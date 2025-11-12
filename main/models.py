@@ -213,6 +213,21 @@ def default_content():
          
 
 
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+
+
+
+
+
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
@@ -282,6 +297,41 @@ class Campaign(models.Model):
     duration = models.PositiveIntegerField(null=True, blank=True, help_text="Enter duration.")
     duration_unit = models.CharField(max_length=10, choices=DURATION_UNITS, default='days')
     funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tags = models.ManyToManyField(Tag, through='CampaignTag', related_name='campaigns', blank=True)
+    sound_community = models.ManyToManyField(
+    Profile,
+    through='CampaignView',
+    related_name='sound_campaigns',
+    blank=True
+    )
+    def get_sound_tribe_members_count(self):
+        """Get count of unique tribe members"""
+        return CampaignView.objects.filter(
+            campaign=self, 
+            sound_reaction__isnull=False
+        ).values('user').distinct().count()
+    
+    def get_recent_sound_tribe_members(self):
+        """
+        Get 6 most recent unique tribe members with their latest reactions.
+        Returns each user only once with their most recent reaction.
+        """
+        # Get the latest CampaignView ID for each user with sound reactions
+        latest_view_ids = CampaignView.objects.filter(
+            campaign=self,
+            sound_reaction__isnull=False
+        ).values('user').annotate(
+            latest_id=models.Max('id')  # Using ID since it's auto-increment and correlates with time
+        ).values_list('latest_id', flat=True)
+        
+        # Get the actual CampaignView objects ordered by most recent
+        recent_views = CampaignView.objects.filter(
+            id__in=latest_view_ids
+        ).select_related('user__user').order_by('-timestamp')[:6]
+        
+        return recent_views
+
+
 
     @property
     def total_pledges(self):
@@ -619,6 +669,20 @@ class Campaign(models.Model):
         return goals_activities.get(self.category, {})
 
 
+class CampaignTag(models.Model):
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='campaign_tags')
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('campaign', 'tag')
+    
+    def __str__(self):
+        return f"{self.campaign.title} - {self.tag.name}"
+
+
+
 
 
 class Report(models.Model):
@@ -909,6 +973,9 @@ class CampaignView(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     time_spent = models.DurationField(default=timezone.timedelta(minutes=0))
 
+    # 👇 new fields for sound validation
+    sound_played = models.BooleanField(default=False)
+    sound_reaction = models.CharField(max_length=20, blank=True, null=True)  # e.g., inspired, motivated, hopeful
     class Meta:
         unique_together = ('user', 'campaign')
 

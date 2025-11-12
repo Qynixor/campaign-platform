@@ -2383,36 +2383,51 @@ def search_campaign(request):
     hadiths = Hadith.objects.none()
     
     if query:
-        # Search across different models
+        # Search across different models - CLEAN APPROACH
         campaigns = Campaign.objects.filter(
             Q(title__icontains=query) | 
             Q(content__icontains=query) |
-            Q(category__icontains=query)
-        )
+            Q(category__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()  # This SHOULD prevent duplicates
+            # Temporary debug - remove after testing
+      
+        # Alternative: More explicit approach if you're still worried
+        # campaigns = Campaign.objects.distinct().filter(
+        #     Q(title__icontains=query) | 
+        #     Q(content__icontains=query) |
+        #     Q(category__icontains=query) |
+        #     Q(tags__name__icontains=query)
+        # )
+        
         profiles = Profile.objects.filter(
             Q(user__username__icontains=query) |
             Q(user__first_name__icontains=query) |
             Q(user__last_name__icontains=query) |
             Q(bio__icontains=query)
-        )
+        ).distinct()
+        
         quran_verses = QuranVerse.objects.filter(
             Q(verse_text__icontains=query) |
             Q(translation__icontains=query) |
             Q(description__icontains=query) |
             Q(surah__name__icontains=query)
-        )
+        ).distinct()
+        
         adhkar = Adhkar.objects.filter(
             Q(type__icontains=query) |
             Q(text__icontains=query) |
             Q(translation__icontains=query) |
             Q(reference__icontains=query)
-        )
+        ).distinct()
+        
         hadiths = Hadith.objects.filter(
             Q(narrator__icontains=query) |
             Q(text__icontains=query) |
             Q(reference__icontains=query) |
             Q(authenticity__icontains=query)
-        )
+        ).distinct()
+    
     
     # Notifications handling
     notifications = Notification.objects.filter(user=request.user).order_by('-timestamp')
@@ -3236,14 +3251,129 @@ def campaign_detail(request, pk):
     return render(request, 'main/campaign_detail.html', {'campaign': campaign,'form':form})
 
 
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+import json
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
+@login_required
+def join_sound_community(request, campaign_id):
+    """Handle sound reaction joins and return updated data"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    user_profile = request.user.profile
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            reaction = data.get('reaction', 'inspired')
 
+            # Create or update CampaignView entry
+            campaign_view, created = CampaignView.objects.get_or_create(
+                user=user_profile,
+                campaign=campaign,
+                defaults={
+                    'sound_played': True, 
+                    'sound_reaction': reaction,
+                    'time_spent': timezone.timedelta(seconds=30)
+                }
+            )
 
+            if not created:
+                campaign_view.sound_played = True
+                campaign_view.sound_reaction = reaction
+                campaign_view.time_spent += timezone.timedelta(seconds=30)
+                campaign_view.save()
 
+            # Count unique members with sound reactions
+            member_count = CampaignView.objects.filter(
+                campaign=campaign, 
+                sound_reaction__isnull=False
+            ).values('user').distinct().count()
+            
+            # Get updated recent members data for real-time update
+            recent_members = campaign.get_recent_sound_tribe_members()
+            recent_members_data = []
+            
+            for view in recent_members:
+                # Get profile image URL - handle default image case
+                profile_image_url = ''
+                if view.user.image and view.user.image.name != 'profile_pics/pp.png':
+                    profile_image_url = view.user.image.url
+                
+                recent_members_data.append({
+                    'username': view.user.user.username,
+                    'reaction': view.sound_reaction,
+                    'emoji': {
+                        'inspired': '🤩',
+                        'motivated': '💪',
+                        'hopeful': '🌟',
+                        'emotional': '💔'
+                    }.get(view.sound_reaction, '🎵'),
+                    'profile_image_url': profile_image_url
+                })
+            
+            return JsonResponse({
+                'status': 'success', 
+                'members': member_count,
+                'reaction': reaction,
+                'recent_members': recent_members_data
+            })
 
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
 
+    return JsonResponse({'status': 'invalid'}, status=400)
 
-
+@csrf_exempt
+def get_campaign_sound_data(request, campaign_id):
+    """Get sound community data for a campaign (for home page and other pages)"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    try:
+        # Count unique members with sound reactions
+        member_count = CampaignView.objects.filter(
+            campaign=campaign, 
+            sound_reaction__isnull=False
+        ).values('user').distinct().count()
+        
+        recent_members = campaign.get_recent_sound_tribe_members()
+        recent_members_data = []
+        
+        for view in recent_members:
+            # Get profile image URL - handle default image case
+            profile_image_url = ''
+            if view.user.image and view.user.image.name != 'profile_pics/pp.png':
+                profile_image_url = view.user.image.url
+            
+            recent_members_data.append({
+                'username': view.user.user.username,
+                'reaction': view.sound_reaction,
+                'emoji': {
+                    'inspired': '🤩',
+                    'motivated': '💪',
+                    'hopeful': '🌟',
+                    'emotional': '💔'
+                }.get(view.sound_reaction, '🎵'),
+                'profile_image_url': profile_image_url
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'member_count': member_count,
+            'recent_members': recent_members_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
 
 
 
@@ -4809,6 +4939,7 @@ def campaign_support(request, campaign_id):
     return render(request, 'main/campaign_support.html', context)
 
 
+
 @login_required
 def recreate_campaign(request, campaign_id):
     # Get following user IDs using the improved pattern
@@ -4823,10 +4954,36 @@ def recreate_campaign(request, campaign_id):
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES, instance=existing_campaign)
         if form.is_valid():
-            form.save()
-            return redirect('view_campaign', campaign_id=existing_campaign.id)  # Update with your success URL
+            # Save campaign first
+            campaign = form.save()
+            
+            # Handle tags after campaign is saved
+            tags_input = form.cleaned_data.get('tags_input', '')
+            if tags_input:
+                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
+                
+                # Clear existing tags and add new ones
+                campaign.tags.clear()
+                for tag_name in tag_names:
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name.lower(),
+                        defaults={'slug': tag_name.lower().replace(' ', '-')}
+                    )
+                    CampaignTag.objects.create(
+                        campaign=campaign,
+                        tag=tag,
+                        added_by=request.user
+                    )
+            
+            messages.success(request, 'Campaign recreated successfully!')
+            return redirect('view_campaign', campaign_id=existing_campaign.id)
+        else:
+            messages.error(request, 'There were errors in your form. Please correct them below.')
     else:
         form = CampaignForm(instance=existing_campaign)
+        # Pre-populate tags input with existing tags
+        existing_tags = ', '.join([tag.name for tag in existing_campaign.tags.all()])
+        form.fields['tags_input'].initial = existing_tags
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
     trending_campaigns = Campaign.objects.filter(visibility='public') \
@@ -4910,11 +5067,26 @@ def recreate_campaign(request, campaign_id):
     return render(request, 'main/recreatecampaign_form.html', context)
 
 
+
+
+
 def success_page(request):
     return render(request, 'main/success.html')
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Count
+from itertools import chain
+from collections import defaultdict
 
+from .models import (
+    Campaign, Profile, Notification, Follow, Love, Comment, 
+    CampaignView, ActivityLove, ActivityComment, NativeAd, Tag, CampaignTag
+)
+from .forms import CampaignForm
 
 @login_required
 def create_campaign(request):
@@ -4925,9 +5097,43 @@ def create_campaign(request):
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES)
         if form.is_valid():
+            # Save campaign first
             campaign = form.save(commit=False)
             campaign.user = request.user.profile
-            campaign.save()
+            campaign.save()  # This gives the campaign an ID
+            
+            # Handle Canva poster data
+            canva_poster_data = request.POST.get('canva_poster_data')
+            if canva_poster_data:
+                try:
+                    canva_data = json.loads(canva_poster_data)
+                    # Download and save the Canva poster
+                    response = requests.get(canva_data['previewUrl'])
+                    if response.status_code == 200:
+                        img_name = f"canva_poster_{campaign.user.username}_{int(time.time())}.png"
+                        img_content = ContentFile(response.content)
+                        campaign.poster.save(img_name, img_content, save=False)
+                except Exception as e:
+                    print(f"Error processing Canva poster: {e}")
+                    # Continue without Canva poster if there's an error
+            
+            campaign.save()            
+            # Handle tags after campaign is saved
+            tags_input = form.cleaned_data.get('tags_input', '')
+            if tags_input:
+                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
+                
+                for tag_name in tag_names:
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name.lower(),
+                        defaults={'slug': tag_name.lower().replace(' ', '-')}
+                    )
+                    CampaignTag.objects.create(
+                        campaign=campaign,
+                        tag=tag,
+                        added_by=request.user
+                    )
+            
             messages.success(request, 'Campaign created successfully!')
             return redirect('home')
         else:
@@ -4965,7 +5171,7 @@ def create_campaign(request):
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
     # Combine all engagement pairs
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
+    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
     # Count number of unique campaigns each user engaged with
@@ -4991,8 +5197,8 @@ def create_campaign(request):
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
     # Improved suggested users logic
-    current_user_following = request.user.following.all()  # Get all Follow objects
-    following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
+    current_user_following = request.user.following.all()
+    following_user_ids = [follow.followed_id for follow in current_user_following]
     
     # Exclude current user and already followed users
     all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
@@ -5011,7 +5217,6 @@ def create_campaign(request):
     # Limit to 2 suggested users
     suggested_users = suggested_users[:2]
 
-
     ads = NativeAd.objects.all()
 
     context = {
@@ -5027,6 +5232,9 @@ def create_campaign(request):
     }
     
     return render(request, 'main/campaign_form.html', context)
+
+
+
 
 def poster_canva(request):
     return render(request, 'main/poster_canva.html', {

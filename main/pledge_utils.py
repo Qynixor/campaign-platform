@@ -146,7 +146,7 @@ def send_paypal_payout(recipient_email, amount, note, sender_item_id):
 
 def process_pledge_split(pledge_amount):
     """Calculate the split between campaign owner and platform"""
-    platform_share = round(float(pledge_amount) * 0.50, 2)  # 50% to platform
-    campaign_owner_share = round(float(pledge_amount) * 0.50, 2)  # 50% to campaign owner
+    platform_share = round(float(pledge_amount) * 0.10, 2)  # 10% to platform
+    campaign_owner_share = round(float(pledge_amount) * 0.90, 2)  # 50% to campaign owner
     
     return platform_share, campaign_owner_share

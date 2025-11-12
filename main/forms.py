@@ -259,8 +259,31 @@ def validate_no_long_words(value):
 from django.core.exceptions import ValidationError
 from PIL import Image
 import os
+from .models import Campaign, Tag, CampaignTag
+
+from django import forms
+from .models import Campaign, Tag, CampaignTag
+from django.core.exceptions import ValidationError
+import os
+from PIL import Image
+
+# Your existing validation function
+def validate_no_long_words(value, max_length=50):
+    words = value.split()
+    for word in words:
+        if len(word) > max_length:
+            raise ValidationError(f"Word '{word[:20]}...' is too long. Maximum word length is {max_length} characters.")
 
 class CampaignForm(forms.ModelForm):
+    tags_input = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Add tags separated by commas...'
+        }),
+        help_text="Separate tags with commas (e.g., education, children, school)"
+    )
+    
     class Meta:
         model = Campaign
         fields = [
@@ -280,6 +303,13 @@ class CampaignForm(forms.ModelForm):
             'funding_goal': 'Funding Goal (optional):',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            # Pre-populate with existing tags
+            existing_tags = ', '.join([tag.name for tag in self.instance.tags.all()])
+            self.fields['tags_input'].initial = existing_tags
+
     def clean_poster(self):
         poster = self.cleaned_data.get('poster')
         if poster:
@@ -296,23 +326,17 @@ class CampaignForm(forms.ModelForm):
 
         return poster
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['content'].widget.attrs['readonly'] = False  # Allow editing
-
     def clean_title(self):
         title = self.cleaned_data.get('title')
-        validate_no_long_words(title)  # Validate the title field
+        validate_no_long_words(title)
         return title
 
     def clean_content(self):
         content = self.cleaned_data.get('content')
-        validate_no_long_words(content)  # Validate the content field
+        validate_no_long_words(content)
         return content
 
-
-
-
+    # REMOVE the custom save method - we'll handle tags in the view
 
 
 class ChatForm(forms.ModelForm):

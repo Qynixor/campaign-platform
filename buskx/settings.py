@@ -95,7 +95,7 @@ WSGI_APPLICATION = 'buskx.wsgi.application'
 
 # Database configuration
 # PostgreSQL configuration (commented out)
- DATABASES = {
+DATABASES = {
      'default': {
          'ENGINE': 'django.db.backends.postgresql',
          'NAME': env('DB_NAME'),  # Load database name from .env
@@ -141,21 +141,105 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# AWS S3 configurations for static and media files
-AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='us-east-1')
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 
-# Static files settings
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
 
-# Media files settings
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+# ==============================
+# Cloudinary Configurations - PRODUCTION
+# ==============================
+import os
+import sys
+from pathlib import Path
+from cloudinary_storage.storage import StaticHashedCloudinaryStorage
+# Cloudinary settings
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    'SECURE': True,
+    'STATIC_IMAGES_EXTENSIONS': ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'],
+    'STATIC_VIDEOS_EXTENSIONS': ['mp4', 'webm', 'ogv'],
+}
+
+# Custom storage class to fix Windows path issues
+class ProductionCloudinaryStorage(StaticHashedCloudinaryStorage):
+    """Fixed Cloudinary storage for production with Windows path support"""
+    
+    def _normalize_name(self, name):
+        """Convert Windows backslashes to forward slashes for Cloudinary"""
+        name = name.replace('\\', '/')
+        return super()._normalize_name(name)
+    
+    def exists(self, name):
+        """Check if file exists with normalized paths"""
+        name = self._normalize_name(name)
+        return super().exists(name)
+    
+    def _save(self, name, content):
+        """Save file with normalized paths"""
+        name = self._normalize_name(name)
+        return super()._save(name, content)
+    
+    def url(self, name):
+        """Generate URL with normalized paths"""
+        name = self._normalize_name(name)
+        return super().url(name)
+
+# Production vs Development configuration
+if 'collectstatic' in sys.argv:
+    # Use local storage ONLY for collectstatic
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATIC_URL = '/static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    
+elif not DEBUG:
+    # PRODUCTION: Use Cloudinary with fixed storage
+    STATICFILES_STORAGE = 'your_app.settings.ProductionCloudinaryStorage'
+    STATIC_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/static/'
+    
+else:
+    # DEVELOPMENT: Use local storage
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATIC_URL = '/static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files configuration for production
+if not DEBUG:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/media/'
+else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
+
+
+
+
+
+# Security settings for production
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Static files optimization
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static'),
+    ]
+    
+    # Whitenoise for static files (alternative to Cloudinary)
+    # MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+
 
 
 # Static files settings (local)
@@ -169,7 +253,9 @@ MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
 
 
+# =========================
 # Email settings
+# =========================
 EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
@@ -178,7 +264,9 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
+# =========================
 # Authentication backends
+# =========================
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -186,7 +274,9 @@ AUTHENTICATION_BACKENDS = (
 
 SITE_ID = 1
 
-# Google social account provider settings
+# =========================
+# Google OAuth (Allauth Social)
+# =========================
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
@@ -199,28 +289,31 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# Allauth additional settings
-ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='none')
-ACCOUNT_EMAIL_REQUIRED = env.bool('ACCOUNT_EMAIL_REQUIRED', default=True)
+# =========================
+# Allauth modern settings
+# =========================
+
+# Email-only signup and login
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
+# Authentication method
+ACCOUNT_LOGIN_METHODS = {'email'}
+
+
+# Email verification options: 'mandatory', 'optional', or 'none'
+ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='optional')
+
+# Redirects
 LOGIN_REDIRECT_URL = '/rallynex-logo/'
 LOGOUT_REDIRECT_URL = 'index'
+
+# Social account settings
 SOCIALACCOUNT_LOGIN_ON_GET = True
-# Ensure email is required for allauth
-
-# Make sure email verification is handled properly
-ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Set this depending on your preference ('mandatory' or 'none')
-
-# Automatically link social accounts to existing email accounts
 SOCIALACCOUNT_AUTO_SIGNUP = True
-
-# Connect social accounts to existing users with the same email address
 SOCIALACCOUNT_QUERY_EMAIL = True
 
-# Add this to point to your custom adapter
+# Custom adapter (optional)
 SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
-# Optional: Require users to provide a username
-ACCOUNT_USERNAME_REQUIRED = False
-
 
 
 

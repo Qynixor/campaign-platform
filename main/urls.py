@@ -67,13 +67,13 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('affiliate-links/', views.affiliate_links, name='affiliate_links'),
 
      path('platformfund/', views.platformfund_view, name='platformfund'),
-       
+      path('campaign/<int:campaign_id>/sound-data/', views.get_campaign_sound_data, name='get_campaign_sound_data'), 
     path('campaign/<int:campaign_id>/', views.view_campaign, name='view_campaign'),  # Corrected URL pattern
     path('update_visibility/<int:campaign_id>/', views.update_visibility, name='update_visibility'),
     path('update_hidden_links/', views.update_hidden_links, name='update_hidden_links'),
  path('upload/', views.upload_file, name='upload_file'),
       path('campaign/<int:campaign_id>/donate/', views.create_donation, name='create_donation'),
- 
+    path('campaign/<int:campaign_id>/join-sound/', views.join_sound_community, name='join_sound_community'),
     path('search_profile_results/', views.search_profile_results, name='search_profile_results'),
     path('search/', views.search_campaign, name='search_campaign'),
     path('notifications/', views.notification_list, name='notification_list'),
