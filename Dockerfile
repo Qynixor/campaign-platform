@@ -19,11 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
-
-# Run migrations (optional - you might want to run this manually)
-# RUN python manage.py migrate
+# Remove this line - we'll handle collectstatic at runtime
+# RUN python manage.py collectstatic --noinput
 
 # Use the port provided by Render
 CMD gunicorn buskx.wsgi:application --bind 0.0.0.0:$PORT
