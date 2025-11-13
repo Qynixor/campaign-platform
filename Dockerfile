@@ -1,7 +1,7 @@
-# Use the official Python runtime as a parent image
-FROM python:3.10-slim
+# Use Python 3.13
+FROM python:3.13-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -10,17 +10,20 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy requirements first for Docker layer caching
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Copy application code
+COPY . .
 
-# Define environment variable
-ENV PYTHONUNBUFFERED 1
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
-# Run the application with gunicorn
-CMD ["gunicorn", "buskx.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Run migrations (optional - you might want to run this manually)
+# RUN python manage.py migrate
+
+# Use the port provided by Render
+CMD gunicorn buskx.wsgi:application --bind 0.0.0.0:$PORT
