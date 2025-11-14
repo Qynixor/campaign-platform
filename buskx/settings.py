@@ -94,20 +94,21 @@ WSGI_APPLICATION = 'buskx.wsgi.application'
 
 
 # Database configuration
-# PostgreSQL configuration (commented out)
 DATABASES = {
-     'default': {
-         'ENGINE': 'django.db.backends.postgresql',
-         'NAME': env('DB_NAME'),  # Load database name from .env
-         'USER': env('DB_USER'),  # Load username from .env
-         'PASSWORD': env('DB_PASSWORD'),  # Load password from .env
-         'HOST': env('DB_HOST'),  # Load host from .env
-         'PORT': env('DB_PORT'),  # Load port from .env
-         'OPTIONS': {
-             'sslmode': 'require',  # SSL mode for secure connection
-         },
-     }
- }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME', default='temp_db_for_build'),
+        'USER': env('DB_USER', default='temp_user'),
+        'PASSWORD': env('DB_PASSWORD', default='temp_password'),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='5432'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
+}
+
+
 
 # SQLite configuration (default for development)
 #DATABASES = {
