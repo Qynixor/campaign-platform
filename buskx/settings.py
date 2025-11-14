@@ -145,99 +145,34 @@ USE_TZ = True
 
 
 
+
 # ==============================
-# Cloudinary Configurations - PRODUCTION
+# Cloudinary Configurations - SIMPLIFIED
 # ==============================
-import os
-import sys
-from pathlib import Path
-from cloudinary_storage.storage import StaticHashedCloudinaryStorage
+
 # Cloudinary settings
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
     'SECURE': True,
-    'STATIC_IMAGES_EXTENSIONS': ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico'],
-    'STATIC_VIDEOS_EXTENSIONS': ['mp4', 'webm', 'ogv'],
 }
 
-# Custom storage class to fix Windows path issues
-class ProductionCloudinaryStorage(StaticHashedCloudinaryStorage):
-    """Fixed Cloudinary storage for production with Windows path support"""
-    
-    def _normalize_name(self, name):
-        """Convert Windows backslashes to forward slashes for Cloudinary"""
-        name = name.replace('\\', '/')
-        return super()._normalize_name(name)
-    
-    def exists(self, name):
-        """Check if file exists with normalized paths"""
-        name = self._normalize_name(name)
-        return super().exists(name)
-    
-    def _save(self, name, content):
-        """Save file with normalized paths"""
-        name = self._normalize_name(name)
-        return super()._save(name, content)
-    
-    def url(self, name):
-        """Generate URL with normalized paths"""
-        name = self._normalize_name(name)
-        return super().url(name)
+# ALWAYS use Cloudinary for media files in production
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/media/'
 
-# Production vs Development configuration
-if 'collectstatic' in sys.argv:
-    # Use local storage ONLY for collectstatic
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    STATIC_URL = '/static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    
-elif not DEBUG:
-    # PRODUCTION: Use Cloudinary with fixed storage
-    STATICFILES_STORAGE = 'your_app.settings.ProductionCloudinaryStorage'
-    STATIC_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/static/'
-    
-else:
-    # DEVELOPMENT: Use local storage
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    STATIC_URL = '/static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Static files - use WhiteNoise for production
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Media files configuration for production
 if not DEBUG:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/media/'
+    # Production: Use WhiteNoise for static files
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 else:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-
-
-
-
-
-
-
-# Security settings for production
-if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    
-    # Static files optimization
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static'),
-    ]
-    
-    # Whitenoise for static files (alternative to Cloudinary)
-    # MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Development: Use local storage for static files
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 
 
