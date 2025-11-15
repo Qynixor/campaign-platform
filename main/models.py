@@ -13,6 +13,8 @@ from django.dispatch import receiver
 from tinymce.models import HTMLField
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
+from cloudinary.models import CloudinaryField
+
 
 User = get_user_model()
 
@@ -36,7 +38,7 @@ class Profile(models.Model):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    image = models.ImageField(upload_to='profile_pics/', default='profile_pics/pp.png', max_length=255)
+    image = CloudinaryField('image', folder='profile_pics', default='profile_pics/pp.png')
     bio = models.TextField(default='No bio available')
     contact = models.CharField(max_length=15, blank=True)
     location = models.CharField(max_length=100, blank=True)
