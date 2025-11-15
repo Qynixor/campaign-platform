@@ -15,11 +15,15 @@ if env_file.exists():
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
-SECRET_KEY = env('SECRET_KEY', default='unsafe-secret-key')
+SECRET_KEY = env('SECRET_KEY', default='unsafe-secret-key-for-development-only')
 DEBUG = env.bool('DEBUG', default=True)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['www.rallynex.com','localhost', '127.0.0.1','rallynex1.onrender.com', 'campaign-platform-kmv9.onrender.com', ])
-
-
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+    'www.rallynex.com',
+    'localhost', 
+    '127.0.0.1',
+    'rallynex1.onrender.com', 
+    'campaign-platform-kmv9.onrender.com',
+])
 
 # Application definitions
 INSTALLED_APPS = [
@@ -41,14 +45,13 @@ INSTALLED_APPS = [
     'crispy_forms',
     'main.apps.MainConfig',
     'django.contrib.sitemaps',
-'django_extensions',
-  'django.contrib.humanize',
-   'django_summernote',  # Remove this if you don’t need it
+    'django_extensions',
+    'django.contrib.humanize',
+    'django_summernote',
     'django_quill',
-      'django_crontab',
-      'background_task',
+    'django_crontab',
+    'background_task',
 ]
-
 
 CRONJOBS = [
     ('0 */24 * * *', 'campaigns.cron.send_pledge_reminders'),
@@ -65,7 +68,6 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'buskx.middlewares.LegalLinksMiddleware',
-    
 ]
 
 ROOT_URLCONF = 'buskx.urls'
@@ -83,15 +85,12 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
-
-             
         },
     },
 ]
 
 # WSGI application
 WSGI_APPLICATION = 'buskx.wsgi.application'
-
 
 # Database configuration
 DATABASES = {
@@ -108,27 +107,12 @@ DATABASES = {
     }
 }
 
-
-
-# SQLite configuration (default for development)
-#DATABASES = {
- #   'default': {
-   #     'ENGINE': 'django.db.backends.sqlite3',
-    #    'NAME': BASE_DIR / 'db.sqlite3',
-    #}
-#}
-
-
-
 CSRF_TRUSTED_ORIGINS = [
     'https://www.rallynex.com',
     'https://rallynex.com',
     'https://rallynex1.onrender.com',
     'https://campaign-platform-kmv9.onrender.com', 
 ]
-
-
-
 
 # Authentication and password validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -143,19 +127,15 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
-
-
-
 # ==============================
 # Cloudinary Configurations - SIMPLIFIED
 # ==============================
 
-# Cloudinary settings
+# Cloudinary settings with defaults
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dummy_cloud_name'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', 'dummy_api_key'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'dummy_api_secret'),
     'SECURE': True,
 }
 
@@ -175,31 +155,16 @@ else:
     # Development: Use local storage for static files
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
-
-
-
-
-# Static files settings (local)
-#STATIC_URL = '/static/'
-#STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Media files settings (local)
-#MEDIA_URL = '/media/'
-#MEDIA_ROOT = BASE_DIR / 'media'
-
-
-
-
 # =========================
-# Email settings
+# Email settings WITH DEFAULTS
 # =========================
-EMAIL_BACKEND = env('EMAIL_BACKEND')
-EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='localhost')
 EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
 
 # =========================
 # Authentication backends
@@ -212,15 +177,15 @@ AUTHENTICATION_BACKENDS = (
 SITE_ID = 1
 
 # =========================
-# Google OAuth (Allauth Social)
+# Google OAuth (Allauth Social) WITH DEFAULTS
 # =========================
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {'access_type': 'online'},
         'APP': {
-            'client_id': env('SOCIALACCOUNT_GOOGLE_CLIENT_ID'),
-            'secret': env('SOCIALACCOUNT_GOOGLE_SECRET'),
+            'client_id': env('SOCIALACCOUNT_GOOGLE_CLIENT_ID', default=''),
+            'secret': env('SOCIALACCOUNT_GOOGLE_SECRET', default=''),
             'key': ''
         }
     }
@@ -236,7 +201,6 @@ ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 # Authentication method
 ACCOUNT_LOGIN_METHODS = {'email'}
 
-
 # Email verification options: 'mandatory', 'optional', or 'none'
 ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='optional')
 
@@ -251,8 +215,6 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 
 # Custom adapter (optional)
 SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
-
-
 
 # TinyMCE configuration
 TINYMCE_DEFAULT_CONFIG = {
@@ -280,27 +242,19 @@ TINYMCE_DEFAULT_CONFIG = {
 # File upload size limit
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB
 
-# Legal links settings
-PRIVACY_POLICY_LINK = env('PRIVACY_POLICY_LINK')
-TERMS_OF_SERVICE_LINK = env('TERMS_OF_SERVICE_LINK')
+# Legal links settings WITH DEFAULTS
+PRIVACY_POLICY_LINK = env('PRIVACY_POLICY_LINK', default='/privacy-policy/')
+TERMS_OF_SERVICE_LINK = env('TERMS_OF_SERVICE_LINK', default='/terms-of-service/')
 
 # Default auto field setting
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# settings.py
-
 SITE_URL = 'https://www.rallynex.com'
-
-# settings.py
-
 SITE_DOMAIN = 'www.rallynex.com'
 
-
-
-
-PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID')
-PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET')
+# PayPal settings WITH DEFAULTS
+PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
+PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
 PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')
 PAYPAL_PLATFORM_ACCOUNT = env('PAYPAL_PLATFORM_ACCOUNT', default='')
 PAYPAL_BRAND_NAME = 'RALLYNEX'
@@ -310,29 +264,30 @@ PAYPAL_API_BASE = (
     else "https://api-m.paypal.com"
 )
 
-
-
-
-
 # RECOMMENDED Branding Settings (customized for Rallynex)
 PAYPAL_PAYMENT_DESCRIPTOR = "RALLYNEX*DONATION"  # Will appear on bank statements (22 char max)
-DEFAULT_FROM_EMAIL = 'notifications@rallynex.com'  # For donation receipts
 
-# Add to your settings.py
+# Flutterwave settings WITH DEFAULTS
 FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY', '')
 FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY', '')
 FLUTTERWAVE_ENCRYPTION_KEY = os.environ.get('FLUTTERWAVE_ENCRYPTION_KEY', '')
-FLUTTERWAVE_PLATFORM_SUBACCOUNT = os.getenv("FLUTTERWAVE_PLATFORM_SUBACCOUNT")
+FLUTTERWAVE_PLATFORM_SUBACCOUNT = os.getenv("FLUTTERWAVE_PLATFORM_SUBACCOUNT", "")
 FLUTTERWAVE_REDIRECT_URL = "http://127.0.0.1:8000/donations/flutterwave/callback/" 
 
-# settings.py
 PLATFORM_SUBACCOUNT_ID = env("FLUTTERWAVE_PLATFORM_SUBACCOUNT_ID", default="")
 
+# Security settings for production
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
-
-
-
-# settings.py
+# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -353,7 +308,7 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
-        'main': {  # Your app name
+        'main': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': False,
