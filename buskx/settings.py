@@ -195,13 +195,21 @@ SOCIALACCOUNT_PROVIDERS = {
 # Allauth modern settings
 # =========================
 
-# Email-only signup and login
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
-# Authentication method
-ACCOUNT_LOGIN_METHODS = {'email'}
+# =========================
+# Allauth modern settings
+# =========================
+
+# Use the new ACCOUNT_LOGIN_METHODS instead of deprecated settings
+ACCOUNT_LOGIN_METHODS = {'username'}  # For username-only login
+# OR for both username and email:
+# ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+
+# Signup fields - include email if verification is mandatory
+ACCOUNT_SIGNUP_FIELDS = ['username*', 'email*', 'password1*', 'password2*']
 
 # Email verification options: 'mandatory', 'optional', or 'none'
+# If you set to 'mandatory', you MUST include 'email*' in SIGNUP_FIELDS
 ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='optional')
 
 # Redirects
@@ -215,6 +223,13 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 
 # Custom adapter (optional)
 SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
+
+# Username settings (optional)
+ACCOUNT_USERNAME_MIN_LENGTH = 3
+ACCOUNT_USERNAME_BLACKLIST = ['admin', 'administrator', 'moderator', 'root']  # Optional
+
+
+
 
 # TinyMCE configuration
 TINYMCE_DEFAULT_CONFIG = {
