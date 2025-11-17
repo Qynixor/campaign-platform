@@ -160,15 +160,15 @@ else:
 # =========================
 
 
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='smtp-relay.brevo.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='dummy@example.com')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='dummy')
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@example.com')
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
+EMAIL_HOST_USER = "9bc4b0001@smtp-brevo.com"  # your Brevo SMTP login
+EMAIL_HOST_PASSWORD = "xsmtpsib-72d936d76a2fbcf8302286e900f73434169c0a8b620453d344c8920935ad59b2-KF0VKDR6nSK2EY1B"
 
+DEFAULT_FROM_EMAIL = "rallynex1@gmail.com"  # must be verified sender in Brevo
 
 
 # =========================
