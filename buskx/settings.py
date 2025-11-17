@@ -264,8 +264,16 @@ TERMS_OF_SERVICE_LINK = env('TERMS_OF_SERVICE_LINK', default='/terms-of-service/
 # Default auto field setting
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SITE_URL = 'https://campaign-platform-kmv9.onrender.com'
-SITE_DOMAIN = 'campaign-platform-kmv9.onrender.com'
+ # Detect environment and set accordingly
+import os
+if 'RENDER' in os.environ:
+    SITE_URL = 'https://campaign-platform-kmv9.onrender.com'
+    SITE_DOMAIN = 'campaign-platform-kmv9.onrender.com'
+else:
+    SITE_URL = 'https://www.rallynex.com'
+    SITE_DOMAIN = 'www.rallynex.com'
+
+ 
 
 # PayPal settings WITH DEFAULTS
 PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
