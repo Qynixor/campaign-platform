@@ -214,7 +214,7 @@ ACCOUNT_SIGNUP_FIELDS = ['username*', 'email*', 'password1*', 'password2*']
 
 # Email verification options: 'mandatory', 'optional', or 'none'
 # If you set to 'mandatory', you MUST include 'email*' in SIGNUP_FIELDS
-ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='optional')
+ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='none')
 
 # Redirects
 LOGIN_REDIRECT_URL = '/rallynex-logo/'
