@@ -210,7 +210,7 @@ ACCOUNT_LOGIN_METHODS = {'username'}  # For username-only login
 # ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 
 # Signup fields - include email if verification is mandatory
-ACCOUNT_SIGNUP_FIELDS = ['username*', 'email*', 'password1*', 'password2*']
+ACCOUNT_SIGNUP_FIELDS = ['username*', 'password1*', 'password2*']
 
 # Email verification options: 'mandatory', 'optional', or 'none'
 # If you set to 'mandatory', you MUST include 'email*' in SIGNUP_FIELDS
