@@ -186,3 +186,31 @@ def face(request):
 
     context = {'user_profile': user_profile}
     return render(request, 'accounts/face.html', context)
+
+
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+import random
+
+def check_username(request):
+    username = request.GET.get("username", "").strip()
+
+    if len(username) < 3:
+        return JsonResponse({"available": False, "suggestions": []})
+
+    # Check if username exists
+    exists = User.objects.filter(username=username).exists()
+
+    if not exists:
+        return JsonResponse({"available": True})
+
+    # Generate fun, memorable suggestions
+    adjectives = ["Cool", "Smart", "Happy", "Brave", "Fast", "Creative", "Mighty", "Lucky", "Shiny", "Bright"]
+    suggestions = []
+
+    for _ in range(5):
+        adj = random.choice(adjectives)
+        num = random.randint(10, 99)  # 2-digit number → easier to remember
+        suggestions.append(f"{adj}{username}{num}")  # adjective first for readability
+
+    return JsonResponse({"available": False, "suggestions": suggestions})

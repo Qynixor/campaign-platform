@@ -2470,84 +2470,123 @@ body.dark-mode .affiliate-link i {
 </aside>
 
 
-
-
-
-
 <section>
-
-
-
-
-<div class="top-navigation-container">
-    <!-- Back Arrow (Left) -->
+  <!-- Top Navigation -->
+  <div class="top-navigation-container">
     <div class="back-arrow-container">
-        <div class="go-back-arrow" onclick="goBack()">
-            <i class="fas fa-arrow-left"></i>
-        </div>
+      <div class="go-back-arrow" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i>
+      </div>
     </div>
 
-    <!-- Search Bar (Right) -->
     <form action="{% url 'search_campaign' %}" method="get" class="search-form">
-        <div class="search-wrapper">
-            <input type="text" placeholder="Search..." name="search_query" id="query-field">
-            <button type="button" class="btn-reset" id="reset-field">
-                <i class="fas fa-times"></i>
-            </button>
-            <button type="submit" class="btn-search">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-    </form>
-</div>
-
-
-<div class="sidebar-box ">
-
-
-
-  <div class="signup-container">
-   
-     
-    <h2>Sign Up for RallyNex</h2>
-    <form method="post" action="{% url 'account_signup' %}">
-      {% csrf_token %}
-      {% for field in form %}
-      <div class="form-field">
-        {{ field.label_tag }}
-        {{ field }}
-        {% if field.errors %}
-        <p class="text-danger">{{ field.errors.as_text }}</p>
-        {% endif %}
+      <div class="search-wrapper">
+        <input type="text" placeholder="Search..." name="search_query" id="query-field">
+        <button type="button" class="btn-reset" id="reset-field">
+          <i class="fas fa-times"></i>
+        </button>
+        <button type="submit" class="btn-search">
+          <i class="fas fa-search"></i>
+        </button>
       </div>
-      {% endfor %}
-              <!-- Add this terms agreement checkbox -->
-        <div class="form-field" style="margin-top: 15px;">
-            <label>
-                <input type="checkbox" name="terms_agreement" required>
-                I agree to the <a href="{% url 'terms_of_service' %}" target="_blank">Terms of Service</a> 
-                and <a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a>
-            </label>
-            {% if form.terms_agreement.errors %}
-            <p class="text-danger">{{ form.terms_agreement.errors.as_text }}</p>
-            {% endif %}
-        </div>
-      <button type="submit" class="btn-signup">Sign Up</button>
     </form>
+  </div>
 
-    <div class="additional-links">
-      <p>Already have an account? <a href="{% url 'account_login' %}">Log in</a></p>
-      <p>Or sign up using</p>
-      <a href="{% provider_login_url 'google' %}" class="btn-third-party">
-        <i class="fab fa-google"></i> Sign Up with Google
-      </a>
+  <!-- Signup Container -->
+  <div class="sidebar-box">
+    <div class="signup-container">
+      <h2>Sign Up for RallyNex</h2>
+      <form method="post" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+
+        {% for field in form %}
+          <div class="form-field">
+            {{ field.label_tag }}
+            {{ field }}
+
+            {% if field.name == "username" %}
+              <!-- Username suggestions DIV -->
+              <div id="username-suggestions" style="margin-top:10px;color:red;"></div>
+            {% endif %}
+
+            {% if field.errors %}
+              <p class="text-danger">{{ field.errors.as_text }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <!-- Terms agreement checkbox -->
+        <div class="form-field" style="margin-top: 15px;">
+          <label>
+            <input type="checkbox" name="terms_agreement" required>
+            I agree to the <a href="{% url 'terms_of_service' %}" target="_blank">Terms of Service</a> 
+            and <a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a>
+          </label>
+          {% if form.terms_agreement.errors %}
+            <p class="text-danger">{{ form.terms_agreement.errors.as_text }}</p>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="btn-signup">Sign Up</button>
+      </form>
+
+      <div class="additional-links">
+        <p>Already have an account? <a href="{% url 'account_login' %}">Log in</a></p>
+        <p>Or sign up using</p>
+        <a href="{% provider_login_url 'google' %}" class="btn-third-party">
+          <i class="fab fa-google"></i> Sign Up with Google
+        </a>
+      </div>
     </div>
   </div>
- 
 
+  <!-- FontAwesome CDN (safe for local dev) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-V0c6e0m...yourhash..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Username suggestion JS -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+      const usernameField = document.querySelector("input[name='username']") || document.getElementById("id_username");
+      const suggestionBox = document.getElementById("username-suggestions");
+      const checkUsernameURL = "{% url 'check_username' %}";
+
+      if (!usernameField || !suggestionBox) return;
+
+      usernameField.addEventListener("input", function() {
+          const username = usernameField.value.trim();
+          if (username.length < 3) {
+              suggestionBox.innerHTML = "";
+              return;
+          }
+
+          fetch(`${checkUsernameURL}?username=${username}`)
+              .then(response => {
+                  if (!response.ok) throw new Error("Network response not ok");
+                  return response.json();
+              })
+              .then(data => {
+                  if (!data.available) {
+                      let html = `<p>Username is taken. Try one of these:</p><ul>`;
+                      data.suggestions.forEach(s => {
+                          html += `<li style="cursor:pointer;color:blue;" 
+                                    onclick="document.querySelector('input[name=\\'username\\']').value='${s}';
+                                             document.getElementById('username-suggestions').innerHTML='';">
+                                    ${s}</li>`;
+                      });
+                      html += "</ul>";
+                      suggestionBox.innerHTML = html;
+                  } else {
+                      suggestionBox.innerHTML = "<p style='color:green;'>Username available ✔</p>";
+                  }
+              })
+              .catch(err => {
+                  console.error("Username check failed:", err);
+                  suggestionBox.innerHTML = "<p style='color:red;'>Could not check username</p>";
+              });
+      });
+  });
+  </script>
 </section>
-
-
 
 
 <aside class="right-aside">
@@ -3266,6 +3305,9 @@ function triggerFireworks(loveIcon) {
 }
 
 </script>
+
+
+
 </body>
 </html>
   
