@@ -214,7 +214,8 @@ ACCOUNT_SIGNUP_FIELDS = ['username*', 'password1*', 'password2*']
 
 # Email verification options: 'mandatory', 'optional', or 'none'
 # If you set to 'mandatory', you MUST include 'email*' in SIGNUP_FIELDS
-ACCOUNT_EMAIL_VERIFICATION = env('ACCOUNT_EMAIL_VERIFICATION', default='none')
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_CONFIRMATION_HMAC = False
 
 # Redirects
 LOGIN_REDIRECT_URL = '/rallynex-logo/'
@@ -232,6 +233,11 @@ SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
 ACCOUNT_USERNAME_MIN_LENGTH = 3
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'administrator', 'moderator', 'root']  # Optional
 
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
+ACCOUNT_CONFIRM_EMAIL_ON_GET = False
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 0
 
 
 
