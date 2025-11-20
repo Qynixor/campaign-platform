@@ -3,6 +3,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 import environ
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 # Load environment variables
 env = environ.Env()
 
@@ -51,6 +55,8 @@ INSTALLED_APPS = [
     'django_quill',
     'django_crontab',
     'background_task',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 CRONJOBS = [
@@ -127,33 +133,50 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# ==============================
-# Cloudinary Configurations - SIMPLIFIED
-# ==============================
 
-# Cloudinary settings with defaults
+
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Cloudinary credentials
+CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
+CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
+CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
+
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True
+)
+
+# Django Cloudinary Storage settings
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dummy_cloud_name'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', 'dummy_api_key'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'dummy_api_secret'),
-    'SECURE': True,
+    'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+    'API_KEY': CLOUDINARY_API_KEY,
+    'API_SECRET': CLOUDINARY_API_SECRET,
 }
 
-# ALWAYS use Cloudinary for media files in production
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_STORAGE["CLOUD_NAME"]}/media/'
 
-# Static files - use WhiteNoise for production
+# Media settings
+MEDIA_URL = '/media/'  # URL prefix for media files
+
+# Static files (unchanged)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-if not DEBUG:
-    # Production: Use WhiteNoise for static files
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-else:
-    # Development: Use local storage for static files
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+
+
+
+
+
 
 # =========================
 # Email settings WITH DEFAULTS

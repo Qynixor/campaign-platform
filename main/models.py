@@ -1,6 +1,7 @@
 import datetime
 import uuid
 import requests
+from cloudinary.models import CloudinaryField
 from django.conf import settings
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -13,7 +14,7 @@ from django.dispatch import receiver
 from tinymce.models import HTMLField
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
-from cloudinary.models import CloudinaryField
+
 
 
 User = get_user_model()
@@ -38,7 +39,12 @@ class Profile(models.Model):
     )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    image = CloudinaryField('image', folder='profile_pics', default='profile_pics/pp.png')
+    image = CloudinaryField(
+        'image',
+        folder='profile_pics',  # Cloudinary folder
+        default='v1763637368/pp_vvzbcj'  # Make sure this exists in Cloudinary
+    )
+    
     bio = models.TextField(default='No bio available')
     contact = models.CharField(max_length=15, blank=True)
     location = models.CharField(max_length=100, blank=True)
@@ -246,7 +252,7 @@ class Campaign(models.Model):
     title = models.CharField(max_length=300)
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
-    poster = models.ImageField(upload_to='campaign_files', null=True, blank=True)
+    poster = CloudinaryField('image', folder='campaign_files', null=True, blank=True)
     audio = models.FileField(upload_to='campaign_audio', null=True, blank=True)
     is_active = models.BooleanField(default=True)  # Stops donations when target is met
    
@@ -839,19 +845,30 @@ class CampaignProduct(models.Model):
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to='campaign_product_images/', blank=True, null=True)
+
+    # ✅ Cloudinary like poster (no default placeholder)
+    image = CloudinaryField(
+        'image',
+        folder='campaign_product_files',
+        null=True,
+        blank=True
+    )
+
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+
     stock_status = models.CharField(
         max_length=20,
         choices=STOCK_STATUS_CHOICES,
         default='in_stock'
     )
+
     date_added = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
+
 
     def get_stock_display(self):
         """Helper: decide stock display based on manual status"""
@@ -1056,13 +1073,18 @@ class CommentLike(models.Model):
 
 
 
-
-
 class Activity(models.Model):
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
     content = models.TextField(default='content')
     timestamp = models.DateTimeField(auto_now_add=True)
-    file = models.FileField(upload_to='activity_file', blank=True, null=True)
+
+    # ✅ Cloudinary version of file upload
+    file = CloudinaryField(
+        'file',
+        folder='activity_files',
+        null=True,
+        blank=True
+    )
 
     def save(self, *args, **kwargs):
         if self.pk is None:  # If this is a new activity
@@ -1164,8 +1186,15 @@ class Message(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     content = models.TextField(default='say something..')
     timestamp = models.DateTimeField(auto_now_add=True)
-    # Add these fields for file attachments
-    file = models.FileField(upload_to='chat_files/', null=True, blank=True)
+
+    # ✅ Cloudinary file field (replaces FileField)
+    file = CloudinaryField(
+        'file',
+        folder='chat_files',
+        null=True,
+        blank=True
+    )
+
     file_name = models.CharField(max_length=255, blank=True)
     file_type = models.CharField(max_length=50, blank=True)  # image, document, etc.
 
@@ -1256,11 +1285,18 @@ class AffiliateNewsSource(models.Model):
     # Add more fields as needed, such as commission rate, affiliate program details, etc
 
 
-
 class NativeAd(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
-    image = models.ImageField(upload_to='native_ads/')
+
+    # ✅ Cloudinary image upload
+    image = CloudinaryField(
+        'image',
+        folder='native_ad_images',
+        null=True,
+        blank=True
+    )
+
     link = models.URLField()
     sponsored_by = models.CharField(max_length=100)
 
@@ -1325,6 +1361,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils.text import slugify
 
+
+
 class Blog(models.Model):
     CATEGORY_CHOICES = [
         ('RallyNex-Led', 'RallyNex-Led'),
@@ -1339,10 +1377,18 @@ class Blog(models.Model):
     author = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    image = models.ImageField(upload_to='blog_images/', blank=True, null=True)
+
+    # ✅ Cloudinary image field
+    image = CloudinaryField(
+        'image',
+        folder='blog_images',
+        null=True,
+        blank=True
+    )
+
     is_published = models.BooleanField(default=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')  # new field for category
-    estimated_reading_time = models.PositiveIntegerField(default=5)  # new field for time in minutes
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')
+    estimated_reading_time = models.PositiveIntegerField(default=5)  # minutes
     
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1353,11 +1399,22 @@ class Blog(models.Model):
         return self.title
 
 
+from cloudinary.models import CloudinaryField
+from django.utils.text import slugify
+
 class CampaignStory(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)  # For friendly URLs
     content = models.TextField()
-    image = models.ImageField(upload_to='story_images/', blank=True, null=True)
+
+    # ✅ Cloudinary image field
+    image = CloudinaryField(
+        'image',
+        folder='story_images',
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
