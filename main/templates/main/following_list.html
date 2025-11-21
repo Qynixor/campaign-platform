@@ -8,6 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>Following List</title>
  <style>
     /* Define CSS variables for light mode */
@@ -235,6 +236,79 @@ body.dark-mode .affiliate-link i {
         body.dark-mode .sub p {
             color: #a0a0a0;
         }
+
+
+        /* Empty state for following */
+.no-following {
+    text-align: center;
+    padding: 40px 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    color: #6c757d;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    margin-top: 20px;
+}
+
+.no-following i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ced4da;
+}
+
+.no-following p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.no-following .following-time {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.no-following .following-time i {
+    font-size: 18px;
+    margin-right: 8px;
+    margin-bottom: 0;
+}
+
+/* Dark mode styles */
+body.dark-mode .no-followers {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #e0e0e0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .no-followers i {
+    color: #555555;
+}
+
+body.dark-mode .no-followers p {
+    color: #aaaaaa;
+}
+
+body.dark-mode .no-followers .followers-time {
+    color: #888888;
+}
+
+body.dark-mode .no-following {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #e0e0e0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .no-following i {
+    color: #555555;
+}
+
+body.dark-mode .no-following p {
+    color: #aaaaaa;
+}
+
+body.dark-mode .no-following .following-time {
+    color: #888888;
+}
 </style>
 
 </head>
@@ -247,34 +321,39 @@ body.dark-mode .affiliate-link i {
    </div>
 </div>
 
-    <div class="following-container">
-        <h1 class="following-title">Following List for {{ user.username }}</h1>
-        {% if following %}
-        <div class="scrollable-following">
-            <ul class="following-list">
-                {% for followed in following %}
-                <li class="following-item">
-                    <div class="following-profile-pic">
-                        <a href="{% url 'profile_view' username=followed.followed.username %}">
-                            <img src="{{ followed.followed.profile.image.url }}" alt="{{ followed.followed.username }}'s Profile Picture">
-                        </a>
-                    </div>
-                    <span>{{ followed.followed.username }}</span>
-                    {% if followed.followed.profile.profile_verified %}
-                    <span class="verified-badge">
-                        verified
-                        <i class="material-icons">verified_user</i>
-                    </span>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% else %}
-        <li class="no-suggested-users">No following yet.</li>
-        {% endif %}
+<div class="following-container">
+    <h1 class="following-title">Following List for {{ user.username }}</h1>
+    {% if following %}
+    <div class="scrollable-following">
+        <ul class="following-list">
+            {% for followed in following %}
+            <li class="following-item">
+                <div class="following-profile-pic">
+                    <a href="{% url 'profile_view' username=followed.followed.username %}">
+                        <img src="{{ followed.followed.profile.image.url }}" alt="{{ followed.followed.username }}'s Profile Picture">
+                    </a>
+                </div>
+                <span>{{ followed.followed.username }}</span>
+                {% if followed.followed.profile.profile_verified %}
+                <span class="verified-badge">
+                    verified
+                    <i class="material-icons">verified_user</i>
+                </span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
     </div>
-
+    {% else %}
+    <div class="no-following">
+        <i class="material-icons">person_search</i>
+        <p>Not following anyone yet</p>
+        <p class="following-time">
+            <i class="material-icons">info</i> You'll see people you follow here when you start following others
+        </p>
+    </div>
+    {% endif %}
+</div>
 
 <script type="text/javascript">
     

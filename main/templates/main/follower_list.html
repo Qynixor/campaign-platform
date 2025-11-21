@@ -8,6 +8,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <title>Follower List</title>
   <style>
     body {
@@ -250,6 +252,77 @@ body.dark-mode .affiliate-link i {
         body.dark-mode .sub p {
             color: #a0a0a0;
         }
+/* Empty state for followers */
+.no-followers {
+    text-align: center;
+    padding: 40px 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    color: #6c757d;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    margin-top: 20px;
+}
+
+.no-followers i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ced4da;
+}
+
+.no-followers p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.no-followers .followers-time {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.no-followers .followers-time i {
+    font-size: 18px;
+    margin-right: 8px;
+    margin-bottom: 0;
+}
+
+/* Dark mode styles */
+body.dark-mode .no-followers {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #e0e0e0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .no-followers i {
+    color: #555555;
+}
+
+body.dark-mode .no-followers p {
+    color: #aaaaaa;
+}
+
+body.dark-mode .no-followers .followers-time {
+    color: #888888;
+}
+
+body.dark-mode .no-following {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #e0e0e0;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+body.dark-mode .no-following i {
+    color: #555555;
+}
+
+body.dark-mode .no-following p {
+    color: #aaaaaa;
+}
+
+body.dark-mode .no-following .following-time {
+    color: #888888;
+}
 </style>
 
 </head>
@@ -261,34 +334,42 @@ body.dark-mode .affiliate-link i {
        <p>See who’s following you and stay connected with your supporters.</p>
    </div>
 </div>
- 
-    <div class="follower-container">
-        <h1 class="follower-title">Follower List for {{ user.username }}</h1>
-        {% if followers %}
-        <div class="scrollable-followers">
-            <ul class="follower-list">
-                {% for follower in followers %}
-                <li class="follower-item">
-                    <div class="follower-profile-pic">
-                        <a href="{% url 'profile_view' username=follower.follower.username %}">
-                            <img src="{{ follower.follower.profile.image.url }}" alt="{{ follower.follower.username }}'s Profile Picture">
-                        </a>
-                    </div>
-                    <span>{{ follower.follower.username }}</span>
-                    {% if follower.follower.profile.profile_verified %}
-                    <span class="verified-badge">
-                        verified
-                        <i class="material-icons">verified_user</i>
-                    </span>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% else %}
-        <li class="no-suggested-users">No followers yet.</li>
-        {% endif %}
+
+
+
+<div class="follower-container">
+    <h1 class="follower-title">Follower List for {{ user.username }}</h1>
+    {% if followers %}
+    <div class="scrollable-followers">
+        <ul class="follower-list">
+            {% for follower in followers %}
+            <li class="follower-item">
+                <div class="follower-profile-pic">
+                    <a href="{% url 'profile_view' username=follower.follower.username %}">
+                        <img src="{{ follower.follower.profile.image.url }}" alt="{{ follower.follower.username }}'s Profile Picture">
+                    </a>
+                </div>
+                <span>{{ follower.follower.username }}</span>
+                {% if follower.follower.profile.profile_verified %}
+                <span class="verified-badge">
+                    verified
+                    <i class="material-icons">verified_user</i>
+                </span>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
     </div>
+    {% else %}
+    <div class="no-followers">
+        <i class="material-icons">group</i>
+        <p>No followers yet</p>
+        <p class="followers-time">
+            <i class="material-icons">info</i> You'll see followers here when people start following you
+        </p>
+    </div>
+    {% endif %}
+</div>
 
      <script type="text/javascript">
          

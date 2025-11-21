@@ -314,15 +314,34 @@ class CampaignForm(forms.ModelForm):
         poster = self.cleaned_data.get('poster')
         if poster:
             valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-            ext = os.path.splitext(poster.name)[1].lower()
+            
+            # ✅ FIX: Handle CloudinaryResource objects
+            if hasattr(poster, 'url'):
+                # Cloudinary resource - get extension from URL
+                url = poster.url
+                ext = os.path.splitext(url)[1].lower().split('?')[0]  # Remove query params
+            else:
+                # Regular file upload
+                ext = os.path.splitext(poster.name)[1].lower()
+            
             if ext not in valid_extensions:
                 raise ValidationError("Unsupported file format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP")
 
-            try:
-                image = Image.open(poster)
-                image.verify()  # Check if it's a valid image file
-            except Exception:
-                raise ValidationError("Uploaded file is not a valid image.")
+            # ✅ FIX: Only validate image if it's a new upload (not Cloudinary resource)
+            if not hasattr(poster, 'url'):  # Only for new file uploads
+                try:
+                    # Reset file pointer to beginning for PIL
+                    if hasattr(poster, 'seek'):
+                        poster.seek(0)
+                    
+                    image = Image.open(poster)
+                    image.verify()  # Check if it's a valid image file
+                    
+                    # Reset again for future use
+                    if hasattr(poster, 'seek'):
+                        poster.seek(0)
+                except Exception as e:
+                    raise ValidationError("Uploaded file is not a valid image.")
 
         return poster
 
