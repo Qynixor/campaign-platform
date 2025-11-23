@@ -124,7 +124,6 @@ section {
   padding: 20px;
 }
 
-
 @media (min-width: 769px) {
     .rallynex-header-container {
         display: none !important;
@@ -133,24 +132,69 @@ section {
 
 /* Mobile styles */
 @media (max-width: 768px) {
+/* Sticky Header Styles */
+.rallynex-header-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(192, 192, 192, 0.2);
+    z-index: 1000;
+    transition: transform 0.3s ease, background 0.3s ease;
+    transform: translateY(0);
+}
+
+.rallynex-header-container.hidden {
+    transform: translateY(-100%);
+}
+
+.rallynex-header-container.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode styles for sticky header */
+.dark-mode .rallynex-header-container {
+    background: rgba(26, 26, 26, 0.95);
+    border-bottom: 1px solid rgba(58, 58, 58, 0.3);
+}
+
+.dark-mode .rallynex-header-container.scrolled {
+    background: rgba(26, 26, 26, 0.98);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Adjust body padding to account for fixed header */
+body {
+    padding-top: 80px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 70px;
+    }
+    
     .rallynex-header-container {
-        padding: 15px;
+        padding: 12px 15px;
     }
-
-    /* Hide the full search bar by default on mobile */
-    .rallynex-search-container form {
-        display: none;
-    }
-
-    /* Mobile search icon - silver */
+}
+    /* Ensure mobile search icon is visible */
     .rallynex-mobile-search-icon {
         display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         font-size: 24px;
         color: #c0c0c0;
         cursor: pointer;
         padding: 8px;
         border-radius: 50%;
         transition: all 0.2s ease;
+        position: relative;
+        z-index: 100;
     }
 
     .rallynex-mobile-search-icon:hover {
@@ -158,17 +202,23 @@ section {
         background: #f8f8f8;
     }
 
-    /* Mobile search popup - all white */
+    /* Hide the full search bar by default on mobile */
+    .rallynex-search-container form {
+        display: none !important;
+    }
+
+    /* Mobile search popup */
     .rallynex-mobile-search-popup {
         display: none;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+        width: 100%;
         background: white;
         padding: 15px;
         box-shadow: 0 2px 5px rgba(192,192,192,0.2);
-        z-index: 1000;
+        z-index: 9999;
     }
 
     .rallynex-mobile-search-popup.active {
@@ -176,7 +226,7 @@ section {
         align-items: center;
     }
 
-    /* Search wrapper - white with silver accents */
+    /* Search wrapper */
     .rallynex-mobile-search-wrapper {
         flex: 1;
         display: flex;
@@ -195,11 +245,12 @@ section {
 
     .rallynex-mobile-search-wrapper input {
         flex: 1;
-        padding: 12px 40px 12px 15px;
+        padding: 12px 45px 12px 15px;
         border: none;
         font-size: 16px;
         background: white;
         color: #333;
+        width: 100%;
     }
 
     .rallynex-mobile-search-wrapper input::placeholder {
@@ -207,13 +258,13 @@ section {
         opacity: 1;
     }
 
-    /* Clear button */
+    /* Clear button - ensure it's visible */
     .rallynex-clear-search {
         position: absolute;
-        right: 50px;
+        right: 45px;
         top: 50%;
         transform: translateY(-50%);
-        display: none;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         width: 20px;
@@ -223,13 +274,20 @@ section {
         background: none;
         border: none;
         transition: all 0.2s ease;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 10;
+    }
+
+    .rallynex-clear-search.visible {
+        display: flex !important;
     }
 
     .rallynex-clear-search:hover {
         color: #a0a0a0;
     }
 
-    /* Search button - silver */
+    /* Search button */
     .rallynex-mobile-search-wrapper button[type="submit"] {
         padding: 0 15px;
         background: #f0f0f0;
@@ -237,13 +295,14 @@ section {
         border: none;
         border-left: 1px solid #e0e0e0;
         transition: all 0.2s ease;
+        min-width: 50px;
     }
 
     .rallynex-mobile-search-wrapper button[type="submit"]:hover {
         background: #e0e0e0;
     }
 
-    /* Close button - silver */
+    /* Close button */
     .rallynex-close-mobile-search {
         margin-left: 12px;
         font-size: 20px;
@@ -253,6 +312,9 @@ section {
         border-radius: 50%;
         padding: 5px;
         transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .rallynex-close-mobile-search:hover {
@@ -261,10 +323,8 @@ section {
     }
 }
 
-/* Hide mobile elements on desktop */
-.rallynex-mobile-search-icon {
-    display: none;
-}
+/* Reset mobile elements on desktop */
+.rallynex-mobile-search-icon,
 .rallynex-mobile-search-popup {
     display: none;
 }
@@ -339,7 +399,8 @@ section {
 
 @media (min-width: 769px) {
     .rallynex-mobile-search-icon,
-    .rallynex-mobile-search-popup {
+    .rallynex-mobile-search-popup,
+    .rallynex-clear-search {
         display: none !important;
     }
 }
@@ -6555,7 +6616,10 @@ body.dark-mode .comment-count {
         display: inline-block;
         border-radius: 3px;
         backdrop-filter: brightness(1.2);
-    "><img src="{% static 'main/files/w.png' %}" alt="Rallynex Logo" style="height: 50px; width: 50px;"> RALLYNEX</div>
+        transition: all 0.3s ease;
+    ">
+        <img src="{% static 'main/files/w.png' %}" alt="Rallynex Logo" style="height: 50px; width: 50px; transition: all 0.3s ease;"> RALLYNEX
+    </div>
 
     <!-- Mobile Search Icon on the right -->
     <div class="rallynex-mobile-search-icon">
@@ -10025,7 +10089,45 @@ function createHearts(element) {
 
 
 
+<script type="text/javascript">
+    // Sticky header scroll behavior
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.querySelector('.rallynex-header-container');
+    let lastScrollY = window.scrollY;
+    let ticking = false;
 
+    function updateHeader() {
+        const currentScrollY = window.scrollY;
+        
+        if (currentScrollY > 100) {
+            header.classList.add('scrolled');
+            
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                // Scrolling down - hide header
+                header.classList.add('hidden');
+            } else {
+                // Scrolling up - show header
+                header.classList.remove('hidden');
+            }
+        } else {
+            // At top of page - reset styles
+            header.classList.remove('scrolled', 'hidden');
+        }
+        
+        lastScrollY = currentScrollY;
+        ticking = false;
+    }
+
+    function onScroll() {
+        if (!ticking) {
+            requestAnimationFrame(updateHeader);
+            ticking = true;
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+});
+</script>
 
 
 
