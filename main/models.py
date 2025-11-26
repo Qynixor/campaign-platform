@@ -15,7 +15,7 @@ from tinymce.models import HTMLField
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
 
-
+from django.core.cache import cache
 
 User = get_user_model()
 
@@ -234,8 +234,6 @@ class Tag(models.Model):
 
 
 
-
-
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
@@ -306,39 +304,41 @@ class Campaign(models.Model):
     duration_unit = models.CharField(max_length=10, choices=DURATION_UNITS, default='days')
     funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tags = models.ManyToManyField(Tag, through='CampaignTag', related_name='campaigns', blank=True)
-    sound_community = models.ManyToManyField(
-    Profile,
-    through='CampaignView',
-    related_name='sound_campaigns',
-    blank=True
-    )
-    def get_sound_tribe_members_count(self):
-        """Get count of unique tribe members"""
-        return CampaignView.objects.filter(
-            campaign=self, 
-            sound_reaction__isnull=False
-        ).values('user').distinct().count()
-    
-    def get_recent_sound_tribe_members(self):
-        """
-        Get 6 most recent unique tribe members with their latest reactions.
-        Returns each user only once with their most recent reaction.
-        """
-        # Get the latest CampaignView ID for each user with sound reactions
-        latest_view_ids = CampaignView.objects.filter(
-            campaign=self,
-            sound_reaction__isnull=False
-        ).values('user').annotate(
-            latest_id=models.Max('id')  # Using ID since it's auto-increment and correlates with time
-        ).values_list('latest_id', flat=True)
-        
-        # Get the actual CampaignView objects ordered by most recent
-        recent_views = CampaignView.objects.filter(
-            id__in=latest_view_ids
-        ).select_related('user__user').order_by('-timestamp')[:6]
-        
-        return recent_views
 
+    def get_sound_tribe_members_count(self):
+        """
+        Get the number of members in the sound tribe for this campaign
+        """
+        return SoundTribe.objects.filter(campaign=self).count()
+    
+    def has_user_joined_tribe(self, user_profile):
+        """
+        Check if a specific user has joined the sound tribe
+        """
+        if not user_profile:
+            return False
+        return SoundTribe.objects.filter(
+            user=user_profile,
+            campaign=self
+        ).exists()
+    
+    def get_recent_tribe_members(self, limit=6):
+        """
+        Get recent tribe members with profile data
+        """
+        recent_members = SoundTribe.objects.filter(
+            campaign=self
+        ).select_related('user__user', 'user').order_by('-timestamp')[:limit]
+        
+        return [
+            {
+                'username': member.user.user.username,
+                'profile_pic': member.user.image.url if member.user.image else '',
+                'profile_url': reverse('profile_view', kwargs={'username': member.user.user.username}),
+                'timestamp': member.timestamp
+            }
+            for member in recent_members
+        ]
 
 
     @property
@@ -677,6 +677,51 @@ class Campaign(models.Model):
         return goals_activities.get(self.category, {})
 
 
+
+
+
+class CampaignView(models.Model):
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)  # Allow null values for the user field
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    time_spent = models.DurationField(default=timezone.timedelta(minutes=0))
+
+    class Meta:
+        unique_together = ('user', 'campaign')
+
+
+
+
+
+
+class SoundTribe(models.Model):
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'campaign')
+    
+    def __str__(self):
+        username = self.user.user.username if self.user else "Unknown"
+        return f"{username} - {self.campaign.title}"
+    
+    def save(self, *args, **kwargs):
+        if self.pk is None:  # If this is a new tribe join
+            # Create the notification message
+            message = f"{self.user.user.username} joined your Soundmark Tribe. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+            # Create the notification
+            Notification.objects.create(user=self.campaign.user.user, message=message)
+        super().save(*args, **kwargs)
+
+
+
+
+
+
+
+
+
 class CampaignTag(models.Model):
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='campaign_tags')
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
@@ -981,22 +1026,6 @@ class CartItem(models.Model):
 
 
 
-
-
-
-
-
-class CampaignView(models.Model):
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)  # Allow null values for the user field
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    time_spent = models.DurationField(default=timezone.timedelta(minutes=0))
-
-    # 👇 new fields for sound validation
-    sound_played = models.BooleanField(default=False)
-    sound_reaction = models.CharField(max_length=20, blank=True, null=True)  # e.g., inspired, motivated, hopeful
-    class Meta:
-        unique_together = ('user', 'campaign')
 
 
 

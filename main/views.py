@@ -3251,131 +3251,110 @@ def campaign_detail(request, pk):
     return render(request, 'main/campaign_detail.html', {'campaign': campaign,'form':form})
 
 
+
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-import json
-from django.utils import timezone
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
+from django.urls import reverse
+import json
+from .models import Campaign, SoundTribe, Profile
 
-@login_required
-def join_sound_community(request, campaign_id):
-    """Handle sound reaction joins and return updated data"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    user_profile = request.user.profile
-    
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            reaction = data.get('reaction', 'inspired')
+# ==================== SOUND TRIBE VIEWS ====================
 
-            # Create or update CampaignView entry
-            campaign_view, created = CampaignView.objects.get_or_create(
-                user=user_profile,
-                campaign=campaign,
-                defaults={
-                    'sound_played': True, 
-                    'sound_reaction': reaction,
-                    'time_spent': timezone.timedelta(seconds=30)
-                }
-            )
-
-            if not created:
-                campaign_view.sound_played = True
-                campaign_view.sound_reaction = reaction
-                campaign_view.time_spent += timezone.timedelta(seconds=30)
-                campaign_view.save()
-
-            # Count unique members with sound reactions
-            member_count = CampaignView.objects.filter(
-                campaign=campaign, 
-                sound_reaction__isnull=False
-            ).values('user').distinct().count()
-            
-            # Get updated recent members data for real-time update
-            recent_members = campaign.get_recent_sound_tribe_members()
-            recent_members_data = []
-            
-            for view in recent_members:
-                # Get profile image URL - handle default image case
-                profile_image_url = ''
-                if view.user.image and view.user.image.name != 'profile_pics/pp.png':
-                    profile_image_url = view.user.image.url
-                
-                recent_members_data.append({
-                    'username': view.user.user.username,
-                    'reaction': view.sound_reaction,
-                    'emoji': {
-                        'inspired': '🤩',
-                        'motivated': '💪',
-                        'hopeful': '🌟',
-                        'emotional': '💔'
-                    }.get(view.sound_reaction, '🎵'),
-                    'profile_image_url': profile_image_url
-                })
-            
-            return JsonResponse({
-                'status': 'success', 
-                'members': member_count,
-                'reaction': reaction,
-                'recent_members': recent_members_data
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': str(e)
-            }, status=400)
-
-    return JsonResponse({'status': 'invalid'}, status=400)
-
+@require_POST
 @csrf_exempt
-def get_campaign_sound_data(request, campaign_id):
-    """Get sound community data for a campaign (for home page and other pages)"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
+def join_sound_tribe(request, campaign_id):
+    """
+    Handle user joining the sound tribe for a campaign
+    """
     try:
-        # Count unique members with sound reactions
-        member_count = CampaignView.objects.filter(
-            campaign=campaign, 
-            sound_reaction__isnull=False
-        ).values('user').distinct().count()
-        
-        recent_members = campaign.get_recent_sound_tribe_members()
-        recent_members_data = []
-        
-        for view in recent_members:
-            # Get profile image URL - handle default image case
-            profile_image_url = ''
-            if view.user.image and view.user.image.name != 'profile_pics/pp.png':
-                profile_image_url = view.user.image.url
-            
-            recent_members_data.append({
-                'username': view.user.user.username,
-                'reaction': view.sound_reaction,
-                'emoji': {
-                    'inspired': '🤩',
-                    'motivated': '💪',
-                    'hopeful': '🌟',
-                    'emotional': '💔'
-                }.get(view.sound_reaction, '🎵'),
-                'profile_image_url': profile_image_url
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please log in to join the sound tribe'
             })
+        
+        campaign = Campaign.objects.get(id=campaign_id)
+        profile = request.user.profile
+        
+        # Create or get tribe entry
+        tribe_entry, created = SoundTribe.objects.get_or_create(
+            user=profile,
+            campaign=campaign
+        )
+        
+        # Get updated tribe data
+        member_count = campaign.get_sound_tribe_members_count()
+        
+        # Get recent members with profile data
+        recent_members = SoundTribe.objects.filter(
+            campaign=campaign
+        ).select_related('user__user', 'user').order_by('-timestamp')[:6]
+        
+        recent_members_data = [
+            {
+                'username': member.user.user.username,
+                'profile_pic': member.user.image.url if member.user.image else '',
+                'profile_url': reverse('profile_view', kwargs={'username': member.user.user.username}),
+                'timestamp': member.timestamp.strftime('%H:%M')
+            }
+            for member in recent_members
+        ]
         
         return JsonResponse({
-            'status': 'success',
+            'success': True,
             'member_count': member_count,
+            'recent_members': recent_members_data,
+            'is_new': created,
+            'message': 'Welcome to the Soundmark Tribe! 🎵'
+        })
+        
+    except Campaign.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Campaign not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def get_sound_tribe_data(request, campaign_id):
+    """
+    Get current sound tribe data for popup display
+    """
+    try:
+        campaign = Campaign.objects.get(id=campaign_id)
+        has_joined = False
+        
+        # Check if current user has joined the tribe
+        if request.user.is_authenticated:
+            has_joined = campaign.has_user_joined_tribe(request.user.profile)
+        
+        member_count = campaign.get_sound_tribe_members_count()
+        
+        # Get recent members with profile data
+        recent_members = SoundTribe.objects.filter(
+            campaign=campaign
+        ).select_related('user__user', 'user').order_by('-timestamp')[:6]
+        
+        recent_members_data = [
+            {
+                'username': member.user.user.username,
+                'profile_pic': member.user.image.url if member.user.image else '',
+                'profile_url': reverse('profile_view', kwargs={'username': member.user.user.username}),
+                'timestamp': member.timestamp.strftime('%H:%M')
+            }
+            for member in recent_members
+        ]
+        
+        return JsonResponse({
+            'success': True,
+            'member_count': member_count,
+            'has_joined': has_joined,
             'recent_members': recent_members_data
         })
         
+    except Campaign.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Campaign not found'})
     except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=400)
-
-
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 
@@ -4451,6 +4430,7 @@ def get_replies(request, comment_id):
 
 
 
+
 @login_required
 def home(request):
     user_profile = get_object_or_404(Profile, user=request.user)
@@ -4484,6 +4464,15 @@ def home(request):
     followed_campaigns = campaigns.filter(user__user__in=following_users)
     own_campaigns = campaigns.filter(user=user_profile)
     campaigns_to_display = followed_campaigns | own_campaigns
+    # FIX: Annotate campaigns with sound community data properly
+    campaigns_with_sound_data = []
+    for camp in campaigns_to_display:
+        sound_data = {
+            'member_count': camp.get_sound_tribe_members_count(),
+            'user_reaction': camp.get_user_reaction(user_profile) if request.user.is_authenticated else None,
+            'campaign_id': camp.id  # Add campaign ID for JS reference
+        }
+        campaigns_with_sound_data.append((camp, sound_data))
 
     # Trending campaigns
     trending_campaigns = Campaign.objects.filter(visibility='public') \
@@ -4579,6 +4568,8 @@ def home(request):
         'suggested_users': suggested_users,
         'top_contributors': top_contributors,
     })
+
+
 
 
 
