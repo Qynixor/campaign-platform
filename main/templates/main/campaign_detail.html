@@ -127,7 +127,6 @@ section {
   padding: 20px;
 }
 
-
 @media (min-width: 769px) {
     .rallynex-header-container {
         display: none !important;
@@ -136,24 +135,69 @@ section {
 
 /* Mobile styles */
 @media (max-width: 768px) {
+/* Sticky Header Styles */
+.rallynex-header-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(192, 192, 192, 0.2);
+    z-index: 1000;
+    transition: transform 0.3s ease, background 0.3s ease;
+    transform: translateY(0);
+}
+
+.rallynex-header-container.hidden {
+    transform: translateY(-100%);
+}
+
+.rallynex-header-container.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode styles for sticky header */
+.dark-mode .rallynex-header-container {
+    background: rgba(26, 26, 26, 0.95);
+    border-bottom: 1px solid rgba(58, 58, 58, 0.3);
+}
+
+.dark-mode .rallynex-header-container.scrolled {
+    background: rgba(26, 26, 26, 0.98);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Adjust body padding to account for fixed header */
+body {
+    padding-top: 80px;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 70px;
+    }
+    
     .rallynex-header-container {
-        padding: 15px;
+        padding: 12px 15px;
     }
-
-    /* Hide the full search bar by default on mobile */
-    .rallynex-search-container form {
-        display: none;
-    }
-
-    /* Mobile search icon - silver */
+}
+    /* Ensure mobile search icon is visible */
     .rallynex-mobile-search-icon {
         display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         font-size: 24px;
         color: #c0c0c0;
         cursor: pointer;
         padding: 8px;
         border-radius: 50%;
         transition: all 0.2s ease;
+        position: relative;
+        z-index: 100;
     }
 
     .rallynex-mobile-search-icon:hover {
@@ -161,17 +205,23 @@ section {
         background: #f8f8f8;
     }
 
-    /* Mobile search popup - all white */
+    /* Hide the full search bar by default on mobile */
+    .rallynex-search-container form {
+        display: none !important;
+    }
+
+    /* Mobile search popup */
     .rallynex-mobile-search-popup {
         display: none;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+        width: 100%;
         background: white;
         padding: 15px;
         box-shadow: 0 2px 5px rgba(192,192,192,0.2);
-        z-index: 1000;
+        z-index: 9999;
     }
 
     .rallynex-mobile-search-popup.active {
@@ -179,7 +229,7 @@ section {
         align-items: center;
     }
 
-    /* Search wrapper - white with silver accents */
+    /* Search wrapper */
     .rallynex-mobile-search-wrapper {
         flex: 1;
         display: flex;
@@ -198,11 +248,12 @@ section {
 
     .rallynex-mobile-search-wrapper input {
         flex: 1;
-        padding: 12px 40px 12px 15px;
+        padding: 12px 45px 12px 15px;
         border: none;
         font-size: 16px;
         background: white;
         color: #333;
+        width: 100%;
     }
 
     .rallynex-mobile-search-wrapper input::placeholder {
@@ -210,13 +261,13 @@ section {
         opacity: 1;
     }
 
-    /* Clear button */
+    /* Clear button - ensure it's visible */
     .rallynex-clear-search {
         position: absolute;
-        right: 50px;
+        right: 45px;
         top: 50%;
         transform: translateY(-50%);
-        display: none;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         width: 20px;
@@ -226,13 +277,20 @@ section {
         background: none;
         border: none;
         transition: all 0.2s ease;
+        opacity: 1 !important;
+        visibility: visible !important;
+        z-index: 10;
+    }
+
+    .rallynex-clear-search.visible {
+        display: flex !important;
     }
 
     .rallynex-clear-search:hover {
         color: #a0a0a0;
     }
 
-    /* Search button - silver */
+    /* Search button */
     .rallynex-mobile-search-wrapper button[type="submit"] {
         padding: 0 15px;
         background: #f0f0f0;
@@ -240,13 +298,14 @@ section {
         border: none;
         border-left: 1px solid #e0e0e0;
         transition: all 0.2s ease;
+        min-width: 50px;
     }
 
     .rallynex-mobile-search-wrapper button[type="submit"]:hover {
         background: #e0e0e0;
     }
 
-    /* Close button - silver */
+    /* Close button */
     .rallynex-close-mobile-search {
         margin-left: 12px;
         font-size: 20px;
@@ -256,6 +315,9 @@ section {
         border-radius: 50%;
         padding: 5px;
         transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .rallynex-close-mobile-search:hover {
@@ -264,10 +326,8 @@ section {
     }
 }
 
-/* Hide mobile elements on desktop */
-.rallynex-mobile-search-icon {
-    display: none;
-}
+/* Reset mobile elements on desktop */
+.rallynex-mobile-search-icon,
 .rallynex-mobile-search-popup {
     display: none;
 }
@@ -342,7 +402,8 @@ section {
 
 @media (min-width: 769px) {
     .rallynex-mobile-search-icon,
-    .rallynex-mobile-search-popup {
+    .rallynex-mobile-search-popup,
+    .rallynex-clear-search {
         display: none !important;
     }
 }
@@ -647,49 +708,6 @@ border: 1px solid silver;
     margin-right: 10px; /* Add space between the checkbox and label */
 }
 
-/* Style for the submit button */
-.submit-button {
-    background-color: #007bff; /* Set button background color */
-    color: #fff; /* Set button text color */
-    border: none; /* Remove default button border */
-    padding: 8px 16px; /* Add padding to the button */
-    border-radius: 5px; /* Add some border radius */
-    cursor: pointer; /* Change cursor to pointer on hover */
-    transition: background-color 0.3s ease; /* Add smooth transition */
-}
-
-/* Hover effect for the submit button */
-.submit-button:hover {
-    background-color: #0056b3; /* Darken button background color on hover */
-}
-
-
-
-.share-buttons {
-    margin-top: 20px;
-}
-
-.share-buttons span {
-    margin-right: 10px;
-}
-
-.share-buttons a {
-    display: inline-block;
-    width: 40px;
-    height: 40px;
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 50%;
-    text-align: center;
-    line-height: 40px;
-    margin-right: 10px;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-}
-
-.share-buttons a:hover {
-    background-color: #0056b3;
-}
 
        .action-item {
             display: inline-block;
@@ -1424,8 +1442,6 @@ body.dark-mode .comment-count {
 
   </style>
 
-
-
 <style type="text/css">
     /* ===== Base Styles ===== */
     html, body {
@@ -1831,8 +1847,6 @@ body.dark-mode .comment-count {
         stroke: #e0e0e0;
     }
 </style>
-
-
 
 
 <style type="text/css">
@@ -4974,7 +4988,6 @@ body.dark-mode .comment-count {
 .trending-category {
   transition: all 0.3s ease;
 }
-
 </style>
 
 <style>
@@ -4999,7 +5012,16 @@ body.dark-mode .comment-count {
 }
 
 
-/* Clean Share Popup Styles */
+
+</style>
+
+
+
+
+<style type="text/css">
+/* ==================== SHARE POPUP STYLES ==================== */
+
+/* Share Popup Container */
 .share-popup {
     display: none;
     position: fixed;
@@ -5010,7 +5032,7 @@ body.dark-mode .comment-count {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    animation: fadeIn 0.3s ease;
+    animation: shareFadeIn 0.3s ease;
 }
 
 .share-popup-content {
@@ -5024,93 +5046,96 @@ body.dark-mode .comment-count {
     position: relative;
 }
 
-.popup-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.popup-title {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.close-btn {
+.share-close-btn {
     color: #888;
     font-size: 1.8rem;
     cursor: pointer;
     transition: all 0.2s;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
 }
 
-.close-btn:hover {
+.share-close-btn:hover {
     color: #333;
     transform: scale(1.1);
 }
 
-.share-grid {
+/* Share Buttons Grid */
+.share-buttons-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     margin-bottom: 20px;
 }
 
-.share-btn {
+.share-platform-btn {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 15px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     text-decoration: none;
     color: white;
     font-weight: 500;
-    font-size: 0.9rem;
-    text-align: center;
+    aspect-ratio: 1;
+    border: none;
 }
 
-.share-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.share-platform-btn i {
+    font-size: 1.4rem;
 }
 
-.share-btn i {
-    font-size: 1.6rem;
-    margin-bottom: 5px;
+.share-platform-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-.link-copy-section {
+/* Platform Colors - IMPORTANT: Keep these colors in dark mode */
+.share-facebook { background: #3b5998 !important; }
+.share-twitter { background: #1da1f2 !important; }
+.share-linkedin { background: #0077b5 !important; }
+.share-whatsapp { background: #25d366 !important; }
+.share-reddit { background: #ff5700 !important; }
+.share-telegram { background: #0088cc !important; }
+.share-pinterest { background: #e60023 !important; }
+.share-email { background: #777 !important; }
+
+/* Copy Link Section */
+.share-copy-section {
     margin-top: 20px;
     border-top: 1px solid #eee;
     padding-top: 20px;
 }
 
-.link-copy-title {
+.share-copy-title {
     display: block;
     margin-bottom: 8px;
     font-size: 0.95rem;
     color: #555;
 }
 
-.link-copy-container {
+.share-copy-container {
     display: flex;
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid #ddd;
 }
 
-.link-input {
+.share-url-input {
     flex: 1;
     padding: 10px 15px;
     border: none;
     font-size: 0.9rem;
     background: #f9f9f9;
+    color: #333;
 }
 
-.copy-btn {
+.share-copy-action {
     padding: 0 15px;
     background: #4a6bff;
     color: white;
@@ -5120,100 +5145,104 @@ body.dark-mode .comment-count {
     transition: background 0.2s;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
 }
 
-.copy-btn:hover {
+.share-copy-action:hover {
     background: #3a5bef;
 }
 
-.copy-btn i {
+.share-copy-action i {
     font-size: 0.9rem;
 }
 
-/* Platform Colors */
-.facebook { background: #3b5998; }
-.twitter { background: #1da1f2; }
-.linkedin { background: #0077b5; }
-.whatsapp { background: #25d366; }
-.reddit { background: #ff5700; }
-.telegram { background: #0088cc; }
-.pinterest { background: #e60023; }
-.email { background: #777; }
-.messenger { background: #0084ff; }
-.tumblr { background: #35465c; }
-
 /* Animations */
-@keyframes fadeIn {
+@keyframes shareFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
 /* Responsive */
 @media (max-width: 500px) {
-    .share-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .share-buttons-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .share-platform-btn {
+        padding: 12px;
+    }
+    
+    .share-platform-btn i {
+        font-size: 1.2rem;
     }
 }
-/* ===== Dark Mode Styles for Share Popup ===== */
+
+@media (max-width: 350px) {
+    .share-buttons-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ==================== DARK MODE SHARE POPUP ==================== */
+
 .dark-mode .share-popup {
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(6px); /* Slightly stronger blur in dark mode */
+    backdrop-filter: blur(6px);
 }
 
 .dark-mode .share-popup-content {
     background: #1e1e1e;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-    border: 1px solid #333; /* Added subtle border for depth */
+    border: 1px solid #333;
 }
 
-.dark-mode .popup-title {
-    color: #f0f0f0;
-}
-
-.dark-mode .close-btn {
+.dark-mode .share-close-btn {
     color: #888;
 }
 
-.dark-mode .close-btn:hover {
+.dark-mode .share-close-btn:hover {
     color: #f0f0f0;
     transform: scale(1.1);
 }
 
-.dark-mode .link-copy-section {
-    border-top-color: #333;
+/* FIX: Platform buttons KEEP their brand colors in dark mode */
+.dark-mode .share-platform-btn {
+    /* Remove any dark mode overrides that change the colors */
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.dark-mode .link-copy-title {
+.dark-mode .share-platform-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.15);
+}
+
+.dark-mode .share-copy-section {
+    border-top: 1px solid #333;
+}
+
+.dark-mode .share-copy-title {
     color: #b0b0b0;
 }
 
-.dark-mode .link-input {
+.dark-mode .share-copy-container {
+    border: 1px solid #444;
+}
+
+.dark-mode .share-url-input {
     background: #2d2d2d;
     color: #e0e0e0;
-    border-right: 1px solid #333; /* Add separator */
+    border-right: 1px solid #333;
 }
 
-.dark-mode .link-copy-container {
-    border-color: #444;
-}
-
-/* Platform buttons - maintain brand colors but adjust hover states */
-.dark-mode .share-btn {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.dark-mode .share-btn:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    filter: brightness(1.1); /* Slightly brighten on hover */
-}
-
-/* Copy button adjustments */
-.dark-mode .copy-btn {
+.dark-mode .share-copy-action {
     background: #4a6bff;
 }
 
-.dark-mode .copy-btn:hover {
+.dark-mode .share-copy-action:hover {
     background: #3a5bef;
     filter: brightness(1.1);
 }
@@ -5235,29 +5264,7 @@ body.dark-mode .comment-count {
 .dark-mode .share-popup-content::-webkit-scrollbar-thumb:hover {
     background: #666;
 }
-
-/* Responsive adjustments */
-@media (max-width: 500px) {
-    .dark-mode .share-popup-content {
-        margin: 5vh auto;
-        padding: 20px;
-    }
-    
-    .dark-mode .share-grid {
-        gap: 10px;
-    }
-    
-    .dark-mode .share-btn {
-        padding: 10px;
-    }
-}
-
 </style>
-
-
-
-
-
 
 
 <style>
@@ -5417,6 +5424,251 @@ body.dark-mode .comment-count {
         justify-content: center;
     }
 
+/* Clean Share Popup Styles .*/
+.share-popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+.share-popup-content {
+    background: white;
+    margin: 10vh auto;
+    padding: 25px;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.popup-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.close-btn {
+    color: #888;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+.share-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.share-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.share-btn i {
+    font-size: 1.6rem;
+    margin-bottom: 5px;
+}
+
+.link-copy-section {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.link-copy-title {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.link-copy-container {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.link-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    font-size: 0.9rem;
+    background: #f9f9f9;
+}
+
+.copy-btn {
+    padding: 0 15px;
+    background: #4a6bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copy-btn:hover {
+    background: #3a5bef;
+}
+
+.copy-btn i {
+    font-size: 0.9rem;
+}
+/* ==================== SHARE POPUP DARK MODE ==================== */
+
+.dark-mode .share-popup-content {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid #404040;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dark-mode .popup-title {
+    color: #ffffff;
+}
+
+.dark-mode .close-btn {
+    color: #b0b0b0;
+}
+
+.dark-mode .close-btn:hover {
+    color: #ffffff;
+}
+
+.dark-mode .link-copy-section {
+    border-top: 1px solid #404040;
+}
+
+.dark-mode .link-copy-title {
+    color: #b0b0b0;
+}
+
+.dark-mode .link-copy-container {
+    border: 1px solid #404040;
+}
+
+.dark-mode .link-input {
+    background: #2d2d2d;
+    color: #ffffff;
+    border: none;
+}
+
+.dark-mode .link-input::placeholder {
+    color: #888;
+}
+
+.dark-mode .copy-btn {
+    background: #4a6bff;
+    color: white;
+}
+
+.dark-mode .copy-btn:hover {
+    background: #3a5bef;
+}
+
+/* If you're using the copy-link-container class instead */
+.dark-mode .copy-link-container {
+    border-top: 1px solid #404040;
+    padding-top: 20px;
+}
+
+.dark-mode .copy-link-title {
+    color: #b0b0b0;
+}
+
+.dark-mode .copy-link {
+    border: 1px solid #404040;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dark-mode #campaignUrl {
+    background: #2d2d2d;
+    color: #ffffff;
+    border: none;
+    padding: 10px 15px;
+    flex: 1;
+}
+
+.dark-mode .copy-link button {
+    background: #4a6bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dark-mode .copy-link button:hover {
+    background: #3a5bef;
+}
+
+
+
+/* Platform Colors */
+.facebook { background: #3b5998; }
+.twitter { background: #1da1f2; }
+.linkedin { background: #0077b5; }
+.whatsapp { background: #25d366; }
+.reddit { background: #ff5700; }
+.telegram { background: #0088cc; }
+.pinterest { background: #e60023; }
+.email { background: #777; }
+.messenger { background: #0084ff; }
+.tumblr { background: #35465c; }
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .share-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
         /* Enhanced transition effects */
         body, 
         header, 
@@ -5452,16 +5704,7 @@ body.dark-mode .comment-count {
                         box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         transform 0.3s ease;
         }
-
-
-</style>
-
-
-    <style type="text/css">
-        
-
-
-    .sub {
+.sub {
     display: flex;
     align-items: center;
     gap: 12px; /* slightly bigger */
@@ -5526,13 +5769,14 @@ body.dark-mode .comment-count {
         }
 
 
-
 </style>
 
 
 
 
+
 <style>
+
 
 /* ==================== SOUND TRIBE ICON STYLES ==================== */
 
@@ -6128,6 +6372,11 @@ body.dark-mode .comment-count {
 
 
 
+
+
+
+
+ 
 /* Tag badges styling */
 .campaign-tags {
     margin: 15px 0;
@@ -6237,7 +6486,103 @@ body.dark-mode .comment-count {
 </style>
 
 
+<style>
+    .upload-btn {
+        display: inline-block;
+        position: relative;
+    }
+    
+    .upload-btn .btn {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border: 1px solid #d1d5db;
+        color: #374151;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        min-height: 40px;
+    }
+    
+    .upload-btn .btn:hover {
+        background: linear-gradient(135deg, #e9ecef, #dde1e6);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+        border-color: #9ca3af;
+    }
+    
+    .upload-btn .btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .upload-btn .btn::before {
+        content: '+';
+        font-size: 28px;
+        font-weight: 200;
+        line-height: 1;
+        display: inline-block;
+        margin-right: 4px;
+        color: #4b5563;
+    }
+    
+    .upload-btn .btn span {
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        letter-spacing: 0.3px;
+    }
+    
+    .overlay-link {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+        text-decoration: none;
+        border-radius: 20px;
+    }
 
+    .dark-mode .upload-btn .btn {
+    background: linear-gradient(135deg, #374151, #1f2937);
+    border: 1px solid #4b5563;
+    color: #f3f4f6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.dark-mode .upload-btn .btn:hover {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    border-color: #6b7280;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.dark-mode .upload-btn .btn::before {
+    color: #f3f4f6;
+}
+
+.dark-mode .upload-btn .btn span {
+    color: #f3f4f6;
+}
+
+
+.username-link {
+    color: inherit;
+    text-decoration: none; /* clean by default */
+    transition: 0.2s ease;
+}
+
+.username-link:hover {
+    text-decoration: underline; /* underline only on hover */
+}
+
+</style>
 
 
 
@@ -6825,31 +7170,50 @@ body.dark-mode .comment-count {
 
 <!-- CSRF Token -->
 {% csrf_token %}
-
 <!-- Share Popup Container -->
 <div id="sharePopup" class="share-popup">
     <div class="share-popup-content">
-        <span class="close-share" onclick="hideSharePopup()">×</span>
+        <button class="share-close-btn" onclick="hideSharePopup()">×</button>
         <h3>Share This Campaign</h3>
-        <div class="share-buttons">
-            <a href="#" class="share-facebook" onclick="shareOnFacebook()"><i class="fab fa-facebook-f"></i> Facebook</a>
-            <a href="#" class="share-twitter" onclick="shareOnTwitter()"><i class="fab fa-twitter"></i> Twitter</a>
-            <a href="#" class="share-linkedin" onclick="shareOnLinkedIn()"><i class="fab fa-linkedin-in"></i> LinkedIn</a>
-            <a href="#" class="share-whatsapp" onclick="shareOnWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-            <a href="#" class="share-reddit" onclick="shareOnReddit()"><i class="fab fa-reddit-alien"></i> Reddit</a>
-            <a href="#" class="share-telegram" onclick="shareOnTelegram()"><i class="fab fa-telegram-plane"></i> Telegram</a>
-            <a href="#" class="share-pinterest" onclick="shareOnPinterest()"><i class="fab fa-pinterest-p"></i> Pinterest</a>
-            <a href="#" class="share-email" onclick="shareViaEmail()"><i class="fas fa-envelope"></i> Email</a>
+        <div class="share-buttons-grid">
+            <button class="share-platform-btn share-facebook" onclick="shareOnFacebook()" title="Share on Facebook">
+                <i class="fab fa-facebook-f"></i>
+            </button>
+            <button class="share-platform-btn share-twitter" onclick="shareOnTwitter()" title="Share on Twitter">
+                <i class="fab fa-twitter"></i>
+            </button>
+            <button class="share-platform-btn share-linkedin" onclick="shareOnLinkedIn()" title="Share on LinkedIn">
+                <i class="fab fa-linkedin-in"></i>
+            </button>
+            <button class="share-platform-btn share-whatsapp" onclick="shareOnWhatsApp()" title="Share on WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+            </button>
+            <button class="share-platform-btn share-reddit" onclick="shareOnReddit()" title="Share on Reddit">
+                <i class="fab fa-reddit-alien"></i>
+            </button>
+            <button class="share-platform-btn share-telegram" onclick="shareOnTelegram()" title="Share on Telegram">
+                <i class="fab fa-telegram-plane"></i>
+            </button>
+            <button class="share-platform-btn share-pinterest" onclick="shareOnPinterest()" title="Share on Pinterest">
+                <i class="fab fa-pinterest-p"></i>
+            </button>
+            <button class="share-platform-btn share-email" onclick="shareViaEmail()" title="Share via Email">
+                <i class="fas fa-envelope"></i>
+            </button>
         </div>
-        <div class="copy-link-container">
-            <span class="copy-link-title">Or copy the link directly</span>
-            <div class="copy-link">
-                <input type="text" id="campaignUrl" readonly>
-                <button onclick="copyCampaignUrl()"><i class="fas fa-copy"></i> Copy</button>
+        <div class="share-copy-section">
+            <span class="share-copy-title">Or copy link</span>
+            <div class="share-copy-container">
+                <input type="text" id="campaignUrl" class="share-url-input" readonly>
+                <button class="share-copy-action" onclick="copyCampaignUrl()" title="Copy link">
+                    <i class="fas fa-copy"></i>
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+
 <!-- Comment Popup Container -->
 <div id="commentPopup" class="comment-popup-container" style="display: none;">
     <div class="comment-popup-content">
@@ -7141,5 +7505,8 @@ document.addEventListener('click', function(event) {
             });
         });
     </script>
+
+
+
 
 {% endblock %}
