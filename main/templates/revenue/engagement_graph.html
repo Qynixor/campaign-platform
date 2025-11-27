@@ -2,7 +2,6 @@
 
 {% block content %}
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,347 +9,812 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaign Engagement</title>
     <style type="text/css">
+        /* Base styles and reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow-x: hidden;
+            max-width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+        }
+
         /* Base styles */
-.cc-header {
-    background-color: #ffffff; /* Clean white background */
-    border-bottom: 2px solid #007bff; /* Blue underline for emphasis */
-    padding: 15px 20px; /* Adjusted padding for a better appearance */
-    text-align: center; /* Center align the text */
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-}
+        .cc-header {
+            background-color: #ffffff;
+            border-bottom: 2px solid #007bff;
+            padding: 15px 20px;
+            text-align: center;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+            width: 100%;
+        }
 
-.cc-header .activity-title {
-    font-size: 1.5rem; /* Title font size */
-    color: #666; /* Subtle grey for secondary text */
-    margin: 8px 0; /* Adjusted spacing */
-    font-weight: bold; /* Make it more prominent */
-    transition: color 0.3s ease;
-}
+        .cc-header .activity-title {
+            font-size: 1.5rem;
+            color: #666;
+            margin: 8px 0;
+            font-weight: bold;
+            transition: color 0.3s ease;
+            word-wrap: break-word;
+        }
 
-.cc-header .activity-title a {
-    color: #3498db; /* Blue for the link */
-    text-decoration: none; /* No underline */
-    transition: color 0.3s ease, text-decoration-color 0.3s ease;
-}
+        .cc-header .activity-title a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s ease, text-decoration-color 0.3s ease;
+        }
 
-.cc-header .activity-title a:hover {
-    text-decoration: underline; /* Add underline on hover */
-}
+        .cc-header .activity-title a:hover {
+            text-decoration: underline;
+        }
 
-/* Link styles */
-.cc-header .campaign-link {
-    color: #3498db; /* Default link color */
-    text-decoration: none; /* Remove underline by default */
-    font-weight: bold; /* Optional: make it stand out */
-    transition: color 0.3s ease, text-decoration-color 0.3s ease;
-}
+        .cc-header .campaign-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease, text-decoration-color 0.3s ease;
+        }
 
-.cc-header .campaign-link:hover {
-    color: #3498db; /* Retain the blue color on hover */
-    text-decoration: underline; /* Add underline */
-    text-decoration-color: black; /* Make the underline black */
-}
+        .cc-header .campaign-link:hover {
+            color: #3498db;
+            text-decoration: underline;
+            text-decoration-color: black;
+        }
 
-/* ===== DARK MODE STYLES ===== */
-.dark-mode .cc-header {
-    background-color: #1e1e1e; /* Dark background matching navbar */
-    border-bottom: 2px solid #0095f6; /* Brighter blue for dark mode */
-}
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+            padding: 0 20px;
+            width: 100%;
+        }
 
-.dark-mode .cc-header .activity-title {
-    color: #b0b0b0; /* Light grey for better contrast in dark mode */
-}
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+        }
 
-.dark-mode .cc-header .activity-title a {
-    color: #4cb5f9; /* Lighter blue that stands out in dark mode */
-}
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
 
-.dark-mode .cc-header .activity-title a:hover {
-    color: #6dc7ff; /* Even lighter blue on hover */
-}
+        .metric-card h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+        }
 
-.dark-mode .cc-header .campaign-link {
-    color: #4cb5f9; /* Lighter blue for dark mode */
-}
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-bottom: 10px;
+            flex: 1;
+        }
 
-.dark-mode .cc-header .campaign-link:hover {
-    color: #6dc7ff; /* Brighter blue on hover */
-    text-decoration-color: #ffffff; /* White underline in dark mode */
-}
+        .metric-value {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
 
-/* Mobile styles */
-@media (max-width: 768px) {
-    .cc-header {
-        padding: 10px 15px; /* Compact padding for smaller screens */
-    }
+        .metric-label {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
 
-    .cc-header .activity-title {
-        font-size: 1.3rem; /* Slightly smaller font size */
-    }
-    
-    /* Dark mode mobile adjustments */
-    .dark-mode .cc-header {
-        border-bottom: 2px solid #0095f6; /* Consistent blue in dark mode */
-    }
-}
+        /* Engagement Funnel */
+        .engagement-funnel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 0 20px;
+            width: 100%;
+        }
 
-/* Smaller mobile devices (e.g., phones) */
-@media (max-width: 480px) {
-    .cc-header {
-        padding: 8px 12px; /* Further compact padding */
-    }
+        .funnel-stage {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            min-height: 60px;
+        }
 
-    .cc-header .activity-title {
-        font-size: 1.2rem; /* Smaller font for better fit */
-    }
-    
-    /* Dark mode small mobile adjustments */
-    .dark-mode .cc-header {
-        background-color: #1e1e1e; /* Maintain dark background */
-    }
-}
+        .funnel-stage:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-/* Optional: Add smooth transitions for all elements */
-.cc-header * {
-    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-}
+        .stage-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
 
-/* Dark Mode Styles */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: #ffffff; /* Light text */
-}
+        .stage-value {
+            font-weight: bold;
+            color: #3498db;
+            font-size: 1.1rem;
+            text-align: right;
+        }
 
-body.dark-mode header,
-body.dark-mode footer,
-body.dark-mode section,
-body.dark-mode .left-aside,
-body.dark-mode .right-aside,
-body.dark-mode .upper-post,
-body.dark-mode .campaign-content,
-body.dark-mode .react div {
-    background-color: #1e1e1e; /* Slightly lighter dark background */
-    color: #ffffff; /* Light text */
-}
+        .stage-description {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
 
-body.dark-mode .campaign-category {
-    background-color: #333333; /* Darker background for category */
-    color: #ffffff; /* Light text */
-}
+        /* Sub component */
+        .sub {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding: 14px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s ease;
+            min-height: 60px;
+            width: 100%;
+        }
 
-body.dark-mode .objectives-activities {
-    background-color: #262626; /* Dark background for objectives */
-    border-left: 4px solid #3498db; /* Accent border */
-    color: #ffffff; /* Light text */
-}
+        .sub:hover {
+            transform: translateY(-2px);
+        }
 
-body.dark-mode .search-container input[type="text"] {
-    background-color: #333333; /* Dark background for input */
-    color: #ffffff; /* Light text */
-    border: 1px solid #444444; /* Dark border */
-}
+        .sub i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: #4b5563;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid #f9fafb;
+        }
 
-body.dark-mode .search-container .btn-reset {
-    color: #b0b0b0; /* Light icon color */
-}
+        .sub h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
 
-body.dark-mode button:not(.btn-search, .btn-reset) {
-    background-color: #262626; /* Dark background for buttons */
-    color: #ffffff; /* Light text */
-}
+        .sub p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.45;
+        }
 
-body.dark-mode .explore-link i {
-    color: #ffffff; /* Light icon color */
-}
+        /* Loading States */
+        .metric-card.loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
 
-body.dark-mode .love-count,
-body.dark-mode #view-count,
-body.dark-mode .comment-count {
-    color: #ffffff; /* Light text for counts */
-}
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
 
+        /* ===== DARK MODE STYLES ===== */
+        .dark-mode .cc-header {
+            background-color: #1e1e1e;
+            border-bottom: 2px solid #0095f6;
+        }
 
-body.dark-mode .affiliate-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    padding: 10px 15px;
-    background-color: #3498db; /* Accent color for buttons */
-    color: #ffffff;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
+        .dark-mode .cc-header .activity-title {
+            color: #b0b0b0;
+        }
 
-body.dark-mode .affiliate-link:hover {
-    background-color: #2980b9; /* Darker accent color on hover */
-}
+        .dark-mode .cc-header .activity-title a {
+            color: #4cb5f9;
+        }
 
-body.dark-mode .affiliate-link i {
-    margin-right: 8px; /* Space between icon and text */
-}
-    </style>
+        .dark-mode .cc-header .activity-title a:hover {
+            color: #6dc7ff;
+        }
 
+        .dark-mode .cc-header .campaign-link {
+            color: #4cb5f9;
+        }
 
-      <style type="text/css">
-        
+        .dark-mode .cc-header .campaign-link:hover {
+            color: #6dc7ff;
+            text-decoration-color: #ffffff;
+        }
 
-
-    .sub {
-    display: flex;
-    align-items: center;
-    gap: 12px; /* slightly bigger */
-    margin-bottom: 14px; 
-    padding: 14px; /* increased */
-    border-radius: 10px; 
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    transition: transform 0.2s ease;
-}
-
-.sub:hover {
-    transform: translateY(-2px); 
-}
-
-.sub i {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;   /* increased */
-    height: 38px;  /* increased */
-    font-size: 16px; /* slightly bigger */
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #4b5563;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 1px solid #f9fafb;
-}
-
-.sub h2 {
-    margin: 0;
-    font-size: 18px;  /* slightly larger */
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.sub p {
-    margin: 5px 0 0;
-    font-size: 13px;  /* increased */
-    color: #6b7280;
-    line-height: 1.45;
-}
-
-        /* Dark mode for sub elements */
-        body.dark-mode .sub {
+        .dark-mode .metric-card {
             background: #1e1e1e;
             border: 1px solid #333;
         }
-        
-        body.dark-mode .sub i {
+
+        .dark-mode .metric-card h4 {
+            color: #f0f0f0;
+        }
+
+        .dark-mode .metric-value {
+            color: #f0f0f0;
+        }
+
+        .dark-mode .metric-label {
+            color: #a0a0a0;
+        }
+
+        .dark-mode .funnel-stage {
+            background: #1e1e1e;
+            border-left: 5px solid #4cb5f9;
+        }
+
+        .dark-mode .stage-label {
+            color: #f0f0f0;
+        }
+
+        .dark-mode .stage-value {
+            color: #4cb5f9;
+        }
+
+        .dark-mode .stage-description {
+            color: #a0a0a0;
+        }
+
+        .dark-mode .sub {
+            background: #1e1e1e;
+            border: 1px solid #333;
+        }
+
+        .dark-mode .sub i {
             background: linear-gradient(135deg, #2d2d2d 0%, #252525 100%);
             color: #b0b0b0;
             border: 1px solid #333;
         }
-        
-        body.dark-mode .sub h2 {
+
+        .dark-mode .sub h2 {
             color: #f0f0f0;
         }
-        
-        body.dark-mode .sub p {
+
+        .dark-mode .sub p {
             color: #a0a0a0;
         }
-</style>
+
+        /* Responsive Design - Tablet */
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                padding: 0 15px;
+                gap: 15px;
+            }
+
+            .engagement-funnel {
+                padding: 0 15px;
+            }
+
+            .cc-header {
+                padding: 12px 15px;
+            }
+
+            .cc-header .activity-title {
+                font-size: 1.3rem;
+            }
+
+            .metric-card {
+                padding: 18px;
+                min-height: 260px;
+            }
+
+            .sub {
+                padding: 12px;
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .sub i {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+
+        /* Responsive Design - Mobile */
+        @media (max-width: 480px) {
+            .metrics-grid {
+                gap: 12px;
+                margin: 15px 0;
+                padding: 0 10px;
+            }
+
+            .engagement-funnel {
+                padding: 0 10px;
+                gap: 12px;
+            }
+
+            .metric-card {
+                padding: 15px;
+                min-height: 240px;
+                border-radius: 10px;
+            }
+
+            .funnel-stage {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                min-height: auto;
+            }
+
+            .stage-value {
+                align-self: flex-end;
+                font-size: 1rem;
+            }
+
+            .chart-container {
+                height: 180px;
+            }
+
+            .metric-value {
+                font-size: 1.3rem;
+            }
+
+            .cc-header .activity-title {
+                font-size: 1.1rem;
+            }
+
+            .sub {
+                margin-bottom: 12px;
+            }
+
+            .sub h2 {
+                font-size: 16px;
+            }
+
+            .sub p {
+                font-size: 12px;
+            }
+        }
+
+        /* Responsive Design - Small Mobile */
+        @media (max-width: 360px) {
+            .metrics-grid {
+                gap: 10px;
+                padding: 0 8px;
+            }
+
+            .engagement-funnel {
+                padding: 0 8px;
+                gap: 10px;
+            }
+
+            .metric-card {
+                padding: 12px;
+                min-height: 220px;
+                border-radius: 8px;
+            }
+
+            .funnel-stage {
+                padding: 10px 12px;
+            }
+
+            .cc-header {
+                padding: 10px 12px;
+            }
+
+            .cc-header .activity-title {
+                font-size: 1rem;
+            }
+
+            .stage-label {
+                font-size: 0.9rem;
+            }
+
+            .stage-value {
+                font-size: 0.9rem;
+            }
+
+            .stage-description {
+                font-size: 0.8rem;
+            }
+
+            .chart-container {
+                height: 160px;
+            }
+
+            .metric-value {
+                font-size: 1.2rem;
+            }
+
+            .metric-label {
+                font-size: 0.8rem;
+            }
+
+            .sub {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .sub i {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+        }
+
+        /* High DPI Screens */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .metric-card {
+                border-width: 0.5px;
+            }
+            
+            .funnel-stage {
+                border-left-width: 4px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .metric-card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .funnel-stage {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .sub {
+                border: 1px solid #ccc;
+            }
+        }
+
+        /* Reduced motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .metric-card,
+            .funnel-stage,
+            .sub {
+                transition: none;
+                transform: none !important;
+            }
+            
+            @keyframes loading {
+                0% { opacity: 0.7; }
+                50% { opacity: 1; }
+                100% { opacity: 0.7; }
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .metric-card {
+                border: 2px solid;
+            }
+            
+            .funnel-stage {
+                border-left: 5px solid;
+            }
+            
+            .sub {
+                border: 2px solid;
+            }
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-
     <div class="sub">
-   <i class="fas fa-chart-line"></i>
-   <div>
-       <h2>Engagement Metrics</h2>
-       <p>Track campaign performance with insights on views, likes, shares, and participant activity.</p>
-   </div>
-</div>
+        <i class="fas fa-chart-line"></i>
+        <div>
+            <h2>Engagement Metrics</h2>
+            <p>Track campaign performance with insights on views, likes, shares, and participant activity.</p>
+        </div>
+    </div>
 
     <div class="cc-header">
-    <h3 class="activity-title">
-        Engagement Metrics for
-        <a href="{% url 'view_campaign' campaign_id=campaign.pk %}" class="campaign-link">
-            {{ campaign.title }}
-        </a>
-    </h3>
-</div>
+        <h3 class="activity-title">
+            Engagement Metrics for
+            <a href="{% url 'view_campaign' campaign_id=campaign.pk %}" class="campaign-link">
+                {{ campaign.title }}
+            </a>
+        </h3>
+    </div>
 
-    <canvas id="engagementChart" width="400" height="200"></canvas>
+    <!-- Engagement Funnel -->
+    <div class="engagement-funnel">
+        <div class="funnel-stage">
+            <div>
+                <div class="stage-label">Awareness</div>
+                <div class="stage-description">People who discovered your campaign</div>
+            </div>
+            <div class="stage-value" id="awareness-value">{{ engagement_data.views }} views</div>
+        </div>
+        <div class="funnel-stage">
+            <div>
+                <div class="stage-label">Interaction</div>
+                <div class="stage-description">People who engaged with your content</div>
+            </div>
+            <div class="stage-value" id="interaction-value">{{ engagement_data.loves|add:engagement_data.comments }} engagements</div>
+        </div>
+        <div class="funnel-stage">
+            <div>
+                <div class="stage-label">Participation</div>
+                <div class="stage-description">People who joined activities and discussions</div>
+            </div>
+            <div class="stage-value" id="participation-value">
+                {{ engagement_data.activities|add:engagement_data.activity_comments|add:engagement_data.activity_loves }} participations
+            </div>
+        </div>
+        <div class="funnel-stage">
+            <div>
+                <div class="stage-label">Support</div>
+                <div class="stage-description">People who purchased products</div>
+            </div>
+            <div class="stage-value" id="support-value">
+                {{ engagement_data.active_products }} supporters
+            </div>
+        </div>
 
-  <script>
-    // Data passed from Django
-    const engagementData = {{ engagement_data|safe }};
+        <!-- Add Sound Tribe metrics -->
+        <div class="funnel-stage">
+            <div>
+                <div class="stage-label">Sound Tribe</div>
+                <div class="stage-description">People connected through your campaign's sound</div>
+            </div>
+            <div class="stage-value">
+                {{ campaign.get_sound_tribe_members_count }} members
+            </div>
+        </div>
+    </div>
 
-    // Chart.js configuration
-    const ctx = document.getElementById('engagementChart').getContext('2d');
-    const engagementChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: [
-                'Donations', 
-                'Views', 
-                'Loves', 
-                'Comments', 
-                'Activities', 
-                'Activity Loves', 
-                'Brainstorming Ideas', 
-                'Active Products',
-                'Activity Comments'  // New label for Activity Comments
-            ],
-            datasets: [{
-                label: 'Engagement Metrics',
-                data: [
-                    engagementData.donations,
-                    engagementData.views,
-                    engagementData.loves,
-                    engagementData.comments,
-                    engagementData.activities,
-                    engagementData.activity_loves,
-                    engagementData.brainstorms,
-                    engagementData.active_products,
-                    engagementData.activity_comments  // New data point for Activity Comments
-                ],
-                backgroundColor: [
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(231, 233, 237, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(255, 159, 64, 0.2)',
-                    'rgba(201, 203, 207, 0.2)',
-                    'rgba(255, 159, 64, 0.2)'  // Color for Activity Comments
-                ],
-                borderColor: [
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(231, 233, 237, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(255, 159, 64, 1)',
-                    'rgba(201, 203, 207, 1)',
-                    'rgba(255, 159, 64, 1)'  // Border color for Activity Comments
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+        <!-- Engagement Level Chart -->
+        <div class="metric-card">
+            <h4>Engagement Levels</h4>
+            <div class="chart-container">
+                <canvas id="engagementChart"></canvas>
+            </div>
+            <div class="metric-value" id="total-engagement">
+                {{ engagement_data.views|add:engagement_data.loves|add:engagement_data.comments|add:engagement_data.activities|add:engagement_data.active_products }} total
+            </div>
+            <div class="metric-label">Total Interactions</div>
+        </div>
+
+        <!-- Content Distribution Chart -->
+        <div class="metric-card">
+            <h4>Content Distribution</h4>
+            <div class="chart-container">
+                <canvas id="contentChart"></canvas>
+            </div>
+            <div class="metric-value" id="total-content">
+                {{ engagement_data.activities }} activities
+            </div>
+            <div class="metric-label">Total Activities</div>
+        </div>
+
+        <!-- Community Health -->
+        <div class="metric-card">
+            <h4>Community Health</h4>
+            <div class="chart-container">
+                <canvas id="communityChart"></canvas>
+            </div>
+            <div class="metric-value" id="engagement-rate">
+                {% if engagement_data.views > 0 %}
+                    {% widthratio engagement_data.loves|add:engagement_data.comments engagement_data.views 100 %}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="metric-label">Engagement Rate</div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Chart.js configuration for better mobile performance
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 5,
+                    right: 5
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        boxWidth: 12,
+                        font: {
+                            size: window.innerWidth < 480 ? 10 : 12
+                        }
+                    }
                 }
             }
-        }
-    });
-</script>
+        };
+
+        // Data passed from Django - only using available data
+        const engagementData = {
+            views: {{ engagement_data.views }},
+            loves: {{ engagement_data.loves }},
+            comments: {{ engagement_data.comments }},
+            activities: {{ engagement_data.activities }},
+            activity_loves: {{ engagement_data.activity_loves }},
+            active_products: {{ engagement_data.active_products }},
+            activity_comments: {{ engagement_data.activity_comments }}
+        };
+
+        // Calculate metrics - using only available data
+        const awareness = engagementData.views;
+        const interaction = engagementData.loves + engagementData.comments;
+        const participation = engagementData.activities + engagementData.activity_comments + engagementData.activity_loves;
+        const support = engagementData.active_products;
+        
+        const totalEngagement = awareness + interaction + participation + support;
+
+        // Engagement Levels Chart
+        const engagementCtx = document.getElementById('engagementChart').getContext('2d');
+        new Chart(engagementCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Awareness', 'Interaction', 'Participation', 'Support'],
+                datasets: [{
+                    label: 'Engagement Level',
+                    data: [awareness, interaction, participation, support],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 99, 132, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...chartConfig,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 480 ? 10 : 12
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: window.innerWidth < 480 ? 10 : 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    ...chartConfig.plugins,
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Content Distribution Chart - Only show activities since that's what we have
+        const contentCtx = document.getElementById('contentChart').getContext('2d');
+        new Chart(contentCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Activities', 'Activity Comments', 'Activity Likes'],
+                datasets: [{
+                    data: [
+                        engagementData.activities,
+                        engagementData.activity_comments,
+                        engagementData.activity_loves
+                    ],
+                    backgroundColor: [
+                        'rgba(153, 102, 255, 0.8)',
+                        'rgba(255, 159, 64, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...chartConfig,
+                cutout: '60%',
+                plugins: {
+                    ...chartConfig.plugins,
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            ...chartConfig.plugins.legend.labels,
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+
+        // Community Health Chart
+        const communityCtx = document.getElementById('communityChart').getContext('2d');
+        const totalInteractions = engagementData.loves + engagementData.comments + engagementData.activities;
+        const totalViews = engagementData.views || 1; // Avoid division by zero
+        
+        new Chart(communityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Engaged', 'Not Engaged'],
+                datasets: [{
+                    data: [totalInteractions, Math.max(0, totalViews - totalInteractions)],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 0.5)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                ...chartConfig,
+                cutout: '70%',
+                plugins: {
+                    ...chartConfig.plugins,
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Handle window resize for better chart responsiveness
+        window.addEventListener('resize', function() {
+            // Charts will automatically resize due to responsive: true
+        });
+    </script>
+
 
 <script type="text/javascript">
 function switchColor() {
