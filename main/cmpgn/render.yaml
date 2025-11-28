@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: buskx
+    env: python
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: gunicorn buskx.wsgi --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        from: env
+      - key: DEBUG
+        from: env
+      - key: ALLOWED_HOSTS
+        from: env
+      - key: DB_NAME
+        from: env
+      - key: DB_USER
+        from: env
+      - key: DB_PASSWORD
+        from: env
+      - key: DB_HOST
+        from: env
+      - key: DB_PORT
+        from: env
+
