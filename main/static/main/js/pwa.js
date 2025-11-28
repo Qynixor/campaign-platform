@@ -1,49 +1,51 @@
-// Simple working PWA install
+// Simple PWA Install Handler
 let deferredPrompt;
 
-// Show install prompt when available
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    console.log('PWA install available');
+    console.log('PWA install ready');
 });
 
-// Working install function
 function showPWAInstall() {
     if (deferredPrompt) {
-        // Show native install prompt
+        // Show the native install prompt
         deferredPrompt.prompt();
         
         deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
-                console.log('User accepted install');
-                // Hide your install button
-                document.querySelector('.pwa-install-link').style.display = 'none';
-            } else {
-                console.log('User dismissed install');
+                console.log('User installed the app');
+                // Hide install button after successful install
+                const installBtn = document.querySelector('.pwa-install-link');
+                if (installBtn) {
+                    installBtn.style.display = 'none';
+                }
             }
             deferredPrompt = null;
         });
     } else {
-        // Fallback: show instructions
+        // Show instructions if install not available
         showInstallInstructions();
     }
 }
 
-// Simple instructions
 function showInstallInstructions() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
     if (isIOS) {
-        alert('To install: Tap Share → "Add to Home Screen" → "Add"');
+        alert('To install RallyNex:\n\n1. Tap the Share icon (□↑)\n2. Select "Add to Home Screen"\n3. Tap "Add"');
     } else {
-        alert('To install: Tap Menu (⋮) → "Add to Home screen" → "Add"');
+        alert('To install RallyNex:\n\n1. Tap the menu (⋮)\n2. Select "Add to Home screen"\n3. Tap "Add"');
     }
 }
 
 // Register service worker
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js')
-        .then(registration => console.log('SW registered'))
-        .catch(error => console.log('SW failed:', error));
+    navigator.serviceWorker.register('/static/main/js/sw.js')
+        .then(registration => {
+            console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+            console.log('Service Worker registration failed:', error);
+        });
 }
