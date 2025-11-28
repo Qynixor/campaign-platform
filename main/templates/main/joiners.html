@@ -77,35 +77,9 @@
             color: #a0a0a0;
         }
 </style>
-<div class="sub">
-   <i class="fas fa-users"></i>
-   <div>
-       <h2>Campaign Joiners</h2>
-       <p>See all the users who have joined this campaign and are part of the movement.</p>
-   </div>
-</div>
 
 
 
-<div class="joiners-section">
-    <h3>Joiners <span class="joiner-count">{{ joiners|length }}</span></h3>
-    <ul class="joiners-list">
-        {% if joiners %}
-            {% for profile in joiners %}
-                <li>
-                    <a href="{% url 'profile_view' username=profile.user.username %}">
-                        {% if profile.avatar %}
-                            <img src="{{ profile.avatar.url }}" alt="@{{ profile.user.username }}" class="joiner-avatar">
-                        {% endif %}
-                        @{{ profile.user.username }}
-                    </a>
-                </li>
-            {% endfor %}
-        {% else %}
-            <li class="no-suggested-users">No Joiner yet.</li>
-        {% endif %}
-    </ul>
-</div>
 
 <!-- CSS -->
 <style>
@@ -499,7 +473,98 @@ body.dark-mode::-webkit-scrollbar-thumb {
     padding: 16px;
   }
 }
+
+/* ===== Joiner Avatar Styles ===== */
+.joiner-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-light);
+    transition: var(--transition);
+}
+
+.joiners-list li:hover .joiner-avatar {
+    border-color: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* Default avatar for users without profile pictures */
+.default-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid var(--primary-light);
+    transition: var(--transition);
+}
+
+.joiners-list li:hover .default-avatar {
+    border-color: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* Dark mode avatar styles */
+body.dark-mode .joiner-avatar {
+    border-color: #4da6ff;
+}
+
+body.dark-mode .joiners-list li:hover .joiner-avatar {
+    border-color: #80bfff;
+}
+
+body.dark-mode .default-avatar {
+    border-color: #4da6ff;
+    background: linear-gradient(135deg, #4da6ff, #1a75ff);
+}
+
+body.dark-mode .joiners-list li:hover .default-avatar {
+    border-color: #80bfff;
+}
 </style>
+
+
+
+<div class="sub">
+   <i class="fas fa-users"></i>
+   <div>
+       <h2>Campaign Joiners</h2>
+       <p>See all the users who have joined this campaign and are part of the movement.</p>
+   </div>
+</div>
+
+
+
+<div class="joiners-section">
+    <h3>Joiners <span class="joiner-count">{{ joiners|length }}</span></h3>
+    <ul class="joiners-list">
+        {% if joiners %}
+            {% for profile in joiners %}
+                <li>
+                    <a href="{% url 'profile_view' username=profile.user.username %}">
+                        {% if profile.image %}  <!-- Changed from profile.avatar to profile.image -->
+                            <img src="{{ profile.image.url }}" alt="@{{ profile.user.username }}" class="joiner-avatar">
+                        {% else %}
+                            <!-- Fallback if no image -->
+                            <div class="default-avatar">{{ profile.user.username|first|upper }}</div>
+                        {% endif %}
+                        @{{ profile.user.username }}
+                    </a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li class="no-suggested-users">No Joiner yet.</li>
+        {% endif %}
+    </ul>
+</div>
+
+
 
 <script type="text/javascript">
 function switchColor() {
