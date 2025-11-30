@@ -5,734 +5,729 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ultra HD Image & GIF Creator</title>
-    <style>
-        :root {
-            --primary: #6c5ce7;
-            --secondary: #a29bfe;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --success: #00b894;
-            --premium: #fdcb6e;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #000000;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .gif-creator {
-            background-color: #222222;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 450px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            color: #ffffff;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .header h1 {
-            color: var(--primary);
-            font-size: 26px;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #cccccc;
-            font-size: 14px;
-            opacity: 0.7;
-        }
-
-        .premium-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: var(--premium);
-            color: #000;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            transform: rotate(15deg);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .upload-area {
-            border: 2px dashed var(--secondary);
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            background-color: rgba(162, 155, 254, 0.05);
-        }
-
-        .upload-area:hover {
-            background-color = 'rgba(162, 155, 254, 0.1)';
-            border-color = 'var(--primary)';
-        }
-
-        .upload-area i {
-            font-size: 40px;
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-
-        .upload-area p {
-            color: #cccccc;
-            font-size: 14px;
-        }
-
-        .upload-area input {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .controls {
-            margin-bottom: 20px;
-        }
-
-        .control-group {
-            margin-bottom: 15px;
-        }
-
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #cccccc;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .control-group input[type="range"] {
-            width: 100%;
-            height: 8px;
-            -webkit-appearance: none;
-            background: #444444;
-            border-radius: 5px;
-            outline: none;
-        }
-
-        .control-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: var(--primary);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        .control-group select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #333333;
-            color: white;
-            border: 1px solid #555555;
-            font-size: 14px;
-        }
-
-        .preview-container {
-            position: relative;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-        }
-
-        .canvas-container {
-            width: 100%;
-            height: 250px;
-            border-radius: 10px;
-            border: 1px solid #444444;
-            overflow: hidden;
-            background: #111111;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        #gifCanvas {
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            margin: 0 auto;
-            object-fit: contain;
-        }
-
-        .frames-container {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            margin-bottom: 20px;
-            min-height: 80px;
-        }
-
-        .frame {
-            width: 70px;
-            height: 70px;
-            border-radius: 5px;
-            border: 2px solid #444444;
-            object-fit: cover;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background-color: #333333;
-        }
-
-        .frame:hover {
-            transform: scale(1.05);
-            border-color: var(--primary);
-        }
-
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            background-color: #5649d1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        .btn i {
-            font-size: 16px;
-        }
-
-        .btn-secondary {
-            background-color: #333333;
-            color: #ffffff;
-            margin-top: 10px;
-        }
-
-        .btn-secondary:hover {
-            background-color: #444444;
-        }
-
-        .btn-premium {
-            background-color: var(--premium);
-            color: #000;
-            margin-top: 10px;
-        }
-
-        .btn-premium:hover {
-            background-color: #f8c653;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 10px 0;
-            color: #cccccc;
-        }
-
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            display: inline-block;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .download-link {
-            display: none;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .download-link a {
-            color: var(--success);
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .download-link a:hover {
-            text-decoration: underline;
-        }
-
-        .download-options {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .download-options a {
-            flex: 1;
-            padding: 8px;
-            border-radius: 5px;
-            background-color: #333;
-            color: white;
-            text-align: center;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .download-options a:hover {
-            background-color: var(--primary);
-        }
-
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 200px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 12px;
-        }
-
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .quality-info {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 5px;
-        }
-
-        /* Image Editor Styles */
-        .editor-section {
-            margin-top: 20px;
-            border-top: 1px solid #444;
-            padding-top: 20px;
-            display: none;
-        }
-
-        .editor-section h3 {
-            color: var(--primary);
-            margin-bottom: 15px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .editor-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .editor-btn {
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            transition: all 0.2s;
-        }
-
-        .editor-btn:hover {
-            background-color: var(--primary);
-        }
-
-        .editor-btn i {
-            font-size: 14px;
-        }
-
-        .filter-controls {
-            display: none;
-            margin-top: 15px;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .filter-slider {
-            margin-bottom: 10px;
-        }
-
-        .filter-slider label {
-            display: flex;
-            justify-content: space-between;
-            color: #ccc;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .filter-slider input {
-            width: 100%;
-        }
-
-        .filter-presets {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 5px 0;
-            margin-top: 10px;
-        }
-
-        .filter-preset {
-            width: 60px;
-            height: 60px;
-            border-radius: 5px;
-            border: 2px solid #444;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: all 0.2s;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .filter-preset:hover {
-            transform: scale(1.05);
-            border-color: var(--primary);
-        }
-
-        .filter-active {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.3);
-        }
-
-        .crop-controls {
-            display: none;
-            margin-top: 15px;
-        }
-
-        .crop-aspect-ratios {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .crop-aspect-btn {
-            padding: 5px 10px;
-            background: #333;
-            border: none;
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .crop-aspect-btn.active {
-            background: var(--primary);
-        }
-
-        .rotate-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .rotate-btn {
-            flex: 1;
-            padding: 8px;
-            background: #333;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .rotate-btn i {
-            font-size: 14px;
-        }
-
-        .rotate-btn:hover {
-            background: var(--primary);
-        }
-
-        /* Text Editor Styles */
-        .text-controls {
-            display: none;
-            margin-top: 15px;
-        }
-
-        .text-input-group {
-            margin-bottom: 10px;
-        }
-
-        .text-input-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #ccc;
-            font-size: 12px;
-        }
-
-        .text-input-group input[type="text"],
-        .text-input-group input[type="color"],
-        .text-input-group select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 5px;
-            background-color: #333;
-            color: white;
-            border: 1px solid #555;
-            font-size: 12px;
-            margin-bottom: 8px;
-        }
-
-        .text-input-group input[type="range"] {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .text-preview {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #333;
-            border-radius: 5px;
-            min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .text-preview span {
-            max-width: 100%;
-            word-break: break-word;
-            text-align: center;
-        }
-
-        .text-position-controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            margin-top: 10px;
-        }
-
-        .text-position-btn {
-            background: #444;
-            border: none;
-            color: white;
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .text-position-btn.active {
-            background: var(--primary);
-        }
-
-        .text-position-btn i {
-            font-size: 12px;
-        }
-
-        .text-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .text-buttons button {
-            flex: 1;
-        }
-
-
-
-
-
-        /* GIF Video Loop Link Styling */
-.gif-video-loop-link {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.gif-loop-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background-color: var(--primary);
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.gif-loop-btn:hover {
-    background-color: #5649d1;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.gif-loop-btn i {
-    font-size: 16px;
-}
-
-
-/* Add this to your existing CSS */
-@media (max-width: 768px) {
-    body {
+<style>
+    :root {
+        --primary: #1d9bf0;
+        --secondary: #a29bfe;
+        --light: #f8f9fa;
+        --dark: #343a40;
+        --success: #00b894;
+        --premium: #fdcb6e;
+    }
+
+    * {
+        margin: 0;
         padding: 0;
-        display: block; /* Change from flex to block for full height */
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+        background-color: #000000;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
     }
 
     .gif-creator {
-        max-width: 100%;
-        border-radius: 0;
-        min-height: 100vh; /* Full viewport height */
-        padding: 15px;
+        background-color: #222222;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 450px;
+        padding: 25px;
+        transition: all 0.3s ease;
+        color: #ffffff;
     }
 
-    .upload-area {
-        padding: 20px 15px;
+    .header {
+        text-align: center;
+        margin-bottom: 20px;
+        position: relative;
     }
 
-    /* Make buttons slightly smaller on mobile */
-    .btn {
-        padding: 10px 15px;
-        font-size: 13px;
-    }
-
-    /* Adjust header for mobile */
     .header h1 {
-        font-size: 22px;
+        color: var(--primary);
+        font-size: 26px;
+        margin-bottom: 5px;
     }
 
-    /* Ensure frames container doesn't cause horizontal scroll */
-    .frames-container {
-        padding-left: 5px;
-        padding-right: 5px;
+    .header p {
+        color: #cccccc;
+        font-size: 14px;
+        opacity: 0.7;
     }
 
-    /* Make editor controls more compact */
-    .editor-controls {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* For very small devices (optional) */
-@media (max-width: 480px) {
-    .gif-creator {
-        padding: 10px;
+    .premium-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: var(--premium);
+        color: #000;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+        transform: rotate(15deg);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
     .upload-area {
-        padding: 15px 10px;
+        border: 2px dashed var(--secondary);
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        background-color: rgba(162, 155, 254, 0.05);
+    }
+
+    .upload-area:hover {
+        background-color: rgba(162, 155, 254, 0.1);
+        border-color: var(--primary);
+    }
+
+    .upload-area i {
+        font-size: 40px;
+        color: var(--primary);
+        margin-bottom: 10px;
+    }
+
+    .upload-area p {
+        color: #cccccc;
+        font-size: 14px;
+    }
+
+    .upload-area input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .controls {
+        margin-bottom: 20px;
+    }
+
+    .control-group {
+        margin-bottom: 15px;
+    }
+
+    .control-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #cccccc;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .control-group input[type="range"] {
+        width: 100%;
+        height: 8px;
+        -webkit-appearance: none;
+        background: #444444;
+        border-radius: 5px;
+        outline: none;
+    }
+
+    .control-group input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        background: var(--primary);
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .control-group select {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        background-color: #333333;
+        color: white;
+        border: 1px solid #555555;
+        font-size: 14px;
+    }
+
+    .preview-container {
+        position: relative;
+        margin-bottom: 20px;
+        display: none;
+        text-align: center;
+    }
+
+    .canvas-container {
+        width: 100%;
+        height: 250px;
+        border-radius: 10px;
+        border: 1px solid #444444;
+        overflow: hidden;
+        background: #111111;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    #gifCanvas {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+
+    .frames-container {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 0;
+        margin-bottom: 20px;
+        min-height: 80px;
     }
 
     .frame {
+        width: 70px;
+        height: 70px;
+        border-radius: 5px;
+        border: 2px solid #444444;
+        object-fit: cover;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #333333;
+    }
+
+    .frame:hover {
+        transform: scale(1.05);
+        border-color: var(--primary);
+    }
+
+    .btn {
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn:hover {
+        background-color: #1a8ad8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn i {
+        font-size: 16px;
+    }
+
+    .btn-secondary {
+        background-color: #333333;
+        color: #ffffff;
+        margin-top: 10px;
+    }
+
+    .btn-secondary:hover {
+        background-color: #444444;
+    }
+
+    .btn-premium {
+        background-color: var(--premium);
+        color: #000;
+        margin-top: 10px;
+    }
+
+    .btn-premium:hover {
+        background-color: #f8c653;
+    }
+
+    .loading {
+        display: none;
+        text-align: center;
+        margin: 10px 0;
+        color: #cccccc;
+    }
+
+    .spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+        display: inline-block;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .download-link {
+        display: none;
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .download-link a {
+        color: var(--success);
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .download-link a:hover {
+        text-decoration: underline;
+    }
+
+    .download-options {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .download-options a {
+        flex: 1;
+        padding: 8px;
+        border-radius: 5px;
+        background-color: #333;
+        color: white;
+        text-align: center;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .download-options a:hover {
+        background-color: var(--primary);
+    }
+
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    .quality-info {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: 5px;
+    }
+
+    /* Image Editor Styles */
+    .editor-section {
+        margin-top: 20px;
+        border-top: 1px solid #444;
+        padding-top: 20px;
+        display: none;
+    }
+
+    .editor-section h3 {
+        color: var(--primary);
+        margin-bottom: 15px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .editor-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .editor-btn {
+        background-color: #333;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+
+    .editor-btn:hover {
+        background-color: var(--primary);
+    }
+
+    .editor-btn i {
+        font-size: 14px;
+    }
+
+    .filter-controls {
+        display: none;
+        margin-top: 15px;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .filter-slider {
+        margin-bottom: 10px;
+    }
+
+    .filter-slider label {
+        display: flex;
+        justify-content: space-between;
+        color: #ccc;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .filter-slider input {
+        width: 100%;
+    }
+
+    .filter-presets {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 5px 0;
+        margin-top: 10px;
+    }
+
+    .filter-preset {
         width: 60px;
         height: 60px;
+        border-radius: 5px;
+        border: 2px solid #444;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.2s;
+        background-size: cover;
+        background-position: center;
     }
-}
 
-/* Add to your CSS */
-.canva-status {
-    display: none;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-    text-align: center;
-}
+    .filter-preset:hover {
+        transform: scale(1.05);
+        border-color: var(--primary);
+    }
 
-.status-loading {
-    background: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeaa7;
-}
+    .filter-active {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.3);
+    }
 
-.status-success {
-    background: #d1edff;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
+    .crop-controls {
+        display: none;
+        margin-top: 15px;
+    }
 
-.status-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
+    .crop-aspect-ratios {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
 
-.spinner {
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin-right: 10px;
-}
+    .crop-aspect-btn {
+        padding: 5px 10px;
+        background: #333;
+        border: none;
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+    }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-    </style>
+    .crop-aspect-btn.active {
+        background: var(--primary);
+    }
+
+    .rotate-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .rotate-btn {
+        flex: 1;
+        padding: 8px;
+        background: #333;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .rotate-btn i {
+        font-size: 14px;
+    }
+
+    .rotate-btn:hover {
+        background: var(--primary);
+    }
+
+    /* Text Editor Styles */
+    .text-controls {
+        display: none;
+        margin-top: 15px;
+    }
+
+    .text-input-group {
+        margin-bottom: 10px;
+    }
+
+    .text-input-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #ccc;
+        font-size: 12px;
+    }
+
+    .text-input-group input[type="text"],
+    .text-input-group input[type="color"],
+    .text-input-group select {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        background-color: #333;
+        color: white;
+        border: 1px solid #555;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .text-input-group input[type="range"] {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .text-preview {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #333;
+        border-radius: 5px;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .text-preview span {
+        max-width: 100%;
+        word-break: break-word;
+        text-align: center;
+    }
+
+    .text-position-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .text-position-btn {
+        background: #444;
+        border: none;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .text-position-btn.active {
+        background: var(--primary);
+    }
+
+    .text-position-btn i {
+        font-size: 12px;
+    }
+
+    .text-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .text-buttons button {
+        flex: 1;
+    }
+
+    /* GIF Video Loop Link Styling */
+    .gif-video-loop-link {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .gif-loop-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background-color: var(--primary);
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .gif-loop-btn:hover {
+        background-color: #1a8ad8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .gif-loop-btn i {
+        font-size: 16px;
+    }
+
+    /* Add this to your existing CSS */
+    @media (max-width: 768px) {
+        body {
+            padding: 0;
+            display: block; /* Change from flex to block for full height */
+        }
+
+        .gif-creator {
+            max-width: 100%;
+            border-radius: 0;
+            min-height: 100vh; /* Full viewport height */
+            padding: 15px;
+        }
+
+        .upload-area {
+            padding: 20px 15px;
+        }
+
+        /* Make buttons slightly smaller on mobile */
+        .btn {
+            padding: 10px 15px;
+            font-size: 13px;
+        }
+
+        /* Adjust header for mobile */
+        .header h1 {
+            font-size: 22px;
+        }
+
+        /* Ensure frames container doesn't cause horizontal scroll */
+        .frames-container {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        /* Make editor controls more compact */
+        .editor-controls {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* For very small devices (optional) */
+    @media (max-width: 480px) {
+        .gif-creator {
+            padding: 10px;
+        }
+
+        .upload-area {
+            padding: 15px 10px;
+        }
+
+        .frame {
+            width: 60px;
+            height: 60px;
+        }
+    }
+
+    /* Add to your CSS */
+    .canva-status {
+        display: none;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .status-loading {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .status-success {
+        background: #d1edff;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .status-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .spinner {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>

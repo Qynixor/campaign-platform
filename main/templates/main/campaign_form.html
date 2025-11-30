@@ -1228,40 +1228,29 @@
                             </div>
                             <div class="section-label-text">Design & Media</div>
                         </div>
-                        
-                        <!-- Canva GIF Creation Tool -->
-                        <div class="form-section">
-                            <div class="tool-toggle">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="canvaToggle">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <span class="toggle-text">Create a GIF poster with Canva</span>
-                            </div>
-                            
-                            <div class="canva-tool" id="canvaTool">
-                                <div class="canva-header">
-                                    <div class="canva-logo">C</div>
-                                    <div class="canva-title">Canva Design</div>
-                                </div>
-                                <p class="canva-description">Create an eye-catching GIF poster for your campaign with our integrated Canva tool. No design skills needed!</p>
-                                <button type="button" class="canva-button" id="openCanva">
-                                    <i class="fas fa-paint-brush"></i> Design with Canva
-                                </button>
-                                
-                                <!-- Status indicators -->
-                                <div class="canva-status status-loading" id="canvaLoading">
-                                    <span class="spinner"></span> Waiting for Canva design...
-                                </div>
-                                <div class="canva-status status-success" id="canvaSuccess">
-                                    <i class="fas fa-check-circle"></i> Poster created successfully!
-                                </div>
-                                <div class="canva-status status-error" id="canvaError">
-                                    <i class="fas fa-exclamation-circle"></i> Could not connect to Canva. Please try again.
-                                </div>
-                            </div>
-                        </div>
-                        
+         <!-- Canva GIF Creation Tool -->
+<div class="form-section">
+    <div class="tool-toggle">
+        <label class="toggle-switch">
+            <input type="checkbox" id="canvaToggle">
+            <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-text">Create a GIF poster with Canva</span>
+    </div>
+    
+    <div class="canva-tool" id="canvaTool">
+        <div class="canva-header">
+            <div class="canva-logo">C</div>
+            <div class="canva-title">Canva Design</div>
+        </div>
+        <p class="canva-description">Create an eye-catching GIF poster for your campaign with our integrated Canva tool. No design skills needed!</p>
+        
+        <!-- Add data attribute for the Canva URL -->
+        <button type="button" class="canva-button" id="openCanva" data-canva-url="{% url 'poster_canva' %}">
+            <i class="fas fa-paint-brush"></i> Design with Canva
+        </button>
+    </div>
+</div>
                         <!-- Poster Upload -->
                         <div class="form-section">
                             <label class="form-label">Campaign Image / Poster</label>
@@ -1634,60 +1623,42 @@ document.addEventListener('DOMContentLoaded', function() {
     checkForCreatedPoster();
     
     // Close button functionality
-    document.querySelector('.close-btn').addEventListener('click', function() {
-        if(confirm('Are you sure you want to cancel? Your progress will be lost.')) {
-            window.history.back();
-        }
-    });
+    const closeBtn = document.querySelector('.close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            if(confirm('Are you sure you want to cancel? Your progress will be lost.')) {
+                window.history.back();
+            }
+        });
+    }
     
     // Canva tool toggle
     const canvaToggle = document.getElementById('canvaToggle');
     const canvaTool = document.getElementById('canvaTool');
     
-    canvaToggle.addEventListener('change', function() {
-        canvaTool.style.display = this.checked ? 'block' : 'none';
-        updateProgress();
-    });
-    
-    // Initially hide the Canva tool
-    canvaTool.style.display = 'none';
+    if (canvaToggle && canvaTool) {
+        canvaToggle.addEventListener('change', function() {
+            canvaTool.style.display = this.checked ? 'block' : 'none';
+            updateProgress();
+        });
+        
+        // Initially hide the Canva tool
+        canvaTool.style.display = 'none';
+    }
     
     // Canva functionality
     const openCanvaButton = document.getElementById('openCanva');
-    const canvaLoading = document.getElementById('canvaLoading');
-    const canvaSuccess = document.getElementById('canvaSuccess');
-    const canvaError = document.getElementById('canvaError');
-    const posterPreview = document.getElementById('posterPreview');
     const canvaPosterData = document.getElementById('canva_poster_data');
-    
-    // Function to show status message
-    function showStatus(statusElement) {
-        // Hide all status messages first
-        canvaLoading.style.display = 'none';
-        canvaSuccess.style.display = 'none';
-        canvaError.style.display = 'none';
-        
-        // Show the requested status
-        statusElement.style.display = 'block';
-    }
     
     // Function to handle Canva poster data
     function handleCanvaPosterData(data) {
         // Store the data in the hidden field
-        canvaPosterData.value = JSON.stringify(data);
-        
-        // Show the poster preview
-        posterPreview.innerHTML = `
-            <div style="text-align: center;">
-                <img src="${data.previewUrl}" alt="Canva poster preview" class="preview-image">
-                <p style="margin-top: 10px; font-size: 14px; color: var(--text-secondary);">
-                    Poster created with Canva
-                </p>
-            </div>
-        `;
+        if (canvaPosterData) {
+            canvaPosterData.value = JSON.stringify(data);
+        }
         
         // Show success message
-        showStatus(canvaSuccess);
+        showNotification('Poster created successfully with Canva!', 'success');
         
         // Update form progress
         updateProgress();
@@ -1706,7 +1677,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('canva_poster_response');
             } catch (e) {
                 console.error('Error parsing Canva response:', e);
-                showStatus(canvaError);
+                showNotification('Error loading Canva poster. Please try again.', 'error');
             }
         }
     }
@@ -1734,29 +1705,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    openCanvaButton.addEventListener('click', function() {
-        // Show loading status
-        showStatus(canvaLoading);
-        
-        // Generate a unique ID for this Canva session
-        const canvaSessionId = 'canva_' + Date.now();
-        
-        // Store the session ID to identify responses
-        localStorage.setItem('canva_session_id', canvaSessionId);
-        
-        // Open Canva in a new tab
-        const canvaUrl = "{% url 'poster_canva' %}?session_id=" + encodeURIComponent(canvaSessionId);
-        const canvaWindow = window.open(canvaUrl, '_blank');
-        
-        // Set up polling to check for Canva response
-        const checkInterval = setInterval(() => {
-            if (canvaWindow.closed) {
-                clearInterval(checkInterval);
-                // Check if we got a response before the window closed
-                setTimeout(checkForCanvaResponse, 1000);
+    // Fix for Canva button click
+    if (openCanvaButton) {
+        openCanvaButton.addEventListener('click', function() {
+            // Show loading notification
+            showNotification('Opening Canva...', 'success');
+            
+            // Generate a unique ID for this Canva session
+            const canvaSessionId = 'canva_' + Date.now();
+            
+            // Store the session ID to identify responses
+            localStorage.setItem('canva_session_id', canvaSessionId);
+            
+            // Get the Canva URL - make sure this URL is correct
+            let canvaUrl = "{% url 'poster_canva' %}";
+            
+            // If the URL contains the template tag, it won't render properly in JS
+            // Use a data attribute instead
+            if (canvaUrl.includes('{%')) {
+                // Fallback: check if URL is available in a data attribute
+                const canvaButton = document.getElementById('openCanva');
+                canvaUrl = canvaButton.getAttribute('data-canva-url') || '/poster-canva/';
             }
-        }, 1000);
-    });
+            
+            // Add session ID to URL
+            canvaUrl += (canvaUrl.includes('?') ? '&' : '?') + 'session_id=' + encodeURIComponent(canvaSessionId);
+            
+            // Open Canva in a new tab
+            const canvaWindow = window.open(canvaUrl, '_blank');
+            
+            if (!canvaWindow) {
+                // Popup blocked - show error
+                showNotification('Popup blocked! Please allow popups for this site and try again.', 'error');
+                return;
+            }
+            
+            // Set up polling to check for Canva response
+            const checkInterval = setInterval(() => {
+                if (canvaWindow.closed) {
+                    clearInterval(checkInterval);
+                    // Check if we got a response before the window closed
+                    setTimeout(checkForCanvaResponse, 1000);
+                }
+            }, 1000);
+        });
+    }
     
     // Add drag and drop functionality for file uploads
     const fileUploads = document.querySelectorAll('.file-upload');
