@@ -251,6 +251,9 @@ class Campaign(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
     poster = CloudinaryField('image', folder='campaign_files', null=True, blank=True)
+    # Add this new field for multiple images
+    additional_images = models.JSONField(default=list, blank=True, 
+                                       help_text="List of additional image URLs for slideshow")
     audio = models.FileField(upload_to='campaign_audio', null=True, blank=True)
     is_active = models.BooleanField(default=True)  # Stops donations when target is met
    
@@ -304,6 +307,9 @@ class Campaign(models.Model):
     duration_unit = models.CharField(max_length=10, choices=DURATION_UNITS, default='days')
     funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tags = models.ManyToManyField(Tag, through='CampaignTag', related_name='campaigns', blank=True)
+
+
+
 
     def get_sound_tribe_members_count(self):
         """

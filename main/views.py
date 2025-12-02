@@ -4931,6 +4931,7 @@ def campaign_support(request, campaign_id):
 
 
 
+
 @login_required
 def recreate_campaign(request, campaign_id):
     # Get following user IDs using the improved pattern
@@ -4945,8 +4946,97 @@ def recreate_campaign(request, campaign_id):
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES, instance=existing_campaign)
         if form.is_valid():
-            # Save campaign first
-            campaign = form.save()
+            # Save campaign first to get ID
+            campaign = form.save(commit=False)
+            
+            # Handle Canva poster data (if provided)
+            canva_poster_data = request.POST.get('canva_poster_data')
+            if canva_poster_data:
+                try:
+                    canva_data = json.loads(canva_poster_data)
+                    # Download and save the Canva poster
+                    response = requests.get(canva_data['previewUrl'])
+                    if response.status_code == 200:
+                        img_name = f"canva_poster_{campaign.user.username}_{int(time.time())}.png"
+                        img_content = ContentFile(response.content)
+                        campaign.poster.save(img_name, img_content, save=False)
+                except Exception as e:
+                    print(f"Error processing Canva poster: {e}")
+                    # Continue without Canva poster if there's an error
+            
+            # Save campaign to get ID before handling multiple images
+            campaign.save()
+            
+            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW
+            main_poster = request.FILES.get('poster')
+            additional_images = request.FILES.getlist('additional_images')
+            
+            # Track if we need to update images
+            image_urls = []
+            
+            # If main poster was uploaded, upload to Cloudinary
+            if main_poster:
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        main_poster,
+                        folder="campaign_files",
+                        transformation=[
+                            {'width': 1200, 'height': 630, 'crop': 'fill'},
+                            {'quality': 'auto'},
+                            {'format': 'auto'}
+                        ]
+                    )
+                    image_urls.append(upload_result['secure_url'])
+                except Exception as e:
+                    print(f"Error uploading main poster: {e}")
+                    # Keep existing poster if upload fails
+                    if campaign.poster:
+                        image_urls.append(campaign.poster.url)
+            elif campaign.poster:
+                # Keep existing poster if no new one uploaded
+                image_urls.append(campaign.poster.url)
+            
+            # Upload additional images for slideshow
+            additional_image_urls = []
+            
+            # Check if we have existing additional images to preserve
+            if hasattr(campaign, 'additional_images') and campaign.additional_images:
+                # User can choose to keep existing images
+                keep_existing = request.POST.get('keep_existing_images') == 'on'
+                if keep_existing:
+                    additional_image_urls = campaign.additional_images.copy()
+            
+            # Add new additional images
+            for idx, image in enumerate(additional_images[:4]):  # Limit to 4 additional images
+                if image:
+                    try:
+                        upload_result = cloudinary.uploader.upload(
+                            image,
+                            folder="campaign_files/slideshow",
+                            public_id=f"{campaign.id}_{idx}_{int(time.time())}",
+                            transformation=[
+                                {'width': 1200, 'height': 630, 'crop': 'fill'},
+                                {'quality': 'auto'},
+                                {'format': 'auto'}
+                            ]
+                        )
+                        additional_image_urls.append(upload_result['secure_url'])
+                    except Exception as e:
+                        print(f"Error uploading additional image {idx}: {e}")
+            
+            # Update campaign with additional images
+            campaign.additional_images = additional_image_urls
+            
+            # If no main poster but we have additional images, use first as main poster
+            if not main_poster and additional_image_urls and not image_urls:
+                campaign.poster = additional_image_urls[0]
+                # Remove first image from additional_images since it's now the main poster
+                if len(additional_image_urls) > 1:
+                    campaign.additional_images = additional_image_urls[1:]
+                else:
+                    campaign.additional_images = []
+            
+            campaign.save()
             
             # Handle tags after campaign is saved
             tags_input = form.cleaned_data.get('tags_input', '')
@@ -4966,7 +5056,7 @@ def recreate_campaign(request, campaign_id):
                         added_by=request.user
                     )
             
-            messages.success(request, 'Campaign recreated successfully!')
+            messages.success(request, 'Campaign updated successfully!')
             return redirect('view_campaign', campaign_id=existing_campaign.id)
         else:
             messages.error(request, 'There were errors in your form. Please correct them below.')
@@ -5041,6 +5131,23 @@ def recreate_campaign(request, campaign_id):
     suggested_users = suggested_users[:2]
 
     ads = NativeAd.objects.all()
+    
+    # Prepare existing images data for template
+    existing_images = []
+    if existing_campaign.poster:
+        existing_images.append({
+            'url': existing_campaign.poster.url,
+            'is_main': True,
+            'index': 0
+        })
+    
+    if hasattr(existing_campaign, 'additional_images') and existing_campaign.additional_images:
+        for idx, img_url in enumerate(existing_campaign.additional_images):
+            existing_images.append({
+                'url': img_url,
+                'is_main': False,
+                'index': idx + 1
+            })
 
     context = {
         'ads': ads,
@@ -5053,9 +5160,16 @@ def recreate_campaign(request, campaign_id):
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
         'existing_campaign': existing_campaign,
+        'existing_images': existing_images,  # Pass images to template
+        'has_additional_images': hasattr(existing_campaign, 'additional_images') and 
+                                existing_campaign.additional_images and 
+                                len(existing_campaign.additional_images) > 0
     }
     
     return render(request, 'main/recreatecampaign_form.html', context)
+
+
+
 
 
 
@@ -5079,6 +5193,26 @@ from .models import (
 )
 from .forms import CampaignForm
 
+
+
+
+# views.py
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Count
+from itertools import chain
+from collections import defaultdict
+import json
+import requests
+from django.core.files.base import ContentFile
+import time
+import cloudinary
+import cloudinary.uploader
+from .models import *
+from .forms import CampaignForm
+
 @login_required
 def create_campaign(request):
     following_users = [follow.followed for follow in request.user.following.all()]
@@ -5088,12 +5222,11 @@ def create_campaign(request):
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save campaign first
+            # Save campaign first to get ID
             campaign = form.save(commit=False)
             campaign.user = request.user.profile
-            campaign.save()  # This gives the campaign an ID
             
-            # Handle Canva poster data
+            # Handle Canva poster data (if provided)
             canva_poster_data = request.POST.get('canva_poster_data')
             if canva_poster_data:
                 try:
@@ -5108,7 +5241,67 @@ def create_campaign(request):
                     print(f"Error processing Canva poster: {e}")
                     # Continue without Canva poster if there's an error
             
-            campaign.save()            
+            # Save campaign to get ID before handling multiple images
+            campaign.save()
+            
+            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW
+            main_poster = request.FILES.get('poster')
+            additional_images = request.FILES.getlist('additional_images')
+            
+            # If no main poster was uploaded but we have additional images
+            # use the first additional image as the main poster
+            image_urls = []
+            
+            # Upload main poster to Cloudinary
+            if main_poster:
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        main_poster,
+                        folder="campaign_files",
+                        transformation=[
+                            {'width': 1200, 'height': 630, 'crop': 'fill'},
+                            {'quality': 'auto'},
+                            {'format': 'auto'}
+                        ]
+                    )
+                    image_urls.append(upload_result['secure_url'])
+                except Exception as e:
+                    print(f"Error uploading main poster: {e}")
+            
+            # Upload additional images for slideshow
+            additional_image_urls = []
+            for idx, image in enumerate(additional_images[:4]):  # Limit to 4 additional images
+                if image:
+                    try:
+                        upload_result = cloudinary.uploader.upload(
+                            image,
+                            folder="campaign_files/slideshow",
+                            public_id=f"{campaign.id}_{idx}_{int(time.time())}",
+                            transformation=[
+                                {'width': 1200, 'height': 630, 'crop': 'fill'},
+                                {'quality': 'auto'},
+                                {'format': 'auto'}
+                            ]
+                        )
+                        additional_image_urls.append(upload_result['secure_url'])
+                    except Exception as e:
+                        print(f"Error uploading additional image {idx}: {e}")
+            
+            # Update campaign with additional images
+            if additional_image_urls:
+                campaign.additional_images = additional_image_urls
+                
+                # If no main poster but we have additional images, use first as main poster
+                if not main_poster and additional_image_urls:
+                    campaign.poster = additional_image_urls[0]
+                    # Remove first image from additional_images since it's now the main poster
+                    if len(additional_image_urls) > 1:
+                        campaign.additional_images = additional_image_urls[1:]
+                    else:
+                        campaign.additional_images = []
+                
+                campaign.save()
+            
             # Handle tags after campaign is saved
             tags_input = form.cleaned_data.get('tags_input', '')
             if tags_input:
@@ -5126,12 +5319,13 @@ def create_campaign(request):
                     )
             
             messages.success(request, 'Campaign created successfully!')
-            return redirect('home')
+            return redirect('view_campaign', campaign_id=campaign.pk)
         else:
             messages.error(request, 'There were errors in your form. Please correct them below.')
     else:
         form = CampaignForm()
 
+    # ... rest of your view code remains the same ...
     # Fetch unread notifications for the user
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     
@@ -5223,6 +5417,12 @@ def create_campaign(request):
     }
     
     return render(request, 'main/campaign_form.html', context)
+
+
+
+
+
+
 
 
 

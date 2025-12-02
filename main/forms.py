@@ -274,6 +274,8 @@ def validate_no_long_words(value, max_length=50):
         if len(word) > max_length:
             raise ValidationError(f"Word '{word[:20]}...' is too long. Maximum word length is {max_length} characters.")
 
+# forms.py
+
 class CampaignForm(forms.ModelForm):
     tags_input = forms.CharField(
         required=False,
@@ -284,6 +286,13 @@ class CampaignForm(forms.ModelForm):
         help_text="Separate tags with commas (e.g., education, children, school)"
     )
     
+    # Simple FileField for multiple images - we'll handle the multiple attribute in the template
+    additional_images = forms.FileField(
+        required=False,
+        label="Additional Images for Slideshow",
+        help_text="Upload up to 4 additional images for your poster slideshow (optional)"
+    )
+    
     class Meta:
         model = Campaign
         fields = [
@@ -291,31 +300,57 @@ class CampaignForm(forms.ModelForm):
             'visibility', 'content', 'duration',
             'duration_unit', 'funding_goal'
         ]
-        labels = {
-            'title': 'Title:',
-            'content': 'Content:',
-            'poster': 'Poster:',
-            'audio': 'Audio:',
-            'visibility': 'Visibility:',
-            'category': 'Category:',
-            'duration': 'Duration:',
-            'duration_unit': 'Duration Unit:',
-            'funding_goal': 'Funding Goal (optional):',
+        
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'What\'s your campaign about?'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-textarea',
+                'placeholder': 'Tell people more about your campaign...',
+                'rows': 5
+            }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'visibility': forms.Select(attrs={'class': 'form-select'}),
+            'duration': forms.NumberInput(attrs={
+                'class': 'form-input',
+                'min': '1',
+                'placeholder': 'e.g., 30'
+            }),
+            'duration_unit': forms.Select(attrs={'class': 'form-select'}),
+            'funding_goal': forms.NumberInput(attrs={
+                'class': 'form-input',
+                'min': '0',
+                'step': '0.01',
+                'placeholder': '0.00'
+            }),
+            'poster': forms.FileInput(attrs={
+                'accept': 'image/png, image/jpeg, image/gif, image/webp',
+                'class': 'file-upload-input'
+            }),
+            'audio': forms.FileInput(attrs={
+                'accept': 'audio/*',
+                'class': 'file-upload-input'
+            }),
         }
-
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Make poster optional since users might use slideshow
+        self.fields['poster'].required = False
+        
+        # Pre-populate with existing tags if editing
         if self.instance and self.instance.pk:
-            # Pre-populate with existing tags
             existing_tags = ', '.join([tag.name for tag in self.instance.tags.all()])
             self.fields['tags_input'].initial = existing_tags
-
+    
     def clean_poster(self):
         poster = self.cleaned_data.get('poster')
         if poster:
             valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
             
-            # ✅ FIX: Handle CloudinaryResource objects
+            # Handle CloudinaryResource objects
             if hasattr(poster, 'url'):
                 # Cloudinary resource - get extension from URL
                 url = poster.url
@@ -325,9 +360,11 @@ class CampaignForm(forms.ModelForm):
                 ext = os.path.splitext(poster.name)[1].lower()
             
             if ext not in valid_extensions:
-                raise ValidationError("Unsupported file format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP")
+                raise ValidationError(
+                    "Unsupported file format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP"
+                )
 
-            # ✅ FIX: Only validate image if it's a new upload (not Cloudinary resource)
+            # Only validate image if it's a new upload (not Cloudinary resource)
             if not hasattr(poster, 'url'):  # Only for new file uploads
                 try:
                     # Reset file pointer to beginning for PIL
@@ -344,18 +381,36 @@ class CampaignForm(forms.ModelForm):
                     raise ValidationError("Uploaded file is not a valid image.")
 
         return poster
-
+    
     def clean_title(self):
         title = self.cleaned_data.get('title')
-        validate_no_long_words(title)
+        if title:
+            # Assuming validate_no_long_words is defined elsewhere
+            from .utils import validate_no_long_words
+            validate_no_long_words(title)
         return title
 
     def clean_content(self):
         content = self.cleaned_data.get('content')
-        validate_no_long_words(content)
+        if content:
+            # Assuming validate_no_long_words is defined elsewhere
+            from .utils import validate_no_long_words
+            validate_no_long_words(content)
         return content
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        if commit:
+            instance.save()
+            self.save_m2m()
+        
+        return instance
 
-    # REMOVE the custom save method - we'll handle tags in the view
+
+
+
+
 
 
 class ChatForm(forms.ModelForm):

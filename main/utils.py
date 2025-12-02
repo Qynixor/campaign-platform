@@ -24,7 +24,24 @@ def calculate_similarity(profile1, profile2):
     return similarity_score
 
 
+# main/utils.py
 
+def validate_no_long_words(text):
+    """
+    Validate that no word in the text is too long.
+    Usually used to prevent extremely long concatenated words.
+    """
+    if not text:
+        return
+    
+    words = text.split()
+    for word in words:
+        # Check if any word is longer than 50 characters (adjust as needed)
+        if len(word) > 50:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(f"Word '{word[:20]}...' is too long. Please use spaces or break it into smaller words.")
+    
+    return text
 
 
 
