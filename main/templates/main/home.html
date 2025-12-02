@@ -535,16 +535,6 @@ border: 1px solid silver;
 
 
 
-.overlay-link {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
-
-
         button {
             background-color: #007bff;
             color: #fff;
@@ -554,27 +544,6 @@ border: 1px solid silver;
             border-radius: 5px;
         }
        
-
-  .file-container {
-    position: relative;
-    border: 1px solid silver; /* Border color */
-    border-radius: 5px;
-    overflow: hidden; /* Ensure the border doesn't overflow */
-  }
-
-  #campaign-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 5px; /* Border radius for the image */
-    transition: transform 0.3s ease; /* Add transition for smooth transformation */
-  }
-
-  /* Apply styles when hovering over the image */
-  #campaign-image:hover {
-    transform: scale(1.05); /* Scale the image slightly on hover */
-  }
-
-
 
 
 
@@ -6917,72 +6886,154 @@ body.dark-mode .campaign-category:hover {
         transform: translate(-50%, -50%) scale(0.95);
     }
 }
-
-/* ===== RESPONSIVE IMAGE HEIGHT - BEAUTIFUL ON ALL DEVICES ===== */
-
-/* Reset container spacing */
-.campaign-image-section,
-.campaign-image-container,
-.slideshow-container,
-.slideshow-wrapper,
-.slideshow-track,
-.slide {
-    margin: 0;
-    padding: 0;
-    border: none;
-    line-height: 0;
-}
-
-/* Desktop - Standard widescreen aspect ratio (16:9) */
+/* ===== FIX FOR MOBILE IMAGE FITTING ===== */
 .campaign-image-section {
     position: relative;
-    aspect-ratio: 16 / 9; /* Standard widescreen - beautiful for desktop */
     width: 100%;
     overflow: hidden;
-}
-
-/* Mobile - Taller aspect ratio for better engagement */
-@media (max-width: 768px) {
-    .campaign-image-section {
-        aspect-ratio: 3 / 4; /* Portrait/tall ratio - your "gold" for mobile */
-    }
-}
-
-/* Very small phones - Slightly less tall but still portrait */
-@media (max-width: 480px) {
-    .campaign-image-section {
-        aspect-ratio: 2 / 3; /* Even taller portrait ratio */
-    }
-}
-
-/* Make images fill the aspect ratio containers perfectly */
-.main-campaign-image,
-.slide img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Still crops but now respects aspect ratio */
-    display: block;
     margin: 0;
     padding: 0;
-    border: none;
+    line-height: 0;
+    display: block;
 }
 
-/* Slideshow containers */
-.slideshow-container,
-.slideshow-wrapper {
+/* Desktop - Standard widescreen (16:9) */
+.campaign-image-section {
+    aspect-ratio: 16 / 9;
+}
+
+/* Mobile - Taller for engagement (3:4) */
+@media (max-width: 768px) {
+    .campaign-image-section {
+        aspect-ratio: 3 / 4;
+        /* Force the container to respect aspect ratio */
+        height: auto !important;
+        max-height: none !important;
+    }
+}
+
+/* Very small phones - Even taller (2:3) */
+@media (max-width: 480px) {
+    .campaign-image-section {
+        aspect-ratio: 2 / 3;
+    }
+}
+
+/* CRITICAL FIX: Ensure all images fill their containers */
+.campaign-image-section img,
+.main-campaign-image,
+.slide img,
+.campaign-image-container img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+}
+
+/* Ensure the container fills the parent */
+.campaign-image-container,
+.slideshow-container {
+    width: 100%;
     height: 100%;
+    position: relative;
+}
+
+/* Fix slideshow structure */
+.slideshow-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
 .slideshow-track {
+    width: 100%;
     height: 100%;
-    align-items: stretch;
+    display: flex;
+    position: relative;
 }
 
 .slide {
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+    position: relative;
+    display: block;
+}
+
+/* Fix for no-image placeholder */
+.no-image-placeholder {
+    width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    color: #999;
+    background: #f5f5f5;
+}
+
+/* Mobile-specific overrides to remove any conflicting styles */
+@media (max-width: 768px) {
+    /* Remove any inline styles or conflicting styles */
+    .main-campaign-image {
+        height: 100% !important;
+        max-height: none !important;
+        min-height: auto !important;
+    }
+    
+    .campaign-image-container,
+    .slideshow-container {
+        height: 100% !important;
+        min-height: auto !important;
+    }
+    
+    .slide {
+        height: 100% !important;
+    }
+}
+
+/* Additional fix for mobile viewport */
+@media (max-width: 768px) {
+    .campaign-image-section {
+        /* These ensure mobile browsers don't add extra space */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+    }
+}
+
+/* Ensure overlay elements don't interfere with image dimensions */
+.image-overlay-top,
+.image-overlay-bottom,
+.sound-community-icon,
+.campaign-views-overlay,
+.join-prompt {
+    position: absolute;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* Fix for any parent container constraints */
+.simple-campaign-card {
+    overflow: hidden;
+}
+
+/* Remove any potential max-height constraints on mobile */
+@media (max-width: 768px) {
+    .simple-campaign-card,
+    .campaign-image-section,
+    .campaign-image-container,
+    .slideshow-container {
+        max-height: none !important;
+    }
 }
 </style>
 
@@ -10728,6 +10779,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Force images to reflow on mobile after load
+    const images = document.querySelectorAll('.campaign-image-section img');
+    
+    images.forEach(img => {
+        img.addEventListener('load', function() {
+            // Trigger reflow on mobile
+            if (window.innerWidth <= 768) {
+                this.style.display = 'none';
+                void this.offsetHeight; // Trigger reflow
+                this.style.display = 'block';
+            }
+        });
+    });
+    
+    // Handle window resize
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (window.innerWidth <= 768) {
+                const sections = document.querySelectorAll('.campaign-image-section');
+                sections.forEach(section => {
+                    section.style.height = 'auto';
+                    void section.offsetHeight;
+                });
+            }
+        }, 250);
+    });
 });
 </script>
 
