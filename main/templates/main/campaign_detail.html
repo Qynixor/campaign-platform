@@ -7731,7 +7731,8 @@ nav a:hover {
     {% endif %}
 </div>
 <!-- Campaign Image - Dominant Space -->
-<div class="campaign-image-section">
+<div class="campaign-image-section" data-campaign-id="{{ campaign.id }}">
+
     {% if campaign.poster or campaign.additional_images %}
     <div class="campaign-image-container slideshow-container">
         <!-- Slideshow wrapper -->
@@ -8043,78 +8044,76 @@ nav a:hover {
             
             
 
-            <!-- Audio player -->
+<!-- =======================
+     PER–CAMPAIGN AUDIO LOGIC
+     ======================= -->
+<!-- =======================
+     PER–CAMPAIGN AUDIO LOGIC
+=========================== -->
 
-            
-<!-- Audio player -->
-{% if campaign.poster %}
 {% if campaign.audio %}
-    <audio class="campaign-audio" loop preload="auto" muted autoplay>
+    <!-- User uploaded audio -->
+    <audio class="campaign-audio" 
+           data-campaign-id="{{ campaign.id }}" 
+           preload="auto" 
+           loop 
+           muted>
         <source src="{{ campaign.audio.url }}" type="audio/mpeg">
-        Your browser does not support the audio element.
     </audio>
+
 {% else %}
-    <div class="audio-player">
+    <!-- Category-based audio -->
+    <audio class="campaign-audio" 
+           data-campaign-id="{{ campaign.id }}" 
+           preload="auto" 
+           loop 
+           muted>
+
         {% if campaign.category == 'Poverty and Hunger' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/peace.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/peace.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Clean Water and Sanitation' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/art.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/art.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Disaster Relief' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/Humanitarian Aid.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/Humanitarian Aid.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Healthcare and Medicine' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/health.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/health.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Mental Health' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/environment.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/environment.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Human Rights and Equality' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/Equality1.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/Equality1.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Peace and Justice' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/Policy.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/Policy.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Education for All' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/education1.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/education1.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Economic Empowerment' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/economic.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/economic.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Climate Action' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/Sustainable.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/Sustainable.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Save Our Planet' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/animal.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/animal.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Tech for Humanity' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/digital.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/digital.mp3' %}" type="audio/mpeg">
+
         {% elif campaign.category == 'Community Development' %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/community.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/community.mp3' %}" type="audio/mpeg">
+
         {% else %}
-            <audio class="campaign-audio" loop preload="auto" muted autoplay>
-                <source src="{% static 'main/audio/default.mp3' %}" type="audio/mpeg">
-            </audio>
+            <source src="{% static 'main/audio/default.mp3' %}" type="audio/mpeg">
         {% endif %}
-    </div>
+    </audio>
 {% endif %}
-{% endif %}
+
 
        
         </div>
@@ -8722,6 +8721,62 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // All audio elements
+    const audios = document.querySelectorAll(".campaign-audio");
+
+    // Campaign image sections (poster)
+    const campaignSections = document.querySelectorAll(".campaign-image-section");
+
+    // Map campaignId → audio element
+    const audioMap = {};
+    const audioTimeMap = {}; // Track last known time for each audio
+    audios.forEach(a => {
+        const id = a.dataset.campaignId;
+        audioMap[id] = a;
+        audioTimeMap[id] = 0; // start at 0
+        a.pause(); // ensure paused initially
+    });
+
+    const observer = new IntersectionObserver(
+        entries => {
+            entries.forEach(entry => {
+                const section = entry.target;
+                const campaignId = section.dataset.campaignId;
+                const audio = audioMap[campaignId];
+
+                if (!audio) return;
+
+                if (entry.isIntersecting) {
+
+                    // Pause all other audios and save their time
+                    Object.values(audioMap).forEach(a => {
+                        if (a !== audio) {
+                            audioTimeMap[a.dataset.campaignId] = a.currentTime;
+                            a.pause();
+                        }
+                    });
+
+                    // Resume this audio from last saved time
+                    audio.currentTime = audioTimeMap[campaignId] || 0;
+                    audio.muted = false;
+                    audio.play().catch(() => {});
+
+                } else {
+                    // Save current time and pause
+                    audioTimeMap[campaignId] = audio.currentTime;
+                    audio.pause();
+                }
+            });
+        },
+        { threshold: 0.60 } // 60% of poster visible
+    );
+
+    campaignSections.forEach(section => observer.observe(section));
+});
+</script>
 
 
 {% endblock %}
