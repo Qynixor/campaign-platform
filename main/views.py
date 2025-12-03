@@ -4932,6 +4932,7 @@ def campaign_support(request, campaign_id):
 
 
 
+
 @login_required
 def recreate_campaign(request, campaign_id):
     # Get following user IDs using the improved pattern
@@ -4967,14 +4968,14 @@ def recreate_campaign(request, campaign_id):
             # Save campaign to get ID before handling multiple images
             campaign.save()
             
-            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW
+            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW - JUST LIKE CREATE VIEW
             main_poster = request.FILES.get('poster')
-            additional_images = request.FILES.getlist('additional_images')
+            additional_images = request.FILES.getlist('additional_images')  # Get all uploaded files
             
-            # Track if we need to update images
+            # Initialize image URLs list
             image_urls = []
             
-            # If main poster was uploaded, upload to Cloudinary
+            # Upload main poster to Cloudinary
             if main_poster:
                 try:
                     upload_result = cloudinary.uploader.upload(
@@ -4989,24 +4990,9 @@ def recreate_campaign(request, campaign_id):
                     image_urls.append(upload_result['secure_url'])
                 except Exception as e:
                     print(f"Error uploading main poster: {e}")
-                    # Keep existing poster if upload fails
-                    if campaign.poster:
-                        image_urls.append(campaign.poster.url)
-            elif campaign.poster:
-                # Keep existing poster if no new one uploaded
-                image_urls.append(campaign.poster.url)
             
             # Upload additional images for slideshow
             additional_image_urls = []
-            
-            # Check if we have existing additional images to preserve
-            if hasattr(campaign, 'additional_images') and campaign.additional_images:
-                # User can choose to keep existing images
-                keep_existing = request.POST.get('keep_existing_images') == 'on'
-                if keep_existing:
-                    additional_image_urls = campaign.additional_images.copy()
-            
-            # Add new additional images
             for idx, image in enumerate(additional_images[:4]):  # Limit to 4 additional images
                 if image:
                     try:
@@ -5024,17 +5010,38 @@ def recreate_campaign(request, campaign_id):
                     except Exception as e:
                         print(f"Error uploading additional image {idx}: {e}")
             
-            # Update campaign with additional images
-            campaign.additional_images = additional_image_urls
+            # Check if user wants to keep existing images
+            keep_existing = request.POST.get('keep_existing_images') == 'on'
+            
+            # Handle existing additional images
+            if keep_existing and hasattr(campaign, 'additional_images') and campaign.additional_images:
+                # Keep existing additional images
+                existing_additional = campaign.additional_images
+            else:
+                # Start fresh with new additional images only
+                existing_additional = []
+            
+            # Combine existing and new additional images (limit to 4 total)
+            all_additional_images = existing_additional + additional_image_urls
+            campaign.additional_images = all_additional_images[:4]  # Ensure max 4
             
             # If no main poster but we have additional images, use first as main poster
-            if not main_poster and additional_image_urls and not image_urls:
-                campaign.poster = additional_image_urls[0]
-                # Remove first image from additional_images since it's now the main poster
-                if len(additional_image_urls) > 1:
-                    campaign.additional_images = additional_image_urls[1:]
-                else:
-                    campaign.additional_images = []
+            if not main_poster and all_additional_images:
+                # Check if we have existing additional images to use as main
+                if existing_additional:
+                    campaign.poster = existing_additional[0]
+                    # Remove first image from additional_images since it's now the main poster
+                    if len(all_additional_images) > 1:
+                        campaign.additional_images = all_additional_images[1:4]  # Keep next 3
+                    else:
+                        campaign.additional_images = []
+                elif additional_image_urls:
+                    campaign.poster = additional_image_urls[0]
+                    # Remove first image from additional_images since it's now the main poster
+                    if len(additional_image_urls) > 1:
+                        campaign.additional_images = additional_image_urls[1:4]  # Keep next 3
+                    else:
+                        campaign.additional_images = []
             
             campaign.save()
             

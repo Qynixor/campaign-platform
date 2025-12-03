@@ -1459,6 +1459,352 @@ select:-webkit-autofill:focus {
     transition: transform 0.1s ease;
 }
 </style>
+
+
+
+
+<style>
+/* Slideshow Styles */
+.slideshow-info-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.slideshow-info-banner i {
+    font-size: 24px;
+}
+
+.slideshow-info-banner strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.slideshow-info-banner p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.upload-group {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.upload-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.upload-label i {
+    color: #667eea;
+}
+
+.multi-upload-area {
+    border: 2px dashed #667eea;
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.multi-upload-area:hover, .multi-upload-area.dragover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #764ba2;
+}
+
+.multi-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.multi-upload-label i {
+    font-size: 32px;
+    color: #667eea;
+}
+
+.upload-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.upload-count {
+    font-size: 12px;
+    color: #666;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+.image-previews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e9ecef;
+}
+
+.image-preview-item.main-preview {
+    border-color: #667eea;
+    border-width: 3px;
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.remove-image:hover {
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
+.image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.image-info i {
+    margin-right: 5px;
+}
+
+.image-count-status {
+    background: #e9ecef;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-count-status i {
+    color: #667eea;
+}
+
+/* Slideshow Preview */
+.slideshow-preview {
+    margin-top: 25px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.preview-header {
+    background: #f8f9fa;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+    color: #333;
+}
+
+.preview-header i {
+    color: #667eea;
+}
+
+.preview-images {
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    min-height: 200px;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-slide {
+    position: relative;
+    width: 200px;
+    height: 150px;
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+    flex-shrink: 0;
+}
+
+.preview-slide.active {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.preview-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide-number {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.slide-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.preview-placeholder {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+}
+
+.preview-placeholder i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ddd;
+}
+
+.preview-controls {
+    padding: 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.preview-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+}
+
+.timer-setting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timer-setting label {
+    font-size: 14px;
+    color: #666;
+}
+
+.timer-setting select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+}
+
+.no-images {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .image-previews-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
+    .preview-slide {
+        width: 150px;
+        height: 120px;
+    }
+    
+    .preview-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+}
+</style>
+
+
+
+
 </head>
 
 <body>
@@ -1524,44 +1870,55 @@ select:-webkit-autofill:focus {
                             </div>
                             <div class="section-label-text">Design & Media</div>
                         </div>
-                        
-                             <!-- Canva GIF Creation Tool -->
+                          
+
+<!-- Slideshow Images Section -->
 <div class="form-section">
-    <div class="tool-toggle">
-        <label class="toggle-switch">
-            <input type="checkbox" id="canvaToggle">
-            <span class="toggle-slider"></span>
-        </label>
-        <span class="toggle-text">Create a GIF poster with Canva</span>
+    <label class="form-label">Slideshow Images</label>
+    
+    <!-- Slideshow Info Banner -->
+    <div class="slideshow-info-banner">
+        <i class="fas fa-images"></i>
+        <div>
+            <strong>Engaging Slideshow Feature</strong>
+            <p>Upload multiple images for an automatic slideshow. Campaigns with slideshows get 3x more engagement!</p>
+        </div>
     </div>
     
-    <div class="canva-tool" id="canvaTool">
-        <div class="canva-header">
-            <div class="canva-logo">C</div>
-            <div class="canva-title">Canva Design</div>
+    <!-- Main Poster Upload -->
+    <div class="upload-group">
+        <label for="id_poster" class="file-upload">
+            <i class="fas fa-star"></i>
+            <div class="file-upload-text">Click to upload or drag and drop</div>
+            <span class="form-helper">PNG, JPG, GIF or WEBP (max. 5MB) - This will be the first image in slideshow</span>
+        </label>
+        {{ form.poster }}
+        <div id="mainPosterPreview" class="preview-container"></div>
+    </div>
+    
+    <!-- Additional Images Upload -->
+    <div class="upload-group">
+        <label class="upload-label">
+            <i class="fas fa-layer-group"></i> Additional Slideshow Images (Optional)
+        </label>
+        <div class="multi-upload-area" id="multiUploadArea">
+            <label for="id_additional_images" class="multi-upload-label">
+                <i class="fas fa-plus-circle"></i>
+                <div class="upload-text">Click to add more images</div>
+                <span class="form-helper">Select multiple images (Ctrl+Click or drag & drop)</span>
+                <span class="upload-count">Up to 4 additional images</span>
+            </label>
+            <!-- Manually add the multiple attribute here -->
+            <input type="file" name="additional_images" id="id_additional_images" 
+                   multiple accept="image/png, image/jpeg, image/gif, image/webp" 
+                   style="display: none;" 
+                   onchange="previewAdditionalImages(event)">
         </div>
-        <p class="canva-description">Create an eye-catching GIF poster for your campaign with our integrated Canva tool. No design skills needed!</p>
         
-        <!-- Add data attribute for the Canva URL -->
-        <button type="button" class="canva-button" id="openCanva" data-canva-url="{% url 'poster_canva' %}">
-            <i class="fas fa-paint-brush"></i> Design with Canva
-        </button>
+        <!-- Image Previews Grid -->
+        <div class="image-previews-grid" id="additionalPreviews"></div>
     </div>
 </div>
-      
-                        
-                        <!-- Poster Upload -->
-                        <div class="form-section">
-                            <label class="form-label">Campaign Image / Poster</label>
-                            <label for="{{ form.poster.id_for_label }}" class="file-upload">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <div class="file-upload-text">Click to upload or drag and drop</div>
-                                <span class="form-helper">PNG, JPG, GIF or WEBP (max. 5MB)</span>
-                            </label>
-                            {{ form.poster }}
-                            <div id="posterPreview" class="preview-container"></div>
-                        </div>
-                        
                         <!-- Audio Upload -->
                       <!-- Replace your current audio upload section with this -->
 <div class="form-section">
@@ -2088,6 +2445,163 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
     </script>
+
+
+
+    
+<script type="text/javascript">
+    // JavaScript for Slideshow Uploads
+let additionalImages = [];
+let mainImage = null;
+
+// Create a hidden file input for submitting files
+let hiddenFileInputsContainer = document.getElementById('hiddenFileInputsContainer');
+if (!hiddenFileInputsContainer) {
+    hiddenFileInputsContainer = document.createElement('div');
+    hiddenFileInputsContainer.id = 'hiddenFileInputsContainer';
+    hiddenFileInputsContainer.style.display = 'none';
+    document.getElementById('campaignForm').appendChild(hiddenFileInputsContainer);
+}
+
+// Preview main image
+function previewMainImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            mainImage = {
+                url: e.target.result,
+                file: file,
+                isMain: true,
+                inputName: 'poster'  // This is the actual field name
+            };
+            
+            const preview = document.getElementById('mainPosterPreview');
+            preview.innerHTML = `
+                <div class="image-preview-item main-preview">
+                    <img src="${e.target.result}" alt="Main poster">
+                    <div class="image-info">
+                        <i class="fas fa-star"></i> Main Poster
+                    </div>
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Preview additional images
+function previewAdditionalImages(event) {
+    const files = Array.from(event.target.files);
+    const previewContainer = document.getElementById('additionalPreviews');
+    
+    // Filter out any existing files and limit to 4
+    const newFiles = files.slice(0, 4 - additionalImages.length);
+    
+    newFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const imageData = {
+                url: e.target.result,
+                file: file,
+                isMain: false,
+                id: Date.now() + index,
+                inputName: `additional_images_${Date.now() + index}`
+            };
+            
+            additionalImages.push(imageData);
+            
+            renderImagePreviews();
+        };
+        
+        reader.readAsDataURL(file);
+    });
+    
+    // Reset file input to allow adding more images
+    event.target.value = '';
+}
+
+// Render all image previews
+function renderImagePreviews() {
+    const previewContainer = document.getElementById('additionalPreviews');
+    const countText = document.getElementById('imageCountText') || document.createElement('div');
+    
+    previewContainer.innerHTML = '';
+    
+    if (additionalImages.length === 0) {
+        previewContainer.innerHTML = '<div class="no-images">No additional images added</div>';
+        if (countText) countText.textContent = 'No additional images added yet';
+        return;
+    }
+    
+    additionalImages.forEach((image, index) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'image-preview-item';
+        previewItem.innerHTML = `
+            <img src="${image.url}" alt="Additional image ${index + 1}">
+            <button type="button" class="remove-image" onclick="removeImage(${image.id})" title="Remove image">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="image-info">
+                <i class="fas fa-layer-group"></i> Slide ${index + 2}
+            </div>
+        `;
+        previewContainer.appendChild(previewItem);
+    });
+    
+    if (countText) countText.textContent = `${additionalImages.length} additional image${additionalImages.length !== 1 ? 's' : ''} added`;
+}
+
+// Remove an image
+function removeImage(imageId) {
+    additionalImages = additionalImages.filter(img => img.id !== imageId);
+    renderImagePreviews();
+}
+
+// Handle form submission - CRITICAL FIX
+document.getElementById('campaignForm').addEventListener('submit', function(e) {
+    // Clear any existing hidden inputs
+    document.getElementById('hiddenFileInputsContainer').innerHTML = '';
+    
+    // Create hidden inputs for additional images
+    additionalImages.forEach((image, index) => {
+        // Create a new file input for each additional image
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.name = 'additional_images';
+        fileInput.style.display = 'none';
+        
+        // Create a DataTransfer to hold the file
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(image.file);
+        fileInput.files = dataTransfer.files;
+        
+        // Add to form
+        document.getElementById('hiddenFileInputsContainer').appendChild(fileInput);
+    });
+    
+    // Validate at least one image
+    const mainFileInput = document.querySelector('input[name="poster"]');
+    if (!mainFileInput.files.length && additionalImages.length === 0) {
+        e.preventDefault();
+        alert('Please upload at least one image for your campaign.');
+        return;
+    }
+    
+    // Validate image count
+    if (additionalImages.length > 4) {
+        e.preventDefault();
+        alert('Maximum 4 additional images allowed.');
+        return;
+    }
+    
+    console.log('Submitting with:', {
+        mainImage: mainFileInput.files.length,
+        additionalImages: additionalImages.length
+    });
+});
+</script>
 </body>
 </html>
 {% endblock content %}
