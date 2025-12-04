@@ -5273,7 +5273,7 @@ def create_campaign(request):
                         main_poster,
                         folder="campaign_files",
                         transformation=[
-                            {'width': 1200, 'height': 630, 'crop': 'fill'},
+                            {'width': 1200, 'crop': 'limit'},
                             {'quality': 'auto'},
                             {'format': 'auto'}
                         ]
@@ -5292,7 +5292,7 @@ def create_campaign(request):
                             folder="campaign_files/slideshow",
                             public_id=f"{campaign.id}_{idx}_{int(time.time())}",
                             transformation=[
-                                {'width': 1200, 'height': 630, 'crop': 'fill'},
+                                {'width': 1200, 'crop': 'limit'},
                                 {'quality': 'auto'},
                                 {'format': 'auto'}
                             ]
