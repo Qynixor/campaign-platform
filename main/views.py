@@ -4930,9 +4930,6 @@ def campaign_support(request, campaign_id):
     return render(request, 'main/campaign_support.html', context)
 
 
-
-
-
 @login_required
 def recreate_campaign(request, campaign_id):
     # Get following user IDs using the improved pattern
@@ -4968,15 +4965,15 @@ def recreate_campaign(request, campaign_id):
             # Save campaign to get ID before handling multiple images
             campaign.save()
             
-            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW - JUST LIKE CREATE VIEW
+            # =================== HANDLE MAIN POSTER ===================
+            keep_current_poster = request.POST.get('keep_current_poster') == 'on'
             main_poster = request.FILES.get('poster')
-            additional_images = request.FILES.getlist('additional_images')  # Get all uploaded files
             
-            # Initialize image URLs list
-            image_urls = []
-            
-            # Upload main poster to Cloudinary
-            if main_poster:
+            if keep_current_poster and existing_campaign.poster:
+                # Keep the existing poster
+                campaign.poster = existing_campaign.poster
+            elif main_poster:
+                # Upload new poster to Cloudinary
                 try:
                     upload_result = cloudinary.uploader.upload(
                         main_poster,
@@ -4987,13 +4984,19 @@ def recreate_campaign(request, campaign_id):
                             {'format': 'auto'}
                         ]
                     )
-                    image_urls.append(upload_result['secure_url'])
+                    campaign.poster = upload_result['secure_url']
                 except Exception as e:
                     print(f"Error uploading main poster: {e}")
+                    # If upload fails, keep existing poster as fallback
+                    if existing_campaign.poster:
+                        campaign.poster = existing_campaign.poster
             
-            # Upload additional images for slideshow
+            # =================== HANDLE ADDITIONAL IMAGES ===================
+            additional_images = request.FILES.getlist('additional_images')  # Get all uploaded files
+            
+            # Upload new additional images for slideshow
             additional_image_urls = []
-            for idx, image in enumerate(additional_images[:4]):  # Limit to 4 additional images
+            for idx, image in enumerate(additional_images[:4]):  # Limit to 4 new images
                 if image:
                     try:
                         upload_result = cloudinary.uploader.upload(
@@ -5010,24 +5013,28 @@ def recreate_campaign(request, campaign_id):
                     except Exception as e:
                         print(f"Error uploading additional image {idx}: {e}")
             
-            # Check if user wants to keep existing images
-            keep_existing = request.POST.get('keep_existing_images') == 'on'
+            # Check if user wants to keep existing additional images
+            keep_existing_images = request.POST.get('keep_existing_images') == 'on'
+            existing_additional = []
             
-            # Handle existing additional images
-            if keep_existing and hasattr(campaign, 'additional_images') and campaign.additional_images:
-                # Keep existing additional images
-                existing_additional = campaign.additional_images
-            else:
-                # Start fresh with new additional images only
-                existing_additional = []
+            if keep_existing_images and hasattr(existing_campaign, 'additional_images') and existing_campaign.additional_images:
+                # Collect which existing images to keep
+                idx = 0
+                for existing_img_url in existing_campaign.additional_images:
+                    keep_key = f'keep_existing_image_{idx}'
+                    if request.POST.get(keep_key) == 'on':
+                        existing_additional.append(existing_img_url)
+                    idx += 1
             
             # Combine existing and new additional images (limit to 4 total)
             all_additional_images = existing_additional + additional_image_urls
             campaign.additional_images = all_additional_images[:4]  # Ensure max 4
             
-            # If no main poster but we have additional images, use first as main poster
-            if not main_poster and all_additional_images:
-                # Check if we have existing additional images to use as main
+            # =================== HANDLE POSTER FROM ADDITIONAL IMAGES ===================
+            # If no main poster (user didn't keep current and didn't upload new)
+            # but we have additional images, use first additional image as main poster
+            if not campaign.poster and all_additional_images:
+                # If we have existing additional images, use the first one
                 if existing_additional:
                     campaign.poster = existing_additional[0]
                     # Remove first image from additional_images since it's now the main poster
@@ -5045,7 +5052,7 @@ def recreate_campaign(request, campaign_id):
             
             campaign.save()
             
-            # Handle tags after campaign is saved
+            # =================== HANDLE TAGS ===================
             tags_input = form.cleaned_data.get('tags_input', '')
             if tags_input:
                 tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
