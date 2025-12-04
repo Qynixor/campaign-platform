@@ -1956,13 +1956,16 @@ select:-webkit-autofill:focus {
     </div>
 
     <!-- File Upload Area -->
-    <label for="id_audio" class="file-upload">
-        <i class="fas fa-music"></i>
-        <div class="file-upload-text">Click to upload or drag and drop</div>
-        <span class="form-helper">MP3, WAV, or OGG format (max. 5MB, max 30 seconds)</span>
-    </label>
-    <input type="file" id="id_audio" name="audio" accept="audio/*" style="display: none;" onchange="previewAudio(event)">
-    <div id="audioPreview" class="preview-container"></div>
+          <label for="id_audio" class="file-upload">
+    <i class="fas fa-megaphone"></i> <!-- Changed icon for campaigns -->
+    <div class="file-upload-text">Upload Campaign Audio</div>
+    <span class="form-helper">MP3 or WAV format (max. 10MB). Recommended: 30-120 seconds for best engagement.</span>
+</label>
+<input type="file" id="id_audio" name="audio" 
+       accept="audio/mpeg, audio/wav, audio/ogg" 
+       style="display: none;" onchange="previewAudio(event)">
+                        <div id="audioPreview" class="preview-container"></div>
+                    </div>
 </div>
                         
                         <!-- Settings Section -->
@@ -2067,40 +2070,6 @@ select:-webkit-autofill:focus {
             }
         }
         
-       // Audio preview function - ALTERNATIVE VERSION
-function previewAudio(event) {
-    const fileInput = event.target;
-    const previewContainer = document.getElementById('audioPreview');
-    
-    // Clean up previous audio preview
-    const previousAudio = previewContainer.querySelector('audio');
-    if (previousAudio) {
-        const previousSrc = previousAudio.src;
-        if (previousSrc.startsWith('blob:')) {
-            URL.revokeObjectURL(previousSrc);
-        }
-        previewContainer.innerHTML = '';
-    }
-    
-    const file = fileInput.files[0];
-    if (file && file.type.startsWith('audio/')) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.style.width = '100%';
-        audio.style.marginTop = '10px';
-        
-        const objectURL = URL.createObjectURL(file);
-        audio.src = objectURL;
-        
-        previewContainer.appendChild(audio);
-        
-        // Revoke the object URL when the audio element is removed
-        // or when a new file is selected (handled at the beginning of this function)
-        
-    } else if (file) {
-        previewContainer.innerHTML = '<p class="form-helper" style="color:#f02849;">Please select a valid audio file</p>';
-    }
-}
 </script>
    
     <script>
@@ -2448,7 +2417,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    
+
 <script type="text/javascript">
     // JavaScript for Slideshow Uploads
 let additionalImages = [];
@@ -2601,6 +2570,60 @@ document.getElementById('campaignForm').addEventListener('submit', function(e) {
         additionalImages: additionalImages.length
     });
 });
+</script>
+
+
+<script type="text/javascript">
+    // SIMPLEST SOLUTION - Just validate file type and size
+function previewAudio(event) {
+    const fileInput = event.target;
+    const previewContainer = document.getElementById('audioPreview');
+    
+    previewContainer.innerHTML = '';
+    
+    const file = fileInput.files[0];
+    if (!file) return;
+    
+    // Accept common audio formats
+    const validTypes = [
+        'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
+        'audio/ogg', 'audio/oga', 'audio/x-m4a', 'audio/aac'
+    ];
+    
+    // Also check by extension for mobile compatibility
+    const ext = file.name.toLowerCase().split('.').pop();
+    const validExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
+    
+    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+        previewContainer.innerHTML = `
+            <p class="form-helper" style="color:#f02849;">
+                Unsupported file type. Please use MP3, WAV, or OGG.
+            </p>
+        `;
+        fileInput.value = '';
+        return;
+    }
+    
+    // Check size (increase to 10MB for campaigns)
+    if (file.size > 10 * 1024 * 1024) {
+        previewContainer.innerHTML = `
+            <p class="form-helper" style="color:#f02849;">
+                File is too large (${(file.size/(1024*1024)).toFixed(1)}MB). Maximum is 10MB.
+            </p>
+        `;
+        fileInput.value = '';
+        return;
+    }
+    
+    // Play full audio
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.style.width = '100%';
+    audio.style.marginTop = '10px';
+    audio.src = URL.createObjectURL(file);
+    
+    previewContainer.appendChild(audio);
+}
 </script>
 </body>
 </html>
