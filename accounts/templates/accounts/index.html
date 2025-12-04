@@ -2056,6 +2056,64 @@ body.dark-mode .campaign-category:hover {
     line-height: 1.4;
 }
 
+
+/* Time Left Styling */
+.time-left-info {
+    font-size: 13px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    padding: 4px 10px;
+    border-radius: 15px;
+    background: #f5f5f5;
+}
+
+.time-left-info i {
+    margin-right: 5px;
+    font-size: 12px;
+}
+
+/* Urgent time styling */
+.time-left-info .urgent {
+    color: #D32F2F;
+    font-weight: 600;
+}
+
+.time-left-info .warning {
+    color: #F57C00;
+    font-weight: 600;
+}
+
+/* Dark mode */
+.dark-mode .time-left-info {
+    color: #b0b0b0;
+    background: #2d2d2d;
+}
+
+.dark-mode .time-left-info .urgent {
+    color: #ff6b6b;
+}
+
+.dark-mode .time-left-info .warning {
+    color: #ffa726;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .campaign-status {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .time-left-info {
+        margin-left: 0;
+        order: 3; /* Move to new line on mobile */
+        width: 100%;
+        justify-content: center;
+        margin-top: 5px;
+    }
+}
 .campaign-status {
     display: flex;
     padding: 0 12px 12px;
@@ -9055,11 +9113,7 @@ nav a:hover {
             <span>{{ campaign.campaignview_set.count|format_count }}</span>
             <span class="views-label">Views</span>
         </div>   
-        
-        <!-- Image Overlay Info -->
-        <div class="image-overlay-top">
-            <span class="campaign-category">{{ campaign.category }} </span>
-        </div>
+  
         
         <div class="image-overlay-bottom">
             <!-- Action icons with data-title instead of title -->
@@ -9109,16 +9163,7 @@ nav a:hover {
             </div>
             {% endif %}
 
-            <div class="campaign-time-left">
-                <i class="fas fa-clock"></i>
-                <span>
-                    {% if campaign.days_left != None %}
-                        {{ campaign.days_left }} {% if campaign.days_left == 1 %}day{% else %}days{% endif %} left
-                    {% else %}
-                        Ongoing
-                    {% endif %}
-                </span>
-            </div>
+      
         </div>
 
         {% if not user.profile in campaign.user_profiles.all %}
@@ -9176,27 +9221,45 @@ nav a:hover {
 </div>
 
         <!-- Campaign Status - Visual Indicators -->
-        <div class="campaign-status">
-            {% if campaign.is_outdated %}
-            <div class="status-badge outdated">
-                <i class="fas fa-exclamation-circle"></i> Campaign Ended
-            </div>
+       <!-- Campaign Status - Visual Indicators -->
+<div class="campaign-status">
+    {% if campaign.is_outdated %}
+    <div class="status-badge outdated">
+        <i class="fas fa-exclamation-circle"></i> Campaign Ended
+    </div>
+    {% else %}
+    <div class="status-badge active">
+        <i class="fas fa-check-circle"></i> Active Now
+    </div>
+    {% endif %}
+    
+    <div class="runtime-info">
+        <i class="fas fa-calendar-alt"></i>
+        {% if campaign.duration %}
+            {{ campaign.duration }} {{ campaign.duration_unit }}
+        {% else %}
+            Ongoing
+        {% endif %}
+    </div>
+    
+    <!-- ADD TIME LEFT HERE -->
+    <div class="time-left-info">
+        <i class="fas fa-clock"></i>
+        {% if campaign.days_left != None %}
+            {% if campaign.days_left == 0 %}
+                <span class="urgent">Ends today!</span>
+            {% elif campaign.days_left == 1 %}
+                <span class="urgent">1 day left</span>
+            {% elif campaign.days_left <= 7 %}
+                <span class="warning">{{ campaign.days_left }} days left</span>
             {% else %}
-            <div class="status-badge active">
-                <i class="fas fa-check-circle"></i> Active Now
-            </div>
+                <span>{{ campaign.days_left }} days left</span>
             {% endif %}
-            
-            <div class="runtime-info">
-                <i class="fas fa-calendar-alt"></i>
-                {% if campaign.duration %}
-                    {{ campaign.duration }} {{ campaign.duration_unit }}
-                {% else %}
-                    Ongoing
-                {% endif %}
-            </div>
-        </div>
-
+        {% else %}
+            <span>No deadline</span>
+        {% endif %}
+    </div>
+</div>
 <!-- After campaign-status, before simple-actions -->
 {% if user.profile in campaign.user_profiles.all %}
 <div class="campaign-participation-links">
@@ -9629,10 +9692,7 @@ nav a:hover {
             <span class="views-tooltip">Views</span>
         </div>   
         
-        <!-- Image Overlay Info -->
-        <div class="image-overlay-top">
-            <span class="campaign-category">{{ campaign.category }} </span>
-        </div>
+     
         
         <div class="image-overlay-bottom">
             <!-- Action icons with data-title instead of title -->
@@ -9682,16 +9742,7 @@ nav a:hover {
             </div>
             {% endif %}
 
-            <div class="campaign-time-left">
-                <i class="fas fa-clock"></i>
-                <span>
-                    {% if campaign.days_left != None %}
-                        {{ campaign.days_left }} {% if campaign.days_left == 1 %}day{% else %}days{% endif %} left
-                    {% else %}
-                        Ongoing
-                    {% endif %}
-                </span>
-            </div>
+       
         </div>
 
         {% if not user.profile in campaign.user_profiles.all %}
@@ -9746,27 +9797,45 @@ nav a:hover {
              Goals: {{ campaign.get_goals_and_activities.Goals.0|default:"No goal specified"|truncatechars:80 }}        </div>
 
         <!-- Campaign Status - Visual Indicators -->
-        <div class="campaign-status">
-            {% if campaign.is_outdated %}
-            <div class="status-badge outdated">
-                <i class="fas fa-exclamation-circle"></i> Campaign Ended
-            </div>
+       <!-- Campaign Status - Visual Indicators -->
+<div class="campaign-status">
+    {% if campaign.is_outdated %}
+    <div class="status-badge outdated">
+        <i class="fas fa-exclamation-circle"></i> Campaign Ended
+    </div>
+    {% else %}
+    <div class="status-badge active">
+        <i class="fas fa-check-circle"></i> Active Now
+    </div>
+    {% endif %}
+    
+    <div class="runtime-info">
+        <i class="fas fa-calendar-alt"></i>
+        {% if campaign.duration %}
+            {{ campaign.duration }} {{ campaign.duration_unit }}
+        {% else %}
+            Ongoing
+        {% endif %}
+    </div>
+    
+    <!-- ADD TIME LEFT HERE -->
+    <div class="time-left-info">
+        <i class="fas fa-clock"></i>
+        {% if campaign.days_left != None %}
+            {% if campaign.days_left == 0 %}
+                <span class="urgent">Ends today!</span>
+            {% elif campaign.days_left == 1 %}
+                <span class="urgent">1 day left</span>
+            {% elif campaign.days_left <= 7 %}
+                <span class="warning">{{ campaign.days_left }} days left</span>
             {% else %}
-            <div class="status-badge active">
-                <i class="fas fa-check-circle"></i> Active Now
-            </div>
+                <span>{{ campaign.days_left }} days left</span>
             {% endif %}
-            
-            <div class="runtime-info">
-                <i class="fas fa-calendar-alt"></i>
-                {% if campaign.duration %}
-                    {{ campaign.duration }} {{ campaign.duration_unit }}
-                {% else %}
-                    Ongoing
-                {% endif %}
-            </div>
-        </div>
-
+        {% else %}
+            <span>No deadline</span>
+        {% endif %}
+    </div>
+</div>
         <!-- After campaign-status, before simple-actions -->
         {% if user.profile in campaign.user_profiles.all %}
         <div class="campaign-participation-links">
