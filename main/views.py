@@ -4930,6 +4930,12 @@ def campaign_support(request, campaign_id):
     return render(request, 'main/campaign_support.html', context)
 
 
+
+
+
+
+
+
 @login_required
 def recreate_campaign(request, campaign_id):
     # Get following user IDs using the improved pattern
@@ -5181,6 +5187,13 @@ def recreate_campaign(request, campaign_id):
     }
     
     return render(request, 'main/recreatecampaign_form.html', context)
+
+
+
+
+
+
+
 
 
 

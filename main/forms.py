@@ -274,6 +274,7 @@ def validate_no_long_words(value, max_length=50):
         if len(word) > max_length:
             raise ValidationError(f"Word '{word[:20]}...' is too long. Maximum word length is {max_length} characters.")
 
+
 # forms.py
 
 class CampaignForm(forms.ModelForm):
@@ -406,6 +407,9 @@ class CampaignForm(forms.ModelForm):
             self.save_m2m()
         
         return instance
+
+
+
 
 
 
