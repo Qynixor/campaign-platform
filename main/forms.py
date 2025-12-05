@@ -275,7 +275,9 @@ def validate_no_long_words(value, max_length=50):
             raise ValidationError(f"Word '{word[:20]}...' is too long. Maximum word length is {max_length} characters.")
 
 
-# forms.py
+
+
+
 
 class CampaignForm(forms.ModelForm):
     tags_input = forms.CharField(
@@ -287,11 +289,13 @@ class CampaignForm(forms.ModelForm):
         help_text="Separate tags with commas (e.g., education, children, school)"
     )
     
-    # Simple FileField for multiple images - we'll handle the multiple attribute in the template
     additional_images = forms.FileField(
         required=False,
         label="Additional Images for Slideshow",
-        help_text="Upload up to 4 additional images for your poster slideshow (optional)"
+        help_text="Upload up to 4 additional images for your poster slideshow (optional)",
+        widget=forms.FileInput(attrs={
+            'accept': 'image/png, image/jpeg, image/gif, image/webp'
+        })
     )
     
     class Meta:
@@ -319,7 +323,10 @@ class CampaignForm(forms.ModelForm):
                 'min': '1',
                 'placeholder': 'e.g., 30'
             }),
-            'duration_unit': forms.Select(attrs={'class': 'form-select'}),
+            'duration_unit': forms.Select(attrs={
+                'class': 'form-select',
+                # Add empty option
+            }),
             'funding_goal': forms.NumberInput(attrs={
                 'class': 'form-input',
                 'min': '0',
@@ -338,79 +345,125 @@ class CampaignForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make poster optional since users might use slideshow
+        
+        # Required fields (only title and content)
+        self.fields['title'].required = True
+        self.fields['content'].required = True
+        self.fields['category'].required = True
+        self.fields['visibility'].required = True
+        
+        # Optional fields
         self.fields['poster'].required = False
+        self.fields['audio'].required = False
+        self.fields['duration'].required = False
+        self.fields['duration_unit'].required = False
+        self.fields['funding_goal'].required = False
+        self.fields['tags_input'].required = False
+        self.fields['additional_images'].required = False
+        
+        # Add empty choice to duration_unit dropdown
+        self.fields['duration_unit'].widget.choices = [
+            ('', 'Select unit (optional)'),
+            ('days', 'Days'),
+            ('minutes', 'Minutes'),
+        ]
+        
+        # Set defaults for required fields
+        if not self.instance.pk:  # Only for new campaigns
+            self.fields['visibility'].initial = 'public'
+            self.fields['category'].initial = 'Education for All'
         
         # Pre-populate with existing tags if editing
         if self.instance and self.instance.pk:
             existing_tags = ', '.join([tag.name for tag in self.instance.tags.all()])
             self.fields['tags_input'].initial = existing_tags
     
-    def clean_poster(self):
-        poster = self.cleaned_data.get('poster')
-        if poster:
-            valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+    def clean_funding_goal(self):
+        """Ensure funding_goal has a value, default to 0.00"""
+        funding_goal = self.cleaned_data.get('funding_goal')
+        if funding_goal is None or funding_goal == '':
+            return 0.00
+        return funding_goal
+    
+    def clean_duration(self):
+        """Validate duration is positive if provided"""
+        duration = self.cleaned_data.get('duration')
+        
+        # If duration is empty string, set to None (optional)
+        if duration == '':
+            return None
             
-            # Handle CloudinaryResource objects
-            if hasattr(poster, 'url'):
-                # Cloudinary resource - get extension from URL
-                url = poster.url
-                ext = os.path.splitext(url)[1].lower().split('?')[0]  # Remove query params
-            else:
-                # Regular file upload
-                ext = os.path.splitext(poster.name)[1].lower()
-            
-            if ext not in valid_extensions:
-                raise ValidationError(
-                    "Unsupported file format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP"
-                )
-
-            # Only validate image if it's a new upload (not Cloudinary resource)
-            if not hasattr(poster, 'url'):  # Only for new file uploads
-                try:
-                    # Reset file pointer to beginning for PIL
-                    if hasattr(poster, 'seek'):
-                        poster.seek(0)
-                    
-                    image = Image.open(poster)
-                    image.verify()  # Check if it's a valid image file
-                    
-                    # Reset again for future use
-                    if hasattr(poster, 'seek'):
-                        poster.seek(0)
-                except Exception as e:
-                    raise ValidationError("Uploaded file is not a valid image.")
-
-        return poster
+        if duration is not None and duration <= 0:
+            raise ValidationError("Duration must be a positive number.")
+        
+        return duration
+    
+    def clean_duration_unit(self):
+        """Handle duration unit"""
+        duration_unit = self.cleaned_data.get('duration_unit')
+        duration = self.cleaned_data.get('duration')
+        
+        # If no duration is provided, duration_unit should be None
+        if duration is None or duration == '':
+            return None
+        
+        # If duration is provided but unit is empty, default to 'days'
+        if duration and (duration_unit is None or duration_unit == ''):
+            return 'days'
+        
+        return duration_unit
+    
+    def clean(self):
+        """Custom validation for duration fields"""
+        cleaned_data = super().clean()
+        duration = cleaned_data.get('duration')
+        duration_unit = cleaned_data.get('duration_unit')
+        
+        # If duration is provided but unit is not, show error
+        if duration and not duration_unit:
+            self.add_error('duration_unit', 'Please select a duration unit if you set a duration.')
+        
+        # If unit is provided but no duration, show error
+        if duration_unit and not duration:
+            self.add_error('duration', 'Please enter a duration if you select a unit.')
+        
+        return cleaned_data
     
     def clean_title(self):
         title = self.cleaned_data.get('title')
         if title:
-            # Assuming validate_no_long_words is defined elsewhere
-            from .utils import validate_no_long_words
             validate_no_long_words(title)
         return title
 
     def clean_content(self):
         content = self.cleaned_data.get('content')
         if content:
-            # Assuming validate_no_long_words is defined elsewhere
-            from .utils import validate_no_long_words
             validate_no_long_words(content)
         return content
+    
+    def clean_additional_images(self):
+        """Clean additional images if you need validation"""
+        return self.cleaned_data.get('additional_images')
     
     def save(self, commit=True):
         instance = super().save(commit=False)
         
         if commit:
             instance.save()
-            self.save_m2m()
+            
+            # Handle tags if provided
+            tags_input = self.cleaned_data.get('tags_input', '')
+            if tags_input:
+                # Clear existing tags
+                instance.tags.clear()
+                
+                # Add new tags
+                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
+                for tag_name in tag_names:
+                    tag, created = Tag.objects.get_or_create(name=tag_name.lower())
+                    instance.tags.add(tag)
         
         return instance
-
-
-
-
 
 
 

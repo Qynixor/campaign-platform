@@ -304,8 +304,21 @@ class Campaign(models.Model):
         ('days', 'Days'),
     )
     duration = models.PositiveIntegerField(null=True, blank=True, help_text="Enter duration.")
-    duration_unit = models.CharField(max_length=10, choices=DURATION_UNITS, default='days')
-    funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    duration_unit = models.CharField(
+        max_length=10, 
+        choices=DURATION_UNITS, 
+        null=True,  # Allow NULL in database
+        blank=True,  # Allow blank in forms
+        default='days'  # Keep default but allow null
+    )
+    funding_goal = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True,  # Allow NULL in database
+        blank=True,  # Allow blank in forms
+        default=0.00
+    )
+    
     tags = models.ManyToManyField(Tag, through='CampaignTag', related_name='campaigns', blank=True)
 
 
