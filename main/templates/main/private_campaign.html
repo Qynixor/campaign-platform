@@ -8827,6 +8827,26 @@ nav a:hover {
         transform: scale(1.01) !important;
     }
 }
+
+
+/* Page Loader - CRITICAL STYLES */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+        rgba(135, 206, 235, 0.8) 0%,      /* Light blue */
+        rgba(72, 209, 204, 0.9) 50%,      /* Teal blue */
+        rgba(32, 178, 170, 0.8) 100%      /* Aquamarine */
+    );
+    z-index: 999999; /* Make it highest priority */
+    transition: width 0.3s ease;
+    opacity: 0.85;
+    box-shadow: 0 1px 3px rgba(32, 178, 170, 0.3);
+    pointer-events: none; /* So it doesn't block clicks */
+}
 </style>
 
 
@@ -8836,7 +8856,8 @@ nav a:hover {
 
 <body id="mainBody" >
 
-
+<!-- Add this as the FIRST element inside <body> -->
+<div id="page-loader" class="page-loader"></div>
 
 
 
@@ -12170,6 +12191,123 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 
+
+<script type="text/javascript">
+  class PageLoader {
+    constructor() {
+        this.loader = document.getElementById('page-loader');
+        this.loading = false;
+        this.init();
+    }
+    
+    init() {
+        // Method 1: Auto-detect clickable elements (RECOMMENDED)
+        this.autoAttachListeners();
+        
+        // Method 2: Manual triggers for specific elements
+        // this.setupManualTriggers();
+    }
+    
+    autoAttachListeners() {
+        // Attach to ALL links (except external, mailto, tel, and # links)
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            const link = target.closest('a');
+            
+            if (link) {
+                // Skip if it's an external link, anchor, or special protocol
+                if (link.target === '_blank' || 
+                    link.href.includes('mailto:') || 
+                    link.href.includes('tel:') ||
+                    link.getAttribute('href')?.startsWith('#') ||
+                    link.hasAttribute('download')) {
+                    return;
+                }
+                
+                e.preventDefault();
+                this.startLoading(() => {
+                    window.location.href = link.href;
+                });
+            }
+            
+            // Also attach to buttons with class 'btn', 'button', or 'nav-link'
+            if (target.tagName === 'BUTTON' || 
+                target.classList.contains('btn') || 
+                target.classList.contains('button') ||
+                target.classList.contains('nav-link')) {
+                this.showLoader();
+            }
+        });
+    }
+    
+    // OPTIONAL: Manual setup for specific selectors
+    setupManualTriggers() {
+        // Add to your specific navigation links
+        document.querySelectorAll('.your-nav-class a, .menu-item a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (!link.href.includes('#')) {
+                    e.preventDefault();
+                    this.startLoading(() => {
+                        window.location.href = link.href;
+                    });
+                }
+            });
+        });
+        
+        // Add to specific buttons
+        document.querySelectorAll('.your-btn-class, [data-load]').forEach(btn => {
+            btn.addEventListener('click', () => this.showLoader());
+        });
+    }
+    
+    // PUBLIC METHODS - call these from your existing code
+    
+    showLoader(duration = 2000) {
+        if (this.loading) return;
+        
+        this.loading = true;
+        this.loader.style.width = '0';
+        this.loader.style.opacity = '0.85';
+        this.loader.style.display = 'block';
+        
+        // Force reflow and animate
+        this.loader.offsetHeight;
+        this.loader.style.transition = 'width 2s cubic-bezier(0.4, 0, 0.2, 1)';
+        this.loader.style.width = '90%';
+        
+        // Auto-hide after duration
+        if (duration) {
+            setTimeout(() => this.hideLoader(), duration);
+        }
+    }
+    
+    hideLoader() {
+        this.loader.style.transition = 'width 0.3s ease, opacity 0.3s ease';
+        this.loader.style.width = '100%';
+        
+        setTimeout(() => {
+            this.loader.style.opacity = '0';
+            setTimeout(() => {
+                this.loader.style.width = '0';
+                this.loading = false;
+            }, 300);
+        }, 100);
+    }
+    
+    startLoading(callback = null, duration = 2000) {
+        this.showLoader(duration);
+        
+        if (callback && typeof callback === 'function') {
+            setTimeout(callback, duration - 500);
+        }
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.pageLoader = new PageLoader();
+});
+</script>
 
 </body>
 </html>
