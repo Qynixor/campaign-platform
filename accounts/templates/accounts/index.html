@@ -8539,7 +8539,10 @@ nav a:hover {
 }
 
 
-/* Page Loader - CRITICAL STYLES */
+</style>
+
+
+<style>
 .page-loader {
     position: fixed;
     top: 0;
@@ -8547,18 +8550,17 @@ nav a:hover {
     width: 0;
     height: 4px;
     background: linear-gradient(90deg, 
-        rgba(135, 206, 235, 0.8) 0%,      /* Light blue */
-        rgba(72, 209, 204, 0.9) 50%,      /* Teal blue */
-        rgba(32, 178, 170, 0.8) 100%      /* Aquamarine */
+        rgba(135, 206, 235, 0.8) 0%,
+        rgba(72, 209, 204, 0.9) 50%,
+        rgba(32, 178, 170, 0.8) 100%
     );
-    z-index: 999999; /* Make it highest priority */
+    z-index: 999999;
     transition: width 0.3s ease;
     opacity: 0.85;
     box-shadow: 0 1px 3px rgba(32, 178, 170, 0.3);
-    pointer-events: none; /* So it doesn't block clicks */
+    pointer-events: none;
 }
 </style>
-
 </head>
 
 
@@ -12216,119 +12218,71 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script type="text/javascript">
-    class PageLoader {
+// More sophisticated loader that matches your 20-second load
+class SyncedLoader {
     constructor() {
         this.loader = document.getElementById('page-loader');
-        this.loading = false;
-        this.init();
+        this.phases = {
+            'initial': { target: 15, duration: 3000 },
+            'django_render': { target: 40, duration: 7000 },
+            'assets_load': { target: 70, duration: 5000 },
+            'data_fetch': { target: 90, duration: 5000 },
+            'complete': { target: 100, duration: 1000 }
+        };
+        this.currentPhase = 'initial';
     }
     
-    init() {
-        // Method 1: Auto-detect clickable elements (RECOMMENDED)
-        this.autoAttachListeners();
+    start() {
+        console.log('Loader started - expecting ~20 second load');
+        this.animatePhase('initial');
         
-        // Method 2: Manual triggers for specific elements
-        // this.setupManualTriggers();
+        // Auto-progress (fallback if no events fire)
+        setTimeout(() => this.animatePhase('django_render'), 3000);
+        setTimeout(() => this.animatePhase('assets_load'), 10000);
+        setTimeout(() => this.animatePhase('data_fetch'), 15000);
+        setTimeout(() => this.animatePhase('complete'), 20000);
     }
     
-    autoAttachListeners() {
-        // Attach to ALL links (except external, mailto, tel, and # links)
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            const link = target.closest('a');
-            
-            if (link) {
-                // Skip if it's an external link, anchor, or special protocol
-                if (link.target === '_blank' || 
-                    link.href.includes('mailto:') || 
-                    link.href.includes('tel:') ||
-                    link.getAttribute('href')?.startsWith('#') ||
-                    link.hasAttribute('download')) {
-                    return;
-                }
-                
-                e.preventDefault();
-                this.startLoading(() => {
-                    window.location.href = link.href;
-                });
-            }
-            
-            // Also attach to buttons with class 'btn', 'button', or 'nav-link'
-            if (target.tagName === 'BUTTON' || 
-                target.classList.contains('btn') || 
-                target.classList.contains('button') ||
-                target.classList.contains('nav-link')) {
-                this.showLoader();
-            }
-        });
+    animatePhase(phase) {
+        if (!this.phases[phase]) return;
+        
+        this.currentPhase = phase;
+        const { target, duration } = this.phases[phase];
+        
+        this.loader.style.transition = `width ${duration}ms ease`;
+        this.loader.style.width = `${target}%`;
+        
+        console.log(`Loader phase: ${phase} → ${target}% in ${duration}ms`);
     }
     
-    // OPTIONAL: Manual setup for specific selectors
-    setupManualTriggers() {
-        // Add to your specific navigation links
-        document.querySelectorAll('.your-nav-class a, .menu-item a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                if (!link.href.includes('#')) {
-                    e.preventDefault();
-                    this.startLoading(() => {
-                        window.location.href = link.href;
-                    });
-                }
-            });
-        });
-        
-        // Add to specific buttons
-        document.querySelectorAll('.your-btn-class, [data-load]').forEach(btn => {
-            btn.addEventListener('click', () => this.showLoader());
-        });
+    // Call these from your Django template at different stages
+    markDjangoReady() {
+        this.animatePhase('django_render');
     }
     
-    // PUBLIC METHODS - call these from your existing code
-    
-    showLoader(duration = 2000) {
-        if (this.loading) return;
-        
-        this.loading = true;
-        this.loader.style.width = '0';
-        this.loader.style.opacity = '0.85';
-        this.loader.style.display = 'block';
-        
-        // Force reflow and animate
-        this.loader.offsetHeight;
-        this.loader.style.transition = 'width 2s cubic-bezier(0.4, 0, 0.2, 1)';
-        this.loader.style.width = '90%';
-        
-        // Auto-hide after duration
-        if (duration) {
-            setTimeout(() => this.hideLoader(), duration);
-        }
+    markAssetsLoaded() {
+        this.animatePhase('assets_load');
     }
     
-    hideLoader() {
-        this.loader.style.transition = 'width 0.3s ease, opacity 0.3s ease';
-        this.loader.style.width = '100%';
-        
+    markDataFetched() {
+        this.animatePhase('data_fetch');
+    }
+    
+    complete() {
+        this.animatePhase('complete');
         setTimeout(() => {
             this.loader.style.opacity = '0';
             setTimeout(() => {
                 this.loader.style.width = '0';
-                this.loading = false;
-            }, 300);
-        }, 100);
-    }
-    
-    startLoading(callback = null, duration = 2000) {
-        this.showLoader(duration);
-        
-        if (callback && typeof callback === 'function') {
-            setTimeout(callback, duration - 500);
-        }
+            }, 1000);
+        }, 500);
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    window.pageLoader = new PageLoader();
+// Initialize and start the loader
+window.addEventListener('DOMContentLoaded', function() {
+    window.syncedLoader = new SyncedLoader();
+    window.syncedLoader.start();
 });
 </script>
 
