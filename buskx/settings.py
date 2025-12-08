@@ -203,6 +203,9 @@ AUTHENTICATION_BACKENDS = (
 
 SITE_ID = 1
 
+SITE_URL = "https://rallynex.com"
+SITE_NAME = "RallyNex"
+
 # =========================
 # Google OAuth (Allauth Social) WITH DEFAULTS
 # =========================

@@ -5240,6 +5240,10 @@ import cloudinary.uploader
 from .models import *
 from .forms import CampaignForm
 
+
+
+
+
 @login_required
 def create_campaign(request):
     following_users = [follow.followed for follow in request.user.following.all()]
@@ -5249,16 +5253,14 @@ def create_campaign(request):
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES)
         if form.is_valid():
-            # Save campaign first to get ID
             campaign = form.save(commit=False)
             campaign.user = request.user.profile
             
-            # Handle Canva poster data (if provided)
+            # Handle Canva poster data
             canva_poster_data = request.POST.get('canva_poster_data')
             if canva_poster_data:
                 try:
                     canva_data = json.loads(canva_poster_data)
-                    # Download and save the Canva poster
                     response = requests.get(canva_data['previewUrl'])
                     if response.status_code == 200:
                         img_name = f"canva_poster_{campaign.user.username}_{int(time.time())}.png"
@@ -5266,20 +5268,12 @@ def create_campaign(request):
                         campaign.poster.save(img_name, img_content, save=False)
                 except Exception as e:
                     print(f"Error processing Canva poster: {e}")
-                    # Continue without Canva poster if there's an error
             
-            # Save campaign to get ID before handling multiple images
-            campaign.save()
+            # Save to get ID (without processing audio through CloudinaryField)
+            # We'll handle audio separately
             
-            # HANDLE MULTIPLE IMAGE UPLOADS FOR SLIDESHOW
+            # Handle main poster
             main_poster = request.FILES.get('poster')
-            additional_images = request.FILES.getlist('additional_images')
-            
-            # If no main poster was uploaded but we have additional images
-            # use the first additional image as the main poster
-            image_urls = []
-            
-            # Upload main poster to Cloudinary
             if main_poster:
                 try:
                     upload_result = cloudinary.uploader.upload(
@@ -5291,13 +5285,15 @@ def create_campaign(request):
                             {'format': 'auto'}
                         ]
                     )
-                    image_urls.append(upload_result['secure_url'])
+                    campaign.poster = upload_result['secure_url']
                 except Exception as e:
                     print(f"Error uploading main poster: {e}")
             
-            # Upload additional images for slideshow
+            # Handle additional images
+            additional_images = request.FILES.getlist('additional_images')
             additional_image_urls = []
-            for idx, image in enumerate(additional_images[:4]):  # Limit to 4 additional images
+            
+            for idx, image in enumerate(additional_images[:4]):
                 if image:
                     try:
                         upload_result = cloudinary.uploader.upload(
@@ -5314,36 +5310,112 @@ def create_campaign(request):
                     except Exception as e:
                         print(f"Error uploading additional image {idx}: {e}")
             
-            # Update campaign with additional images
+            # IMPORTANT: Set audio to None initially to avoid CloudinaryField auto-upload
+            campaign.audio = None
+            
+            # Save the campaign first
+            campaign.save()
+            
+            # NOW handle audio upload separately
+            audio_file = request.FILES.get('audio')
+            if audio_file:
+                try:
+                    # Validate file size (10MB max)
+                    if audio_file.size > 10 * 1024 * 1024:
+                        messages.error(request, 'Audio file is too large. Maximum size is 10MB.')
+                        # Delete the partially created campaign
+                        campaign.delete()
+                        return render(request, 'main/campaign_form.html', {
+                            'form': form,
+                            'categories': categories,
+                            'user_profile': user_profile,
+                            'unread_notifications': Notification.objects.filter(user=request.user, viewed=False),
+                            'new_campaigns_from_follows': Campaign.objects.filter(
+                                user__user__in=following_users, 
+                                visibility='public', 
+                                timestamp__gt=user_profile.last_campaign_check
+                            ),
+                            'trending_campaigns': Campaign.objects.filter(visibility='public')
+                                .annotate(love_count_annotated=Count('loves'))
+                                .filter(love_count_annotated__gte=1)
+                                .order_by('-love_count_annotated')[:10],
+                        })
+                    
+                    # Validate file type
+                    file_name = audio_file.name.lower()
+                    allowed_extensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac']
+                    is_valid_extension = any(file_name.endswith(ext) for ext in allowed_extensions)
+                    
+                    if not is_valid_extension:
+                        messages.error(request, 'Invalid audio format. Please upload MP3, WAV, OGG, M4A, or AAC files.')
+                        campaign.delete()
+                        return render(request, 'main/campaign_form.html', {
+                            'form': form,
+                            'categories': categories,
+                            'user_profile': user_profile,
+                            'unread_notifications': Notification.objects.filter(user=request.user, viewed=False),
+                            'new_campaigns_from_follows': Campaign.objects.filter(
+                                user__user__in=following_users, 
+                                visibility='public', 
+                                timestamp__gt=user_profile.last_campaign_check
+                            ),
+                            'trending_campaigns': Campaign.objects.filter(visibility='public')
+                                .annotate(love_count_annotated=Count('loves'))
+                                .filter(love_count_annotated__gte=1)
+                                .order_by('-love_count_annotated')[:10],
+                        })
+                    
+                    print(f"Uploading audio file: {audio_file.name}, size: {audio_file.size} bytes")
+                    
+                    # Upload to Cloudinary with resource_type='video' for audio
+                    upload_result = cloudinary.uploader.upload(
+                        audio_file,
+                        resource_type='video',  # This is CRITICAL for audio files
+                        folder="campaign_audio",
+                        public_id=f"campaign_{campaign.id}_audio_{int(time.time())}",
+                    )
+                    
+                    # Update campaign with audio URL
+                    campaign.audio = upload_result['secure_url']
+                    campaign.save()  # Save again with audio URL
+                    
+                    print(f"✓ Audio uploaded successfully: {upload_result['secure_url']}")
+                    
+                except Exception as e:
+                    print(f"✗ Error uploading audio: {e}")
+                    # Don't delete the campaign, just continue without audio
+                    messages.warning(request, 'Audio upload failed, but campaign was created. You can add audio later.')
+            
+            # Handle additional images logic
             if additional_image_urls:
                 campaign.additional_images = additional_image_urls
-                
-                # If no main poster but we have additional images, use first as main poster
                 if not main_poster and additional_image_urls:
                     campaign.poster = additional_image_urls[0]
-                    # Remove first image from additional_images since it's now the main poster
                     if len(additional_image_urls) > 1:
                         campaign.additional_images = additional_image_urls[1:]
                     else:
                         campaign.additional_images = []
-                
                 campaign.save()
             
-            # Handle tags after campaign is saved
+            # Handle tags using the form's save method
+            # We need to manually handle tags since we already saved the campaign
             tags_input = form.cleaned_data.get('tags_input', '')
             if tags_input:
-                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
+                # Clear existing tags
+                campaign.tags.clear()
                 
+                # Add new tags
+                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
                 for tag_name in tag_names:
                     tag, created = Tag.objects.get_or_create(
                         name=tag_name.lower(),
                         defaults={'slug': tag_name.lower().replace(' ', '-')}
                     )
-                    CampaignTag.objects.create(
-                        campaign=campaign,
-                        tag=tag,
-                        added_by=request.user
-                    )
+                    campaign.tags.add(tag)
+            
+            # Update user's last campaign check
+            user_profile.last_campaign_check = timezone.now()
+            user_profile.save()
             
             messages.success(request, 'Campaign created successfully!')
             return redirect('view_campaign', campaign_id=campaign.pk)
@@ -5352,47 +5424,40 @@ def create_campaign(request):
     else:
         form = CampaignForm()
 
-    # ... rest of your view code remains the same ...
-    # Fetch unread notifications for the user
+    # Fetch unread notifications
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     
-    # Check if there are new campaigns from follows
+    # Check for new campaigns from follows
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users, 
         visibility='public', 
         timestamp__gt=user_profile.last_campaign_check
     )
 
-    # Update last_campaign_check for the user's profile
-    user_profile.last_campaign_check = timezone.now()
-    user_profile.save()
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
+    # Trending campaigns
     trending_campaigns = Campaign.objects.filter(visibility='public') \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
 
     # Top Contributors logic
+    from itertools import chain
+    from collections import defaultdict
+    
     engaged_users = set()
-   
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
     comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
     view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
     activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
-    # Combine all engagement pairs
     all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
-    # Count number of unique campaigns each user engaged with
     user_campaign_map = defaultdict(set)
-
     for user_id, campaign_id in all_pairs:
         user_campaign_map[user_id].add(campaign_id)
 
-    # Build a list of contributors with their campaign engagement count
     contributor_data = []
     for user_id, campaign_set in user_campaign_map.items():
         try:
@@ -5405,18 +5470,14 @@ def create_campaign(request):
         except Profile.DoesNotExist:
             continue
 
-    # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
-    # Improved suggested users logic
+    # Suggested users logic
     current_user_following = request.user.following.all()
     following_user_ids = [follow.followed_id for follow in current_user_following]
-    
-    # Exclude current user and already followed users
     all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
     
     suggested_users = []
-    
     for profile in all_profiles:
         similarity_score = calculate_similarity(user_profile, profile)
         if similarity_score >= 0.5:
@@ -5426,7 +5487,6 @@ def create_campaign(request):
                 'followers_count': followers_count
             })
 
-    # Limit to 2 suggested users
     suggested_users = suggested_users[:2]
 
     ads = NativeAd.objects.all()
@@ -5444,11 +5504,6 @@ def create_campaign(request):
     }
     
     return render(request, 'main/campaign_form.html', context)
-
-
-
-
-
 
 
 

@@ -254,7 +254,15 @@ class Campaign(models.Model):
     # Add this new field for multiple images
     additional_images = models.JSONField(default=list, blank=True, 
                                        help_text="List of additional image URLs for slideshow")
-    audio = CloudinaryField('audio', folder='campaign_audio', null=True, blank=True)
+    # FIXED: Add resource_type='video' for audio files
+    audio = CloudinaryField(
+        'audio', 
+        folder='campaign_audio', 
+        resource_type='video',  # This tells Cloudinary it's not an image
+        null=True, 
+        blank=True
+    )
+    
     is_active = models.BooleanField(default=True)  # Stops donations when target is met
    
     CATEGORY_CHOICES = (

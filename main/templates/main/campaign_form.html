@@ -1935,237 +1935,236 @@
             </div>
 
             <div class="card-body">
-                <form method="post" enctype="multipart/form-data" id="campaignForm">
-                    {% csrf_token %}
-                    
-                    <!-- Display Error Messages -->
-                    {% if form.errors %}
-                        <div class="error-container">
-                            <strong>Please correct the following errors:</strong>
-                            <ul>
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li>{{ field.label }}: {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Campaign Basics Section -->
-                    <div class="section-label">
-                        <div class="section-icon">
-                            <i class="fas fa-edit"></i>
-                        </div>
-                        <div class="section-label-text">Campaign Basics</div>
-                    </div>
-                    
-                    <!-- Title -->
-                    <div class="form-section">
-                        <label for="id_title" class="form-label">Campaign Title</label>
-                        <input type="text" id="id_title" name="title" class="form-input" 
-                               placeholder="What's your campaign about?" required
-                               value="{{ form.title.value|default:'' }}">
-                        <span class="form-helper">Choose a clear and engaging title that describes your campaign</span>
-                    </div>
-                    
-                    <!-- Content -->
-                    <div class="form-section">
-                        <label for="id_content" class="form-label">Description</label>
-                        <textarea id="id_content" name="content" class="form-textarea" 
-                                  placeholder="Tell people more about your campaign. What's the purpose? Who will benefit?" required>{{ form.content.value|default:'' }}</textarea>
-                        <span class="form-helper">Be specific about your goals and how people can help</span>
-                    </div>
-                    
-                   
-
-<!-- Slideshow Images Section -->
-<div class="form-section">
-    <label class="form-label">Slideshow Images</label>
+        <form method="post" enctype="multipart/form-data" id="campaignForm">
+    {% csrf_token %}
     
-    <!-- Slideshow Info Banner -->
-    <div class="slideshow-info-banner">
-        <i class="fas fa-images"></i>
-        <div>
-            <strong>Engaging Slideshow Feature</strong>
-            <p>Upload multiple images for an automatic slideshow. Campaigns with slideshows get 3x more engagement!</p>
+    <!-- Display Error Messages -->
+    {% if form.errors %}
+        <div class="error-container">
+            <strong>Please correct the following errors:</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
         </div>
+    {% endif %}
+    
+    <!-- Campaign Basics Section -->
+    <div class="section-label">
+        <div class="section-icon">
+            <i class="fas fa-edit"></i>
+        </div>
+        <div class="section-label-text">Campaign Basics</div>
     </div>
     
-    <!-- Main Poster Upload -->
-    <div class="upload-group">
-        <label for="id_poster" class="file-upload">
-            <i class="fas fa-star"></i>
-            <div class="file-upload-text">Click to upload or drag and drop</div>
-            <span class="form-helper">PNG, JPG, GIF or WEBP (max. 5MB) - This will be the first image in slideshow</span>
-        </label>
-        {{ form.poster }}
-        <div id="mainPosterPreview" class="preview-container"></div>
+    <!-- Title -->
+    <div class="form-section">
+        <label for="id_title" class="form-label">Campaign Title</label>
+        <input type="text" id="id_title" name="title" class="form-input" 
+               placeholder="What's your campaign about?" required
+               value="{{ form.title.value|default:'' }}">
+        <span class="form-helper">Choose a clear and engaging title that describes your campaign</span>
     </div>
     
-    <!-- Additional Images Upload -->
-    <div class="upload-group">
-        <label class="upload-label">
-            <i class="fas fa-layer-group"></i> Additional Slideshow Images (Optional)
-        </label>
-        <div class="multi-upload-area" id="multiUploadArea">
-            <label for="id_additional_images" class="multi-upload-label">
-                <i class="fas fa-plus-circle"></i>
-                <div class="upload-text">Click to add more images</div>
-                <span class="form-helper">Select multiple images (Ctrl+Click or drag & drop)</span>
-                <span class="upload-count">Up to 4 additional images</span>
-            </label>
-            <!-- Manually add the multiple attribute here -->
-            <input type="file" name="additional_images" id="id_additional_images" 
-                   multiple accept="image/png, image/jpeg, image/gif, image/webp" 
-                   style="display: none;" 
-                   onchange="previewAdditionalImages(event)">
+    <!-- Content -->
+    <div class="form-section">
+        <label for="id_content" class="form-label">Description</label>
+        <textarea id="id_content" name="content" class="form-textarea" 
+                  placeholder="Tell people more about your campaign. What's the purpose? Who will benefit?" required>{{ form.content.value|default:'' }}</textarea>
+        <span class="form-helper">Be specific about your goals and how people can help</span>
+    </div>
+    
+    <!-- Slideshow Images Section -->
+    <div class="form-section">
+        <label class="form-label">Slideshow Images</label>
+        
+        <!-- Slideshow Info Banner -->
+        <div class="slideshow-info-banner">
+            <i class="fas fa-images"></i>
+            <div>
+                <strong>Engaging Slideshow Feature</strong>
+                <p>Upload multiple images for an automatic slideshow. Campaigns with slideshows get 3x more engagement!</p>
+            </div>
         </div>
         
-        <!-- Image Previews Grid -->
-        <div class="image-previews-grid" id="additionalPreviews"></div>
-    </div>
-</div>
-                    <!-- Audio Upload -->
-                    <div class="form-section">
-                        <label class="form-label">Campaign Sound <span class="optional-badge">Optional</span></label>
-                        
-                        <!-- Audio Restrictions Warning Box -->
-                        <div class="audio-restrictions-warning">
-                            <div class="warning-header">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <strong>Audio Usage Guidelines</strong>
-                            </div>
-                            <div class="restriction-content">
-                                <div class="allowed-list">
-                                    <h4><i class="fas fa-check-circle text-success"></i> Allowed</h4>
-                                    <ul>
-                                        <li>Your original recordings</li>
-                                        <li>Royalty-free music</li>
-                                        <li>Sound effects you created</li>
-                                        <li>Voice recordings</li>
-                                    </ul>
-                                </div>
-                                <div class="restricted-list">
-                                    <h4><i class="fas fa-ban text-danger"></i> Restricted</h4>
-                                    <ul>
-                                        <li>Copyrighted music (pop songs, albums)</li>
-                                        <li>Audio from movies, TV shows, games</li>
-                                        <li>Commercial jingles or advertisements</li>
-                                        <li>Sample packs without proper license</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="warning-footer">
-                                <p><strong>Note:</strong> Violations may result in campaign removal and account suspension.</p>
-                            </div>
-                        </div>
-
-                        <!-- File Upload Area -->
-                    <label for="id_audio" class="file-upload">
-    <i class="fas fa-megaphone"></i> <!-- Changed icon for campaigns -->
-    <div class="file-upload-text">Upload Campaign Audio</div>
-    <span class="form-helper">MP3 or WAV format (max. 10MB). Recommended: 30-120 seconds for best engagement.</span>
-</label>
-<input type="file" id="id_audio" name="audio" 
-       accept="audio/mpeg, audio/wav, audio/ogg" 
-       style="display: none;" onchange="previewAudio(event)">
-                        <div id="audioPreview" class="preview-container"></div>
-                    </div>
-                    
-                    <!-- Settings Section -->
-                    <div class="section-label">
-                        <div class="section-icon">
-                            <i class="fas fa-cog"></i>
-                        </div>
-                        <div class="section-label-text">Campaign Settings</div>
-                    </div>
-                    
-                    <!-- Category and Visibility -->
-                    <div class="two-column">
-                        <div class="form-section">
-                            <label for="id_category" class="form-label">Category</label>
-                            <select id="id_category" name="category" class="form-select">
-                                {% for category in categories %}
-                                <option value="{{ category.0 }}" 
-                                        {% if form.category.value == category.0 %}selected{% endif %}>
-                                    {{ category.1 }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-section">
-                            <label for="id_visibility" class="form-label">Visibility</label>
-                            <select id="id_visibility" name="visibility" class="form-select">
-                                <option value="public" {% if form.visibility.value == 'public' %}selected{% endif %}>Public</option>
-                                <option value="private" {% if form.visibility.value == 'private' %}selected{% endif %}>Private</option>
-                            </select>
-                            <span class="form-helper"><span class="tag-pill">Tip</span> Public campaigns can be discovered by everyone</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Tags -->
-                    <div class="form-section">
-                        <label for="id_tags_input" class="form-label">Tags <span class="optional-badge">Optional</span></label>
-                        <input type="text" id="id_tags_input" name="tags_input" class="form-input" 
-                               placeholder="education, children, school, learning..."
-                               value="{{ form.tags_input.value|default:'' }}">
-                        <span class="form-helper">
-                            <i class="fas fa-tags"></i> 
-                            Add relevant tags separated by commas. This helps people discover your campaign.
-                        </span>
-                        
-                        <!-- Popular tags suggestions -->
-                        <div class="popular-tags">
-                            <div class="popular-tags-title">Popular tags:</div>
-                            <div class="popular-tags-list">
-                                <span class="suggested-tag" data-tag="education">education</span>
-                                <span class="suggested-tag" data-tag="children">children</span>
-                                <span class="suggested-tag" data-tag="community">community</span>
-                                <span class="suggested-tag" data-tag="health">health</span>
-                                <span class="suggested-tag" data-tag="environment">environment</span>
-                                <span class="suggested-tag" data-tag="urgent">urgent</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Duration -->
-                   <!-- Duration section in template -->
-<div class="two-column">
-    <div class="form-section">
-        <label for="id_duration" class="form-label">Duration <span class="optional-badge">Optional</span></label>
-        <input type="number" id="id_duration" name="duration" class="form-input" 
-               min="1" placeholder="e.g., 30"
-               value="{{ form.duration.value|default:'' }}">
+        <!-- Main Poster Upload -->
+        <div class="upload-group">
+            <label for="id_poster" class="file-upload">
+                <i class="fas fa-star"></i>
+                <div class="file-upload-text">Click to upload or drag and drop</div>
+                <span class="form-helper">PNG, JPG, GIF or WEBP (max. 5MB) - This will be the first image in slideshow</span>
+            </label>
+            {{ form.poster }}
+            <div id="mainPosterPreview" class="preview-container"></div>
+        </div>
+        
+        <!-- Additional Images Upload -->
+        <div class="upload-group">
+            <label class="upload-label">
+                <i class="fas fa-layer-group"></i> Additional Slideshow Images (Optional)
+            </label>
+            <div class="multi-upload-area" id="multiUploadArea">
+                <label for="id_additional_images" class="multi-upload-label">
+                    <i class="fas fa-plus-circle"></i>
+                    <div class="upload-text">Click to add more images</div>
+                    <span class="form-helper">Select multiple images (Ctrl+Click or drag & drop)</span>
+                    <span class="upload-count">Up to 4 additional images</span>
+                </label>
+                <!-- Manually add the multiple attribute here -->
+                <input type="file" name="additional_images" id="id_additional_images" 
+                       multiple accept="image/png, image/jpeg, image/gif, image/webp" 
+                       style="display: none;" 
+                       onchange="previewAdditionalImages(event)">
+            </div>
+            
+            <!-- Image Previews Grid -->
+            <div class="image-previews-grid" id="additionalPreviews"></div>
+        </div>
     </div>
     
+    <!-- Audio Upload -->
     <div class="form-section">
-        <label for="id_duration_unit" class="form-label">Unit <span class="optional-badge">Optional</span></label>
-        <select id="id_duration_unit" name="duration_unit" class="form-select">
-            <option value="">Select unit (optional)</option>
-            <option value="days" {% if form.duration_unit.value == 'days' %}selected{% endif %}>Days</option>
-            <option value="minutes" {% if form.duration_unit.value == 'minutes' %}selected{% endif %}>Minutes</option>
-        </select>
+        <label class="form-label">Campaign Sound <span class="optional-badge">Optional</span></label>
+        
+        <!-- Audio Restrictions Warning Box -->
+        <div class="audio-restrictions-warning">
+            <div class="warning-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Audio Usage Guidelines</strong>
+            </div>
+            <div class="restriction-content">
+                <div class="allowed-list">
+                    <h4><i class="fas fa-check-circle text-success"></i> Allowed</h4>
+                    <ul>
+                        <li>Your original recordings</li>
+                        <li>Royalty-free music</li>
+                        <li>Sound effects you created</li>
+                        <li>Voice recordings</li>
+                    </ul>
+                </div>
+                <div class="restricted-list">
+                    <h4><i class="fas fa-ban text-danger"></i> Restricted</h4>
+                    <ul>
+                        <li>Copyrighted music (pop songs, albums)</li>
+                        <li>Audio from movies, TV shows, games</li>
+                        <li>Commercial jingles or advertisements</li>
+                        <li>Sample packs without proper license</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="warning-footer">
+                <p><strong>Note:</strong> Violations may result in campaign removal and account suspension.</p>
+            </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="upload-group">
+            <label for="id_audio" class="file-upload">
+                <i class="fas fa-megaphone"></i>
+                <div class="file-upload-text">Upload Campaign Audio</div>
+                <span class="form-helper">MP3, WAV, or OGG format (max. 10MB). Recommended: 30-120 seconds for best engagement.</span>
+            </label>
+            {{ form.audio }}
+            <div id="audioPreview" class="preview-container"></div>
+        </div>
     </div>
-</div>
-                    <!-- Funding Goal -->
-                    <div class="form-section">
-                        <label for="id_funding_goal" class="form-label">Funding Goal <span class="optional-badge">Optional</span></label>
-                        <input type="number" id="id_funding_goal" name="funding_goal" class="form-input" 
-                               min="0" step="0.01" placeholder="0.00"
-                               value="{{ form.funding_goal.value|default:'' }}">
-                        <span class="form-helper">Set a fundraising target if needed</span>
-                    </div>
-                    
-                    <!-- Hidden field to store Canva poster data -->
-                    <input type="hidden" id="canva_poster_data" name="canva_poster_data">
-                    
-                    <!-- Submit Button -->
-                    <button type="submit" class="submit-button">
-                        <i class="fas fa-paper-plane"></i> Create Campaign
-                    </button>
-                </form>
+    
+    <!-- Settings Section -->
+    <div class="section-label">
+        <div class="section-icon">
+            <i class="fas fa-cog"></i>
+        </div>
+        <div class="section-label-text">Campaign Settings</div>
+    </div>
+    
+    <!-- Category and Visibility -->
+    <div class="two-column">
+        <div class="form-section">
+            <label for="id_category" class="form-label">Category</label>
+            <select id="id_category" name="category" class="form-select">
+                {% for category in categories %}
+                <option value="{{ category.0 }}" 
+                        {% if form.category.value == category.0 %}selected{% endif %}>
+                    {{ category.1 }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-section">
+            <label for="id_visibility" class="form-label">Visibility</label>
+            <select id="id_visibility" name="visibility" class="form-select">
+                <option value="public" {% if form.visibility.value == 'public' %}selected{% endif %}>Public</option>
+                <option value="private" {% if form.visibility.value == 'private' %}selected{% endif %}>Private</option>
+            </select>
+            <span class="form-helper"><span class="tag-pill">Tip</span> Public campaigns can be discovered by everyone</span>
+        </div>
+    </div>
+    
+    <!-- Tags -->
+    <div class="form-section">
+        <label for="id_tags_input" class="form-label">Tags <span class="optional-badge">Optional</span></label>
+        <input type="text" id="id_tags_input" name="tags_input" class="form-input" 
+               placeholder="education, children, school, learning..."
+               value="{{ form.tags_input.value|default:'' }}">
+        <span class="form-helper">
+            <i class="fas fa-tags"></i> 
+            Add relevant tags separated by commas. This helps people discover your campaign.
+        </span>
+        
+        <!-- Popular tags suggestions -->
+        <div class="popular-tags">
+            <div class="popular-tags-title">Popular tags:</div>
+            <div class="popular-tags-list">
+                <span class="suggested-tag" data-tag="education">education</span>
+                <span class="suggested-tag" data-tag="children">children</span>
+                <span class="suggested-tag" data-tag="community">community</span>
+                <span class="suggested-tag" data-tag="health">health</span>
+                <span class="suggested-tag" data-tag="environment">environment</span>
+                <span class="suggested-tag" data-tag="urgent">urgent</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Duration -->
+    <div class="two-column">
+        <div class="form-section">
+            <label for="id_duration" class="form-label">Duration <span class="optional-badge">Optional</span></label>
+            <input type="number" id="id_duration" name="duration" class="form-input" 
+                   min="1" placeholder="e.g., 30"
+                   value="{{ form.duration.value|default:'' }}">
+        </div>
+        
+        <div class="form-section">
+            <label for="id_duration_unit" class="form-label">Unit <span class="optional-badge">Optional</span></label>
+            <select id="id_duration_unit" name="duration_unit" class="form-select">
+                <option value="">Select unit (optional)</option>
+                <option value="days" {% if form.duration_unit.value == 'days' %}selected{% endif %}>Days</option>
+                <option value="minutes" {% if form.duration_unit.value == 'minutes' %}selected{% endif %}>Minutes</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Funding Goal -->
+    <div class="form-section">
+        <label for="id_funding_goal" class="form-label">Funding Goal <span class="optional-badge">Optional</span></label>
+        <input type="number" id="id_funding_goal" name="funding_goal" class="form-input" 
+               min="0" step="0.01" placeholder="0.00"
+               value="{{ form.funding_goal.value|default:'' }}">
+        <span class="form-helper">Set a fundraising target if needed</span>
+    </div>
+    
+    <!-- Hidden field to store Canva poster data -->
+    <input type="hidden" id="canva_poster_data" name="canva_poster_data">
+    
+    <!-- Submit Button -->
+    <button type="submit" class="submit-button">
+        <i class="fas fa-paper-plane"></i> Create Campaign
+    </button>
+</form>
             </div>
         </div>
     </div>
@@ -2693,60 +2692,98 @@ setTimeout(function() {
     }
 }, 5000);
     </script>
-
-
-    <script type="text/javascript">
-        // SIMPLEST SOLUTION - Just validate file type and size
+<script>
+// Audio preview and validation
 function previewAudio(event) {
     const fileInput = event.target;
     const previewContainer = document.getElementById('audioPreview');
     
+    // Clear previous preview
     previewContainer.innerHTML = '';
     
     const file = fileInput.files[0];
     if (!file) return;
     
-    // Accept common audio formats
-    const validTypes = [
+    // File size validation (10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+        previewContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                File too large (${(file.size/(1024*1024)).toFixed(1)}MB). Maximum size is 10MB.
+            </div>
+        `;
+        fileInput.value = '';
+        return;
+    }
+    
+    // File type validation - check both MIME type and extension
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+    const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+    
+    // Accept common MIME types
+    const validMimeTypes = [
         'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
         'audio/ogg', 'audio/oga', 'audio/x-m4a', 'audio/aac'
     ];
     
-    // Also check by extension for mobile compatibility
-    const ext = file.name.toLowerCase().split('.').pop();
-    const validExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
-    
-    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+    if (!isValidExtension && !validMimeTypes.includes(file.type)) {
         previewContainer.innerHTML = `
-            <p class="form-helper" style="color:#f02849;">
-                Unsupported file type. Please use MP3, WAV, or OGG.
-            </p>
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                Unsupported file format. Please use MP3, WAV, OGG, or M4A files.
+            </div>
         `;
         fileInput.value = '';
         return;
     }
     
-    // Check size (increase to 10MB for campaigns)
-    if (file.size > 10 * 1024 * 1024) {
-        previewContainer.innerHTML = `
-            <p class="form-helper" style="color:#f02849;">
-                File is too large (${(file.size/(1024*1024)).toFixed(1)}MB). Maximum is 10MB.
-            </p>
-        `;
-        fileInput.value = '';
-        return;
-    }
+    // Create audio preview
+    const audioURL = URL.createObjectURL(file);
     
-    // Play full audio
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    audio.style.width = '100%';
-    audio.style.marginTop = '10px';
-    audio.src = URL.createObjectURL(file);
+    // Create audio element
+    const audioElement = document.createElement('audio');
+    audioElement.controls = true;
+    audioElement.style.width = '100%';
+    audioElement.style.marginTop = '15px';
+    audioElement.style.borderRadius = '8px';
+    audioElement.src = audioURL;
     
-    previewContainer.appendChild(audio);
+    // Create info card
+    const infoCard = document.createElement('div');
+    infoCard.className = 'audio-info-card';
+    infoCard.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <i class="fas fa-check-circle" style="color: #28a745; font-size: 18px;"></i>
+            <div>
+                <strong style="display: block; color: #333;">${file.name}</strong>
+                <span style="font-size: 12px; color: #666;">
+                    ${(file.size/(1024*1024)).toFixed(2)} MB • ${file.type || 'Audio file'}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    // Add to preview container
+    previewContainer.appendChild(infoCard);
+    previewContainer.appendChild(audioElement);
+    
+    // Clean up URL when audio element is removed
+    audioElement.onunload = function() {
+        URL.revokeObjectURL(audioURL);
+    };
 }
-    </script>
+
+// Also add function to remove audio
+function removeAudio() {
+    const audioInput = document.getElementById('id_audio');
+    const previewContainer = document.getElementById('audioPreview');
+    
+    audioInput.value = '';
+    previewContainer.innerHTML = '';
+}
+</script>
 </body>
 </html>
 {% endblock content %}
