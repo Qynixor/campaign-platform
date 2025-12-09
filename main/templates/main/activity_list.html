@@ -2138,19 +2138,27 @@ function switchColor() {
 class CampaignEnhancer {
     constructor(config = {}) {
         this.config = {
-            enableParticles: false, // Disabled by default to avoid conflicts
-            particleCount: 15,
+            enableParticles: false,
             enableAnimations: true,
             animationIntensity: 'moderate',
-            brandColors: null,
             respectReducedMotion: true,
             debug: false,
+            magicalMargins: true, // Enable magical top/bottom margins
+            marginColors: [
+                '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
+                '#118AB2', '#EF476F', '#9D4EDD', '#FF9E00'
+            ],
+            marginIntensity: 0.6,
+            marginHeight: '8px', // Height of magical margins
+            marginSpeed: 'slow', // Speed of color transitions
+            enableShimmer: true, // Add subtle shimmer particles
             ...config
         };
         
-        this.mediaContainers = new WeakMap();
-        this.observer = null;
         this.isInitialized = false;
+        this.marginAnimationId = null;
+        this.colorIndex = 0;
+        this.colorProgress = 0;
     }
 
     init() {
@@ -2170,412 +2178,356 @@ class CampaignEnhancer {
 
     setup() {
         this.setupAccessibility();
-        this.setupMutationObserver();
-        this.enhanceExistingContent();
         
-        // Only create particles if explicitly enabled
-        if (this.config.enableParticles && this.config.particleCount > 0) {
-            this.createSubtleBackground();
+        // Add magical margin effects
+        if (this.config.magicalMargins) {
+            this.createMagicalMargins();
+            this.startMarginAnimation();
         }
+    }
+
+    // Create magical top and bottom margins
+    createMagicalMargins() {
+        // Remove any existing margins first
+        document.querySelectorAll('.magical-margin').forEach(el => el.remove());
+        
+        // Create top margin
+        const topMargin = document.createElement('div');
+        topMargin.className = 'magical-margin magical-margin-top';
+        topMargin.setAttribute('aria-hidden', 'true');
+        
+        // Create bottom margin
+        const bottomMargin = document.createElement('div');
+        bottomMargin.className = 'magical-margin magical-margin-bottom';
+        bottomMargin.setAttribute('aria-hidden', 'true');
+        
+        // Add shimmer effects if enabled
+        if (this.config.enableShimmer) {
+            this.addShimmerEffects(topMargin);
+            this.addShimmerEffects(bottomMargin);
+        }
+        
+        document.body.appendChild(topMargin);
+        document.body.appendChild(bottomMargin);
+        
+        // Add event listeners for hover effects
+        this.addMarginHoverEffects();
+    }
+
+    // Add shimmer particle effects to margins
+    addShimmerEffects(margin) {
+        if (!this.config.enableShimmer) return;
+        
+        const shimmerCount = 8; // Fixed number of shimmer particles
+        
+        for (let i = 0; i < shimmerCount; i++) {
+            const shimmer = document.createElement('div');
+            shimmer.className = 'magical-shimmer';
+            
+            const position = margin.classList.contains('magical-margin-top') ? 'top' : 'bottom';
+            const duration = 2 + Math.random() * 2;
+            const delay = Math.random() * 5;
+            
+            Object.assign(shimmer.style, {
+                position: 'absolute',
+                width: '2px',
+                height: '2px',
+                background: 'currentColor',
+                borderRadius: '50%',
+                opacity: '0',
+                animation: `shimmer-sparkle ${duration}s ease-in-out infinite`,
+                animationDelay: `${delay}s`,
+                left: `${(i / shimmerCount) * 100}%`,
+                [position]: '4px'
+            });
+            
+            margin.appendChild(shimmer);
+        }
+    }
+
+    // Add hover effects to margins
+    addMarginHoverEffects() {
+        const margins = document.querySelectorAll('.magical-margin');
+        
+        margins.forEach(margin => {
+            margin.addEventListener('mouseenter', () => {
+                margin.style.opacity = '1';
+                margin.style.height = '12px';
+            });
+            
+            margin.addEventListener('mouseleave', () => {
+                margin.style.opacity = '0.9';
+                margin.style.height = this.config.marginHeight;
+            });
+        });
+    }
+
+    // Animate the magical margins
+    startMarginAnimation() {
+        if (!this.config.enableAnimations) return;
+
+        const animate = () => {
+            const topMargin = document.querySelector('.magical-margin-top');
+            const bottomMargin = document.querySelector('.magical-margin-bottom');
+            
+            if (!topMargin || !bottomMargin) {
+                this.marginAnimationId = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Calculate current and next colors
+            const currentColor = this.config.marginColors[this.colorIndex];
+            const nextColor = this.config.marginColors[(this.colorIndex + 1) % this.config.marginColors.length];
+            
+            // Interpolate between colors
+            const r1 = parseInt(currentColor.slice(1, 3), 16);
+            const g1 = parseInt(currentColor.slice(3, 5), 16);
+            const b1 = parseInt(currentColor.slice(5, 7), 16);
+            
+            const r2 = parseInt(nextColor.slice(1, 3), 16);
+            const g2 = parseInt(nextColor.slice(3, 5), 16);
+            const b2 = parseInt(nextColor.slice(5, 7), 16);
+            
+            const r = Math.floor(r1 + (r2 - r1) * this.colorProgress);
+            const g = Math.floor(g1 + (g2 - g1) * this.colorProgress);
+            const b = Math.floor(b1 + (b2 - b1) * this.colorProgress);
+            
+            const interpolatedColor = `rgb(${r}, ${g}, ${b})`;
+            
+            // Create beautiful gradient for margins
+            const gradient = this.createMagicalGradient(interpolatedColor);
+            
+            // Apply to margins
+            topMargin.style.background = gradient;
+            bottomMargin.style.background = gradient;
+            
+            // Update shimmer colors
+            document.querySelectorAll('.magical-shimmer').forEach(shimmer => {
+                shimmer.style.color = interpolatedColor;
+            });
+            
+            // Update box shadow for glow effect
+            const glowOpacity = Math.floor(this.config.marginIntensity * 50).toString(16).padStart(2, '0');
+            topMargin.style.boxShadow = `0 4px 20px ${interpolatedColor}${glowOpacity}`;
+            bottomMargin.style.boxShadow = `0 -4px 20px ${interpolatedColor}${glowOpacity}`;
+            
+            // Update progress based on speed
+            const speedMap = {
+                'slow': 0.002,
+                'medium': 0.005,
+                'fast': 0.01
+            };
+            this.colorProgress += speedMap[this.config.marginSpeed] || 0.002;
+            
+            // Move to next color if progress complete
+            if (this.colorProgress >= 1) {
+                this.colorProgress = 0;
+                this.colorIndex = (this.colorIndex + 1) % this.config.marginColors.length;
+            }
+            
+            this.marginAnimationId = requestAnimationFrame(animate);
+        };
+        
+        animate();
+    }
+
+    // Create magical gradient for margins
+    createMagicalGradient(color) {
+        const alpha = Math.floor(this.config.marginIntensity * 255).toString(16).padStart(2, '0');
+        const alphaLight = Math.floor(this.config.marginIntensity * 180).toString(16).padStart(2, '0');
+        const alphaDark = Math.floor(this.config.marginIntensity * 100).toString(16).padStart(2, '0');
+        
+        return `linear-gradient(90deg,
+            transparent 0%,
+            ${color}${alphaDark} 20%,
+            ${color}${alphaLight} 40%,
+            ${color}${alpha} 50%,
+            ${color}${alphaLight} 60%,
+            ${color}${alphaDark} 80%,
+            transparent 100%
+        )`;
     }
 
     setupAccessibility() {
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (prefersReducedMotion && this.config.respectReducedMotion) {
             this.config.enableAnimations = false;
-            this.config.enableParticles = false;
-        }
-    }
-
-    setupMutationObserver() {
-        // Watch for dynamically loaded content
-        this.observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1) { // ELEMENT_NODE
-                            this.enhanceNewContent(node);
-                        }
-                    });
-                }
-            });
-        });
-
-        this.observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
-
-    enhanceExistingContent() {
-        // Enhance existing videos
-        document.querySelectorAll('video.activity-media').forEach(video => {
-            this.enhanceCampaignVideo(video);
-        });
-
-        // Enhance existing images
-        document.querySelectorAll('img.activity-media').forEach(img => {
-            this.enhanceCampaignImage(img);
-        });
-
-        // Enhance existing campaign links
-        document.querySelectorAll('a.campaign-link, a.document-link').forEach(link => {
-            this.enhanceCampaignLink(link);
-        });
-    }
-
-    enhanceNewContent(container) {
-        if (!(container instanceof Element)) return;
-        
-        // Check for videos
-        container.querySelectorAll('video.activity-media').forEach(video => {
-            if (!this.mediaContainers.has(video)) {
-                this.enhanceCampaignVideo(video);
-            }
-        });
-
-        // Check for images
-        container.querySelectorAll('img.activity-media').forEach(img => {
-            if (!this.mediaContainers.has(img)) {
-                this.enhanceCampaignImage(img);
-            }
-        });
-
-        // Check for links
-        container.querySelectorAll('a.campaign-link, a.document-link').forEach(link => {
-            if (!link.classList.contains('campaign-link-enhanced')) {
-                this.enhanceCampaignLink(link);
-            }
-        });
-    }
-
-    createSubtleBackground() {
-        // Skip if already exists
-        if (document.querySelector('.campaign-background-particles')) {
-            return;
-        }
-
-        // Don't create on mobile for performance
-        if (window.innerWidth < 768) {
-            if (this.config.debug) console.log('Skipping particles on mobile');
-            return;
-        }
-
-        const container = document.createElement('div');
-        container.className = 'campaign-background-particles';
-        container.setAttribute('aria-hidden', 'true');
-        
-        // Add particles
-        for (let i = 0; i < this.config.particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'campaign-particle';
             
-            const size = this.config.animationIntensity === 'high' ? 
-                Math.random() * 3 + 1 : Math.random() * 2 + 0.5;
-            
-            Object.assign(particle.style, {
-                width: `${size}px`,
-                height: `${size}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100 + 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${Math.random() * 10 + 15}s`,
-                backgroundColor: this.config.brandColors?.primary || '#4f46e5',
-                opacity: '0.1'
-            });
-            
-            container.appendChild(particle);
-        }
-        
-        document.body.appendChild(container);
-    }
-
-    enhanceCampaignVideo(video) {
-        // Skip if already enhanced
-        if (video.classList.contains('campaign-media-enhanced') || 
-            this.mediaContainers.has(video)) {
-            return;
-        }
-
-        if (!this.config.enableAnimations) {
-            video.classList.add('campaign-media-enhanced');
-            return;
-        }
-
-        try {
-            const container = document.createElement('div');
-            container.className = 'campaign-media-container campaign-video-container';
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'campaign-media-wrapper';
-            
-            // Store reference
-            this.mediaContainers.set(video, { container, wrapper });
-            
-            // Wrap video
-            video.parentNode.insertBefore(container, video);
-            container.appendChild(wrapper);
-            wrapper.appendChild(video);
-            
-            // Add play button overlay if video has controls
-            if (video.controls && !video.querySelector('.campaign-video-overlay')) {
-                this.addVideoPlayOverlay(video, wrapper);
+            // Stop margin animation if running
+            if (this.marginAnimationId) {
+                cancelAnimationFrame(this.marginAnimationId);
+                this.marginAnimationId = null;
             }
             
-            video.classList.add('campaign-media-enhanced');
-            
-            if (this.config.debug) console.log('Enhanced video:', video);
-        } catch (error) {
-            if (this.config.debug) console.error('Error enhancing video:', error);
-        }
-    }
-
-    enhanceCampaignImage(img) {
-        // Skip if already enhanced
-        if (img.classList.contains('campaign-media-enhanced') || 
-            this.mediaContainers.has(img)) {
-            return;
-        }
-
-        if (!this.config.enableAnimations) {
-            img.classList.add('campaign-media-enhanced');
-            return;
-        }
-
-        try {
-            // Don't wrap images on mobile to avoid layout issues
-            if (window.innerWidth < 768) {
-                img.classList.add('campaign-media-enhanced');
-                return;
-            }
-
-            const container = document.createElement('div');
-            container.className = 'campaign-media-container campaign-image-container';
-            
-            const wrapper = document.createElement('div');
-            wrapper.className = 'campaign-media-wrapper';
-            
-            // Store reference
-            this.mediaContainers.set(img, { container, wrapper });
-            
-            // Wrap image
-            img.parentNode.insertBefore(container, img);
-            container.appendChild(wrapper);
-            wrapper.appendChild(img);
-            
-            // Add loading state
-            if (!img.complete) {
-                wrapper.classList.add('campaign-media-loading');
-                img.addEventListener('load', () => {
-                    wrapper.classList.remove('campaign-media-loading');
-                    wrapper.classList.add('campaign-media-loaded');
-                });
-            }
-            
-            img.classList.add('campaign-media-enhanced');
-            
-            if (this.config.debug) console.log('Enhanced image:', img);
-        } catch (error) {
-            if (this.config.debug) console.error('Error enhancing image:', error);
-        }
-    }
-
-    addVideoPlayOverlay(video, container) {
-        const overlay = document.createElement('button');
-        overlay.className = 'campaign-video-overlay';
-        overlay.setAttribute('aria-label', 'Play video');
-        overlay.setAttribute('type', 'button');
-        overlay.innerHTML = `
-            <svg width="64" height="64" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="30" fill="rgba(0,0,0,0.7)"/>
-                <path d="M26 20L44 32L26 44Z" fill="white"/>
-            </svg>
-        `;
-        
-        overlay.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (video.paused) {
-                video.play();
-            } else {
-                video.pause();
-            }
-        });
-        
-        video.addEventListener('play', () => {
-            overlay.style.opacity = '0';
-            overlay.style.pointerEvents = 'none';
-        });
-        
-        video.addEventListener('pause', () => {
-            overlay.style.opacity = '1';
-            overlay.style.pointerEvents = 'auto';
-        });
-        
-        container.appendChild(overlay);
-    }
-
-    enhanceCampaignLink(link) {
-        if (link.classList.contains('campaign-link-enhanced')) {
-            return;
-        }
-
-        link.classList.add('campaign-link-enhanced');
-        
-        if (this.config.enableAnimations) {
-            // Use CSS transitions instead of inline styles
-            link.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-            
-            link.addEventListener('mouseenter', () => {
-                link.style.transform = 'translateY(-2px)';
-                link.style.boxShadow = '0 6px 20px rgba(79, 70, 229, 0.4)';
-            });
-            
-            link.addEventListener('mouseleave', () => {
-                link.style.transform = 'translateY(0)';
-                link.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.3)';
+            // Set static color for margins
+            const margins = document.querySelectorAll('.magical-margin');
+            margins.forEach(margin => {
+                margin.style.animation = 'none';
+                margin.style.background = `linear-gradient(90deg, transparent, ${this.config.marginColors[0]}40, transparent)`;
             });
         }
-        
-        // Add click tracking
-        link.addEventListener('click', (e) => {
-            this.trackCampaignClick(link);
-        });
-        
-        if (this.config.debug) console.log('Enhanced link:', link);
     }
 
-    trackCampaignClick(link) {
-        // Simple tracking - you can replace with your analytics
-        const eventData = {
-            type: 'campaign_click',
-            href: link.href,
-            text: link.textContent.trim(),
-            timestamp: new Date().toISOString()
-        };
-        
-        if (this.config.debug) {
-            console.log('Campaign click tracked:', eventData);
+    // Public method to update margin colors
+    updateMarginColors(newColors) {
+        if (Array.isArray(newColors) && newColors.length > 0) {
+            this.config.marginColors = newColors;
+            this.colorIndex = 0;
+            this.colorProgress = 0;
         }
-        
-        // Dispatch custom event for other scripts to listen to
-        const event = new CustomEvent('campaign:click', {
-            detail: eventData,
-            bubbles: true
-        });
-        link.dispatchEvent(event);
     }
 
-    // Public method to manually enhance new content
-    enhanceContent(container = document.body) {
-        this.enhanceNewContent(container);
+    // Public method to toggle magical margins
+    toggleMagicalMargins(enabled) {
+        this.config.magicalMargins = enabled;
+        
+        if (enabled) {
+            this.createMagicalMargins();
+            this.startMarginAnimation();
+        } else {
+            // Remove margins
+            document.querySelectorAll('.magical-margin').forEach(el => el.remove());
+            
+            // Stop animation
+            if (this.marginAnimationId) {
+                cancelAnimationFrame(this.marginAnimationId);
+                this.marginAnimationId = null;
+            }
+        }
+    }
+
+    // Public method to change margin intensity
+    setMarginIntensity(intensity) {
+        if (intensity >= 0 && intensity <= 1) {
+            this.config.marginIntensity = intensity;
+        }
     }
 
     // Cleanup method
     cleanup() {
-        if (this.observer) {
-            this.observer.disconnect();
+        // Stop margin animation
+        if (this.marginAnimationId) {
+            cancelAnimationFrame(this.marginAnimationId);
+            this.marginAnimationId = null;
         }
         
-        document.querySelectorAll('.campaign-background-particles').forEach(el => el.remove());
+        // Remove magical margins
+        document.querySelectorAll('.magical-margin').forEach(el => el.remove());
         
-        // Unwrap enhanced media
-        this.mediaContainers.forEach(({ container, wrapper }, media) => {
-            if (container && container.parentNode && wrapper && media.parentNode === wrapper) {
-                container.parentNode.insertBefore(media, container);
-                container.remove();
-                media.classList.remove('campaign-media-enhanced');
-            }
-        });
-        
-        this.mediaContainers = new WeakMap();
         this.isInitialized = false;
         
         if (this.config.debug) console.log('CampaignEnhancer cleaned up');
     }
 }
 
-// Add minimal CSS for campaign enhancements
+// Add CSS for magical margin effects
 if (!document.querySelector('#campaign-enhancer-styles')) {
     const style = document.createElement('style');
     style.id = 'campaign-enhancer-styles';
     style.textContent = `
-        .campaign-background-particles {
+        /* MAGICAL TOP AND BOTTOM MARGIN EFFECTS */
+        
+        .magical-margin {
             position: fixed;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            z-index: 9998;
+            pointer-events: auto;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .magical-margin-top {
+            top: 0;
+        }
+        
+        .magical-margin-bottom {
+            bottom: 0;
+        }
+        
+        /* Shimmer particle animations */
+        @keyframes shimmer-sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: translateY(0);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateY(-4px);
+            }
+        }
+        
+        /* Gradient overlay for extra magic */
+        .magical-margin::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.2) 25%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 100%
+            );
             pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
         }
         
-        .campaign-particle {
-            position: absolute;
-            border-radius: 50%;
-            background: #4f46e5;
-            opacity: 0.1;
-            animation: campaign-particle-float 20s linear infinite;
+        /* Hover effects */
+        .magical-margin:hover {
+            opacity: 1 !important;
+            height: 12px !important;
         }
         
-        @keyframes campaign-particle-float {
-            0% { transform: translateY(0) translateX(0); opacity: 0.1; }
-            50% { opacity: 0.15; }
-            100% { transform: translateY(-100vh) translateX(20px); opacity: 0.1; }
+        .magical-margin-top:hover {
+            box-shadow: 0 8px 30px var(--current-color) !important;
         }
         
-        .campaign-media-container {
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 8px 0;
+        .magical-margin-bottom:hover {
+            box-shadow: 0 -8px 30px var(--current-color) !important;
         }
         
-        .campaign-media-wrapper {
-            position: relative;
-            display: block;
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .magical-margin {
+                height: 6px;
+            }
+            
+            .magical-margin:hover {
+                height: 8px !important;
+            }
         }
         
-        .campaign-video-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-            z-index: 10;
-            padding: 0;
+        @media (max-width: 480px) {
+            .magical-margin {
+                height: 4px;
+            }
+            
+            .magical-margin:hover {
+                height: 6px !important;
+            }
         }
         
-        .campaign-video-overlay svg {
-            width: 48px;
-            height: 48px;
-            display: block;
-        }
-        
-        .campaign-link-enhanced {
-            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-        }
-        
+        /* Reduced motion support */
         @media (prefers-reduced-motion: reduce) {
-            .campaign-particle,
-            .campaign-video-overlay,
-            .campaign-link-enhanced {
+            .magical-margin {
                 animation: none !important;
                 transition: none !important;
             }
-        }
-        
-        @media (max-width: 767px) {
-            .campaign-background-particles {
+            
+            .magical-shimmer {
                 display: none;
             }
-            
-            .campaign-video-overlay svg {
-                width: 40px;
-                height: 40px;
+        }
+        
+        /* Print styles - hide margins when printing */
+        @media print {
+            .magical-margin {
+                display: none !important;
             }
         }
     `;
@@ -2584,28 +2536,34 @@ if (!document.querySelector('#campaign-enhancer-styles')) {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize with safe defaults
     window.campaignEnhancer = new CampaignEnhancer({
-        enableParticles: false, // Disabled to avoid conflicts with your layout
+        enableParticles: false,
         enableAnimations: true,
         animationIntensity: 'moderate',
+        magicalMargins: true, // This is what creates the magical top/bottom margins
+        marginIntensity: 0.6, // How intense the color effect is (0-1)
+        marginHeight: '8px', // Height of the magical borders
+        marginSpeed: 'slow', // Speed of color transitions: 'slow', 'medium', 'fast'
+        enableShimmer: true, // Adds subtle sparkling particles
         respectReducedMotion: true,
-        debug: false // Set to true for debugging
+        debug: false // Set to true to see console logs
     });
     
     window.campaignEnhancer.init();
     
-    // Make enhanceContent available globally
-    window.enhanceCampaignContent = () => window.campaignEnhancer.enhanceContent();
+    // Make control methods available globally
+    window.toggleMagicalMargins = (enabled) => window.campaignEnhancer.toggleMagicalMargins(enabled);
+    window.updateMarginColors = (colors) => window.campaignEnhancer.updateMarginColors(colors);
+    window.setMarginIntensity = (intensity) => window.campaignEnhancer.setMarginIntensity(intensity);
 });
 
-// Re-initialize on AJAX content load (for SPAs)
-if (typeof window.jQuery !== 'undefined') {
-    jQuery(document).ajaxComplete(() => {
-        if (window.campaignEnhancer) {
-            window.campaignEnhancer.enhanceContent();
+// Also initialize if script is loaded after DOM is ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(() => {
+        if (window.campaignEnhancer && !window.campaignEnhancer.isInitialized) {
+            window.campaignEnhancer.init();
         }
-    });
+    }, 100);
 }
 </script>
 
