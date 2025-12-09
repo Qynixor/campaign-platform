@@ -1134,12 +1134,13 @@ class Activity(models.Model):
     content = models.TextField(default='content')
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    # ✅ Cloudinary version of file upload
+    # ✅ Cloudinary version of file upload - Configured for both images and videos
     file = CloudinaryField(
         'file',
         folder='activity_files',
         null=True,
-        blank=True
+        blank=True,
+        resource_type='auto'  # This allows both images and videos
     )
 
     def save(self, *args, **kwargs):
@@ -1153,12 +1154,7 @@ class Activity(models.Model):
                 message_follower = f"An activity was added to a campaign you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
                 Notification.objects.create(user=follower, message=message_follower)
 
-
         super().save(*args, **kwargs)
-
-
-
-
 
 
 
