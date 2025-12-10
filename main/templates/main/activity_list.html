@@ -1051,6 +1051,52 @@ body.dark-mode .document-link {
         background-color: #121212 !important;
     }
 }
+
+/* Comments Title Styles */
+.comments-header {
+    margin: 20px 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.comments-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.comments-title i {
+    color: #666;
+    font-size: 14px;
+}
+
+.comments-count {
+    font-size: 14px;
+    font-weight: 400;
+    color: #666;
+    margin-left: 4px;
+}
+
+/* Dark mode */
+.dark-mode .comments-header {
+    border-bottom-color: #333;
+}
+
+.dark-mode .comments-title {
+    color: #f0f0f0;
+}
+
+.dark-mode .comments-title i {
+    color: #b0b0b0;
+}
+
+.dark-mode .comments-count {
+    color: #888;
+}
 </style>
 
 <div class="sub">
@@ -1178,6 +1224,8 @@ body.dark-mode .document-link {
                         </div>
                     </div>
                 </div>
+
+
             </li>
         {% endfor %}
     </ul>
@@ -1195,26 +1243,31 @@ body.dark-mode .document-link {
 // Global comment system functions
 window.commentSystem = {
     init: function() {
-        document.querySelectorAll('.activity-interactions').forEach(section => {
-            const activityId = section.closest('.activity-item').querySelector('.love-icon').dataset.activityId;
-            const commentSection = document.createElement('div');
-            commentSection.className = 'comment-section';
-            commentSection.dataset.activityId = activityId;
-            commentSection.innerHTML = `
-                <div class="comments-container" id="comments-container-${activityId}">
-                    <div class="no-comments">Loading comments...</div>
-                </div>
-                <div class="comment-form">
-                    <textarea class="comment-input" placeholder="Add a comment..." rows="1"></textarea>
-                    <span class="comment-submit-btn">Post</span>
-                </div>
-            `;
-            
-            section.parentNode.insertBefore(commentSection, section.nextSibling);
-            this.initCommentSystem(activityId);
-        });
-    },
-
+    document.querySelectorAll('.activity-interactions').forEach(section => {
+        const activityId = section.closest('.activity-item').querySelector('.love-icon').dataset.activityId;
+        const commentSection = document.createElement('div');
+        commentSection.className = 'comment-section';
+        commentSection.dataset.activityId = activityId;
+        commentSection.innerHTML = `
+            <div class="comments-header">
+                <h4 class="comments-title">
+                    <i class="far fa-comments"></i> Comments
+                    
+                </h4>
+            </div>
+            <div class="comments-container" id="comments-container-${activityId}">
+                <div class="no-comments">Loading comments...</div>
+            </div>
+            <div class="comment-form">
+                <textarea class="comment-input" placeholder="Add a comment..." rows="1"></textarea>
+                <span class="comment-submit-btn">Post</span>
+            </div>
+        `;
+        
+        section.parentNode.insertBefore(commentSection, section.nextSibling);
+        this.initCommentSystem(activityId);
+    });
+},
     initCommentSystem: function(activityId) {
         const container = document.querySelector(`#comments-container-${activityId}`);
         const commentInput = document.querySelector(`[data-activity-id="${activityId}"] .comment-input`);
