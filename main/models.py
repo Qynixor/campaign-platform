@@ -223,6 +223,129 @@ def default_content():
 
 
 
+
+# models.py
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class UserSubscription(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    
+    # Flutterwave fields
+    flutterwave_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    flutterwave_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    flutterwave_transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Payment provider tracking
+    payment_provider = models.CharField(
+        max_length=20, 
+        choices=[
+            ('flutterwave', 'Flutterwave'),
+            ('none', 'None')
+        ],
+        default='none'
+    )
+    
+    status = models.CharField(max_length=50, default='inactive')
+    campaign_limit = models.PositiveIntegerField(default=2)
+    
+    def has_active_subscription(self):
+        return self.status == 'active'
+    
+    def get_campaign_count(self):
+        from main.models import Campaign
+        try:
+            return Campaign.objects.filter(user=self.user.profile).count()
+        except AttributeError:
+            # Fallback in case profile doesn't exist
+            return Campaign.objects.filter(user__user=self.user).count()
+    
+    def can_create_campaign(self):
+        # ACTIVE subscribers can create unlimited campaigns
+        if self.has_active_subscription():
+            return True
+        
+        # INACTIVE users are limited to campaign_limit
+        return self.get_campaign_count() < self.campaign_limit
+    
+    @classmethod
+    def get_for_user(cls, user):
+        subscription, created = cls.objects.get_or_create(
+            user=user,
+            defaults={'status': 'inactive', 'campaign_limit': 2}
+        )
+        return subscription
+    
+    @classmethod
+    def handle_subscription_completed(cls, event):
+        """
+        Update or create UserSubscription when payment completes.
+        Call this from your webhook.
+        """
+        # Handle Flutterwave webhook data
+        data = event['data']
+        transaction_id = data.get('id')
+        customer_email = data.get('customer', {}).get('email')
+        customer_id = data.get('customer', {}).get('id')
+        
+        print(f"📧 Flutterwave - Looking for user with email: {customer_email}")
+        
+        try:
+            user = User.objects.get(email=customer_email)
+        except User.DoesNotExist:
+            # Try to find by username if email contains username
+            try:
+                username = customer_email.split('@')[0]
+                user = User.objects.get(username=username)
+            except (User.DoesNotExist, IndexError):
+                print(f"❌ User not found for email: {customer_email}")
+                return None
+        
+        print(f"✅ Found user: {user.username} ({user.email})")
+        
+        subscription, created = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                'status': 'active',
+                'flutterwave_customer_id': customer_id,
+                'flutterwave_transaction_id': transaction_id,
+                'payment_provider': 'flutterwave',
+                'campaign_limit': 9999
+            }
+        )
+        
+        # Update existing subscription
+        subscription.flutterwave_customer_id = customer_id
+        subscription.flutterwave_transaction_id = transaction_id
+        subscription.payment_provider = 'flutterwave'
+        subscription.status = 'active'
+        subscription.campaign_limit = 9999
+        subscription.save()
+        
+        print(f"✅ Flutterwave subscription activated for {user.username}")
+        return subscription
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.status} ({self.payment_provider})"
+
+@receiver(post_save, sender=User)
+def create_user_subscription(sender, instance, created, **kwargs):
+    if created:
+        UserSubscription.objects.get_or_create(
+            user=instance,
+            defaults={'status': 'inactive', 'campaign_limit': 2}
+        )
+
+
+
+
+
+
+
+
+
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(unique=True)

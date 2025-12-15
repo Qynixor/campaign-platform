@@ -168,7 +168,13 @@ path('pledge-failure/', views.pledge_failure, name='pledge_failure'),
     path("payment/failure/", views.payment_failure, name="payment_failure"),
     path("transactions/", views.transaction_history, name="transaction_history"),
 
-
+    path('create-flutterwave-checkout/', views.create_flutterwave_checkout, name='create_flutterwave_checkout'),
+    path('flutterwave-webhook/', views.flutterwave_webhook, name='flutterwave_webhook'),
+    path('flutterwave-callback/', views.flutterwave_callback, name='flutterwave_callback'),
+    
+    # Common URLs
+    path('success-page/', views.success_page, name='success_page'),
+    path('pro/', views.subscription_required, name='subscription_required'),
 ]
 
 

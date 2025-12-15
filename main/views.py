@@ -21,6 +21,7 @@ from .models import (
     Profile, Campaign, Comment, Follow, Activity, SupportCampaign,
     User, Love, CampaignView, Chat, Notification,Message
 )
+from main.models import UserSubscription
 
 from django.http import JsonResponse
 from django.core.exceptions import MultipleObjectsReturned
@@ -4935,16 +4936,43 @@ def campaign_support(request, campaign_id):
 
 
 
-
 @login_required
 def recreate_campaign(request, campaign_id):
+    # Import Campaign at the top of the function to avoid scope issues
+    from main.models import Campaign, Profile, Tag, CampaignTag, Love, Comment, CampaignView, \
+                           ActivityLove, ActivityComment, Notification, NativeAd, Follow
+    
+    # ================ SECURITY CHECK ================
+    # Get the campaign first to check ownership
+    existing_campaign = get_object_or_404(Campaign, pk=campaign_id)
+    
+    # Check if user owns this campaign
+    user_profile = get_object_or_404(Profile, user=request.user)
+    if existing_campaign.user != user_profile:
+        messages.error(request, "You don't have permission to edit this campaign.")
+        return redirect('home')
+    
+    # ================ SUBSCRIPTION VALIDATION ================
+    # Check if user has permission to edit campaigns
+    subscription = UserSubscription.get_for_user(request.user)
+    
+    # If user doesn't have active subscription, check campaign count
+    if not subscription.has_active_subscription():
+        user_campaign_count = Campaign.objects.filter(user=user_profile).count()
+        
+        # Check if user has reached their free limit
+        if user_campaign_count >= subscription.campaign_limit:
+            messages.warning(
+                request,
+                "You've reached your free campaign limit. Upgrade to Rallynex Pro to edit or create more campaigns."
+            )
+            return redirect('subscription_required')
+    
     # Get following user IDs using the improved pattern
     current_user_following = request.user.following.all()
     following_user_ids = [follow.followed_id for follow in current_user_following]
     
-    user_profile = get_object_or_404(Profile, user=request.user)
     categories = Campaign.CATEGORY_CHOICES
-    existing_campaign = get_object_or_404(Campaign, pk=campaign_id)
 
     # Handle form submission
     if request.method == 'POST':
@@ -5087,6 +5115,10 @@ def recreate_campaign(request, campaign_id):
         form.fields['tags_input'].initial = existing_tags
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
+    from django.db.models import Count
+    from itertools import chain
+    from collections import defaultdict
+    
     trending_campaigns = Campaign.objects.filter(visibility='public') \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
@@ -5196,12 +5228,6 @@ def recreate_campaign(request, campaign_id):
 
 
 
-
-
-
-
-
-
 def success_page(request):
     return render(request, 'main/success.html')
 
@@ -5246,6 +5272,16 @@ from .forms import CampaignForm
 
 @login_required
 def create_campaign(request):
+    # Get or create subscription for user
+    subscription = UserSubscription.get_for_user(request.user)
+    
+    # Check if user can create campaign
+    if not subscription.can_create_campaign():
+        messages.warning(
+            request,
+            "You've reached your free campaign limit. Upgrade to Rallynex Pro to create unlimited campaigns."
+        )
+        return redirect('subscription_required')
     following_users = [follow.followed for follow in request.user.following.all()]
     user_profile = get_object_or_404(Profile, user=request.user)
     categories = Campaign.CATEGORY_CHOICES
@@ -5501,6 +5537,9 @@ def create_campaign(request):
         'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
+        'is_pro': subscription.has_active_subscription(),
+        'campaign_count': subscription.get_campaign_count(),
+        'campaign_limit': subscription.campaign_limit,
     }
     
     return render(request, 'main/campaign_form.html', context)
@@ -7469,3 +7508,210 @@ def transaction_history(request):
     """
     transactions = Transaction.objects.filter(buyer=request.user).order_by('-created_at')
     return render(request, "main/transaction_history.html", {"transactions": transactions})
+
+
+
+
+
+
+
+
+# views.py - Add these imports
+import json
+import time
+import requests
+from django.conf import settings
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+# ==================== FLUTTERWAVE VIEWS ====================
+@login_required
+def create_flutterwave_checkout(request):
+    """
+    Create Flutterwave payment link/checkout
+    """
+    try:
+        # Get user details
+        user = request.user
+        email = user.email or f"{user.username}@rallynex.com"
+        
+        # Flutterwave API details
+        flutterwave_secret_key = settings.FLUTTERWAVE_SECRET_KEY
+        
+        # Create payment data
+        payment_data = {
+            "tx_ref": f"RALLYNEX_{user.id}_{int(time.time())}",
+            "amount": "9",  # $9 per month
+            "currency": "USD",
+            "redirect_url": request.build_absolute_uri('/flutterwave-callback/'),
+            "meta": {
+                "user_id": user.id,
+                "username": user.username,
+            },
+            "customer": {
+                "email": email,
+                "name": user.get_full_name() or user.username,
+            },
+            "customizations": {
+                "title": "Rallynex Pro Subscription",
+                "description": "Monthly subscription for unlimited campaigns",
+                "logo": request.build_absolute_uri('/static/logo.png')
+            }
+        }
+        
+        # Make API request to Flutterwave
+        headers = {
+            'Authorization': f'Bearer {flutterwave_secret_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        response = requests.post(
+            'https://api.flutterwave.com/v3/payments',
+            headers=headers,
+            json=payment_data
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data['status'] == 'success':
+                return JsonResponse({
+                    'status': 'success',
+                    'payment_url': data['data']['link']
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': data.get('message', 'Payment initiation failed')
+                }, status=400)
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Failed to connect to payment gateway'
+            }, status=500)
+            
+    except Exception as e:
+        print(f"❌ Flutterwave Error: {e}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)
+
+@csrf_exempt
+def flutterwave_webhook(request):
+    """
+    Handle Flutterwave webhook notifications
+    """
+    try:
+        # Verify webhook signature
+        secret_hash = settings.FLUTTERWAVE_SECRET_HASH
+        signature = request.headers.get('verif-hash')
+        
+        if signature != secret_hash:
+            print(f"❌ Invalid Flutterwave webhook signature")
+            return HttpResponse(status=400)
+        
+        # Parse webhook data
+        data = json.loads(request.body)
+        event_type = data.get('event')
+        
+        print(f"🔔 Flutterwave webhook received: {event_type}")
+        
+        if event_type == 'charge.completed':
+            # Check if payment was successful
+            if data['data']['status'] == 'successful':
+                # Handle successful payment
+                subscription = UserSubscription.handle_subscription_completed(data)
+                if subscription:
+                    print(f"🎉 Successfully activated Flutterwave subscription")
+                else:
+                    print(f"⚠️ Failed to activate Flutterwave subscription")
+            else:
+                print(f"⚠️ Flutterwave payment not successful: {data['data']['status']}")
+        
+        return HttpResponse(status=200)
+        
+    except Exception as e:
+        print(f"❌ Flutterwave webhook error: {e}")
+        return HttpResponse(status=400)
+
+@login_required
+def flutterwave_callback(request):
+    """
+    Handle Flutterwave payment callback (redirect after payment)
+    """
+    transaction_id = request.GET.get('transaction_id')
+    status = request.GET.get('status')
+    
+    if status == 'successful' and transaction_id:
+        # Verify the transaction
+        try:
+            flutterwave_secret_key = settings.FLUTTERWAVE_SECRET_KEY
+            
+            headers = {
+                'Authorization': f'Bearer {flutterwave_secret_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(
+                f'https://api.flutterwave.com/v3/transactions/{transaction_id}/verify',
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data['status'] == 'success' and data['data']['status'] == 'successful':
+                    # Update user subscription
+                    user = request.user
+                    subscription = UserSubscription.get_for_user(user)
+                    
+                    subscription.flutterwave_transaction_id = transaction_id
+                    subscription.flutterwave_customer_id = data['data']['customer']['id']
+                    subscription.payment_provider = 'flutterwave'
+                    subscription.status = 'active'
+                    subscription.campaign_limit = 9999
+                    subscription.save()
+                    
+                    messages.success(request, "🎉 Your Flutterwave subscription is now active!")
+                    return redirect('success_page')
+        
+        except Exception as e:
+            print(f"❌ Flutterwave verification error: {e}")
+    
+    messages.error(request, "Payment verification failed. Please contact support.")
+    return redirect('subscription_required')
+
+# ==================== COMMON VIEWS ====================
+@login_required
+def success_page(request):
+    # Get user's subscription
+    subscription = UserSubscription.get_for_user(request.user)
+    
+    context = {
+        'is_pro': subscription.has_active_subscription(),
+        'subscription': subscription,
+        'payment_provider': subscription.payment_provider,
+    }
+    
+    return render(request, 'main/success-page.html', context)
+
+@login_required
+def subscription_required(request):
+    """Display subscription upgrade page with Flutterwave payment option"""
+    from main.models import UserSubscription
+    
+    # Get user's subscription
+    subscription = UserSubscription.get_for_user(request.user)
+    
+    context = {
+        'flutterwave_public_key': getattr(settings, 'FLUTTERWAVE_PUBLIC_KEY', ''),
+        'subscription': subscription,
+        'campaign_count': subscription.get_campaign_count(),
+    }
+    
+    return render(request, 'main/subscription_required.html', context)
+
+
+

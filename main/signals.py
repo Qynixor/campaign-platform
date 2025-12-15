@@ -10,3 +10,7 @@ def verify_profile(sender, instance, created, **kwargs):
         if instance.followers.count() > 1:  # Check if the profile has more than 1 million followers
             instance.verified = True
             instance.save(update_fields=['verified'])
+
+
+
+

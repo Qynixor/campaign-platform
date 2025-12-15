@@ -173,11 +173,12 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 
 
-
-
-
-
-
+# =========================
+# Stripe
+# =========================
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID")
 # =========================
 # Email settings WITH DEFAULTS
 # =========================
@@ -259,13 +260,6 @@ SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
 ACCOUNT_USERNAME_MIN_LENGTH = 3
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'administrator', 'moderator', 'root']  # Optional
 
-ACCOUNT_EMAIL_REQUIRED = False
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
-ACCOUNT_CONFIRM_EMAIL_ON_GET = False
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 0
-
-
 
 # TinyMCE configuration
 TINYMCE_DEFAULT_CONFIG = {
@@ -326,25 +320,11 @@ PAYPAL_API_BASE = (
 # RECOMMENDED Branding Settings (customized for Rallynex)
 PAYPAL_PAYMENT_DESCRIPTOR = "RALLYNEX*DONATION"  # Will appear on bank statements (22 char max)
 
-# Flutterwave settings WITH DEFAULTS
-FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY', '')
-FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY', '')
-FLUTTERWAVE_ENCRYPTION_KEY = os.environ.get('FLUTTERWAVE_ENCRYPTION_KEY', '')
-FLUTTERWAVE_PLATFORM_SUBACCOUNT = os.getenv("FLUTTERWAVE_PLATFORM_SUBACCOUNT", "")
-FLUTTERWAVE_REDIRECT_URL = "http://127.0.0.1:8000/donations/flutterwave/callback/" 
 
-PLATFORM_SUBACCOUNT_ID = env("FLUTTERWAVE_PLATFORM_SUBACCOUNT_ID", default="")
-
-# Security settings for production
-if not DEBUG:
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+# Flutterwave settings
+FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY')
+FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY')
+FLUTTERWAVE_SECRET_HASH = os.environ.get('FLUTTERWAVE_SECRET_HASH')
 
 # Logging configuration
 LOGGING = {
@@ -374,3 +354,5 @@ LOGGING = {
         },
     },
 }
+
+
