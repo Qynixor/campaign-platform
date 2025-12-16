@@ -3728,12 +3728,33 @@ def like_comment_reply(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+
+
 @login_required
 def create_activity(request, campaign_id):
+    # 🔒 CHECK USER CAMPAIGN LIMIT FOR ACTIVITY CREATION
+    subscription = UserSubscription.get_for_user(request.user)
+    user_campaign_count = Campaign.objects.filter(user=request.user.profile).count()
+    
+    # Check if user has active subscription
+    if not subscription.has_active_subscription():
+        # If user has reached their free campaign limit, restrict activity creation
+        if user_campaign_count >= subscription.campaign_limit:
+            messages.warning(
+                request,
+                "You've reached your free campaign limit. Upgrade to Rallynex Pro to create activities."
+            )
+            return redirect('subscription_required')
+    
     following_users = [follow.followed for follow in request.user.following.all()]
     category_filter = request.GET.get('category', '')  # Get category filter from request
     user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # 🔒 ADDITIONAL CHECK: Ensure user owns the campaign to create activities
+    if campaign.user != user_profile:
+        messages.error(request, "You can only create activities for your own campaigns.")
+        return redirect('campaign_detail', campaign_id=campaign_id)
 
     if request.method == 'POST':
         formset = ActivityFormSet(request.POST, request.FILES, instance=campaign)
@@ -3780,9 +3801,8 @@ def create_activity(request, campaign_id):
     # 🔥 Trending campaigns (Only those with at least 1 love)
     trending_campaigns = Campaign.objects.filter(visibility='public') \
         .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
+        .filter(love_count_annotated__gte=1)
       
-
     # Apply category filter if provided
     if category_filter:
         trending_campaigns = trending_campaigns.filter(category=category_filter)
@@ -3867,9 +3887,18 @@ def create_activity(request, campaign_id):
         'top_contributors': top_contributors,
         'categories': categories,
         'selected_category': category_filter,
+        'is_pro': subscription.has_active_subscription(),  # Add subscription info to context
+        'campaign_count': user_campaign_count,  # Add campaign count to context
+        'campaign_limit': subscription.campaign_limit,  # Add limit to context
     }
 
     return render(request, 'main/activity_create.html', context)
+
+
+
+
+
+
 
 
 @login_required
@@ -7511,11 +7540,6 @@ def transaction_history(request):
 
 
 
-
-
-
-
-
 # views.py - Add these imports
 import json
 import time
@@ -7527,162 +7551,130 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
 from django.contrib import messages
 
-# ==================== FLUTTERWAVE VIEWS ====================
+# ==================== PAYPAL VIEWS ====================
 @login_required
-def create_flutterwave_checkout(request):
+def subscription_required(request):
+    """Display subscription upgrade page with PayPal payment option"""
+    from main.models import UserSubscription
+    
+    # Get user's subscription
+    subscription = UserSubscription.get_for_user(request.user)
+    
+    context = {
+        'paypal_business_email': getattr(settings, 'PAYPAL_BUSINESS_EMAIL', ''),
+        'paypal_button_id': getattr(settings, 'PAYPAL_SUBSCRIPTION_BUTTON_ID', ''),
+        'subscription': subscription,
+        'campaign_count': subscription.get_campaign_count(),
+    }
+    
+    return render(request, 'main/subscription_required.html', context)
+# views.py - PAYPAL SECTION
+@csrf_exempt
+def paypal_webhook(request):
     """
-    Create Flutterwave payment link/checkout
+    Handle PayPal IPN (Instant Payment Notification) webhook
     """
     try:
-        # Get user details
-        user = request.user
-        email = user.email or f"{user.username}@rallynex.com"
+        # Verify the IPN is genuine
+        data = request.POST.copy()
+        data['cmd'] = '_notify-validate'
         
-        # Flutterwave API details
-        flutterwave_secret_key = settings.FLUTTERWAVE_SECRET_KEY
+        # Use PayPal's IPN URL (use sandbox for testing)
+        paypal_url = 'https://ipnpb.paypal.com/cgi-bin/webscr'  # LIVE
         
-        # Create payment data
-        payment_data = {
-            "tx_ref": f"RALLYNEX_{user.id}_{int(time.time())}",
-            "amount": "9",  # $9 per month
-            "currency": "USD",
-            "redirect_url": request.build_absolute_uri('/flutterwave-callback/'),
-            "meta": {
-                "user_id": user.id,
-                "username": user.username,
-            },
-            "customer": {
-                "email": email,
-                "name": user.get_full_name() or user.username,
-            },
-            "customizations": {
-                "title": "Rallynex Pro Subscription",
-                "description": "Monthly subscription for unlimited campaigns",
-                "logo": request.build_absolute_uri('/static/logo.png')
-            }
-        }
-        
-        # Make API request to Flutterwave
-        headers = {
-            'Authorization': f'Bearer {flutterwave_secret_key}',
-            'Content-Type': 'application/json'
-        }
-        
+        # Post back to PayPal for verification
         response = requests.post(
-            'https://api.flutterwave.com/v3/payments',
-            headers=headers,
-            json=payment_data
+            paypal_url,
+            data=data,
+            timeout=10
         )
         
-        if response.status_code == 200:
-            data = response.json()
-            if data['status'] == 'success':
-                return JsonResponse({
-                    'status': 'success',
-                    'payment_url': data['data']['link']
-                })
-            else:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': data.get('message', 'Payment initiation failed')
-                }, status=400)
-        else:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Failed to connect to payment gateway'
-            }, status=500)
+        if response.text == 'VERIFIED':
+            # Payment was verified
+            txn_type = data.get('txn_type')
+            payer_email = data.get('payer_email')
+            subscr_id = data.get('subscr_id')
+            custom_field = data.get('custom')  # This contains user ID
             
-    except Exception as e:
-        print(f"❌ Flutterwave Error: {e}")
-        return JsonResponse({
-            'status': 'error',
-            'message': str(e)
-        }, status=400)
-
-@csrf_exempt
-def flutterwave_webhook(request):
-    """
-    Handle Flutterwave webhook notifications
-    """
-    try:
-        # Verify webhook signature
-        secret_hash = settings.FLUTTERWAVE_SECRET_HASH
-        signature = request.headers.get('verif-hash')
-        
-        if signature != secret_hash:
-            print(f"❌ Invalid Flutterwave webhook signature")
-            return HttpResponse(status=400)
-        
-        # Parse webhook data
-        data = json.loads(request.body)
-        event_type = data.get('event')
-        
-        print(f"🔔 Flutterwave webhook received: {event_type}")
-        
-        if event_type == 'charge.completed':
-            # Check if payment was successful
-            if data['data']['status'] == 'successful':
-                # Handle successful payment
-                subscription = UserSubscription.handle_subscription_completed(data)
+            print(f"\n{'='*60}")
+            print(f"🔔 PayPal IPN verified: {txn_type}")
+            print(f"📧 Payer email: {payer_email}")
+            print(f"🔢 Subscription ID: {subscr_id}")
+            print(f"👤 Custom field (user ID): {custom_field}")
+            print(f"{'='*60}")
+            
+            if txn_type in ['subscr_signup', 'subscr_payment']:
+                # New subscription or payment - USE CUSTOM FIELD FOR USER ID
+                subscription = UserSubscription.handle_paypal_subscription(
+                    payer_email=payer_email,
+                    subscr_id=subscr_id,
+                    custom_data=custom_field  # Pass user ID from custom field
+                )
                 if subscription:
-                    print(f"🎉 Successfully activated Flutterwave subscription")
+                    print(f"🎉 PayPal subscription activated for {subscription.user.username}")
                 else:
-                    print(f"⚠️ Failed to activate Flutterwave subscription")
-            else:
-                print(f"⚠️ Flutterwave payment not successful: {data['data']['status']}")
+                    print(f"⚠️ Failed to activate PayPal subscription")
+            
+            elif txn_type in ['subscr_cancel', 'subscr_eot', 'subscr_failed']:
+                # Subscription cancelled, ended, or failed
+                try:
+                    subscription = UserSubscription.objects.get(
+                        paypal_subscription_id=subscr_id
+                    )
+                    if txn_type == 'subscr_failed':
+                        subscription.status = 'payment_failed'
+                    else:
+                        subscription.status = 'cancelled'
+                    subscription.save()
+                    print(f"📝 PayPal subscription {subscr_id} status updated to: {subscription.status}")
+                except UserSubscription.DoesNotExist:
+                    print(f"⚠️ PayPal subscription not found: {subscr_id}")
+            
+            # Log the full data for debugging
+            print(f"📦 Full IPN data (first 10 items):")
+            for key, value in list(data.items())[:10]:
+                print(f"   {key}: {value}")
+        
+        elif response.text == 'INVALID':
+            print(f"❌ Invalid PayPal IPN")
+            return HttpResponse(status=400)
         
         return HttpResponse(status=200)
         
     except Exception as e:
-        print(f"❌ Flutterwave webhook error: {e}")
+        print(f"❌ PayPal webhook error: {e}")
+        import traceback
+        traceback.print_exc()
         return HttpResponse(status=400)
 
 @login_required
-def flutterwave_callback(request):
+def paypal_return(request):
     """
-    Handle Flutterwave payment callback (redirect after payment)
+    Handle return from PayPal after payment
     """
-    transaction_id = request.GET.get('transaction_id')
-    status = request.GET.get('status')
+    # For testing: Get subscription ID from URL if available
+    subscr_id = request.GET.get('subscr_id', f'LOCAL-TEST-{int(time.time())}')
     
-    if status == 'successful' and transaction_id:
-        # Verify the transaction
-        try:
-            flutterwave_secret_key = settings.FLUTTERWAVE_SECRET_KEY
-            
-            headers = {
-                'Authorization': f'Bearer {flutterwave_secret_key}',
-                'Content-Type': 'application/json'
-            }
-            
-            response = requests.get(
-                f'https://api.flutterwave.com/v3/transactions/{transaction_id}/verify',
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data['status'] == 'success' and data['data']['status'] == 'successful':
-                    # Update user subscription
-                    user = request.user
-                    subscription = UserSubscription.get_for_user(user)
-                    
-                    subscription.flutterwave_transaction_id = transaction_id
-                    subscription.flutterwave_customer_id = data['data']['customer']['id']
-                    subscription.payment_provider = 'flutterwave'
-                    subscription.status = 'active'
-                    subscription.campaign_limit = 9999
-                    subscription.save()
-                    
-                    messages.success(request, "🎉 Your Flutterwave subscription is now active!")
-                    return redirect('success_page')
-        
-        except Exception as e:
-            print(f"❌ Flutterwave verification error: {e}")
+    subscription = UserSubscription.get_for_user(request.user)
     
-    messages.error(request, "Payment verification failed. Please contact support.")
-    return redirect('subscription_required')
+    # AUTO-ACTIVATE FOR LOCALHOST TESTING
+    subscription.status = 'active'
+    subscription.payment_provider = 'paypal'
+    subscription.paypal_subscription_id = subscr_id
+    subscription.campaign_limit = 9999
+    subscription.save()
+    
+    print(f"✅ Manual activation via paypal_return for {request.user.username}")
+    messages.success(request, "✅ Subscription activated successfully!")
+    return redirect('success_page')
 
+@login_required
+def paypal_cancel(request):
+    """
+    Handle cancellation from PayPal
+    """
+    messages.info(request, "Your PayPal payment was cancelled.")
+    return redirect('subscription_required')
 # ==================== COMMON VIEWS ====================
 @login_required
 def success_page(request):
@@ -7696,22 +7688,3 @@ def success_page(request):
     }
     
     return render(request, 'main/success-page.html', context)
-
-@login_required
-def subscription_required(request):
-    """Display subscription upgrade page with Flutterwave payment option"""
-    from main.models import UserSubscription
-    
-    # Get user's subscription
-    subscription = UserSubscription.get_for_user(request.user)
-    
-    context = {
-        'flutterwave_public_key': getattr(settings, 'FLUTTERWAVE_PUBLIC_KEY', ''),
-        'subscription': subscription,
-        'campaign_count': subscription.get_campaign_count(),
-    }
-    
-    return render(request, 'main/subscription_required.html', context)
-
-
-

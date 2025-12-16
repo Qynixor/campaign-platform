@@ -220,10 +220,6 @@ def default_content():
 
          
 
-
-
-
-
 # models.py
 from django.contrib.auth.models import User
 from django.db import models
@@ -233,16 +229,16 @@ from django.dispatch import receiver
 class UserSubscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
     
-    # Flutterwave fields
-    flutterwave_customer_id = models.CharField(max_length=255, blank=True, null=True)
-    flutterwave_subscription_id = models.CharField(max_length=255, blank=True, null=True)
-    flutterwave_transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    # PayPal fields
+    paypal_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    paypal_payer_id = models.CharField(max_length=255, blank=True, null=True)
+    paypal_email = models.EmailField(blank=True, null=True)
     
     # Payment provider tracking
     payment_provider = models.CharField(
         max_length=20, 
         choices=[
-            ('flutterwave', 'Flutterwave'),
+            ('paypal', 'PayPal'),
             ('none', 'None')
         ],
         default='none'
@@ -279,52 +275,63 @@ class UserSubscription(models.Model):
         return subscription
     
     @classmethod
-    def handle_subscription_completed(cls, event):
+    def handle_paypal_subscription(cls, payer_email, subscr_id, custom_data=None):
         """
-        Update or create UserSubscription when payment completes.
-        Call this from your webhook.
+        Update or create UserSubscription when PayPal subscription is created.
+        Uses custom field (user ID) to find the user.
         """
-        # Handle Flutterwave webhook data
-        data = event['data']
-        transaction_id = data.get('id')
-        customer_email = data.get('customer', {}).get('email')
-        customer_id = data.get('customer', {}).get('id')
+        user = None
         
-        print(f"📧 Flutterwave - Looking for user with email: {customer_email}")
-        
-        try:
-            user = User.objects.get(email=customer_email)
-        except User.DoesNotExist:
-            # Try to find by username if email contains username
+        # METHOD 1: Try to get user from custom field (user ID) - PRIMARY METHOD
+        if custom_data:
             try:
-                username = customer_email.split('@')[0]
-                user = User.objects.get(username=username)
-            except (User.DoesNotExist, IndexError):
-                print(f"❌ User not found for email: {customer_email}")
-                return None
+                user_id = int(custom_data)
+                user = User.objects.get(id=user_id)
+                print(f"✅ Found user by ID {user_id}: {user.username}")
+            except (ValueError, User.DoesNotExist) as e:
+                print(f"❌ User not found for ID {custom_data}: {e}")
         
-        print(f"✅ Found user: {user.username} ({user.email})")
+        # METHOD 2: Fallback to email lookup (for backward compatibility)
+        if not user and payer_email:
+            print(f"📧 PayPal - Looking for user with email: {payer_email}")
+            try:
+                user = User.objects.get(email=payer_email)
+                print(f"✅ Found user by email: {user.username}")
+            except User.DoesNotExist:
+                # Try to find by username if email contains username
+                try:
+                    username = payer_email.split('@')[0]
+                    user = User.objects.get(username=username)
+                    print(f"✅ Found user by username: {username}")
+                except (User.DoesNotExist, IndexError):
+                    print(f"❌ User not found for email: {payer_email}")
+                    return None
         
+        if not user:
+            print(f"❌ Could not find user with any method")
+            return None
+        
+        # Create or update subscription
         subscription, created = cls.objects.get_or_create(
             user=user,
             defaults={
                 'status': 'active',
-                'flutterwave_customer_id': customer_id,
-                'flutterwave_transaction_id': transaction_id,
-                'payment_provider': 'flutterwave',
+                'paypal_subscription_id': subscr_id,
+                'paypal_email': payer_email,
+                'payment_provider': 'paypal',
                 'campaign_limit': 9999
             }
         )
         
         # Update existing subscription
-        subscription.flutterwave_customer_id = customer_id
-        subscription.flutterwave_transaction_id = transaction_id
-        subscription.payment_provider = 'flutterwave'
+        subscription.paypal_subscription_id = subscr_id
+        subscription.paypal_email = payer_email
+        subscription.payment_provider = 'paypal'
         subscription.status = 'active'
         subscription.campaign_limit = 9999
         subscription.save()
         
-        print(f"✅ Flutterwave subscription activated for {user.username}")
+        print(f"🎉 PayPal subscription activated for {user.username}")
         return subscription
     
     def __str__(self):
@@ -337,9 +344,6 @@ def create_user_subscription(sender, instance, created, **kwargs):
             user=instance,
             defaults={'status': 'inactive', 'campaign_limit': 2}
         )
-
-
-
 
 
 

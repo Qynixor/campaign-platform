@@ -27,6 +27,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     '127.0.0.1',
     'rallynex1.onrender.com', 
     'campaign-platform-kmv9.onrender.com',
+
 ])
 
 # Application definitions
@@ -114,6 +115,7 @@ DATABASES = {
 }
 
 CSRF_TRUSTED_ORIGINS = [
+
     'https://www.rallynex.com',
     'https://rallynex.com',
     'https://rallynex1.onrender.com',
