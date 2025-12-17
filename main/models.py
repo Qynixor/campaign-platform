@@ -128,6 +128,16 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
 
 
 
+
+
+
+
+
+
+
+
+
+
 class UserVerification(models.Model):
     VERIFICATION_STATUS_CHOICES = (
         ('Pending', 'Pending'),
@@ -359,6 +369,7 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+from django.db.models import Sum
 
 
 from django.db import models
@@ -500,8 +511,13 @@ class Campaign(models.Model):
         return self.pledge_set.aggregate(total=models.Sum('amount'))['total'] or 0
     @property
     def total_donations(self):
-        return self.donations.aggregate(total=models.Sum('amount'))['total'] or 0
-
+        """
+        Calculate total donations for this campaign.
+        Only counts donations where fulfilled=True to avoid counting cancelled payments.
+        """
+        return self.donations.filter(fulfilled=True).aggregate(
+            total=models.Sum('amount')
+        )['total'] or 0
     @property
     def donation_percentage(self):
         if self.funding_goal == 0:

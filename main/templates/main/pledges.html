@@ -86,14 +86,24 @@
                                     </button>
                                 </form>
                                 
-                                {% if pledge.contact %}
-                                <div class="pledge-contact">
-                                    <a href="mailto:{{ pledge.contact }}?subject=Payment for {{ campaign.title }} pledge&body=Hi {{ pledge.user.username }},%0D%0A%0D%0AThank you for pledging {{ pledge.amount }} {{ pledge.currency|default:"USD" }} to '{{ campaign.title }}' on RallyNex.%0D%0A%0D%0APlease complete your pledge by following the link below:%0D%0A{{ request.build_absolute_uri }}%0D%0A%0D%0ABest regards,%0D%0A{{ campaign.user.username }}%0D%0AFrom RallyNex"
-                                       class="contact-btn email">
-                                        <i class="fas fa-envelope"></i> Email
-                                    </a>
-                                </div>
-                                {% endif %}
+                               {% if pledge.contact %}
+<div class="pledge-contact">
+    <a href="mailto:{{ pledge.contact }}
+        ?subject=Payment for {{ campaign.title }} pledge
+        &body=Hi {{ pledge.user.username }},%0D%0A%0D%0A
+        Thank you for pledging {{ pledge.amount }} {{ pledge.currency|default:"USD" }}
+        to '{{ campaign.title }}' on RallyNex.%0D%0A%0D%0A
+        Please complete your pledge by clicking the link below:%0D%0A
+        {{ request.scheme }}://{{ request.get_host }}{% url 'pledge_payment_page' pledge.id %}%0D%0A%0D%0A
+        Best regards,%0D%0A
+        {{ campaign.user.username }}%0D%0A
+        From RallyNex"
+       class="contact-btn email">
+        <i class="fas fa-envelope"></i> Email
+    </a>
+</div>
+{% endif %}
+
                             </div>
                         </div>
                         {% endfor %}
