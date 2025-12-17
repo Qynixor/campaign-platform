@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>How It Works | Crowdfunding Platform</title>
+    <title>How It Works | rallynex</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -116,6 +116,63 @@
     margin-left: -1em;
 }
     </style>
+    <style>
+/* Add these to your existing styles */
+
+/* Sticky CTA for mobile */
+.sticky-cta {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #007BFF;
+    padding: 15px;
+    text-align: center;
+    z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .sticky-cta {
+        display: block;
+    }
+}
+
+/* Progress indicator */
+.progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 4px;
+    background: #007BFF;
+    width: 0%;
+    z-index: 1001;
+    transition: width 0.3s ease;
+}
+
+/* Share buttons */
+.share-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.share-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.facebook { background: #4267B2; }
+.twitter { background: #1DA1F2; }
+.whatsapp { background: #25D366; }
+</style>
 </head>
 <body>
     <div class="container">
@@ -268,9 +325,10 @@
                 </div>
             </div>
         </div>
-    </div>
 
 
+
+        
 
         <!-- Recognition & Rewards Section -->
         <h2 class="section-header">Recognition & Rewards</h2>
@@ -315,11 +373,43 @@
         </div>
 
     </div>
+    </div>
+
+
     <div class="cta">
         <h2 style="color: white;">Start Your Own Campaign!</h2>
         <p>Do you have a cause you're passionate about? Join Rallynex and create your own impactful campaign today!</p>
         <a href="{% url 'index' %}">Start a Campaign</a>
     </div>
+<script>
+// Add this before closing body tag
+document.addEventListener('DOMContentLoaded', function() {
+    // Progress bar
+    window.addEventListener('scroll', function() {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        document.getElementById("progressBar").style.width = scrolled + "%";
+    });
+
+    // Copy link button
+    document.getElementById('copyLink').addEventListener('click', function() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(function() {
+            alert('Link copied to clipboard!');
+        });
+    });
+
+    // Time on page tracking
+    let startTime = new Date();
+    window.addEventListener('beforeunload', function() {
+        let endTime = new Date();
+        let timeSpent = Math.round((endTime - startTime) / 1000);
+        // Send to analytics
+        console.log('Time spent on page:', timeSpent, 'seconds');
+    });
+});
+</script>
 </body>
 </html>
 
