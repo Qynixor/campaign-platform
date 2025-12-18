@@ -1,4 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import dj_database_url
+
+
 from pathlib import Path
 from dotenv import load_dotenv
 import environ
@@ -6,6 +13,7 @@ import environ
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+
 
 # Load environment variables
 env = environ.Env()
@@ -99,20 +107,19 @@ TEMPLATES = [
 # WSGI application
 WSGI_APPLICATION = 'buskx.wsgi.application'
 
-# Database configuration
+
+
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME', default='temp_db_for_build'),
-        'USER': env('DB_USER', default='temp_user'),
-        'PASSWORD': env('DB_PASSWORD', default='temp_password'),
-        'HOST': env('DB_HOST', default='localhost'),
-        'PORT': env('DB_PORT', default='5432'),
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
-    }
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
+
+
 
 CSRF_TRUSTED_ORIGINS = [
 
