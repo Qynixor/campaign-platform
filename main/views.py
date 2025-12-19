@@ -901,6 +901,7 @@ def project_support(request):
 
 
 
+
 def robots_txt(request):
     lines = [
         "User-agent: *",
@@ -910,9 +911,15 @@ def robots_txt(request):
         "Disallow: /static/",
         "Allow: /",
         "",
-        "Sitemap: https://rallynex.onrender.com/sitemap.xml",
+        # CHANGE THIS LINE ONLY:
+        "Sitemap: https://rallynex.com/sitemap.xml",  # Removed '.onrender.com'
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+
+
+
 
 
 
