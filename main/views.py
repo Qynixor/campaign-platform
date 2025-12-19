@@ -111,6 +111,38 @@ from django.utils import timezone
 from .models import Campaign, Profile, Notification, Chat, Message, NativeAd, NotInterested, Love
 from django.contrib.auth.models import AnonymousUser
 
+
+from django.http import HttpResponse
+
+def robots_txt(request):
+    content = """User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /accounts/
+Disallow: /tinymce/
+Disallow: /static/
+
+Sitemap: https://rallynex.com/sitemap.xml
+"""
+    return HttpResponse(content, content_type="text/plain")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @login_required
 def campaign_list(request):
     # Get the current user's profile
@@ -898,26 +930,6 @@ def terms_of_service(request):
 
 def project_support(request):
     return render(request, 'revenue/support.html')
-
-
-
-
-def robots_txt(request):
-    lines = [
-        "User-agent: *",
-        "Disallow: /admin/",
-        "Disallow: /accounts/",
-        "Disallow: /tinymce/",
-        "Disallow: /static/",
-        "Allow: /",
-        "",
-        # CHANGE THIS LINE ONLY:
-        "Sitemap: https://rallynex.com/sitemap.xml",  # Removed '.onrender.com'
-    ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
-
-
-
 
 
 
