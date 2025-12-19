@@ -83,7 +83,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'buskx.middlewares.LegalLinksMiddleware',
-    'buskx.middleware.WWWRedirectMiddleware',  # Add this line
+    'buskx.middlewares.WWWRedirectMiddleware',  # Changed: 'middleware' → 'middlewares'
 ]
 
 ROOT_URLCONF = 'buskx.urls'

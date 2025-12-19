@@ -1,7 +1,6 @@
-# middlewares.py
-
+# File: /app/buskx/middlewares.py
 from django.conf import settings
-
+from django.http import HttpResponsePermanentRedirect
 
 class LegalLinksMiddleware:
     def __init__(self, get_response):
@@ -12,11 +11,6 @@ class LegalLinksMiddleware:
         request.terms_of_service_link = settings.TERMS_OF_SERVICE_LINK
         response = self.get_response(request)
         return response
-
-
-
-# Create a file called middleware.py in your main Django app
-# (the one containing settings.py)
 
 class WWWRedirectMiddleware:
     def __init__(self, get_response):
@@ -35,7 +29,6 @@ class WWWRedirectMiddleware:
             if request.GET:
                 new_url += '?' + request.GET.urlencode()
                 
-            from django.http import HttpResponsePermanentRedirect
-            return HttpResponsePermanentRedirect(new_url)
+            return HttpResponsePermanentRedirect(new_url)  # Fixed: removed extra ]
         
         return self.get_response(request)
