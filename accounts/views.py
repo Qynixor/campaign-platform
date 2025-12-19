@@ -37,7 +37,7 @@ from main.models import (
 )
 
 from main.forms import (
-    UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm, ActivityFormSet,
+    UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
     SupportForm, ChatForm, MessageForm, CampaignSearchForm, ProfileSearchForm,
      CampaignProductForm, ReportForm, NotInterestedForm,
     SubscriptionForm, UpdateVisibilityForm, ActivityCommentForm,

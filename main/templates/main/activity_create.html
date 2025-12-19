@@ -1,547 +1,1768 @@
 {% extends 'main/face.html' %}
 
-{% block title %}Specific Campaign - RallyNex{% endblock %}
+{% block title %}
+    {% if existing_activities_count > 0 %}
+        Continue Activities - {{ campaign.title }} - RallyNex
+    {% else %}
+        Start Activities - {{ campaign.title }} - RallyNex
+    {% endif %}
+{% endblock %}
 
-{% block description %}Join this specific campaign for change...{% endblock %}
-
-{% block og_title %}Specific Campaign - Make a Difference{% endblock %}
-
-{% block og_image %}https://rallynex.com/static/campaign-image.jpg{% endblock %}
+{% block description %}
+    {% if existing_activities_count > 0 %}
+        Edit your previous activities and add new updates for {{ campaign.title }}
+    {% else %}
+        Start sharing updates for your campaign {{ campaign.title }}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
 
 <style type="text/css">
-/* Container style */
-.custom-form-container {
-    max-width: 100%;
-    margin: 20px auto;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-    box-sizing: border-box;
-    color: #333;
-}
-
-/* Form label style */
-.custom-label {
-    font-weight: bold;
-    color: #444;
-    display: block;
-    margin-bottom: 6px;
-}
-
-
-/* Input, textarea, and select styles */
-.custom-input[type="text"],
-.custom-input[type="email"],
-.custom-input[type="file"],
-textarea,
-select {
-    width: 100%;
-    padding: 12px;
-    margin-top: 8px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f0f0f0; /* Light background for white text */
-    color: #333; /* Black text for readability */
-    transition: border-color 0.3s ease, background-color 0.3s ease;
-}
-
-/* Focus styles for interactive elements */
-.custom-input:focus,
-textarea:focus,
-select:focus {
-    outline: none;
-    border-color: #007bff; /* Highlight border on focus */
-    background-color: #fff; /* Ensure focus state has white background */
-}
-
-/* Dark theme for accessibility in specific sections (e.g., modal, dark backgrounds) */
-.dark-mode .custom-input[type="text"],
-.dark-mode .custom-input[type="email"],
-.dark-mode .custom-input[type="file"],
-.dark-mode textarea,
-.dark-mode select {
-    background-color: #333; /* Dark background for white text */
-    color: #fff; /* White text for dark theme */
-    border: 1px solid #555; /* Softer borders for dark theme */
-}
-
-/* Dark theme focus */
-.dark-mode .custom-input:focus,
-.dark-mode textarea:focus,
-.dark-mode select:focus {
-    border-color: #00c853; /* Highlight with green for a sense of help or growth */
-}
-
-
-
-/* Emoji button style */
-.custom-emoji-button {
-    padding: 8px;
-    font-size: 24px;
-    background-color: #e9ecef;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-right: 5px;
-    margin-bottom: 5px;
-}
-
-.custom-emoji-button:hover {
-    background-color: #ced4da;
-}
-
-/* Emoji container with overflow */
-.emoji-container {
-    max-height: 200px; /* Set max height for the container */
-    overflow-y: auto; /* Enable vertical scrolling */
-    display: flex;
-    flex-wrap: wrap; /* Allow emojis to wrap into new lines */
-    padding: 10px 0;
-}
-
-.emoji-container.hidden {
-    max-height: 50px; /* Set a smaller height when the container is hidden */
-    overflow: hidden; /* Hide the rest of the emojis */
-}
-
-.show-more-button {
-    display: inline-block;
-    padding: 6px 12px;
-    margin-top: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.show-more-button:hover {
-    background-color: #0056b3;
-}
-
-/* Submit button style */
-.custom-submit-button {
-    width: 100%;
-    padding: 12px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.custom-submit-button:hover {
-    background-color: #0056b3;
-}
-
-/* Back button style */
-.custom-back-button {
-    display: inline-block;
-    padding: 10px 15px;
-    margin-top: 20px;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 14px;
-    background-color: #f9f9f9;
-    color: #000;
-    border: 1px solid #ccc;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-}
-
-.custom-back-button:hover {
-    background-color: #e2e6ea;
-}
-
-/* Responsive styles */
-@media (max-width: 600px) {
-    .custom-form-container {
-        padding: 15px;
+    /* ===== MAIN CONTAINER ===== */
+    .activity-form-container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(29, 161, 242, 0.08);
+        border: 1px solid #e1e8ed;
+        margin: 20px auto;
+        max-width: 600px;
+        overflow: hidden;
     }
-
-    .custom-submit-button,
-    .custom-back-button {
-        padding: 10px;
-        font-size: 16px;
+    
+    /* ===== HEADER ===== */
+    .activity-header {
+        padding: 24px;
+        background: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+        color: white;
+        position: relative;
     }
-
-    .custom-emoji-button {
-        font-size: 20px;
-        padding: 6px;
+    
+    .activity-header h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
-}
-
-/* ===== Dark Mode ===== */
-body.dark-mode {
-    background-color: #121212;
-    color: #e0e0e0;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Container (Dark) */
-body.dark-mode .campaign-activities-container {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.05);
-}
-
-/* Header (Dark) */
-body.dark-mode .campaign-activities-header {
-    color: #f1f1f1;
-}
-
-/* Activity item (Dark) */
-body.dark-mode .campaign-activity-item {
-    color: #cccccc;
-}
-
-/* Button (Dark) */
-body.dark-mode .campaign-toggle-button {
-    background-color: #3498db;
-    color: #ffffff;
-}
-
-body.dark-mode .campaign-toggle-button:hover {
-    background-color: #2980b9;
-}
-
-
-
-/* Container for the campaign activities */
-.campaign-activities-container {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-}
-
-/* Header for campaign activities */
-.campaign-activities-header {
-    font-size: 22px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 12px;
-}
-
-/* List of campaign activities */
-.campaign-activities-list {
-    max-height: 200px; /* Limit height initially */
-    overflow-y: hidden; /* Hide overflow */
-    transition: max-height 0.3s ease; /* Smooth transition */
-}
-
-/* Individual campaign activity item */
-.campaign-activity-item {
-    font-size: 16px;
-    color: #555;
-    padding: 6px 0;
-    line-height: 1.5;
-    display: block;
-}
-
-/* Button to toggle visibility of extra activities */
-.campaign-toggle-button {
-    display: inline-block;
-    padding: 8px 16px;
-    margin-top: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-}
-
-/* Hover effect for the toggle button */
-.campaign-toggle-button:hover {
-    background-color: #0056b3;
-}
-
-/* Expanded state for activities list */
-.campaign-activities-expanded {
-    max-height: 1000px; /* Larger height for smooth expansion */
-}
-
-/* Responsive styles */
-@media (max-width: 600px) {
-    .campaign-activities-header {
+    
+    .activity-header h1 i {
+        font-size: 22px;
+    }
+    
+    .activity-subtitle {
+        margin: 8px 0 0 0;
+        font-size: 15px;
+        opacity: 0.95;
+        font-weight: 400;
+    }
+    
+    .close-btn {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* ===== BODY ===== */
+    .activity-body {
+        padding: 32px;
+    }
+    
+    /* ===== PROGRESS INDICATOR ===== */
+    .progress-indicator {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .progress-text {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .progress-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    /* ===== FORM SECTIONS ===== */
+    .form-section {
+        margin-bottom: 28px;
+        padding: 24px;
+        border: 2px solid #f0f4f8;
+        border-radius: 12px;
+        background: #fafbfd;
+        transition: all 0.3s ease;
+    }
+    
+    .form-section:hover {
+        border-color: #e1e8ed;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-section.existing-activity {
+        border-left: 4px solid #10b981;
+        background: #f0f9ff;
+    }
+    
+    .form-section.new-activity {
+        border-left: 4px solid #1da1f2;
+        background: #f0f9ff;
+    }
+    
+    /* ===== FORM HEADERS ===== */
+    .form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px dashed #e1e8ed;
+    }
+    
+    .form-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #14171a;
+        margin: 0;
+    }
+    
+    .activity-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: #1da1f2;
+        color: white;
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .form-type-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .badge-existing {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+    
+    .badge-new {
+        background: #e8f5fe;
+        color: #1a8cd8;
+        border: 1px solid #1da1f2;
+    }
+    
+    .timestamp {
+        font-size: 12px;
+        color: #657786;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    /* ===== FORM ELEMENTS ===== */
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #14171a;
+        font-size: 15px;
+    }
+    
+    .form-textarea, .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e8ed;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 15px;
+        background-color: white;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+    
+    .form-textarea:focus, .form-input:focus {
+        outline: none;
+        border-color: #1da1f2;
+        box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
+    }
+    
+    .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.5;
+    }
+    
+    .form-helper {
+        color: #657786;
+        font-size: 13px;
+        margin-top: 8px;
+        display: block;
+    }
+    
+    /* ===== EMOJI SECTION ===== */
+    .emoji-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0;
+        padding: 16px;
+        background: #e8f5fe;
+        border-radius: 12px;
+        border: 1px solid rgba(29, 161, 242, 0.2);
+    }
+    
+    .emoji-button {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: 2px solid #e1e8ed;
+        border-radius: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .emoji-button:hover {
+        transform: translateY(-2px);
+        border-color: #1da1f2;
+        background: #e8f5fe;
+        box-shadow: 0 4px 8px rgba(29, 161, 242, 0.1);
+    }
+    
+    .emoji-section {
+        margin: 20px 0;
+    }
+    
+    .emoji-section-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #1da1f2;
+        font-weight: 600;
+        font-size: 15px;
+    }
+    
+    .emoji-section-label i {
         font-size: 18px;
     }
-
-    .campaign-activity-item {
-        font-size: 14px;
+    
+    /* ===== FILE UPLOAD ===== */
+    .file-upload-area {
+        border: 2px dashed #e1e8ed;
+        border-radius: 12px;
+        padding: 32px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #fafbfd;
+        margin-top: 12px;
+        position: relative;
     }
-
-    .campaign-toggle-button {
-        font-size: 14px;
+    
+    .file-upload-area:hover {
+        border-color: #1da1f2;
+        background: #e8f5fe;
     }
-}
-
-
-    /* Preview container styling */
-    .preview-container {
-        margin-top: 10px;
+    
+    .file-upload-icon {
+        font-size: 28px;
+        color: #1da1f2;
+        margin-bottom: 12px;
+    }
+    
+    .file-upload-text {
+        font-size: 15px;
+        color: #14171a;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .file-input-hidden {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 2;
+    }
+    
+    /* ===== FILE PREVIEW ===== */
+    .file-preview-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+    
+    .file-preview-item {
+        position: relative;
         border-radius: 8px;
         overflow: hidden;
-        max-width: 100%;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e1e8ed;
+        height: 120px;
     }
-
-    /* Image preview styling */
-    .preview-container img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
+    
+    .file-preview-item img,
+    .file-preview-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
         display: block;
     }
-
-    /* Video preview styling */
-    .preview-container video {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-        display: block;
-    }
-
-    /* Placeholder for empty preview */
-    .preview-placeholder {
+    
+    .audio-preview {
         padding: 20px;
-        text-align: center;
-        color: #888;
-        font-size: 14px;
-        background-color: #f9f9f9;
-        border: 1px dashed #ddd;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .remove-file-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+    }
+    
+    .file-name {
+        font-size: 12px;
+        color: #657786;
+        margin-top: 4px;
+        word-break: break-word;
+    }
+    
+    /* ===== DELETE CHECKBOX ===== */
+    .delete-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: #fff5f5;
         border-radius: 8px;
+        border: 1px solid #feb2b2;
     }
-
-        /* Error message styling */
-    .preview-error {
-        padding: 10px;
-        background-color: #ffebee;
-        color: #c62828;
-        border: 1px solid #ffcdd2;
-        border-radius: 4px;
+    
+    .delete-checkbox label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: #c53030;
+        font-weight: 500;
         font-size: 14px;
-        margin-top: 10px;
+    }
+    
+    /* ===== SUBMIT BUTTON ===== */
+    .submit-button {
+        background: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 32px auto 0;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(29, 161, 242, 0.2);
+    }
+    
+    .submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(29, 161, 242, 0.3);
+    }
+    
+    .submit-button i {
+        margin-right: 10px;
+        font-size: 16px;
+    }
+    
+    /* ===== ERROR STYLES ===== */
+    .error-container {
+        background-color: rgba(224, 36, 94, 0.05);
+        border-left: 4px solid #e0245e;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        color: #e0245e;
+        font-size: 14px;
+    }
+    
+    /* ===== GUIDANCE ===== */
+    .emotional-guidance {
+        background: #e8f5fe;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 1px solid rgba(29, 161, 242, 0.2);
+    }
+    
+    .guidance-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #1da1f2;
+    }
+    
+    .guidance-content {
+        color: #14171a;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* ===== BACK BUTTON ===== */
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: white;
+        border: 2px solid #e1e8ed;
+        border-radius: 12px;
+        color: #14171a;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin: 20px auto;
+        display: block;
+        width: fit-content;
+    }
+    
+    .back-button:hover {
+        border-color: #1da1f2;
+        background: #e8f5fe;
+        transform: translateY(-2px);
+    }
+    
+    /* ===== MAX LIMIT WARNING ===== */
+    .max-limit-warning {
+        background: #fff7ed;
+        border: 2px solid #fed7aa;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+        color: #9a3412;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .max-limit-warning i {
+        font-size: 20px;
+        color: #f97316;
+    }
+    
+    /* ===== FLEXIBILITY NOTE ===== */
+    .flexibility-note {
+        background: #f0f9ff;
+        border: 2px solid #bae6fd;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+        color: #0369a1;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .flexibility-note i {
+        font-size: 20px;
+        color: #0ea5e9;
+    }
+    
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .activity-form-container {
+            margin: 16px;
+        }
+        
+        .activity-body {
+            padding: 24px;
+        }
+        
+        .activity-header {
+            padding: 20px;
+        }
+        
+        .activity-header h1 {
+            font-size: 20px;
+        }
+        
+        .form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .timestamp {
+            align-self: flex-start;
+        }
+        
+        .emoji-button {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+        
+        .file-preview-container {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
     }
 
+    /* ===== FIX FOR CONTENT TEXTAREA ===== */
+    /* Target Django's form textarea specifically */
+    textarea.activity-content {
+        width: 100% !important;
+        min-height: 120px !important;
+        max-height: 300px !important;
+        resize: vertical !important;
+        padding: 12px 16px !important;
+        border: 2px solid #e1e8ed !important;
+        border-radius: 12px !important;
+        font-family: inherit !important;
+        font-size: 15px !important;
+        background-color: white !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease !important;
+        line-height: 1.5 !important;
+    }
+    
+    textarea.activity-content:focus {
+        outline: none !important;
+        border-color: #1da1f2 !important;
+        box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1) !important;
+    }
 
+    /* ===== DARK MODE DESIGN ===== */
+    .dark-mode .activity-form-container {
+        background: #15202b;
+        border-radius: 16px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+        border: 1px solid #38444d;
+        margin: 20px auto;
+        max-width: 600px;
+        overflow: hidden;
+    }
 
-/* Dark Mode Styles */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: #ffffff; /* Light text */
-}
+    /* ===== DARK HEADER ===== */
+    .dark-mode .activity-header {
+        padding: 24px;
+        background: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+        color: white;
+        position: relative;
+    }
 
-body.dark-mode header,
-body.dark-mode footer,
-body.dark-mode section,
-body.dark-mode .left-aside,
-body.dark-mode .right-aside,
-body.dark-mode .upper-post,
-body.dark-mode .campaign-content,
-body.dark-mode .react div {
-    background-color: #1e1e1e; /* Slightly lighter dark background */
-    color: #ffffff; /* Light text */
-}
+    .dark-mode .activity-header h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-body.dark-mode .campaign-category {
-    background-color: #333333; /* Darker background for category */
-    color: #ffffff; /* Light text */
-}
+    .dark-mode .activity-subtitle {
+        margin: 8px 0 0 0;
+        font-size: 15px;
+        opacity: 0.95;
+        font-weight: 400;
+    }
 
-body.dark-mode .objectives-activities {
-    background-color: #262626; /* Dark background for objectives */
-    border-left: 4px solid #3498db; /* Accent border */
-    color: #ffffff; /* Light text */
-}
+    /* ===== DARK BODY ===== */
+    .dark-mode .activity-body {
+        padding: 32px;
+        background: #15202b;
+    }
 
-body.dark-mode .search-container input[type="text"] {
-    background-color: #333333; /* Dark background for input */
-    color: #ffffff; /* Light text */
-    border: 1px solid #444444; /* Dark border */
-}
+    /* ===== DARK PROGRESS INDICATOR ===== */
+    .dark-mode .progress-indicator {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 
-body.dark-mode .search-container .btn-reset {
-    color: #b0b0b0; /* Light icon color */
-}
+    .dark-mode .progress-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
 
-body.dark-mode button:not(.btn-search, .btn-reset) {
-    background-color: #262626; /* Dark background for buttons */
-    color: #ffffff; /* Light text */
-}
+    /* ===== DARK FORM SECTIONS ===== */
+    .dark-mode .form-section {
+        margin-bottom: 28px;
+        padding: 24px;
+        border: 2px solid #2d3748;
+        border-radius: 12px;
+        background: #1e2a3a;
+        transition: all 0.3s ease;
+    }
 
-body.dark-mode .explore-link i {
-    color: #ffffff; /* Light icon color */
-}
+    .dark-mode .form-section:hover {
+        border-color: #4a5568;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
 
-body.dark-mode .love-count,
-body.dark-mode #view-count,
-body.dark-mode .comment-count {
-    color: #ffffff; /* Light text for counts */
-}
+    .dark-mode .form-section.existing-activity {
+        border-left: 4px solid #10b981;
+        background: rgba(16, 185, 129, 0.1);
+    }
 
+    .dark-mode .form-section.new-activity {
+        border-left: 4px solid #1da1f2;
+        background: rgba(29, 161, 242, 0.1);
+    }
 
-body.dark-mode .affiliate-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    padding: 10px 15px;
-    background-color: #3498db; /* Accent color for buttons */
-    color: #ffffff;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
+    /* ===== DARK FORM HEADERS ===== */
+    .dark-mode .form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px dashed #4a5568;
+    }
 
-body.dark-mode .affiliate-link:hover {
-    background-color: #2980b9; /* Darker accent color on hover */
-}
+    .dark-mode .form-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #ffffff;
+        margin: 0;
+    }
 
-body.dark-mode .affiliate-link i {
-    margin-right: 8px; /* Space between icon and text */
-}
+    .dark-mode .activity-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: #1da1f2;
+        color: white;
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .dark-mode .form-type-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dark-mode .badge-existing {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border: 1px solid #10b981;
+    }
+
+    .dark-mode .badge-new {
+        background: rgba(29, 161, 242, 0.2);
+        color: #90cdf4;
+        border: 1px solid #1da1f2;
+    }
+
+    .dark-mode .timestamp {
+        font-size: 12px;
+        color: #a0aec0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* ===== DARK FORM ELEMENTS ===== */
+    .dark-mode .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #e2e8f0;
+        font-size: 15px;
+    }
+
+    .dark-mode .form-textarea,
+    .dark-mode .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #4a5568;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 15px;
+        background-color: #2d3748;
+        color: #e2e8f0;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+    }
+
+    .dark-mode .form-textarea:focus,
+    .dark-mode .form-input:focus {
+        outline: none;
+        border-color: #1da1f2;
+        box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2);
+    }
+
+    .dark-mode .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.5;
+    }
+
+    .dark-mode .form-helper {
+        color: #a0aec0;
+        font-size: 13px;
+        margin-top: 8px;
+        display: block;
+    }
+
+    /* Fix for dark mode content textarea */
+    .dark-mode textarea.activity-content {
+        width: 100% !important;
+        min-height: 120px !important;
+        max-height: 300px !important;
+        resize: vertical !important;
+        padding: 12px 16px !important;
+        border: 2px solid #4a5568 !important;
+        border-radius: 12px !important;
+        font-family: inherit !important;
+        font-size: 15px !important;
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+        box-sizing: border-box !important;
+        transition: all 0.2s ease !important;
+        line-height: 1.5 !important;
+    }
+
+    .dark-mode textarea.activity-content:focus {
+        outline: none !important;
+        border-color: #1da1f2 !important;
+        box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2) !important;
+    }
+
+    /* ===== DARK EMOJI SECTION ===== */
+    .dark-mode .emoji-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0;
+        padding: 16px;
+        background: rgba(29, 161, 242, 0.15);
+        border-radius: 12px;
+        border: 1px solid rgba(29, 161, 242, 0.3);
+    }
+
+    .dark-mode .emoji-button {
+        width: 40px;
+        height: 40px;
+        background: #2d3748;
+        border: 2px solid #4a5568;
+        border-radius: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dark-mode .emoji-button:hover {
+        transform: translateY(-2px);
+        border-color: #1da1f2;
+        background: rgba(29, 161, 242, 0.2);
+        box-shadow: 0 4px 8px rgba(29, 161, 242, 0.2);
+    }
+
+    .dark-mode .emoji-section {
+        margin: 20px 0;
+    }
+
+    .dark-mode .emoji-section-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #1da1f2;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    /* ===== DARK FILE UPLOAD ===== */
+    .dark-mode .file-upload-area {
+        border: 2px dashed #4a5568;
+        border-radius: 12px;
+        padding: 32px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.05);
+        margin-top: 12px;
+        position: relative;
+    }
+
+    .dark-mode .file-upload-area:hover {
+        border-color: #1da1f2;
+        background: rgba(29, 161, 242, 0.1);
+    }
+
+    .dark-mode .file-upload-icon {
+        font-size: 28px;
+        color: #1da1f2;
+        margin-bottom: 12px;
+    }
+
+    .dark-mode .file-upload-text {
+        font-size: 15px;
+        color: #e2e8f0;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    /* ===== DARK FILE PREVIEW ===== */
+    .dark-mode .file-preview-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .dark-mode .file-preview-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #4a5568;
+        height: 120px;
+        background: #2d3748;
+    }
+
+    .dark-mode .file-preview-item img,
+    .dark-mode .file-preview-item video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        filter: brightness(0.9);
+    }
+
+    .dark-mode .audio-preview {
+        padding: 20px;
+        background: #2d3748;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100%;
+        color: #e2e8f0;
+    }
+
+    .dark-mode .remove-file-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+    }
+
+    .dark-mode .file-name {
+        font-size: 12px;
+        color: #a0aec0;
+        margin-top: 4px;
+        word-break: break-word;
+    }
+
+    /* ===== DARK DELETE CHECKBOX ===== */
+    .dark-mode .delete-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: rgba(220, 53, 69, 0.1);
+        border-radius: 8px;
+        border: 1px solid #fc8181;
+    }
+
+    .dark-mode .delete-checkbox label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: #fc8181;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    /* ===== DARK SUBMIT BUTTON ===== */
+    .dark-mode .submit-button {
+        background: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 16px 32px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 32px auto 0;
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3);
+    }
+
+    .dark-mode .submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(29, 161, 242, 0.4);
+    }
+
+    /* ===== DARK ERROR STYLES ===== */
+    .dark-mode .error-container {
+        background-color: rgba(224, 36, 94, 0.1);
+        border-left: 4px solid #f56565;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        color: #f56565;
+        font-size: 14px;
+    }
+
+    /* ===== DARK GUIDANCE ===== */
+    .dark-mode .emotional-guidance {
+        background: rgba(29, 161, 242, 0.15);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 1px solid rgba(29, 161, 242, 0.3);
+    }
+
+    .dark-mode .guidance-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #1da1f2;
+    }
+
+    .dark-mode .guidance-content {
+        color: #e2e8f0;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    /* ===== DARK BACK BUTTON ===== */
+    .dark-mode .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #2d3748;
+        border: 2px solid #4a5568;
+        border-radius: 12px;
+        color: #e2e8f0;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        margin: 20px auto;
+        display: block;
+        width: fit-content;
+    }
+
+    .dark-mode .back-button:hover {
+        border-color: #1da1f2;
+        background: rgba(29, 161, 242, 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* ===== DARK MAX LIMIT WARNING ===== */
+    .dark-mode .max-limit-warning {
+        background: rgba(251, 146, 60, 0.1);
+        border: 2px solid #ed8936;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+        color: #feebc8;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dark-mode .max-limit-warning i {
+        font-size: 20px;
+        color: #f6ad55;
+    }
+
+    /* ===== DARK FLEXIBILITY NOTE ===== */
+    .dark-mode .flexibility-note {
+        background: rgba(29, 161, 242, 0.1);
+        border: 2px solid #63b3ed;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+        color: #bee3f8;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dark-mode .flexibility-note i {
+        font-size: 20px;
+        color: #90cdf4;
+    }
+
+    /* ===== DARK MODE RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .dark-mode .activity-form-container {
+            margin: 16px;
+        }
+        
+        .dark-mode .activity-body {
+            padding: 24px;
+        }
+        
+        .dark-mode .activity-header {
+            padding: 20px;
+        }
+        
+        .dark-mode .activity-header h1 {
+            font-size: 20px;
+        }
+        
+        .dark-mode .form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .dark-mode .timestamp {
+            align-self: flex-start;
+        }
+        
+        .dark-mode .emoji-button {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+        
+        .dark-mode .file-preview-container {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+        
+        textarea.activity-content {
+            min-height: 100px !important;
+            max-height: 200px !important;
+        }
+    }
+
+    /* ===== DARK MODE SPECIFIC IMPROVEMENTS ===== */
+
+    /* Selection styling for dark mode */
+    .dark-mode ::selection {
+        background: rgba(29, 161, 242, 0.3);
+        color: #ffffff;
+    }
+
+    /* Placeholder styling */
+    .dark-mode ::placeholder {
+        color: #718096;
+    }
+
+    /* Scrollbar styling for dark mode */
+    .dark-mode ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .dark-mode ::-webkit-scrollbar-track {
+        background: #1e2a3a;
+        border-radius: 4px;
+    }
+
+    .dark-mode ::-webkit-scrollbar-thumb {
+        background: #4a5568;
+        border-radius: 4px;
+    }
+
+    .dark-mode ::-webkit-scrollbar-thumb:hover {
+        background: #718096;
+    }
+
+    /* Focus outline for accessibility */
+    .dark-mode *:focus-visible {
+        outline: 2px solid #1da1f2;
+        outline-offset: 2px;
+    }
+
+    /* Disabled state styling */
+    .dark-mode :disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 </style>
 
-<h2 style="font-size:19px; padding-left: 20px; color:#333;">Campaign Activities Form</h2>
-<div class="custom-form-container">
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ formset.management_form }}
-        {% for form in formset %}
-            <div>
-                {{ form.as_p }}
-                <label class="custom-label">Emoji:</label>
-                <div class="emoji-container" id="emojiContainer{{ form.content.auto_id }}">
-                    {% for emoji in initial_emojis %}
-                        <button type="button" class="custom-emoji-button" onclick="addEmoji('{{ emoji }}', '{{ form.content.auto_id }}')">{{ emoji }}</button>
-                    {% endfor %}
-                    <div class="emoji-container hidden" id="extraEmojis{{ form.content.auto_id }}">
-                        {% for emoji in additional_emojis %}
-                            <button type="button" class="custom-emoji-button" onclick="addEmoji('{{ emoji }}', '{{ form.content.auto_id }}')">{{ emoji }}</button>
-                        {% endfor %}
-                    </div>
-                </div>
-                <button type="button" class="show-more-button" onclick="toggleEmojiOverflow('{{ form.content.auto_id }}')">…</button>
-                <div>
-                    
-                </div>
+<!-- MAIN CONTAINER -->
+<div class="activity-form-container">
+    <div class="activity-header">
+        <div>
+            <h1>
+                <i class="fas fa-tasks"></i>
+                {% if existing_activities_count > 0 %}
+                    Continue Activities
+                {% else %}
+                    Create First Activity
+                {% endif %}
+            </h1>
+            <p class="activity-subtitle">
+                {% if existing_activities_count > 0 %}
+                    Edit {{ existing_activities_count }} existing activity{{ existing_activities_count|pluralize }} and add new updates
+                {% else %}
+                    Start sharing updates for "{{ campaign.title }}"
+                {% endif %}
+            </p>
+        </div>
+        <button class="close-btn" onclick="window.history.back()">&times;</button>
+    </div>
+
+    <div class="activity-body">
+        <!-- PROGRESS INDICATOR -->
+        {% if existing_activities_count > 0 %}
+        <div class="progress-indicator">
+            <div class="progress-text">
+                <i class="fas fa-history"></i>
+                {% if existing_activities_count == 1 %}
+                    You have 1 previous activity. You can edit it below.
+                {% else %}
+                    You have {{ existing_activities_count }} previous activities. Edit them below.
+                {% endif %}
             </div>
-            <hr>
-        {% endfor %}
-        <button type="submit" class="custom-submit-button">Submit</button>
-    </form><br>    <div class="campaign-activities-container">
-                        <h4 class="campaign-activities-header">Examples of Activities to Post</h4>
-                        <div id="campaignActivitiesList" class="campaign-activities-list">
-                            {% for activity in campaign.get_goals_and_activities.Activities %}
-                                <activity-text class="campaign-activity-item">{{ activity }}</activity-text>
+            <div class="progress-count">
+                {{ existing_activities_count }} / {{ max_forms }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- MAX LIMIT WARNING -->
+        {% if is_at_max %}
+        <div class="max-limit-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Maximum activities reached ({{ max_forms }})</strong><br>
+                You cannot add more activities. Delete some existing ones to make space for new updates.
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- FLEXIBILITY NOTE -->
+        <div class="flexibility-note">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <strong>Flexible updates:</strong> You can leave forms empty if you don't want to make changes.
+                Only forms with content or files will be saved.
+            </div>
+        </div>
+        
+        <!-- GUIDANCE -->
+        <div class="emotional-guidance">
+            <div class="guidance-header">
+                <i class="fas fa-lightbulb"></i>
+                <strong>How Progressive Activities Work</strong>
+            </div>
+            <div class="guidance-content">
+                {% if existing_activities_count == 0 %}
+                    <strong>First visit:</strong> Create your first activity<br>
+                    <strong>Next visit:</strong> Edit previous activity + Add new one<br>
+                    <strong>Continuing:</strong> Build your activity history over time
+                {% else %}
+                    <strong>Edit:</strong> Update your previous activities (optional)<br>
+                    <strong>Add:</strong> Create new updates ({% if is_at_max %}No space{% else %}+1 empty form{% endif %})<br>
+                    <strong>Skip:</strong> Leave forms empty if no changes needed
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- FORM START -->
+        {% if formset %}
+        <form method="post" enctype="multipart/form-data" id="activityForm">
+            {% csrf_token %}
+            
+            {{ formset.management_form }}
+            
+            {% if formset.errors %}
+                <div class="error-container">
+                    <strong>Please fix these errors:</strong>
+                    <ul>
+                        {% for form in formset %}
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>
+                                        {% if form.instance.pk %}
+                                            Activity #{{ forloop.parentloop.parentloop.counter }}
+                                        {% else %}
+                                            New Activity
+                                        {% endif %}
+                                        - {{ field.label }}: {{ error }}
+                                    </li>
+                                {% endfor %}
                             {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            
+            <!-- FORMSET LOOP -->
+            {% for form in formset %}
+                {% with form_index=forloop.counter0 is_existing=form.instance.pk %}
+                <div class="form-section {% if is_existing %}existing-activity{% else %}new-activity{% endif %}" 
+                     id="activity-form-{{ form_index }}" 
+                     data-form-index="{{ form_index }}"
+                     data-is-existing="{{ is_existing|yesno:'true,false' }}">
+                    
+                    <!-- FORM HEADER -->
+                    <div class="form-header">
+                        <h3 class="form-title">
+                            <span class="activity-number">{{ forloop.counter }}</span>
+                            {% if is_existing %}
+                                Activity #{{ forloop.counter }}
+                                <span class="form-type-badge badge-existing">
+                                    <i class="fas fa-edit"></i> Existing
+                                </span>
+                            {% else %}
+                                New Activity
+                                <span class="form-type-badge badge-new">
+                                    <i class="fas fa-plus"></i> New
+                                </span>
+                            {% endif %}
+                        </h3>
+                        
+                        {% if is_existing %}
+                        <div class="timestamp">
+                            <i class="far fa-clock"></i>
+                            {{ form.instance.timestamp|date:"M d, Y • g:i A" }}
                         </div>
-                        <span id="toggleActivitiesButton" class="campaign-toggle-button">See More</span>
+                        {% endif %}
                     </div>
+                    
+                    <!-- HIDDEN FIELDS -->
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                    
+                    <!-- DELETE CHECKBOX (Only for existing activities) -->
+                    {% if is_existing and form.DELETE %}
+                    <div class="delete-checkbox">
+                        <label>
+                            {{ form.DELETE }}
+                            <i class="fas fa-trash-alt"></i>
+                            Delete this activity
+                        </label>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- CONTENT FIELD -->
+                    <div style="margin-bottom: 20px;">
+                        <label class="form-label">
+                            {% if is_existing %}
+                                {% if form.instance.content %}
+                                    Update your message (optional):
+                                {% else %}
+                                    Add a message (optional):
+                                {% endif %}
+                            {% else %}
+                                What would you like to share? (optional)
+                            {% endif %}
+                        </label>
+                        {{ form.content }}
+                        <span class="form-helper">
+                            {% if is_existing %}
+                                Edit your message or leave it as is
+                            {% else %}
+                                Share updates, progress, or calls to action
+                            {% endif %}
+                        </span>
+                        
+                        <!-- EMOJI SECTION -->
+                        <div class="emoji-section">
+                            <div class="emoji-section-label">
+                                <i class="fas fa-smile"></i>
+                                {% if is_existing %}
+                                    Update the feeling (optional)
+                                {% else %}
+                                    Add feeling (optional)
+                                {% endif %}
+                            </div>
+                            
+                            <div class="emoji-container" id="emojiContainer-{{ form_index }}">
+                                {% for emoji in initial_emojis %}
+                                    <button type="button" 
+                                            class="emoji-button" 
+                                            onclick="addEmojiToField('{{ emoji }}', {{ form_index }})">
+                                        {{ emoji }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- MEDIA FIELD -->
+                    <div>
+                        <label class="form-label">
+                            {% if is_existing and form.instance.file %}
+                                Update media (optional):
+                            {% else %}
+                                Add media (optional):
+                            {% endif %}
+                        </label>
+                        
+                        <!-- FILE UPLOAD AREA -->
+                        <div class="file-upload-area" id="drop-area-{{ form_index }}">
+                            <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                            <div class="file-upload-text">
+                                {% if is_existing and form.instance.file %}
+                                    Replace current file or upload new (optional)
+                                {% else %}
+                                    Upload image, video, or audio (optional)
+                                {% endif %}
+                            </div>
+                            <span class="form-helper">Click or drag & drop (max 10MB) - Optional</span>
+                            <input type="file" 
+                                   class="file-input-hidden" 
+                                   id="file-input-{{ form_index }}"
+                                   accept="image/*,video/*,audio/*"
+                                   onchange="handleFileSelect({{ form_index }})">
+                        </div>
+                        
+                        <!-- HIDDEN DJANGO FILE FIELD -->
+                        {{ form.file }}
+                        
+                        <!-- FILE PREVIEW AREA -->
+                        <div id="file-preview-{{ form_index }}" class="file-preview-container">
+                            <!-- Preview generated by JavaScript -->
+                        </div>
+                        
+                        <!-- EXISTING FILE (if editing) -->
+                        {% if is_existing and form.instance.file %}
+                        <div id="existing-file-{{ form_index }}" class="file-preview-container" style="margin-top: 10px;">
+                            <div style="width: 100%;">
+                                <div class="file-preview-item">
+                                    {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
+                                        <img src="{{ form.instance.file.url }}" alt="Current file">
+                                    {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
+                                        <video controls style="width:100%;height:100%;">
+                                            <source src="{{ form.instance.file.url }}">
+                                        </video>
+                                    {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
+                                        <div class="audio-preview">
+                                            <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
+                                            <audio controls style="width: 100%; margin-top: 8px;">
+                                                <source src="{{ form.instance.file.url }}">
+                                            </audio>
+                                        </div>
+                                    {% else %}
+                                        <div class="audio-preview">
+                                            <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
+                                            <div style="font-size: 12px; margin-top: 8px;">Current file</div>
+                                        </div>
+                                    {% endif %}
+                                    <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ form_index }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="file-name">
+                                    {% if form.instance.file.name|length > 20 %}
+                                        {{ form.instance.file.name|slice:":17" }}...
+                                    {% else %}
+                                        {{ form.instance.file.name }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endwith %}
+                
+                <!-- SEPARATOR (except last form) -->
+                {% if not forloop.last %}
+                <hr style="border: none; border-top: 2px dashed #e1e8ed; margin: 32px 0;">
+                {% endif %}
+            {% endfor %}
+            
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" class="submit-button" id="submitBtn">
+                <i class="fas fa-save"></i>
+                {% if existing_activities_count > 0 %}
+                    {% if is_at_max %}
+                        Save Changes
+                    {% else %}
+                        Save Changes & Add New Activity
+                    {% endif %}
+                {% else %}
+                    Create First Activity
+                {% endif %}
+            </button>
+            
+            <!-- PROGRESSIVE WORKFLOW NOTE -->
+            <div style="text-align: center; margin-top: 24px; color: #657786; font-size: 14px; line-height: 1.5;">
+                <i class="fas fa-sync-alt" style="margin-right: 8px;"></i>
+                <strong>Flexible Workflow:</strong> 
+                {% if existing_activities_count == 0 %}
+                    Start today, come back tomorrow to edit and add more
+                {% elif is_at_max %}
+                    You've reached the maximum. Delete some to add new ones
+                {% else %}
+                    Fill any forms you want, leave others empty. Only filled forms will be saved.
+                {% endif %}
+            </div>
+        </form>
+        {% endif %}
+    </div>
 </div>
 
+<!-- BACK BUTTON -->
+<a href="{% url 'view_campaign' campaign_id=campaign.pk %}" class="back-button">
+    <i class="fas fa-arrow-left"></i>
+    Back to "{{ campaign.title }}"
+</a>
 
 <script>
-    // Toggle emoji container visibility
-    function toggleEmojiOverflow(fieldId) {
-        var container = document.getElementById('extraEmojis' + fieldId);
-        container.classList.toggle('hidden');
+    // ===== EMOJI HANDLING =====
+    function addEmojiToField(emoji, formIndex) {
+        const form = document.getElementById(`activity-form-${formIndex}`);
+        const textarea = form.querySelector('textarea[name$="-content"]');
+        if (!textarea) return;
+        
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        
+        textarea.value = textBefore + emoji + textAfter;
+        textarea.focus();
+        textarea.selectionStart = cursorPos + emoji.length;
+        textarea.selectionEnd = cursorPos + emoji.length;
+        
+        // Trigger resize
+        textarea.dispatchEvent(new Event('input'));
     }
-
-    // Add emoji to the form content field
-    function addEmoji(emoji, fieldId) {
-        var contentField = document.getElementById(fieldId);
-        contentField.value += emoji;
+    
+    // ===== FILE UPLOAD HANDLING =====
+    function handleFileSelect(formIndex) {
+        const fileInput = document.getElementById(`file-input-${formIndex}`);
+        const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
+        const previewArea = document.getElementById(`file-preview-${formIndex}`);
+        
+        if (!fileInput || !fileInput.files.length || !djangoFileInput) return;
+        
+        // Clear previous preview
+        previewArea.innerHTML = '';
+        
+        // Create DataTransfer to handle files
+        const dt = new DataTransfer();
+        const files = Array.from(fileInput.files);
+        
+        // Only take the first file
+        const file = files[0];
+        dt.items.add(file);
+        
+        // Update the Django file input
+        djangoFileInput.files = dt.files;
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            
+            if (file.type.startsWith('image/')) {
+                previewItem.innerHTML = `
+                    <div class="file-preview-item">
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                `;
+            } else if (file.type.startsWith('video/')) {
+                previewItem.innerHTML = `
+                    <div class="file-preview-item">
+                        <video controls style="width:100%;height:100%;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </video>
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                `;
+            } else if (file.type.startsWith('audio/')) {
+                previewItem.innerHTML = `
+                    <div class="file-preview-item">
+                        <div class="audio-preview">
+                            <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
+                            <audio controls style="width: 100%; margin-top: 8px;">
+                                <source src="${e.target.result}" type="${file.type}">
+                            </audio>
+                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})" style="position: absolute; top: 5px; right: 5px;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                `;
+            } else {
+                previewItem.innerHTML = `
+                    <div class="file-preview-item">
+                        <div class="audio-preview">
+                            <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
+                            <div style="font-size: 12px; margin-top: 8px;">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})" style="position: absolute; top: 5px; right: 5px;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                `;
+            }
+            
+            previewArea.appendChild(previewItem);
+            previewArea.style.display = 'grid';
+        };
+        
+        reader.readAsDataURL(file);
     }
-
-    document.getElementById('toggleActivitiesButton').addEventListener('click', function() {
-        var container = document.getElementById('campaignActivitiesList');
-        var button = document.getElementById('toggleActivitiesButton');
-
-        if (container.classList.contains('campaign-activities-expanded')) {
-            container.classList.remove('campaign-activities-expanded');
-            button.textContent = 'See More';
+    
+    function removeFile(formIndex) {
+        const fileInput = document.getElementById(`file-input-${formIndex}`);
+        const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
+        const previewArea = document.getElementById(`file-preview-${formIndex}`);
+        
+        if (fileInput) fileInput.value = '';
+        if (djangoFileInput) djangoFileInput.value = '';
+        if (previewArea) {
+            previewArea.innerHTML = '';
+            previewArea.style.display = 'none';
+        }
+    }
+    
+    function removeExistingFile(formIndex) {
+        const existingDiv = document.getElementById(`existing-file-${formIndex}`);
+        const clearCheckbox = document.querySelector(`#activity-form-${formIndex} input[name$="-file-clear"]`);
+        
+        if (existingDiv) existingDiv.style.display = 'none';
+        if (clearCheckbox) clearCheckbox.checked = true;
+    }
+    
+    // ===== DRAG & DROP =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize drag and drop
+        document.querySelectorAll('.activity-form').forEach(formElement => {
+            const formIndex = formElement.dataset.formIndex;
+            const dropArea = document.getElementById(`drop-area-${formIndex}`);
+            
+            if (dropArea) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                function highlight() {
+                    dropArea.style.borderColor = '#1da1f2';
+                    dropArea.style.background = '#e8f5fe';
+                }
+                
+                function unhighlight() {
+                    dropArea.style.borderColor = '#e1e8ed';
+                    dropArea.style.background = '#fafbfd';
+                }
+                
+                dropArea.addEventListener('drop', function(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    const fileInput = document.getElementById(`file-input-${formIndex}`);
+                    
+                    if (fileInput && files.length > 0) {
+                        fileInput.files = files;
+                        handleFileSelect(formIndex);
+                    }
+                });
+            }
+        });
+        
+        // Auto-resize textareas
+        document.querySelectorAll('textarea').forEach(textarea => {
+            // Apply the activity-content class to all content textareas
+            if (textarea.name.includes('-content')) {
+                textarea.classList.add('activity-content');
+            }
+            
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+            
+            // Initial resize
+            setTimeout(() => {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+            }, 100);
+        });
+        
+        // Scroll to new activity forms
+        document.querySelectorAll('.new-activity').forEach(form => {
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+    
+    // ===== FORM VALIDATION =====
+    document.getElementById('activityForm')?.addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        // NO VALIDATION REQUIRED - forms can be empty
+        // Only validate file sizes if files are uploaded
+        
+        // Validate file sizes (if any files are uploaded)
+        let allFilesValid = true;
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            Array.from(input.files).forEach(file => {
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    allFilesValid = false;
+                    alert(`File "${file.name}" is too large (${(file.size/1024/1024).toFixed(1)}MB). Maximum size is 10MB.`);
+                }
+            });
+        });
+        
+        if (!allFilesValid) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading state with appropriate text
+        const existingCount = document.querySelectorAll('.existing-activity').length;
+        const newCount = document.querySelectorAll('.new-activity').length;
+        
+        if (existingCount > 0 && newCount > 0) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        } else if (existingCount > 0) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         } else {
-            container.classList.add('campaign-activities-expanded');
-            button.textContent = 'See Less';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        }
+        
+        submitBtn.disabled = true;
+        
+        // Re-enable after 10 seconds if submission fails
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 10000);
+        
+        return true;
+    });
+    
+    // Keyboard shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            const form = document.getElementById('activityForm');
+            if (form) {
+                e.preventDefault();
+                form.submit();
+            }
         }
     });
 </script>
-
-
-<script type="text/javascript">
-function switchColor() {
-    const body = document.body;
-    const isDarkMode = body.classList.toggle('dark-mode'); // Toggle dark mode class
-    var reactDivs = document.querySelectorAll('.react');
-
-    // Update background and text colors for all elements
-    const elementsToUpdate = document.querySelectorAll(
-        'header, footer, section, .left-aside, .right-aside, .upper-post, .campaign-content, .react, .search-container input, .search-container .btn-reset'
-    );
-
-    elementsToUpdate.forEach(element => {
-        element.classList.toggle('dark-mode', isDarkMode);
-    });
-
-    // Update text colors for specific elements
-    const textElements = document.querySelectorAll(
-        'h1, h2, h3,  p, li, .campaign-nav, .campaign-nav a, .btn, .reaction, .action-item, .action-item a, .carousel, .ad, .slide, .ad a, .explore-link, .love-count, #view-count, .comment-count'
-    );
-
-    textElements.forEach(element => {
-        element.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update buttons
-    const buttons = document.querySelectorAll('button:not(.btn-search, .btn-reset)');
-    buttons.forEach(button => {
-        button.style.backgroundColor = isDarkMode ? '#262626' : '';
-        button.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update `.react` divs
-    if (reactDivs.length > 0) {
-        reactDivs.forEach(function(reactDiv) {
-            reactDiv.style.backgroundColor = isDarkMode ? "#262626" : "";
-            reactDiv.style.color = isDarkMode ? "white" : "black";
-
-            if (isDarkMode) {
-                reactDiv.classList.add('react-hover');
-            } else {
-                reactDiv.classList.remove('react-hover');
-                reactDiv.style.backgroundColor = "";
-            }
-        });
-    }
-
-    // Update input field and reset button
-    const inputField = document.querySelector('.search-container input[type="text"]');
-    const inputResetButton = document.querySelector('.search-container .btn-reset');
-
-    if (inputField) {
-        inputField.style.backgroundColor = isDarkMode ? '#333333' : '#ffffff';
-        inputField.style.color = isDarkMode ? '#ffffff' : '#000000';
-    }
-
-    if (inputResetButton) {
-        inputResetButton.style.color = '#b0b0b0';
-    }
-}
-
-</script>
-
-
-<a href="{% url 'view_campaign' campaign_id=campaign.pk %}" class="custom-back-button" style="font-size:12px;">
-    <i class="fa fa-arrow-left"></i> Back
-</a>
-
-
 
 {% endblock %}

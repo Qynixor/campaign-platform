@@ -586,8 +586,8 @@ class Campaign(models.Model):
         for profile in self.visible_to_followers.all():
             user = profile.user  # Ensure this relationship is correctly set
             message = (
-                f'You have been granted access to a private campaign: {self.title}. '
-                f'<a href="{reverse("view_campaign", kwargs={"campaign_id": self.pk})}">View Campaign</a>'
+                f'You have been granted access to a private cause: {self.title}. '
+                f'<a href="{reverse("view_campaign", kwargs={"campaign_id": self.pk})}">View Cause</a>'
             )
             Notification.objects.create(
                 user=user,
@@ -879,7 +879,7 @@ class SoundTribe(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:  # If this is a new tribe join
             # Create the notification message
-            message = f"{self.user.user.username} joined your Soundmark Tribe. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+            message = f"{self.user.user.username} joined your Soundmark Tribe. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
             # Create the notification
             Notification.objects.create(user=self.campaign.user.user, message=message)
         super().save(*args, **kwargs)
@@ -1210,7 +1210,7 @@ class Love(models.Model):
         if self.pk is None:  # If this is a new love
             # Create the notification message
             campaign_title = self.campaign.title
-            message = f"{self.user.username} loved your campaign '{campaign_title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+            message = f"{self.user.username} loved your cause '{campaign_title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
             # Create the notification
             Notification.objects.create(user=self.campaign.user.user, message=message)
         super().save(*args, **kwargs)
@@ -1240,7 +1240,7 @@ class Comment(models.Model):
             # Create notification only for top-level comments
             if not self.parent_comment:
                 commenter_username = self.user.user.username
-                message = f"{commenter_username} commented on your campaign '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+                message = f"{commenter_username} commented on your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
                 Notification.objects.create(user=self.campaign.user.user, message=message)
         super().save(*args, **kwargs)
     
@@ -1289,12 +1289,12 @@ class Activity(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:  # If this is a new activity
             # Create the notification message for the campaign owner
-            message_owner = f"An activity was added to your campaign '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+            message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
             # Create the notification for the campaign owner
             Notification.objects.create(user=self.campaign.user.user, message=message_owner)
             followers = self.campaign.user.followers.all()
             for follower in followers:
-                message_follower = f"An activity was added to a campaign you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Campaign</a>"
+                message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
                 Notification.objects.create(user=follower, message=message_follower)
 
         super().save(*args, **kwargs)
@@ -1309,7 +1309,7 @@ class ActivityLove(models.Model):
     def save(self, *args, **kwargs):
         if self.pk is None:  # If this is a new love
             # Create the notification message
-            message = f"{self.user.username} loved an activity in your campaign '{self.activity.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.activity.campaign.pk})}'>View Campaign</a>"
+            message = f"{self.user.username} loved an activity in your cause '{self.activity.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.activity.campaign.pk})}'>View Cause</a>"
             # Create the notification
             Notification.objects.create(user=self.activity.campaign.user.user, message=message)
         super().save(*args, **kwargs)

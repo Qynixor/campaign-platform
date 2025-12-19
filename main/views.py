@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count
 from django.http import HttpResponse
-from .forms import ActivityFormSet
+
 from django.contrib.auth.models import User
 from .forms import (
     UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
@@ -642,7 +642,9 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
 
         # Unread messages
         user_chats = Chat.objects.filter(participants=self.request.user)
-        unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=self.request.user).count()
+        unread_messages_count = Message.objects.filter(
+            chat__in=user_chats
+        ).exclude(sender=self.request.user).count()
         context['unread_messages_count'] = unread_messages_count
 
         # User profile
@@ -662,11 +664,12 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
         user_profile.save()
 
         # Improved suggested users logic
-        current_user_following = request.user.following.all()  # Get all Follow objects
-        following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
+        current_user_following = self.request.user.following.all()
+        following_user_ids = [follow.followed_id for follow in current_user_following]
     
-    # Exclude current user and already followed users
-        all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
+        # Exclude current user and already followed users
+        # FIXED: Changed request.user to self.request.user
+        all_profiles = Profile.objects.exclude(user=self.request.user).exclude(user__id__in=following_user_ids)
     
         suggested_users = []
     
@@ -675,12 +678,12 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
             if similarity_score >= 0.5:
                 followers_count = Follow.objects.filter(followed=profile.user).count()
                 suggested_users.append({
-                'user': profile.user,
-                'followers_count': followers_count
+                    'user': profile.user,
+                    'followers_count': followers_count
                 })
 
         suggested_users = suggested_users[:2]
-
+        context['suggested_users'] = suggested_users  # Don't forget to add to context!
 
         # Ads
         ads = NativeAd.objects.all()
@@ -689,8 +692,7 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
         # 🔥 Trending campaigns (Only those with at least 1 love)
         trending_campaigns = Campaign.objects.filter(visibility='public') \
             .annotate(love_count_annotated=Count('loves')) \
-            .filter(love_count_annotated__gte=1) \
-            
+            .filter(love_count_annotated__gte=1)
 
         # Apply category filter if provided
         if category_filter:
@@ -700,7 +702,6 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
         context['trending_campaigns'] = trending_campaigns
 
         # Top Contributors logic
-       
         love_pairs = Love.objects.values_list('user_id', 'campaign_id')
         comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
         view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
@@ -708,7 +709,7 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
         activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
         # Combine all engagement pairs
-        all_pairs = chain( love_pairs, comment_pairs, view_pairs,
+        all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                           activity_love_pairs, activity_comment_pairs)
 
         # Count number of unique campaigns each user engaged with
@@ -3730,9 +3731,108 @@ def like_comment_reply(request):
 
 
 
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.forms import inlineformset_factory
+from django.db import transaction
+from django import forms
+from django.urls import reverse
+from cloudinary.models import CloudinaryResource
+
+# Models
+from .models import (
+    Campaign, Activity, Profile, Notification, 
+    NativeAd, Follow, Love, Comment, 
+    CampaignView, ActivityLove, ActivityComment,
+    UserSubscription
+)
+
+# Utilities
+from .utils import calculate_similarity, validate_no_long_words
+
+# ActivityForm Definition
+class ActivityForm(forms.ModelForm):
+    file = forms.FileField(
+        required=False,
+        label="Add Media (optional)",
+        help_text="Upload image, video or audio file (max 10MB)",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'image/*,video/*,audio/*',
+            'class': 'file-input',
+            'multiple': False
+        })
+    )
+    
+    class Meta:
+        model = Activity
+        fields = ['content', 'file']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Share an update, ask for help, celebrate progress...',
+                'class': 'activity-content'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make both fields completely optional
+        self.fields['content'].required = False
+        self.fields['file'].required = False
+            
+    def clean(self):
+        cleaned_data = super().clean()
+        # Both fields are optional - user can leave entire form empty
+        # Empty forms will be skipped in the view
+        return cleaned_data
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if content:
+            validate_no_long_words(content)
+        return content
+
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        
+        # Skip validation if it's an existing CloudinaryResource
+        if file and isinstance(file, CloudinaryResource):
+            return file
+            
+        # Only validate for new file uploads
+        if file and hasattr(file, 'size'):
+            # Validate file size (10MB max)
+            max_size = 10 * 1024 * 1024  # 10MB
+            if file.size > max_size:
+                raise forms.ValidationError(f'File size must be under {max_size/1024/1024}MB')
+            
+            # Validate file types
+            allowed_types = ['image', 'video', 'audio']
+            if not any(file.content_type.startswith(t) for t in allowed_types):
+                raise forms.ValidationError('Only image, video, and audio files are allowed')
+        
+        return file
+
+
+
+
 @login_required
 def create_activity(request, campaign_id):
-    # 🔒 CHECK USER CAMPAIGN LIMIT FOR ACTIVITY CREATION
+    """
+    PROGRESSIVE ACTIVITY CREATION VIEW
+    --------------------------------
+    First visit: Show 1 empty form
+    Second visit: Show previous activity (editable) + 1 empty form
+    Third visit: Show 2 previous activities + 1 empty form
+    ...up to max 10 forms total
+    Empty forms are allowed - user doesn't have to fill every form
+    """
+    
+    # 🔒 CHECK USER CAMPAIGN LIMIT
     subscription = UserSubscription.get_for_user(request.user)
     user_campaign_count = Campaign.objects.filter(user=request.user.profile).count()
     
@@ -3747,24 +3847,145 @@ def create_activity(request, campaign_id):
             return redirect('subscription_required')
     
     following_users = [follow.followed for follow in request.user.following.all()]
-    category_filter = request.GET.get('category', '')  # Get category filter from request
+    category_filter = request.GET.get('category', '')
     user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    # 🔒 ADDITIONAL CHECK: Ensure user owns the campaign to create activities
+    # 🔒 ADDITIONAL CHECK: Ensure user owns the campaign
     if campaign.user != user_profile:
         messages.error(request, "You can only create activities for your own campaigns.")
-        return redirect('campaign_detail', campaign_id=campaign_id)
+        # Redirect to activity_list instead of view_campaign
+        return redirect('activity_list', campaign_id=campaign_id)
+
+    # Get existing activities for this campaign, ordered newest first
+    existing_activities = Activity.objects.filter(campaign=campaign).order_by('-timestamp')
+    
+    # Calculate how many forms to show
+    # Show existing activities + 1 empty form, but max 10 total
+    MAX_FORMS = 10
+    existing_count = existing_activities.count()
+    
+    if existing_count >= MAX_FORMS:
+        # Already at max, show all existing (no empty form)
+        forms_to_show = MAX_FORMS
+        empty_forms = 0
+    else:
+        # Show existing + 1 empty form
+        forms_to_show = existing_count + 1
+        empty_forms = 1
+    
+    # Create the formset with dynamic number of forms
+    ActivityFormSet = inlineformset_factory(
+        Campaign,
+        Activity,
+        form=ActivityForm,
+        extra=empty_forms,  # Add empty forms
+        can_delete=True,
+        max_num=MAX_FORMS,
+        fields=['content', 'file']
+    )
 
     if request.method == 'POST':
-        formset = ActivityFormSet(request.POST, request.FILES, instance=campaign)
+        formset = ActivityFormSet(
+            request.POST, 
+            request.FILES, 
+            instance=campaign,
+            queryset=existing_activities  # Pre-populate with existing activities
+        )
+        
         if formset.is_valid():
-            formset.save()
-            return redirect('activity_list', campaign_id=campaign_id)
+            try:
+                with transaction.atomic():
+                    instances = formset.save(commit=False)
+                    
+                    saved_count = 0
+                    new_count = 0
+                    updated_count = 0
+                    
+                    for instance in instances:
+                        # Skip COMPLETELY empty forms (no content AND no file)
+                        # Also skip if it's an existing activity with no changes
+                        if not instance.content and not instance.file:
+                            # Check if this is an existing activity with no changes
+                            if instance.pk:
+                                # Get the original instance
+                                original = Activity.objects.get(pk=instance.pk)
+                                # If no changes at all, skip
+                                if (instance.content == original.content and 
+                                    instance.file == original.file):
+                                    continue
+                            else:
+                                # New form with no content or file, skip
+                                continue
+                            
+                        # If there's a file but no content, add default content
+                        if instance.file and not instance.content:
+                            instance.content = "Shared a file"
+                            
+                        instance.save()
+                        saved_count += 1
+                        
+                        if not instance.pk:  # New activity
+                            new_count += 1
+                        else:  # Updated activity
+                            updated_count += 1
+                    
+                    # Handle deleted forms
+                    deleted_count = 0
+                    for form in formset.deleted_forms:
+                        if form.instance.pk:
+                            form.instance.delete()
+                            deleted_count += 1
+                    
+                    # Create success message based on actions
+                    if saved_count > 0 or deleted_count > 0:
+                        action_messages = []
+                        if new_count > 0:
+                            action_messages.append(f"Created {new_count} new activity{'s' if new_count > 1 else ''}")
+                        if updated_count > 0:
+                            action_messages.append(f"Updated {updated_count} existing activity{'s' if updated_count > 1 else ''}")
+                        if deleted_count > 0:
+                            action_messages.append(f"Deleted {deleted_count} activity{'s' if deleted_count > 1 else ''}")
+                        
+                        if action_messages:
+                            messages.success(request, ' • '.join(action_messages))
+                        else:
+                            messages.success(request, 'Changes saved successfully!')
+                    else:
+                        # Check if user submitted completely empty forms
+                        messages.info(request, 'No changes were made.')
+                    
+                    # CHANGED: Redirect to activity_list instead of view_campaign
+                    return redirect('activity_list', campaign_id=campaign_id)
+                    
+            except Exception as e:
+                messages.error(request, f'Error saving activities: {str(e)}')
+                print(f"Error in create_activity: {e}")
+        else:
+            # Show form errors
+            error_count = 0
+            error_messages = []
+            for i, form in enumerate(formset):
+                if form.errors:
+                    error_count += len(form.errors)
+                    for field, errors in form.errors.items():
+                        for error in errors:
+                            error_messages.append(f"Form {i+1} - {field}: {error}")
+            
+            if error_count > 0:
+                messages.error(request, f'Please correct the {error_count} error{"s" if error_count > 1 else ""} below.')
+                # Print errors to console for debugging
+                print("Form errors:", error_messages)
+            else:
+                messages.error(request, 'Please correct the errors below.')
     else:
-        formset = ActivityFormSet(instance=campaign)
+        # GET request - show forms with existing activities + empty form(s)
+        formset = ActivityFormSet(
+            instance=campaign,
+            queryset=existing_activities
+        )
 
-    # Notification and messaging data
+    # Get context data for notifications, etc.
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users,
@@ -3776,16 +3997,14 @@ def create_activity(request, campaign_id):
 
     ads = NativeAd.objects.all()
 
-    # Improved suggested users logic
-    current_user_following = request.user.following.all()  # Get all Follow objects
-    following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
+    # Suggested users logic
+    current_user_following = request.user.following.all()
+    following_user_ids = [follow.followed_id for follow in current_user_following]
     
-    # Exclude current user and already followed users
     all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
     
     suggested_users = []
-    
-    for profile in all_profiles:
+    for profile in all_profiles[:2]:
         similarity_score = calculate_similarity(user_profile, profile)
         if similarity_score >= 0.5:
             followers_count = Follow.objects.filter(followed=profile.user).count()
@@ -3794,39 +4013,34 @@ def create_activity(request, campaign_id):
                 'followers_count': followers_count
             })
 
-    # Limit to 2 suggested users
-    suggested_users = suggested_users[:2]
-
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
+    # Trending campaigns
+    from django.db.models import Count
     trending_campaigns = Campaign.objects.filter(visibility='public') \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)
       
-    # Apply category filter if provided
     if category_filter:
         trending_campaigns = trending_campaigns.filter(category=category_filter)
 
     trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
 
     # Top Contributors logic
- 
+    from itertools import chain
+    from collections import defaultdict
+    
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
     comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
     view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
     activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
-    # Combine all engagement pairs
     all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
-    # Count number of unique campaigns each user engaged with
     user_campaign_map = defaultdict(set)
     for user_id, campaign_id in all_pairs:
         user_campaign_map[user_id].add(campaign_id)
 
-    # Build a list of contributors with their campaign engagement count
     contributor_data = []
     for user_id, campaign_set in user_campaign_map.items():
         try:
@@ -3839,37 +4053,21 @@ def create_activity(request, campaign_id):
         except Profile.DoesNotExist:
             continue
 
-    # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
     categories = Campaign.objects.values_list('category', flat=True).distinct()
 
-    # Expanded list of 200 emojis for activities
+    # Emojis for the emoji picker
     emojis = [
-    '📢', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥', '🌟', 
-    '🌳', '🌍', '🌱', '🌲', '🌿', '🍃', '🏞️', '🦋', '🐝', '🐞', '🦜', '🐢', '🐘', '🐆', '🐅', '🐬',  # Environmental and wildlife
-    '💉', '❤️', '🩺', '🚑', '🏥', '🧬', '💊', '🩹', '🧑‍⚕️', '👨‍⚕️', '🩸', '🫁', '🫀', '🧠', '🦷', '👁️',  # Health and wellness
-    '📚', '🎓', '🏫', '🖊️', '📖', '✍️', '🧑‍🏫', '👨‍🏫', '📜', '🔖', '📕', '📝', '📋', '📑', '🧮', '🎒',  # Education and literacy
-    '🤝', '🗣️', '💬', '🏘️', '🏠', '👩‍🏫', '👨‍🏫', '🧑‍🎓', '👩‍🎓', '👨‍🎓', '🏘️', '🏡', '🏙️', '🚪', '🛠️', '🛏️',  # Community development
-    '⚖️', '🕊️', '🏳️‍🌈', '🔒', '🛡️', '📜', '📛', '🤲', '✌️', '👐', '🙏', '🧑‍⚖️', '👨‍⚖️', '📝', '🪧', '🎗️',  # Equality and inclusion
-    '🐾', '🐕', '🐈', '🐅', '🐆', '🐘', '🐄', '🐑', '🐇', '🐿️', '🐦', '🦢', '🦉', '🐠', '🦑', '🦓', '🐅',  # Animal welfare
-    '🌐', '💻', '📱', '🖥️', '⌨️', '🔐', '🛡️', '📡', '🛰️', '🌐', '💾', '🖱️', '🖨️', '📂', '🗄️', '📧', '🛠️',  # Digital rights and tech
-    '🌍', '🛠️', '📜', '🌱', '💡', '🏡', '🏘️', '🏭', '🚜', '🚲', '🌾', '💧', '🌊', '☀️', '⚡', '💨', '🌋',  # Sustainable development
-    '🕊️', '🔫', '💣', '⚔️', '🛡️', '🕵️‍♂️', '🕵️‍♀️', '🚨', '🚔', '🧑‍✈️', '👮‍♂️', '👮‍♀️', '🧑‍✈️', '🎯', '✌️', '☮️', '📜',  # Peace and conflict resolution
-    '📱', '📡', '🌐', '💻', '🔐', '🔒', '🛡️', '📊', '📈', '🖥️', '🗂️', '📂', '🖱️', '🖨️', '📞', '💡', '🔍',  # Economic empowerment and digital advocacy
-    '💸', '💰', '🏦', '🏛️', '🧑‍💼', '👨‍💼', '📈', '🧾', '📜', '💼', '📊', '🧑‍💻', '👨‍💻', '🏦', '💳', '💱',  # Economic empowerment
-    '🎨', '🎭', '🎬', '🎤', '🎻', '🎷', '🎺', '🎸', '🎹', '🎧', '📸', '📹', '🎥', '🖼️', '🧑‍🎨', '👨‍🎨',  # Artistic advocacy and creatives
-    '🛠️', '🧑‍🔧', '👨‍🔧', '🏗️', '🧑‍🏭', '🚜', '⚙️', '🔩', '🔧', '🪛', '🛢️', '🏭', '🚇', '🚉', '🛠️', '🔧',  # Infrastructure and development
-    '🏆', '🎯', '📜', '🎗️', '🎖️', '🏅', '🥇', '🥈', '🥉', '📣', '🚀', '⚡', '🌟', '⭐', '🔔', '💡',  # Recognition, achievement, and awards
-    '🎡', '🎢', '🎪', '🎬', '🎤', '🎧', '📽️', '📺', '🎭', '🎨', '🖼️', '🎷', '🎸', '🎹', '🎤', '🎬',  # Creative, events, and entertainment
-    '📝', '📄', '📊', '📈', '🗣️', '🗳️', '📋', '🧾', '🧑‍⚖️', '👨‍⚖️', '🏛️', '📜', '✍️', '📝', '📋', '✏️',  # Policy advocacy, legal, and campaigns
-    '🖋️', '🖊️', '🖌️', '🧑‍🎨', '👨‍🎨', '🎨', '📸', '🎥', '🎤', '📹', '🖼️', '🎭', '🎬', '🎤', '🎹', '🎨',  # Creative activities
-    '🏗️', '🚜', '🛠️', '🔧', '⚙️', '📊', '📈', '💡', '🛠️', '🏛️', '🏦', '💼', '🧑‍💻', '🧑‍⚖️', '📜', '📋',  # Development and advocacy
-    '🎗️', '🚩', '🏁', '📢', '🎯', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥',  # Miscellaneous activities and objectives
-    '🧑‍🚒', '👨‍🚒', '🚒', '🧑‍🚒', '🚨', '🚑', '🏥', '💉', '❤️', '🩸', '🩺', '👩‍⚕️', '👨‍⚕️', '🏥', '🚨', '🧑‍⚕️',  # Emergency and humanitarian aid
+        '📢', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥', '🌟', 
+        '🌳', '🌍', '🌱', '🌲', '🌿', '🍃', '🏞️', '🦋', '🐝', '🐞', '🦜', '🐢', '🐘', '🐆', '🐅', '🐬',
+        '💉', '❤️', '🩺', '🚑', '🏥', '🧬', '💊', '🩹', '🧑‍⚕️', '👨‍⚕️', '🩸', '🫁', '🫀', '🧠', '🦷', '👁️',
+        '📚', '🎓', '🏫', '🖊️', '📖', '✍️', '🧑‍🏫', '👨‍🏫', '📜', '🔖', '📕', '📝', '📋', '📑', '🧮', '🎒',
+        '🤝', '🗣️', '💬', '🏘️', '🏠', '👩‍🏫', '👨‍🏫', '🧑‍🎓', '👩‍🎓', '👨‍🎓', '🏘️', '🏡', '🏙️', '🚪', '🛠️', '🛏️',
+        '⚖️', '🕊️', '🏳️‍🌈', '🔒', '🛡️', '📜', '📛', '🤲', '✌️', '👐', '🙏', '🧑‍⚖️', '👨‍⚖️', '📝', '🪧', '🎗️',
+        '🐾', '🐕', '🐈', '🐅', '🐆', '🐘', '🐄', '🐑', '🐇', '🐿️', '🐦', '🦢', '🦉', '🐠', '🦑', '🦓', '🐅',
     ]
 
-    # Split the emojis into two parts: first 10 and the rest
     initial_emojis = emojis[:10]
     additional_emojis = emojis[10:]
 
@@ -3887,12 +4085,16 @@ def create_activity(request, campaign_id):
         'top_contributors': top_contributors,
         'categories': categories,
         'selected_category': category_filter,
-        'is_pro': subscription.has_active_subscription(),  # Add subscription info to context
-        'campaign_count': user_campaign_count,  # Add campaign count to context
-        'campaign_limit': subscription.campaign_limit,  # Add limit to context
+        'is_pro': subscription.has_active_subscription(),
+        'campaign_count': user_campaign_count,
+        'campaign_limit': subscription.campaign_limit,
+        'existing_activities_count': existing_count,
+        'max_forms': MAX_FORMS,
+        'is_at_max': existing_count >= MAX_FORMS,
     }
 
     return render(request, 'main/activity_create.html', context)
+
 
 
 
@@ -4205,6 +4407,9 @@ def update_visibilit(request, campaign_id):
     }
     
     return render(request, 'main/manage_campaign_visibility.html', context)
+
+
+
 @login_required
 def delete_campaign(request, campaign_id):
     try:

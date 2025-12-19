@@ -77,22 +77,73 @@ class ActivityCommentForm(forms.ModelForm):
 
 
 
-# ActivityForm
+
+# main/forms.py
+from django import forms
+from .models import Activity
+from .utils import validate_no_long_words
+
 class ActivityForm(forms.ModelForm):
+    file = forms.FileField(
+        required=False,
+        label="Add Media (optional)",
+        help_text="Upload image, video or audio file (max 10MB)",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'image/*,video/*,audio/*',
+            'class': 'file-input',
+            'multiple': False
+        })
+    )
+    
     class Meta:
         model = Activity
         fields = ['content', 'file']
         widgets = {
-            'content': forms.Textarea(attrs={'class': 'custom-textarea-{{ form.content.auto_id }}', 'rows': 3}),
+            'content': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Share an update, ask for help, celebrate progress...',
+                'class': 'activity-content'
+            }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['content'].required = False
+            self.fields['content'].initial = ''
+            
+    def clean(self):
+        cleaned_data = super().clean()
+        content = cleaned_data.get('content')
+        file = cleaned_data.get('file')
+        
+        if not content and not file:
+            raise forms.ValidationError(
+                "Please provide either content or a media file for the activity."
+            )
+        return cleaned_data
 
     def clean_content(self):
         content = self.cleaned_data.get('content')
-        validate_no_long_words(content)  # Validate the content field
+        if content:
+            validate_no_long_words(content)
         return content
 
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            max_size = 10 * 1024 * 1024
+            if file.size > max_size:
+                raise forms.ValidationError(f'File size must be under {max_size/1024/1024}MB')
+            
+            allowed_types = ['image', 'video', 'audio']
+            if not any(file.content_type.startswith(t) for t in allowed_types):
+                raise forms.ValidationError('Only image, video, and audio files are allowed')
+        return file
 
-ActivityFormSet = inlineformset_factory(Campaign, Activity, form=ActivityForm, extra=1, can_delete=False)
+
+
+
 
 
 class ProfileForm(forms.ModelForm):

@@ -8915,7 +8915,7 @@ nav a:hover {
   <div class="snaps-grid">
     <a href="{% url 'create_campaign' %}" class="snap-link">
       <i class="snap-icon fas fa-bullhorn"></i>
-      <span class="snap-label">Start Campaign</span>
+      <span class="snap-label">Start Cause</span>
     </a>
 
 
@@ -8971,10 +8971,11 @@ nav a:hover {
                 {{ user.username }}
             </a>
         </h2>
-        <p>Discover causes and campaigns that matter to you.</p>
+        <p>
+            Find causes where lonely passion turns into powerful togetherness.
+        </p>
     </div>
 </div>
-
 
 
 
@@ -9356,7 +9357,7 @@ nav a:hover {
 <div class="campaign-status">
     {% if campaign.is_outdated %}
     <div class="status-badge outdated">
-        <i class="fas fa-exclamation-circle"></i> Campaign Ended
+        <i class="fas fa-exclamation-circle"></i> Cause Ended
     </div>
     {% else %}
     <div class="status-badge active">
@@ -9998,7 +9999,7 @@ nav a:hover {
 <div class="campaign-status">
     {% if campaign.is_outdated %}
     <div class="status-badge outdated">
-        <i class="fas fa-exclamation-circle"></i> Campaign Ended
+        <i class="fas fa-exclamation-circle"></i> Cause Ended
     </div>
     {% else %}
     <div class="status-badge active">
@@ -10284,7 +10285,7 @@ nav a:hover {
 <div id="sharePopup" class="share-popup">
     <div class="share-popup-content">
         <span class="close-share" onclick="hideSharePopup()">×</span>
-        <h3>Share This Campaign</h3>
+        <h3>Share This Cause</h3>
         <div class="share-buttons">
             <a href="#" class="share-btn facebook" onclick="shareOnFacebook()" title="Share on Facebook">
                 <i class="fab fa-facebook-f"></i>
@@ -10509,7 +10510,7 @@ nav a:hover {
           {{ contributor.user.get_full_name|default:contributor.user.username }}
         </h4>
         <div class="contributor-stats">
-          {{ contributor.campaign_count }} Campaign{{ contributor.campaign_count|pluralize }}
+          {{ contributor.campaign_count }} Cause{{ contributor.campaign_count|pluralize }}
         </div>
       </div>
     </div>
@@ -11133,7 +11134,6 @@ function getCSRFToken() {
 
 </script>
 
-
 <script type="text/javascript">
 let currentCampaignId = null;
 
@@ -11154,63 +11154,67 @@ function hideSharePopup() {
 
 function shareOnFacebook() {
     const url = encodeURIComponent(document.getElementById('campaignUrl').value);
-    const text = encodeURIComponent(`🔥 Join me in supporting this life-changing campaign!\n\nOver 10,000 people have already contributed - let's make an even bigger impact together.\n\n${document.getElementById('campaignUrl').value}\n\n#ChangeMakers`);
+    const text = encodeURIComponent(
+        `🔥 Join me in supporting this life-changing cause!\n\nOver 10,000 people have already contributed - let's make an even bigger impact together.\n\n${document.getElementById('campaignUrl').value}\n\n#ChangeMakers`
+    );
     window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}&u=${url}`, '_blank');
 }
 
 function shareOnTwitter() {
     const url = document.getElementById('campaignUrl').value;
-    const baseText = "🚀 Just discovered this incredible movement that's changing lives! Join me in making a difference";
+    const baseText = "🚀 Just discovered this incredible cause that's changing lives! Join me in making a difference";
     
-    // Calculate remaining characters (280 total - 23 for URL - 1 space - 24 for hashtags)
     const maxTextLength = 280 - 23 - 1 - 24;
     let tweetText = baseText;
     
-    // Truncate if needed (very unlikely with this message)
     if (tweetText.length > maxTextLength) {
         tweetText = tweetText.substring(0, maxTextLength - 3) + "...";
     }
     
-    // Compose final tweet with URL at the end and space before it
     const fullTweet = `${tweetText} ${url} #BeTheChange #MakeADifference`;
-    
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(fullTweet)}`, '_blank');
 }
 
 function shareOnLinkedIn() {
     const url = encodeURIComponent(document.getElementById('campaignUrl').value);
-    const text = encodeURIComponent(`Professional network alert: This is how we drive real change. Proud to support this initiative that's transforming our community.\n\n${document.getElementById('campaignUrl').value}\n\nYour support matters!`);
+    const text = encodeURIComponent(
+        `Professional network alert: This is how we drive real change. Proud to support this cause that's transforming our community.\n\n${document.getElementById('campaignUrl').value}\n\nYour support matters!`
+    );
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`, '_blank');
 }
 
 function shareOnWhatsApp() {
     const url = document.getElementById('campaignUrl').value;
-    const text = `Hey! I just found this amazing campaign that needs our support:\n\n${url}\n\nIt only takes 2 minutes to contribute, and together we can create something extraordinary!`;
+    const text = `Hey! I just found this amazing cause that needs our support:\n\n${url}\n\nIt only takes 2 minutes to contribute, and together we can create something extraordinary!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
 function shareOnReddit() {
     const url = encodeURIComponent(document.getElementById('campaignUrl').value);
-    const title = encodeURIComponent(`This campaign is changing lives - and your upvote could help it reach critical funding!\n\n${document.getElementById('campaignUrl').value}`);
+    const title = encodeURIComponent(
+        `This cause is changing lives — and your upvote could help it reach more people!\n\n${document.getElementById('campaignUrl').value}`
+    );
     window.open(`https://www.reddit.com/submit?url=${url}&title=${title}`, '_blank');
 }
 
 function shareOnTelegram() {
     const url = document.getElementById('campaignUrl').value;
-    const text = `URGENT: This campaign needs our attention! 💪\n\nJoin me in supporting this worthy cause before time runs out:\n\n${url}`;
+    const text = `URGENT: This cause needs our attention! 💪\n\nJoin me in supporting this worthy cause before time runs out:\n\n${url}`;
     window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
 }
 
 function shareOnPinterest() {
     const url = encodeURIComponent(document.getElementById('campaignUrl').value);
-    const description = encodeURIComponent(`Pin this to save a life! This campaign is creating real change:\n\n${document.getElementById('campaignUrl').value}\n\nHelp spread the word and be part of something bigger.`);
+    const description = encodeURIComponent(
+        `Pin this to make a difference! This cause is creating real change:\n\n${document.getElementById('campaignUrl').value}\n\nHelp spread the word and be part of something bigger.`
+    );
     window.open(`https://pinterest.com/pin/create/button/?url=${url}&description=${description}`, '_blank');
 }
 
 function shareViaEmail() {
     const url = document.getElementById('campaignUrl').value;
     const subject = "Let's make a difference together - your support matters!";
-    const body = `Hi there,\n\nI just discovered this incredible campaign that's close to my heart:\n\n${url}\n\nWith your help, we can make an even bigger impact. Even just sharing this message helps!\n\nThank you for being part of this important movement!\n\nBest regards,`;
+    const body = `Hi there,\n\nI just discovered this incredible cause that's close to my heart:\n\n${url}\n\nWith your help, we can make an even bigger impact. Even just sharing this message helps!\n\nThank you for being part of this important movement!\n\nBest regards,`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -11245,9 +11249,6 @@ window.onclick = function(event) {
     }
 }
 </script>
-
-
-
 
 
 <script>
