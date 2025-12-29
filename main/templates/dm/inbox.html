@@ -1,0 +1,443 @@
+{% extends 'main/face.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block content %}
+<div class="inbox-container">
+    <!-- Header -->
+    <div class="inbox-header">
+        <h2>💬 Your Messages</h2>
+        {% if total_unread > 0 %}
+        <span class="unread-badge">{{ total_unread }} unread</span>
+        {% endif %}
+    </div>
+
+    <!-- Conversations List -->
+    <div class="conversations-list">
+        {% for conv in conversations %}
+        <a href="{% url 'dm_page' dm_id=conv.id %}" class="conversation-card">
+            <div class="conversation-avatar">
+                {% if conv.user1 == request.user %}
+                    {% with other_user=conv.user2 %}
+                    <img src="{{ other_user.profile.image.url|default:'/static/default-avatar.png' }}" 
+                         alt="{{ other_user.username }}" class="avatar">
+                    <span class="status-dot" 
+                          data-user-id="{{ other_user.id }}" 
+                          id="status-dot-{{ other_user.id }}">
+                        <!-- Status will be updated by JavaScript -->
+                    </span>
+                    {% endwith %}
+                {% else %}
+                    {% with other_user=conv.user1 %}
+                    <img src="{{ other_user.profile.image.url|default:'/static/default-avatar.png' }}" 
+                         alt="{{ other_user.username }}" class="avatar">
+                    <span class="status-dot" 
+                          data-user-id="{{ other_user.id }}" 
+                          id="status-dot-{{ other_user.id }}">
+                        <!-- Status will be updated by JavaScript -->
+                    </span>
+                    {% endwith %}
+                {% endif %}
+            </div>
+            
+            <div class="conversation-info">
+                <div class="conversation-header">
+                    <h4 class="conversation-username">
+                        {% if conv.user1 == request.user %}
+                            {{ conv.user2.username }}
+                        {% else %}
+                            {{ conv.user1.username }}
+                        {% endif %}
+                        <span class="user-status" id="status-text-{{ other_user.id|default:0 }}" style="font-size: 12px; color: #6c757d; margin-left: 5px;">
+                            <!-- Status text will be updated by JavaScript -->
+                        </span>
+                    </h4>
+                    <span class="conversation-time">{{ conv.updated_at|timesince }} ago</span>
+                </div>
+                
+                <div class="conversation-preview">
+                    {% if conv.last_message %}
+                        <p class="preview-text">{{ conv.last_message.content|truncatechars:60 }}</p>
+                    {% else %}
+                        <p class="preview-text">No messages yet</p>
+                    {% endif %}
+                    
+                    {% if conv.unread_count > 0 %}
+                    <span class="message-count">{{ conv.unread_count }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="conversation-arrow">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </div>
+        </a>
+        {% empty %}
+        <div class="empty-inbox">
+            <div class="empty-icon">💬</div>
+            <h3>No messages yet</h3>
+            <p>Start conversations from people's profiles</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .inbox-container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+
+    .inbox-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #007bff;
+    }
+
+    .inbox-header h2 {
+        margin: 0;
+        color: #212529;
+        font-size: 28px;
+    }
+
+    .dark-mode .inbox-header h2 {
+        color: #e0e0e0;
+    }
+
+    .unread-badge {
+        background: #dc3545;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+
+    .conversations-list {
+        background: #ffffff;
+        border-radius: 15px;
+        overflow: hidden;
+        border-left: 2px solid #c0c0c0;
+        box-shadow: 0 4px 6px rgba(192, 192, 192, 0.1);
+    }
+
+    .dark-mode .conversations-list {
+        background: #2d2d2d;
+        border-left: 2px solid #444;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .conversation-card {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        border-bottom: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .conversation-card:hover {
+        background: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .dark-mode .conversation-card {
+        border-bottom: 1px solid #444;
+    }
+
+    .dark-mode .conversation-card:hover {
+        background: #404040;
+    }
+
+    .conversation-card:last-child {
+        border-bottom: none;
+    }
+
+    .conversation-avatar {
+        position: relative;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+
+    .conversation-avatar .avatar {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+    }
+
+    .dark-mode .conversation-avatar .avatar {
+        border: 2px solid #495057;
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        background-color: #6c757d; /* Default offline color */
+    }
+
+    .dark-mode .status-dot {
+        border: 2px solid #2d2d2d;
+    }
+
+    .status-dot.online {
+        background-color: #28a745;
+    }
+
+    .status-dot.offline {
+        background-color: #6c757d;
+    }
+
+    .conversation-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .conversation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .conversation-username {
+        margin: 0;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #212529;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+    }
+
+    .dark-mode .conversation-username {
+        color: #e0e0e0;
+    }
+
+    .conversation-time {
+        font-size: 0.85em;
+        color: #6c757d;
+        white-space: nowrap;
+        margin-left: 10px;
+    }
+
+    .dark-mode .conversation-time {
+        color: #adb5bd;
+    }
+
+    .conversation-preview {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .preview-text {
+        margin: 0;
+        font-size: 0.95em;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    .dark-mode .preview-text {
+        color: #adb5bd;
+    }
+
+    .message-count {
+        background: #007bff;
+        color: white;
+        font-size: 0.8em;
+        font-weight: 600;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 10px;
+        flex-shrink: 0;
+    }
+
+    .conversation-arrow {
+        color: #6c757d;
+        margin-left: 10px;
+        opacity: 0.7;
+        transition: transform 0.2s;
+    }
+
+    .conversation-card:hover .conversation-arrow {
+        transform: translateX(3px);
+        opacity: 1;
+    }
+
+    .empty-inbox {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-inbox h3 {
+        margin: 0 0 10px 0;
+        color: #495057;
+        font-size: 1.5em;
+    }
+
+    .dark-mode .empty-inbox h3 {
+        color: #adb5bd;
+    }
+
+    .empty-inbox p {
+        margin: 0;
+        font-size: 1em;
+        opacity: 0.8;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .inbox-container {
+            padding: 0 15px;
+            margin: 10px auto;
+        }
+        
+        .inbox-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .conversation-card {
+            padding: 15px;
+        }
+        
+        .conversation-avatar .avatar {
+            width: 45px;
+            height: 45px;
+        }
+        
+        .conversation-username {
+            font-size: 1em;
+        }
+        
+        .preview-text {
+            font-size: 0.9em;
+        }
+    }
+</style>
+
+<script>
+    // Update activity when user visits inbox
+    function updateMyActivity() {
+        fetch('/update-activity/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Activity updated:', data.status);
+        })
+        .catch(error => {
+            console.error('Error updating activity:', error);
+        });
+    }
+    
+    // Check status of a specific user
+    function checkUserStatus(userId) {
+        fetch(`/check-status/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const statusDot = document.getElementById(`status-dot-${userId}`);
+                const statusText = document.getElementById(`status-text-${userId}`);
+                
+                if (statusDot) {
+                    statusDot.classList.remove('online', 'offline');
+                    statusDot.classList.add(data.is_online ? 'online' : 'offline');
+                }
+                
+                if (statusText) {
+                    statusText.textContent = data.is_online ? 'Online' : data.last_seen;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+            });
+    }
+    
+    // Check status for all users in the conversation list
+    function checkAllUserStatuses() {
+        // Get all status dots
+        const statusDots = document.querySelectorAll('.status-dot');
+        
+        statusDots.forEach(dot => {
+            const userId = dot.getAttribute('data-user-id');
+            if (userId) {
+                checkUserStatus(userId);
+            }
+        });
+    }
+    
+    // Update on page load
+    window.addEventListener('load', function() {
+        updateMyActivity();
+        // Wait a bit for DOM to be fully ready
+        setTimeout(checkAllUserStatuses, 500);
+    });
+    
+    // Update on user interaction
+    document.addEventListener('mousemove', updateMyActivity);
+    document.addEventListener('keypress', updateMyActivity);
+    
+    // Auto-refresh conversations every 30 seconds
+    function refreshInbox() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newConversationsList = doc.querySelector('.conversations-list');
+                
+                if (newConversationsList) {
+                    document.querySelector('.conversations-list').innerHTML = newConversationsList.innerHTML;
+                    // After refreshing, check statuses again
+                    setTimeout(checkAllUserStatuses, 500);
+                }
+            })
+            .catch(error => console.error('Inbox refresh error:', error));
+    }
+    
+    // Update activity every 15 seconds
+    setInterval(updateMyActivity, 15000);
+    
+    // Check user statuses every 10 seconds
+    setInterval(checkAllUserStatuses, 10000);
+    
+    // Refresh inbox every 30 seconds
+    setInterval(refreshInbox, 30000);
+</script>
+{% endblock %}

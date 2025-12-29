@@ -620,3 +620,5 @@ class DonationForm(forms.ModelForm):
             'amount': 'Donation Amount',
         }
 
+
+

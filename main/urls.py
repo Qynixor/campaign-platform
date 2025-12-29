@@ -1,5 +1,6 @@
 from django.urls import path, include
 from . import views
+
 from .views import CustomLoginView
 from .views import CampaignDeleteView
 # urls.py
@@ -134,19 +135,6 @@ path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
     path('post_comment_reply/', views.post_comment_reply, name='post_comment_reply'),
     path('get_comment_replies/<int:comment_id>/', views.get_comment_replies, name='get_comment_replies'),
     path('like_comment_reply/', views.like_comment_reply, name='like_comment_reply'),
-
-    path('campaign/<int:campaign_id>/pledge/', views.create_pledge, name='create_pledge'), 
-    path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),
-# urls.py
-path('pledge/<int:pledge_id>/toggle-fulfillment/', views.toggle_pledge_fulfillment, name='toggle_pledge_fulfillment'),
-
-    path('cart/', views.view_cart, name='view_cart'),
-    path('cart/add/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
-    path('cart/update/<int:item_id>/', views.update_cart_item, name='update_cart_item'),
-    path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
-
-
-path('pledge-payment/<int:pledge_id>/', views.pledge_payment_page, name='pledge_payment_page'),
 path('initiate-pledge-payment/<int:pledge_id>/', views.initiate_pledge_payment, name='initiate_pledge_payment'),
 path('pledge-payment-callback/<int:pledge_id>/', views.pledge_payment_callback, name='pledge_payment_callback'),
 path('pledge-success/<int:pledge_id>/', views.pledge_success, name='pledge_success'),
@@ -174,6 +162,15 @@ path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
     # Common URLs
     path('success-page/', views.success_page, name='success_page'),
     path('pro/', views.subscription_required, name='subscription_required'),
+
+# DM URLs - ALL 4 ARE REQUIRED
+path('dm/inbox/', views.dm_inbox, name='dm_inbox'),
+path('dm/<int:dm_id>/', views.dm_page, name='dm_page'),
+path('dm/start/<int:user_id>/', views.start_dm, name='start_dm'),
+path('dm/<int:dm_id>/send/', views.send_dm_message, name='send_dm_message'),  # THIS ONE WAS MISSING
+# Add these to your existing urlpatterns
+path('update-activity/', views.update_activity, name='update_activity'),
+path('check-status/<int:user_id>/', views.check_status, name='check_status'),
 ]
 
 

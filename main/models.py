@@ -17,6 +17,29 @@ from django.urls import reverse
 
 from django.core.cache import cache
 
+# Add these imports at the top
+from django.db import transaction
+from django.db.models import Q
+
+User = get_user_model()
+
+import datetime
+import uuid
+import requests
+from cloudinary.models import CloudinaryField
+from django.conf import settings
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from PIL import Image, ExifTags
+from io import BytesIO
+from django.core.files.base import ContentFile
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from tinymce.models import HTMLField
+from django.db.models.signals import m2m_changed
+from django.urls import reverse
+
 User = get_user_model()
 
 class Profile(models.Model):
@@ -41,8 +64,8 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = CloudinaryField(
         'image',
-        folder='profile_pics',  # Cloudinary folder
-        default='v1763637368/pp_vvzbcj'  # Make sure this exists in Cloudinary
+        folder='profile_pics',
+        default='v1763637368/pp_vvzbcj'
     )
     
     bio = models.TextField(default='No bio available')
@@ -60,8 +83,13 @@ class Profile(models.Model):
 
     # ✅ Payment-related field for PayPal
     paypal_email = models.EmailField(max_length=255, blank=True, null=True)
-   
-
+    last_activity = models.DateTimeField(default=timezone.now)
+    
+    def update_last_activity(self):
+        """Update user's last activity timestamp"""
+        self.last_activity = timezone.now()
+        self.save(update_fields=['last_activity'])   
+    
     def has_paypal(self):
         """Check if PayPal details are set"""
         return bool(self.paypal_email)
@@ -83,59 +111,175 @@ class Profile(models.Model):
     def __str__(self):
         return f'{self.user.username} Profile'
 
-
-    def age(self):
-        if self.date_of_birth:
-            today = timezone.now().date()
-            age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
-            return age
-        return None
-
-    def update_verification_status(self):
-        """Update verification status."""
-        self.profile_verified = True
-        self.save(update_fields=['profile_verified'])
-
-    def __str__(self):
-        return f'{self.user.username} Profile'
-
     @property
     def total_loves(self):
-        # Sum the loves for all campaigns owned by the user
-        from .models import Love  # Import here to avoid circular imports
+        from .models import Love
+        # ✅ FIXED: Use self (Profile), not self.user (User)
         return Love.objects.filter(campaign__user=self).count()
 
     def is_changemaker(self):
-        # Correct the query to reflect the relationship with the Campaign model
-        from .models import Activity, ActivityLove  # Import here to avoid circular imports
+        from .models import Activity, ActivityLove
+        # ✅ FIXED: Use self (Profile), not self.user (User)
         activity_count = Activity.objects.filter(campaign__user=self).count()
         activity_love_count = ActivityLove.objects.filter(activity__campaign__user=self).count()
         return activity_count >= 1 and activity_love_count >= 1
-
-    
-  
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
-        # Create user profile when new user is created
         Profile.objects.create(user=instance)
     else:
-        # Save existing profile on user update
         instance.profile.save()
 
+# FIX: Use DIFFERENT related_name for DirectMessage
+class Conversation(models.Model):
+    """
+    Represents a conversation thread between two users
+    """
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_user1')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_user2')
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Track if either user has blocked the conversation
+    blocked_by_user1 = models.BooleanField(default=False)
+    blocked_by_user2 = models.BooleanField(default=False)
+    
+    # Muting preferences
+    muted_by_user1 = models.BooleanField(default=False)
+    muted_by_user2 = models.BooleanField(default=False)
+    
+    class Meta:
+        unique_together = ['user1', 'user2']
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"Conversation between {self.user1.username} and {self.user2.username}"
+    
+    @classmethod
+    def get_or_create_conversation(cls, user1, user2):
+        """Get or create a conversation between two users"""
+        users = sorted([user1, user2], key=lambda u: u.id)
+        
+        conversation, created = cls.objects.get_or_create(
+            user1=users[0],
+            user2=users[1],
+            defaults={'updated_at': timezone.now()}
+        )
+        return conversation, created
+    
+    def get_other_user(self, current_user):
+        """Get the other user in the conversation"""
+        if current_user == self.user1:
+            return self.user2
+        return self.user1
+    
+    def get_unread_count(self, user):
+        """Get unread message count for a specific user"""
+        if user == self.user1 or user == self.user2:
+            return self.messages.filter(
+                recipient=user,
+                read=False,
+                deleted_by_recipient=False
+            ).count()
+        return 0
+    
+    def is_blocked_for_user(self, user):
+        """Check if conversation is blocked for a user"""
+        if user == self.user1:
+            return self.blocked_by_user2
+        elif user == self.user2:
+            return self.blocked_by_user1
+        return False
+    
+    def is_muted_for_user(self, user):
+        """Check if conversation is muted for a user"""
+        if user == self.user1:
+            return self.muted_by_user1
+        elif user == self.user2:
+            return self.muted_by_user2
+        return False
+    
+    @property
+    def last_message(self):
+        """Get the last message in the conversation"""
+        
+        return self.direct_messages.order_by('-timestamp').first()
 
+# FIX: Use UNIQUE related_name for DirectMessage
+class DirectMessage(models.Model):
+    """
+    One-on-one private messages between users
+    """
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='direct_messages')  # Changed from 'messages'
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_direct_messages')  # CHANGED: 'sent_direct_messages'
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_direct_messages')  # CHANGED: 'received_direct_messages'
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    # For multimedia messages - using your existing Cloudinary setup
+    file = CloudinaryField(
+        'file',
+        folder='direct_messages_files',
+        null=True,
+        blank=True,
+        resource_type='auto'
+    )
+    file_name = models.CharField(max_length=255, blank=True)
+    file_type = models.CharField(max_length=50, blank=True)
+    
+    # Message status
+    deleted_by_sender = models.BooleanField(default=False)
+    deleted_by_recipient = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['timestamp']
+        indexes = [
+            models.Index(fields=['sender', 'recipient', 'timestamp']),
+            models.Index(fields=['recipient', 'read']),
+            models.Index(fields=['conversation', 'timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"DM from {self.sender.username} to {self.recipient.username}"
+    
+    def is_active_for_user(self, user):
+        """Check if message is visible to a specific user"""
+        if user == self.sender:
+            return not self.deleted_by_sender
+        elif user == self.recipient:
+            return not self.deleted_by_recipient
+        return False
+    
+    def mark_as_read(self):
+        if not self.read:
+            self.read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['read', 'read_at'])
+    
+    def get_file_category(self):
+        if not self.file_type:
+            return ''
+        if self.file_type.startswith('image'):
+            return 'image'
+        elif self.file_type.startswith('video'):
+            return 'video'
+        elif self.file_type.startswith('audio'):
+            return 'audio'
+        else:
+            return 'document'
 
-
-
-
-
-
-
-
-
-
-
-
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        if is_new:
+            # Create notification for recipient
+            Notification.objects.create(
+                user=self.recipient,
+                message=f"You have a new message from {self.sender.username}",
+                redirect_link=reverse('dm_page', kwargs={'dm_id': self.conversation.id})
+            )
 
 
 class UserVerification(models.Model):

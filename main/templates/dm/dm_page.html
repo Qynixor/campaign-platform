@@ -1,0 +1,398 @@
+{% extends 'main/face.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block content %}
+<div class="dm-container">
+    <!-- Header with Online Status -->
+    <div class="dm-header">
+        <div class="user-info">
+            <a href="{% url 'profile_view' username=other_user.username %}" class="profile-link">
+                <div class="avatar-status">
+                    <img src="{{ other_user.profile.image.url|default:'/static/default-avatar.png' }}" 
+                         alt="{{ other_user.username }}" class="avatar">
+                    <span class="status-dot" id="statusDot"></span>
+                </div>
+            </a>
+            <div>
+                <a href="{% url 'profile_view' username=other_user.username %}" class="username-link">
+                    <h3>{{ other_user.username }}</h3>
+                </a>
+                <div class="user-status">
+                    <span id="onlineStatus" class="status-text">
+                        {% if other_user.profile.last_activity > timezone.now|add:'-2 minutes' %}
+                            🟢 Online
+                        {% else %}
+                            Last seen {{ other_user.profile.last_activity|timesince }} ago
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <a href="{% url 'profile_view' username=other_user.username %}" class="back-btn">← Back </a>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-box" id="messagesBox">
+        {% for message in messages %}
+        <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" 
+             id="message-{{ message.id }}">
+            <div class="message-header">
+                <a href="{% url 'profile_view' username=message.sender.username %}" class="sender-link">
+                    <strong>{{ message.sender.username }}</strong>
+                </a>
+                <span class="message-time">{{ message.timestamp|timesince }} ago</span>
+            </div>
+            
+            <div class="message-content">
+                {{ message.content|urlize|safe }}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>💬 No messages yet. Start the conversation!</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Message Form -->
+    <form method="POST" action="{% url 'send_dm_message' dm_id=conversation.id %}" 
+          class="dm-form" id="messageForm">
+        {% csrf_token %}
+        <div class="input-container">
+            <input type="text" name="message" id="messageInput" 
+                   placeholder="Type a message..." required>
+            <div class="input-actions">
+                <button type="submit" class="send-btn">
+                    Send
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .dm-container {
+        max-width: 700px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+
+    .dm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+
+    .dark-mode .dm-header {
+        border-bottom: 1px solid #495057;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    /* Profile link styling */
+    .profile-link {
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .username-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .username-link:hover h3 {
+        color: #007bff;
+    }
+
+    .dark-mode .username-link:hover h3 {
+        color: #0d6efd;
+    }
+
+    .sender-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .sender-link:hover {
+        text-decoration: underline;
+    }
+
+    .avatar-status {
+        position: relative;
+    }
+
+    .avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #dee2e6;
+        transition: transform 0.2s;
+    }
+
+    .profile-link:hover .avatar {
+        transform: scale(1.05);
+        border-color: #007bff;
+    }
+
+    .dark-mode .avatar {
+        border: 2px solid #495057;
+    }
+
+    .dark-mode .profile-link:hover .avatar {
+        border-color: #0d6efd;
+    }
+
+    .status-dot {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+    }
+
+    .dark-mode .status-dot {
+        border: 2px solid #2d2d2d;
+    }
+
+    /* ✅ ADD THESE STATUS DOT STYLES */
+    .status-dot.online {
+        background-color: #28a745;
+    }
+
+    .status-dot.offline {
+        background-color: #6c757d;
+    }
+
+    .online-text {
+        color: #28a745;
+        font-size: 0.9em;
+    }
+
+    .offline-text {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    .dark-mode .offline-text {
+        color: #adb5bd;
+    }
+
+    .back-btn {
+        padding: 8px 16px;
+        background: #f8f9fa;
+        color: #212529;
+        text-decoration: none;
+        border-radius: 20px;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        background: #e9ecef;
+    }
+
+    .dark-mode .back-btn {
+        background: #2d2d2d;
+        color: #e0e0e0;
+        border: 1px solid #444;
+    }
+
+    .dark-mode .back-btn:hover {
+        background: #404040;
+    }
+
+    .messages-box {
+        height: 500px;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f8f8;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        border-left: 2px solid #c0c0c0;
+        box-shadow: 0 2px 4px rgba(192, 192, 192, 0.3);
+    }
+
+    .dark-mode .messages-box {
+        background: #2d2d2d;
+        border-left: 2px solid #444;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        color: #e0e0e0;
+    }
+
+    .message {
+        margin: 15px 0;
+        padding: 12px 18px;
+        border-radius: 18px;
+        max-width: 70%;
+    }
+
+    .message.sent {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+    }
+
+    .dark-mode .message.sent {
+        background: #0d6efd;
+    }
+
+    .message.received {
+        background: #e9ecef;
+        color: #212529;
+        margin-right: auto;
+    }
+
+    .dark-mode .message.received {
+        background: #404040;
+        color: #e0e0e0;
+    }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+
+    .message-time {
+        opacity: 0.8;
+        font-size: 0.8em;
+    }
+
+    .input-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        background: #f8f8f8;
+        border: 1px solid #dee2e6;
+        border-radius: 25px;
+        padding: 5px 5px 5px 20px;
+        border-left: 2px solid #c0c0c0;
+    }
+
+    .dark-mode .input-container {
+        background: #2d2d2d;
+        border: 1px solid #444;
+        border-left: 2px solid #444;
+    }
+
+    #messageInput {
+        flex: 1;
+        padding: 12px 0;
+        background: transparent;
+        border: none;
+        color: #212529;
+        font-size: 1em;
+        outline: none;
+    }
+
+    .dark-mode #messageInput {
+        color: #e0e0e0;
+    }
+
+    .send-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .send-btn:hover {
+        background: #0056b3;
+    }
+</style>
+
+<script>
+    // Update my activity
+    function updateMyActivity() {
+        fetch('/update-activity/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+    }
+    
+    // Check other user's status
+    function checkOtherUserStatus() {
+        fetch(`/check-status/{{ other_user.id }}/`)
+            .then(response => response.json())
+            .then(data => {
+                const statusElement = document.getElementById('onlineStatus');
+                const statusDot = document.getElementById('statusDot');
+                
+                if (data.is_online) {
+                    statusElement.innerHTML = '🟢 Online';
+                    statusElement.className = 'online-text';
+                    statusDot.className = 'status-dot online';
+                } else {
+                    statusElement.innerHTML = `Last seen ${data.last_seen}`;
+                    statusElement.className = 'offline-text';
+                    statusDot.className = 'status-dot offline';
+                }
+            });
+    }
+    
+    // Message refresh
+    let messageInput = document.getElementById('messageInput');
+    let savedInputValue = '';
+    
+    messageInput.addEventListener('input', function() {
+        savedInputValue = this.value;
+        updateMyActivity();
+    });
+    
+    function scrollToBottom() {
+        const box = document.getElementById('messagesBox');
+        box.scrollTop = box.scrollHeight;
+    }
+    
+    function refreshMessages() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMessagesBox = doc.getElementById('messagesBox');
+                
+                if (newMessagesBox) {
+                    document.getElementById('messagesBox').innerHTML = newMessagesBox.innerHTML;
+                    messageInput.value = savedInputValue;
+                    scrollToBottom();
+                }
+            });
+    }
+    
+    // Auto-refresh every 3 seconds
+    setInterval(refreshMessages, 3000);
+    
+    // Check status every 10 seconds
+    setInterval(checkOtherUserStatus, 10000);
+    
+    // Initial calls
+    window.onload = function() {
+        scrollToBottom();
+        updateMyActivity();
+        checkOtherUserStatus();
+    };
+    
+    // Update activity on send
+    document.getElementById('messageForm').addEventListener('submit', function() {
+        updateMyActivity();
+    });
+</script>
+{% endblock %}

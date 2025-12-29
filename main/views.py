@@ -6486,23 +6486,39 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Profile, Follow
 
+
+
+from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
+from itertools import chain
+from collections import defaultdict
+from .models import Profile, Follow, Campaign, Notification, Love, Comment, CampaignView, ActivityLove, ActivityComment, NativeAd
+
 @login_required
 def profile_view(request, username):
-    # Get the user's profile (username will come without @ due to URL pattern)
-    user_profile = get_object_or_404(Profile, user__username=username)
+    # Get the User object, not Profile
+    user_obj = get_object_or_404(User, username=username)
     
-    # Check if the logged-in user is following this profile
-    following_profile = Follow.objects.filter(follower=request.user, followed=user_profile.user).exists()
+    # Get the user's profile
+    user_profile = get_object_or_404(Profile, user=user_obj)
     
-    # Calculate followers and following counts
-    followers_count = Follow.objects.filter(followed=user_profile.user).count()
-    following_count = Follow.objects.filter(follower=user_profile.user).count()
+    # ✅ FIXED: Pass User objects, not Profile
+    following_profile = Follow.objects.filter(
+        follower=request.user, 
+        followed=user_obj  # Use user_obj (User), not user_profile.user
+    ).exists()
     
-    # Get public campaigns
+    # ✅ FIXED: Use User objects here too
+    followers_count = Follow.objects.filter(followed=user_obj).count()
+    following_count = Follow.objects.filter(follower=user_obj).count()
+    
+    # Get public campaigns (user_profile is already a Profile object)
     public_campaigns = user_profile.user_campaigns.filter(visibility='public').order_by('-timestamp')
     public_campaigns_count = public_campaigns.count()
     
-    # Filter campaigns where the user qualifies as a changemaker
+    # Rest of your code remains the same...
     changemaker_campaigns = [campaign for campaign in public_campaigns if campaign.is_changemaker]
     
     # Determine the most appropriate campaign
@@ -6538,7 +6554,7 @@ def profile_view(request, username):
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
     # Combine all engagement pairs
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
+    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
     # Count number of unique campaigns each user engaged with
@@ -6563,9 +6579,9 @@ def profile_view(request, username):
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
-    # Get suggested users with followers count (using improved logic)
-    current_user_following = request.user.following.all()  # Get all Follow objects
-    following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
+    # Get suggested users with followers count
+    current_user_following = request.user.following.all()
+    following_user_ids = [follow.followed_id for follow in current_user_following]
     
     # Exclude current user and already followed users
     all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
@@ -6575,19 +6591,21 @@ def profile_view(request, username):
     for profile in all_profiles:
         similarity_score = calculate_similarity(user_profile, profile)
         if similarity_score >= 0.5:
-            followers_count = Follow.objects.filter(followed=profile.user).count()
+            followers_count_suggested = Follow.objects.filter(followed=profile.user).count()
             suggested_users.append({
                 'user': profile.user,
-                'followers_count': followers_count
+                'followers_count': followers_count_suggested
             })
 
     # Limit to only 2 suggested users
     suggested_users = suggested_users[:2]
 
     ads = NativeAd.objects.all()
-
+    
+    # ✅ IMPORTANT: Make sure you're passing the right objects
     context = {
-        'user_profile': user_profile,
+        'user_profile': user_profile,  # Profile object
+        'user_obj': user_obj,          # User object (optional, for clarity)
         'following_profile': following_profile,
         'followers_count': followers_count,
         'following_count': following_count,
@@ -6602,6 +6620,18 @@ def profile_view(request, username):
     }
     
     return render(request, 'main/user_profile.html', context)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7912,3 +7942,238 @@ def success_page(request):
     }
     
     return render(request, 'main/success-page.html', context)
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.http import JsonResponse
+import json
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+
+# CORRECTED: DM View Functions
+@login_required
+def start_dm(request, user_id):
+    """Start or go to a direct message conversation"""
+    # Get the User object from user_id
+    other_user = get_object_or_404(User, id=user_id)
+    
+    # Find existing conversation
+    conversation = Conversation.objects.filter(
+        Q(user1=request.user, user2=other_user) |
+        Q(user1=other_user, user2=request.user)
+    ).first()
+    
+    # Create new conversation if doesn't exist
+    if not conversation:
+        # Always store user1 as the one with smaller ID to avoid duplicates
+        user1, user2 = sorted([request.user, other_user], key=lambda u: u.id)
+        conversation = Conversation.objects.create(
+            user1=user1,
+            user2=user2
+        )
+    
+    return redirect('dm_page', dm_id=conversation.id)
+
+
+
+@login_required
+def dm_page(request, dm_id):
+    """Display the DM conversation page"""
+    conversation = get_object_or_404(
+        Conversation.objects.filter(
+            Q(user1=request.user) | Q(user2=request.user)
+        ),
+        id=dm_id
+    )
+    
+    # Get other user
+    other_user = conversation.user2 if conversation.user1 == request.user else conversation.user1
+    
+    # ✅ FIX: MARK ALL MESSAGES AS READ when user opens conversation
+    DirectMessage.objects.filter(
+        conversation=conversation,
+        recipient=request.user,
+        read=False
+    ).update(
+        read=True,
+        read_at=timezone.now()
+    )
+    
+    # Get messages (exclude deleted ones)
+    messages = conversation.direct_messages.filter(
+        Q(deleted_by_sender=False) & 
+        Q(deleted_by_recipient=False)
+    ).order_by('timestamp')
+    
+    # Update current user's last activity
+    request.user.profile.update_last_activity()
+    
+    return render(request, 'dm/dm_page.html', {
+        'conversation': conversation,
+        'other_user': other_user,
+        'messages': messages,
+        'timezone': timezone
+    })
+
+
+
+
+
+# VIEW 3: Send a DM message (AJAX compatible)
+@login_required
+def send_dm_message(request, dm_id):
+    """Handle sending a DM message"""
+    if request.method == 'POST':
+        conversation = get_object_or_404(
+            Conversation.objects.filter(
+                Q(user1=request.user) | Q(user2=request.user)
+            ),
+            id=dm_id
+        )
+        
+        # Get other user
+        other_user = conversation.user2 if conversation.user1 == request.user else conversation.user1
+        
+        # Get message content
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request
+            data = json.loads(request.body)
+            message_content = data.get('message', '').strip()
+        else:
+            # Regular form submission
+            message_content = request.POST.get('message', '').strip()
+        
+        # Create message if not empty
+        if message_content:
+            dm = DirectMessage.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                recipient=other_user,
+                content=message_content
+            )
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message_id': dm.id,
+                    'sender': request.user.username,
+                    'content': message_content,
+                    'timestamp': dm.timestamp.strftime('%H:%M')
+                })
+        
+        return redirect('dm_page', dm_id=dm_id)
+
+
+
+
+
+
+
+
+
+@login_required
+def dm_inbox(request):
+    """Show all DM conversations for the current user"""
+    # Get all conversations where user is participant
+    conversations = Conversation.objects.filter(
+        Q(user1=request.user) | Q(user2=request.user)
+    ).order_by('-updated_at')
+    
+    # Add unread count for each conversation
+    for conv in conversations:
+        conv.unread_count = DirectMessage.objects.filter(
+            conversation=conv,
+            recipient=request.user,
+            read=False,
+            deleted_by_recipient=False
+        ).count()
+    
+    # Total unread count for badge
+    total_unread = DirectMessage.objects.filter(
+        recipient=request.user,
+        read=False,
+        deleted_by_recipient=False
+    ).count()
+    
+    return render(request, 'dm/inbox.html', {
+        'conversations': conversations,
+        'total_unread': total_unread
+    })
+
+
+from django.http import JsonResponse
+from django.core.cache import cache
+from django.utils import timezone
+from datetime import timedelta
+
+@login_required
+def update_activity(request):
+    """Update current user's activity"""
+    # Update cache
+    cache.set(f'user_activity_{request.user.id}', timezone.now(), 300)
+    
+    # Update profile's last_activity field
+    request.user.profile.last_activity = timezone.now()
+    request.user.profile.save(update_fields=['last_activity'])
+    
+    return JsonResponse({'status': 'updated'})
+
+@login_required
+def check_status(request, user_id):
+    """Check if a user is online"""
+    # Try to get other user
+    try:
+        other_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'is_online': False, 'last_seen': 'unknown'})
+    
+    # Check cache first
+    last_activity_cache = cache.get(f'user_activity_{user_id}')
+    
+    # Check profile's last_activity field
+    last_activity_profile = other_user.profile.last_activity
+    
+    # Use the most recent one
+    if last_activity_cache and last_activity_cache > last_activity_profile:
+        last_activity = last_activity_cache
+    else:
+        last_activity = last_activity_profile
+    
+    is_online = False
+    last_seen_text = 'a while ago'
+    
+    if last_activity:
+        # Calculate how long ago
+        time_diff = timezone.now() - last_activity
+        seconds_diff = time_diff.total_seconds()
+        
+        # User is online if active in last 2 minutes
+        is_online = seconds_diff < 120
+        
+        if is_online:
+            last_seen_text = 'just now'
+        else:
+            # Show human-readable time
+            if seconds_diff < 60:  # 1 minute
+                last_seen_text = 'just now'
+            elif seconds_diff < 3600:  # 1 hour
+                minutes = int(seconds_diff / 60)
+                last_seen_text = f'{minutes} minute{"s" if minutes > 1 else ""} ago'
+            elif seconds_diff < 86400:  # 1 day
+                hours = int(seconds_diff / 3600)
+                last_seen_text = f'{hours} hour{"s" if hours > 1 else ""} ago'
+            else:
+                days = int(seconds_diff / 86400)
+                last_seen_text = f'{days} day{"s" if days > 1 else ""} ago'
+    
+    return JsonResponse({
+        'is_online': is_online,
+        'last_seen': last_seen_text
+    })
