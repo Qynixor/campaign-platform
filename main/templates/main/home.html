@@ -8519,6 +8519,48 @@ nav a:hover {
     background: #383838;
 }
 
+
+/* Fix for RALLYNEX text visibility */
+.rallynex-name span {
+    background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 1px 2px rgba(29, 155, 240, 0.3);
+}
+
+/* Make sure the logo container has proper contrast */
+.rallynex-header-container {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Mobile search icon hover state */
+.rallynex-mobile-search-icon:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Ensure mobile search popup has proper positioning */
+@media (max-width: 768px) {
+    .rallynex-mobile-search-popup.active {
+        position: fixed !important;
+        top: 60px !important;
+        left: 0;
+        right: 0;
+        z-index: 9999 !important;
+        background: white;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .dark-mode .rallynex-mobile-search-popup.active {
+        background: #1a1a1a;
+    }
+}
+
+
 </style>
 
 
@@ -8535,36 +8577,60 @@ nav a:hover {
 <div id="page-loader" class="page-loader"></div>
 
 <header>
-    
-<div class="rallynex-header-container" style="display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+   <div class="rallynex-header-container" style="
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+">
     <!-- Rallynex Logo/Name on the left -->
     <div class="rallynex-name" style="
         font-family: 'Courier New', monospace;
-        color: #ffffff;
-        background: linear-gradient(135deg, #c0c0c0, #f8f8f8);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 
-            0 1px 1px rgba(0,0,0,0.3),
-            0 0 8px rgba(255,255,255,0.4);
+        color: white;
         font-weight: bold;
         letter-spacing: 3px;
-        font-size: 24px;
-        padding: 4px 12px;
-        display: inline-block;
-        border-radius: 3px;
-        backdrop-filter: brightness(1.2);
-        transition: all 0.3s ease;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     ">
-        <img src="{% static 'main/files/w.png' %}" alt="Rallynex Logo" style="height: 50px; width: 50px; transition: all 0.3s ease;"> RALLYNEX
+        <img src="{% static 'main/files/w.png' %}" alt="Rallynex Logo" style="
+            height: 40px; 
+            width: 40px; 
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        "> 
+        <span style="
+            background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 1px 2px rgba(29, 155, 240, 0.3);
+        ">RALLYNEX</span>
     </div>
 
     <!-- Mobile Search Icon on the right -->
-    <div class="rallynex-mobile-search-icon">
+    <div class="rallynex-mobile-search-icon" style="
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    ">
         <i class="fas fa-search"></i>
     </div>
 </div>
+
+<!-- Add this spacer to prevent content from hiding under header -->
+<div style="height: 60px; display: none;" id="header-spacer"></div>
 
 <!-- Mobile search popup -->
 <div class="rallynex-mobile-search-popup">
@@ -11497,11 +11563,16 @@ function createHearts(element) {
     }
 }
 </script>
-
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
     const header = document.querySelector('.rallynex-header-container');
+    const headerSpacer = document.getElementById('header-spacer');
     let lastScroll = 0;
+    
+    // Show spacer only on mobile
+    if (window.innerWidth <= 768) {
+        headerSpacer.style.display = 'block';
+    }
     
     window.addEventListener('scroll', function() {
         const currentScroll = window.pageYOffset;
@@ -11509,26 +11580,74 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentScroll <= 50) {
             // At top - semi-transparent Twitter blue
             header.style.transform = 'translateY(0)';
-            header.style.backgroundColor = 'rgba(29, 155, 240, 0.9)'; // Twitter blue
+            header.style.backgroundColor = 'rgba(29, 155, 240, 0.95)';
             header.style.backdropFilter = 'blur(10px)';
+            header.style.boxShadow = '0 2px 15px rgba(29, 155, 240, 0.2)';
+            header.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
         } 
         else if (currentScroll > lastScroll && currentScroll > 100) {
             // Scrolling down - hide header
             header.style.transform = 'translateY(-100%)';
         } 
         else {
-            // Scrolling up - show with solid Twitter blue
+            // Scrolling up - show with solid but nice Twitter blue
             header.style.transform = 'translateY(0)';
-            header.style.backgroundColor = 'rgba(29, 155, 240, 1)'; // Solid Twitter blue
-            header.style.backdropFilter = 'blur(5px)';
-            header.style.boxShadow = '0 2px 15px rgba(29, 155, 240, 0.3)';
+            header.style.backgroundColor = 'rgba(29, 155, 240, 0.98)';
+            header.style.backdropFilter = 'blur(15px)';
+            header.style.boxShadow = '0 4px 20px rgba(29, 155, 240, 0.25)';
+            header.style.borderBottom = '1px solid rgba(255, 255, 255, 0.15)';
         }
         
         lastScroll = currentScroll;
     });
+    
+    // Mobile search icon hover effect
+    const searchIcon = document.querySelector('.rallynex-mobile-search-icon');
+    if (searchIcon) {
+        searchIcon.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+        });
+        
+        searchIcon.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = 'transparent';
+        });
+    }
+    
+    // Mobile search functionality
+    const mobileSearchIcon = document.querySelector('.rallynex-mobile-search-icon');
+    const mobileSearchPopup = document.querySelector('.rallynex-mobile-search-popup');
+    const closeSearch = document.querySelector('.rallynex-close-mobile-search');
+    const clearSearch = document.querySelector('.rallynex-clear-search');
+    const searchInput = document.getElementById('mobile-search-input');
+    
+    if (mobileSearchIcon && mobileSearchPopup && closeSearch) {
+        mobileSearchIcon.addEventListener('click', function() {
+            mobileSearchPopup.classList.add('active');
+            setTimeout(() => searchInput.focus(), 100);
+        });
+        
+        closeSearch.addEventListener('click', function() {
+            mobileSearchPopup.classList.remove('active');
+            searchInput.value = '';
+            clearSearch.classList.remove('visible');
+        });
+        
+        searchInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                clearSearch.classList.add('visible');
+            } else {
+                clearSearch.classList.remove('visible');
+            }
+        });
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            this.classList.remove('visible');
+            searchInput.focus();
+        });
+    }
 });
 </script>
-
 
 <script>
 class SoundTribeManager {
