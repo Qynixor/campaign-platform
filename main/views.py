@@ -657,7 +657,7 @@ def campaign_joiners(request, campaign_id):
 class CampaignDeleteView(LoginRequiredMixin, DeleteView):
     model = Campaign
     template_name = 'main/campaign_confirm_delete.html'
-    success_url = reverse_lazy('manage_campaigns')
+    success_url = reverse_lazy('home')
 
     def get_queryset(self):
         user_profile = get_object_or_404(Profile, user=self.request.user)

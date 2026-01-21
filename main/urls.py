@@ -171,6 +171,10 @@ path('dm/<int:dm_id>/send/', views.send_dm_message, name='send_dm_message'),  # 
 # Add these to your existing urlpatterns
 path('update-activity/', views.update_activity, name='update_activity'),
 path('check-status/<int:user_id>/', views.check_status, name='check_status'),
+path('campaign/<int:campaign_id>/pledge/', views.create_pledge, name='create_pledge'),
+# Add this to your urls.py
+# Add this line to your urlpatterns:
+path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),
 ]
 
 

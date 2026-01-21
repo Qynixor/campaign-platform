@@ -1591,458 +1591,186 @@
     }
 }
 </style>
-
 <div class="upgrade-container">
     <!-- Progress Bar -->
     <div class="upgrade-progress">
         <div class="upgrade-progress-bar"></div>
     </div>
-    
+
     <!-- Main Card -->
     <div class="upgrade-card">
-        <!-- Header - Different based on subscription status -->
         {% if user.subscription.has_active_subscription %}
-        <!-- Success Header for Pro Users -->
+        <!-- Calm confirmation for supporters -->
         <div class="success-header">
             <h1 class="upgrade-title">
-                <i class="fas fa-crown"></i>
-                You're Already Pro!
+                <i class="fas fa-heart"></i>
+                You’re Supporting Without Limits
             </h1>
-            <p class="upgrade-subtitle">Thank you for being a valued Pro member</p>
-            <span class="already-pro-badge">Pro Member</span>
+            <p class="upgrade-subtitle">
+                Thank you for helping more causes find momentum
+            </p>
+            <span class="already-pro-badge">Supporter</span>
         </div>
-        
-        <!-- Success Alert -->
+
         <div class="upgrade-success-alert upgrade-fade-in">
             <div class="upgrade-alert-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="upgrade-alert-content">
-                <h5>Full Access Granted</h5>
-                <p>You have unlimited campaigns and all Pro features. Your subscription is managed through {{ user.subscription.payment_provider|title }}.</p>
+                <h5>Everything Is Active</h5>
+                <p>
+                    You can create and grow as many causes as you need. 
+                    Your subscription is managed through {{ user.subscription.payment_provider|title }}.
+                </p>
             </div>
         </div>
-        
+
         {% else %}
-        <!-- Upgrade Header for Free Users -->
+        <!-- Gentle limit message -->
         <div class="upgrade-header">
             <div class="floating-element"></div>
             <div class="floating-element"></div>
             <div class="floating-element"></div>
-            
+
             <h1 class="upgrade-title">
-                <i class="fas fa-rocket"></i>
-                You've Reached Your Limit
+                <i class="fas fa-compass"></i>
+                You’ve Reached the Free Limit
             </h1>
-            <p class="upgrade-subtitle">But your journey is just beginning...</p>
-            <span class="upgrade-badge">Free Plan</span>
+            <p class="upgrade-subtitle">
+                This is where many causes choose to grow further
+            </p>
+            <span class="upgrade-badge">Free Access</span>
         </div>
-        
-        <!-- Alert for Free Users -->
+
         <div class="upgrade-alert upgrade-fade-in">
             <div class="upgrade-alert-icon">
-                <i class="fas fa-exclamation-circle"></i>
+                <i class="fas fa-info-circle"></i>
             </div>
             <div class="upgrade-alert-content">
-                <h5>Action Required</h5>
-                <p>You've created <strong>{{ user.subscription.get_campaign_count }}</strong> campaigns. To continue growing your impact, upgrade now to unlock unlimited possibilities.</p>
+                <h5>Next Step Available</h5>
+                <p>
+                    You currently have <strong>{{ user.subscription.get_campaign_count }}</strong> active causes.
+                    Upgrading removes limits so your work doesn’t have to pause.
+                </p>
             </div>
         </div>
         {% endif %}
-        
-        <!-- Content -->
+
         <div style="padding: 2rem 2.5rem;">
-            <!-- Social Proof -->
+            <!-- Community proof -->
             <div class="upgrade-social-proof upgrade-fade-in">
                 <div class="upgrade-avatars">
                     {% for i in "12345" %}
-                    <img src="https://i.pravatar.cc/150?img={{ i|add:'30' }}" 
-                         class="upgrade-avatar" 
-                         alt="Happy user {{ i }}"
+                    <img src="https://i.pravatar.cc/150?img={{ i|add:'30' }}"
+                         class="upgrade-avatar"
+                         alt="Community member {{ i }}"
                          loading="lazy">
                     {% endfor %}
                 </div>
                 <p class="upgrade-social-text">
-                    <strong>1,247+ activists</strong> have already upgraded this week. Join them now!
+                    <strong>1,247 people</strong> chose to support more causes this week
                 </p>
             </div>
-            
+
             {% if not user.subscription.has_active_subscription %}
-            <!-- DIRECT PAYPAL FORM - Added as requested -->
+            <!-- PayPal -->
             <div class="direct-paypal-form upgrade-fade-in" style="animation-delay: 0.05s;">
                 <h4 class="direct-paypal-title">
-                    <i class="fab fa-paypal"></i> Direct PayPal Subscription
+                    <i class="fab fa-paypal"></i> Continue with PayPal
                 </h4>
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-  <input type="hidden" name="cmd" value="_s-xclick" />
-  
-  <!-- 🚨 YOUR NEW LIVE BUTTON ID -->
-  <input type="hidden" name="hosted_button_id" value="7TWD76E6BY72S" />
-  
-  <input type="hidden" name="currency_code" value="USD" />
-  
-  <!-- CRITICAL: User ID for webhooks -->
-  <input type="hidden" name="custom" value="{{ user.id }}" />
-  
-  <!-- 🚨 LIVE DOMAIN URLs -->
-  <input type="hidden" name="return" value="https://rallynex.com/paypal/return/" />
-  <input type="hidden" name="cancel_return" value="https://rallynex.com/paypal/cancel/" />
-  <input type="hidden" name="notify_url" value="https://rallynex.com/paypal/webhook/" />
-  
-  <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif" 
-         border="0" name="submit" title="PayPal - The safer, easier way to pay online!" 
-         alt="Subscribe" />
-</form>
+
+                <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                    <input type="hidden" name="cmd" value="_s-xclick" />
+                    <input type="hidden" name="hosted_button_id" value="7TWD76E6BY72S" />
+                    <input type="hidden" name="currency_code" value="USD" />
+                    <input type="hidden" name="custom" value="{{ user.id }}" />
+                    <input type="hidden" name="return" value="https://rallynex.com/paypal/return/" />
+                    <input type="hidden" name="cancel_return" value="https://rallynex.com/paypal/cancel/" />
+                    <input type="hidden" name="notify_url" value="https://rallynex.com/paypal/webhook/" />
+
+                    <input type="image"
+                           src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif"
+                           border="0"
+                           name="submit"
+                           alt="Subscribe" />
+                </form>
+
                 <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem;">
-                    <i class="fas fa-lock me-1"></i> Secure payment • <i class="fas fa-sync-alt me-1"></i> Monthly subscription
+                    Secure monthly support • Cancel anytime
                 </p>
             </div>
-          
             {% endif %}
-            
-            <!-- Comparison Table -->
+
+            <!-- Plans -->
             <div class="upgrade-comparison">
-                <!-- Free Plan -->
                 <div class="upgrade-plan upgrade-fade-in" style="animation-delay: 0.2s;">
-                    <div class="upgrade-plan-badge">Free Plan</div>
+                    <div class="upgrade-plan-badge">Free</div>
                     <h2 class="upgrade-price">$0</h2>
-                    
+
                     <ul class="upgrade-features">
-                        <li><i class="fas fa-times"></i> Limited to 2 campaigns</li>
-                        <li><i class="fas fa-times"></i> Basic analytics only</li>
-                        <li><i class="fas fa-times"></i> Standard email support</li>
-                        <li><i class="fas fa-times"></i> No priority listing</li>
-                        <li><i class="fas fa-times"></i> Basic campaign templates</li>
+                        <li><i class="fas fa-times"></i> Up to 2 active causes</li>
+                        <li><i class="fas fa-times"></i> Basic insights</li>
+                        <li><i class="fas fa-times"></i> Standard support</li>
                     </ul>
-                    
-                    {% if user.subscription.has_active_subscription %}
+
                     <button class="upgrade-btn upgrade-btn-secondary" disabled>
-                        <i class="fas fa-arrow-left me-2"></i> Not Your Plan
+                        Current access
                     </button>
-                    {% else %}
-                    <button class="upgrade-btn upgrade-btn-secondary" disabled>
-                        <i class="fas fa-check-circle me-2"></i> Current Plan
-                    </button>
-                    {% endif %}
                 </div>
-                
-                <!-- Pro Plan -->
+
                 <div class="upgrade-plan featured upgrade-fade-in" style="animation-delay: 0.3s;">
                     <div class="upgrade-plan-popular">
-                        <i class="fas fa-crown"></i> MOST POPULAR
+                        <i class="fas fa-heart"></i> COMMUNITY CHOICE
                     </div>
-                    
-                    <div class="upgrade-plan-badge">Pro Plan</div>
+
+                    <div class="upgrade-plan-badge">Unlimited Support</div>
                     <h2 class="upgrade-price">$9<span>/month</span></h2>
-                    
+
                     <ul class="upgrade-features">
-                        <li><i class="fas fa-check"></i> <strong>Unlimited campaigns</strong></li>
-                        <li><i class="fas fa-check"></i> Advanced analytics dashboard</li>
-                        <li><i class="fas fa-check"></i> Priority 24/7 support</li>
-                        <li><i class="fas fa-check"></i> 5x more visibility</li>
-                        <li><i class="fas fa-check"></i> Early access to new features</li>
-                        <li><i class="fas fa-check"></i> Premium campaign templates</li>
-                        <li><i class="fas fa-check"></i> Team collaboration tools</li>
+                        <li><i class="fas fa-check"></i> Unlimited causes</li>
+                        <li><i class="fas fa-check"></i> Deeper insights</li>
+                        <li><i class="fas fa-check"></i> Priority help</li>
+                        <li><i class="fas fa-check"></i> Greater visibility</li>
                     </ul>
-                    
+
                     {% if user.subscription.has_active_subscription %}
                     <button class="upgrade-btn upgrade-btn-success" disabled>
-                        <i class="fas fa-crown me-2"></i> You're Already Pro!
+                        Active
                     </button>
-                    <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem;">
-                        <i class="fab fa-paypal me-1"></i> Active via PayPal
-                    </p>
                     {% else %}
-                    <!-- Alternative PayPal Button -->
-                    <div style="text-align: center;">
+                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+                        <input type="hidden" name="cmd" value="_s-xclick" />
+                        <input type="hidden" name="hosted_button_id" value="7TWD76E6BY72S" />
+                        <input type="hidden" name="currency_code" value="USD" />
+                        <input type="hidden" name="custom" value="{{ user.id }}" />
+                        <input type="hidden" name="return" value="https://rallynex.com/paypal/return/" />
+                        <input type="hidden" name="cancel_return" value="https://rallynex.com/paypal/cancel/" />
+                        <input type="hidden" name="notify_url" value="https://rallynex.com/paypal/webhook/" />
 
-
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-  <input type="hidden" name="cmd" value="_s-xclick" />
-  
-  <!-- 🚨 YOUR NEW LIVE BUTTON ID -->
-  <input type="hidden" name="hosted_button_id" value="7TWD76E6BY72S" />
-  
-  <input type="hidden" name="currency_code" value="USD" />
-  
-  <!-- CRITICAL: User ID for webhooks -->
-  <input type="hidden" name="custom" value="{{ user.id }}" />
-  
-  <!-- 🚨 LIVE DOMAIN URLs -->
-  <input type="hidden" name="return" value="https://rallynex.com/paypal/return/" />
-  <input type="hidden" name="cancel_return" value="https://rallynex.com/paypal/cancel/" />
-  <input type="hidden" name="notify_url" value="https://rallynex.com/paypal/webhook/" />
-  
-  <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif" 
-         border="0" name="submit" title="PayPal - The safer, easier way to pay online!" 
-         alt="Subscribe" />
-</form>
-                    </div>
-                    <p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem;">
-                        <i class="fas fa-sync-alt me-1"></i> Cancel anytime • <i class="fas fa-globe me-1"></i> Global access
-                    </p>
+                        <input type="image"
+                               src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif"
+                               border="0"
+                               alt="Subscribe" />
+                    </form>
                     {% endif %}
                 </div>
             </div>
-            
-            {% if not user.subscription.has_active_subscription %}
-            <!-- Countdown Timer - Only show for non-Pro users -->
-            <div class="upgrade-countdown upgrade-fade-in" style="animation-delay: 0.4s;">
-                <div class="upgrade-countdown-header">
-                    <i class="fas fa-clock upgrade-countdown-icon"></i>
-                    Special Offer Ends Soon!
-                </div>
-                
-                <div class="upgrade-timer">
-                    <div class="upgrade-timer-unit">
-                        <div class="upgrade-timer-value" id="hours">24</div>
-                        <div class="upgrade-timer-label">Hours</div>
-                    </div>
-                    <div class="upgrade-timer-unit">
-                        <div class="upgrade-timer-value" id="minutes">59</div>
-                        <div class="upgrade-timer-label">Minutes</div>
-                    </div>
-                    <div class="upgrade-timer-unit">
-                        <div class="upgrade-timer-value" id="seconds">59</div>
-                        <div class="upgrade-timer-label">Seconds</div>
-                    </div>
-                </div>
-                
-                <p class="upgrade-countdown-note">
-                    Upgrade now to lock in $9/month pricing forever. Price increases to $19/month tomorrow.
-                </p>
-            </div>
-            {% endif %}
-            
-            <!-- Testimonials -->
-            <div class="upgrade-testimonials">
-                <div class="upgrade-testimonial upgrade-fade-in" style="animation-delay: 0.5s;">
-                    <div class="upgrade-testimonial-header">
-                        <img src="https://i.pravatar.cc/150?img=32" 
-                             class="upgrade-testimonial-avatar" 
-                             alt="Sarah M."
-                             loading="lazy">
-                        <div>
-                            <div class="upgrade-testimonial-author">Sarah M. 🇺🇸</div>
-                            <div class="upgrade-testimonial-stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="upgrade-testimonial-text">
-                        "As an activist in the US, I appreciate how easy it was to subscribe with PayPal. Unlimited campaigns let me organize multiple movements simultaneously!"
-                    </p>
-                </div>
-                
-                <div class="upgrade-testimonial upgrade-fade-in" style="animation-delay: 0.6s;">
-                    <div class="upgrade-testimonial-header">
-                        <img src="https://i.pravatar.cc/150?img=15" 
-                             class="upgrade-testimonial-avatar" 
-                             alt="James K."
-                             loading="lazy">
-                        <div>
-                            <div class="upgrade-testimonial-author">James K. 🇬🇧</div>
-                            <div class="upgrade-testimonial-stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="upgrade-testimonial-text">
-                        "UK activist here. PayPal made the payment process seamless. Priority support saved our campaign launch when we had urgent issues."
-                    </p>
-                </div>
-                
-                <div class="upgrade-testimonial upgrade-fade-in" style="animation-delay: 0.7s;">
-                    <div class="upgrade-testimonial-header">
-                        <img src="https://i.pravatar.cc/150?img=28" 
-                             class="upgrade-testimonial-avatar" 
-                             alt="Lisa T."
-                             loading="lazy">
-                        <div>
-                            <div class="upgrade-testimonial-author">Lisa T. 🇨🇦</div>
-                            <div class="upgrade-testimonial-stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="upgrade-testimonial-text">
-                        "Canadian activist working with global teams. The unlimited campaigns feature lets me coordinate with activists across 12 different countries!"
-                    </p>
-                </div>
-            </div>
-            
-            <!-- CTA Section -->
-            <div class="upgrade-cta upgrade-fade-in" style="animation-delay: 0.8s;">
-                {% if user.subscription.has_active_subscription %}
-                <h2 class="upgrade-cta-title">Enjoy Your Pro Benefits!</h2>
-                <p class="upgrade-cta-subtitle">
-                    Thank you for being a valued Pro member. You have full access to all features.
-                </p>
-                
-         
-                
-                {% else %}
-                <h2 class="upgrade-cta-title">Ready to Scale Your Impact?</h2>
-                <p class="upgrade-cta-subtitle">
-                    Join thousands of activists worldwide who turned their ideas into movements. 
-                    Take the leap and unlock your full potential today.
-                </p>
-                
-                <div class="upgrade-cta-buttons">
-                    <!-- Direct PayPal CTA Button -->
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
-  <input type="hidden" name="cmd" value="_s-xclick" />
-  
-  <!-- 🚨 YOUR NEW LIVE BUTTON ID -->
-  <input type="hidden" name="hosted_button_id" value="7TWD76E6BY72S" />
-  
-  <input type="hidden" name="currency_code" value="USD" />
-  
-  <!-- CRITICAL: User ID for webhooks -->
-  <input type="hidden" name="custom" value="{{ user.id }}" />
-  
-  <!-- 🚨 LIVE DOMAIN URLs -->
-  <input type="hidden" name="return" value="https://rallynex.com/paypal/return/" />
-  <input type="hidden" name="cancel_return" value="https://rallynex.com/paypal/cancel/" />
-  <input type="hidden" name="notify_url" value="https://rallynex.com/paypal/webhook/" />
-  
-  <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif" 
-         border="0" name="submit" title="PayPal - The safer, easier way to pay online!" 
-         alt="Subscribe" />
-</form>
 
-                    <a href="{% url 'home' %}" class="upgrade-cta-button upgrade-cta-button-secondary">
-                        <i class="fas fa-clock me-2"></i> Maybe Later
-                    </a>
-                </div>
+            <!-- CTA -->
+            <div class="upgrade-cta upgrade-fade-in" style="animation-delay: 0.6s;">
+                {% if user.subscription.has_active_subscription %}
+                <h2 class="upgrade-cta-title">Thank You for Supporting More Causes</h2>
+                <p class="upgrade-cta-subtitle">
+                    Your support helps ideas turn into collective action.
+                </p>
+                {% else %}
+                <h2 class="upgrade-cta-title">Keep Your Cause Moving</h2>
+                <p class="upgrade-cta-subtitle">
+                    Remove limits so your work can grow at its own pace.
+                </p>
                 {% endif %}
-                
-                <!-- Security Info -->
-                <div class="upgrade-security">
-                    <div class="upgrade-security-item">
-                        <i class="fab fa-paypal upgrade-security-icon"></i>
-                        <span>Secure payment via PayPal</span>
-                    </div>
-                    <div class="upgrade-security-item">
-                        <i class="fas fa-sync-alt upgrade-security-icon"></i>
-                        <span>Cancel anytime</span>
-                    </div>
-                    <div class="upgrade-security-item">
-                        <i class="fas fa-shield-alt upgrade-security-icon"></i>
-                        <span>30-day money-back guarantee</span>
-                    </div>
-                    <div class="upgrade-security-item">
-                        <i class="fas fa-globe upgrade-security-icon"></i>
-                        <span>Works in 200+ countries</span>
-                    </div>
-                </div>
-                
-                <!-- Payment Logos -->
-                <div class="upgrade-payment-logos">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 
-                         class="upgrade-payment-logo" 
-                         alt="Visa"
-                         loading="lazy">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" 
-                         class="upgrade-payment-logo" 
-                         alt="Mastercard"
-                         loading="lazy">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" 
-                         class="upgrade-payment-logo" 
-                         alt="American Express"
-                         loading="lazy">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" 
-                         class="upgrade-payment-logo" 
-                         alt="PayPal"
-                         loading="lazy"
-                         style="height: 25px;">
-                </div>
             </div>
-            
-            <!-- FAQ Section -->
-            <div class="upgrade-faq upgrade-fade-in" style="animation-delay: 0.9s;">
-                <h3 class="upgrade-faq-title">Frequently Asked Questions</h3>
-                
-                <div class="upgrade-faq-item active">
-                    <div class="upgrade-faq-question">
-                       How does the free plan work?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                        The free plan lets you create and manage up to 2 active marketing campaigns. This is a great way to test all the core features before upgrading.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                        What happens when I reach my limit of 2 campaigns?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                       You will need to upgrade to the Pro plan ($9/month) to create a 3rd campaign. You can also archive an existing free campaign to free up a slot for a new one.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                        Is there a free trial for the Pro plan?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                        You're already experiencing our free plan! The Pro plan offers immediate access to advanced features. We offer a 30-day money-back guarantee, so you can try Pro risk-free. If you're not satisfied, we'll give you a full refund.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                       Do I lose my existing campaigns if I upgrade?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                      No. Upgrading instantly unlocks unlimited campaigns. All your existing data, settings, and analytics for your first 2 campaigns are preserved and remain fully active.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                       Can I cancel the Pro plan later?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                       Yes, you can cancel anytime from your account settings. If you cancel, your account will revert to the free plan at the end of your billing period, and the 2-campaign limit will apply again.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                       What payment methods do you accept?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                       We accept payments through PayPal which supports:<br><br>
-                       • <strong>Credit/Debit Cards:</strong> Visa, Mastercard, American Express<br>
-                       • <strong>PayPal Balance</strong><br>
-                       • <strong>Bank Transfers</strong><br>
-                       • <strong>Local payment methods</strong> depending on your country<br><br>
-                       PayPal works in 200+ countries worldwide, making it accessible to activists everywhere.
-                    </div>
-                </div>
-                
-                <div class="upgrade-faq-item">
-                    <div class="upgrade-faq-question">
-                       How does the subscription renewal work?
-                    </div>
-                    <div class="upgrade-faq-answer">
-                       Your subscription automatically renews every month at $9. You'll receive a notification before each renewal. You can cancel at any time from your PayPal account or by contacting support.
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
 </div>

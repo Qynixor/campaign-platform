@@ -694,311 +694,287 @@
 </head>
 
 <body>
-    <div class="create-wrapper">
-        <div class="create-container">
-            
-            <!-- Welcome Message -->
-            <div class="welcome-message">
-                <h2>You're not alone in caring</h2>
-                <p>This is where lonely passion becomes powerful togetherness. Let's open a home for what matters to you.</p>
-            </div>
-            
-            <!-- Progress Indicator -->
-            <div class="progress-bar">
-                <div class="progress-fill" id="formProgress"></div>
-                <div class="progress-text" id="progressText">Start your journey</div>
-            </div>
-            
-            <!-- Main Form Card -->
-            <div class="create-card">
-                <div class="card-header">
-                    <div>
-                        <h1>
-                            <i class="fas fa-heart heart-blue"></i>
-                            Open a Home for Your Cause
-                        </h1>
-                        <p class="card-subtitle">This is where lonely passion becomes powerful togetherness</p>
-                    </div>
-                    
-                    <div class="paypal-status">
-                        {% if not user_profile.has_paypal %}
-                            <a href="{% url 'edit_profile' username=user_profile.user.username %}" style="color: white; text-decoration: underline;">
-                                <i class="fas fa-plus-circle"></i> Add PayPal
-                            </a>
-                        {% else %}
-                            <span>
-                                <i class="fas fa-check-circle"></i> Ready for support
-                            </span>
-                        {% endif %}
-                    </div>
-                    
-                    <button class="close-btn" onclick="window.history.back()">&times;</button>
+<div class="create-wrapper">
+    <div class="create-container">
+
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+            <h2>Start something that matters</h2>
+            <p>This is where you turn an idea into a cause, show real progress, and invite others to support you.</p>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="formProgress"></div>
+            <div class="progress-text" id="progressText">Create your cause</div>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="create-card">
+            <div class="card-header">
+                <div>
+                    <h1>
+                        <i class="fas fa-flag-checkered heart-blue"></i>
+                        Create Your Cause
+                    </h1>
+                    <p class="card-subtitle">
+                        Define what you’re working toward and invite support along the way
+                    </p>
                 </div>
 
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" id="campaignForm">
-                        {% csrf_token %}
-                        
-                        {% if form.errors %}
-                            <div class="error-container">
-                                <strong>Let's fix these together:</strong>
-                                <ul>
-                                    {% for field in form %}
-                                        {% for error in field.errors %}
-                                            <li>{{ field.label }}: {{ error }}</li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- SECTION: THE HEART OF YOUR CAUSE -->
-                        <div class="section-label">
-                            <div class="section-icon"><i class="fas fa-heart"></i></div>
-                            <div class="section-label-text">The Heart of Your Cause</div>
-                        </div>
-                        
-                        <!-- Emotional Guidance -->
-                        <div class="emotional-guidance">
-                            <div class="guidance-header">
-                                <i class="fas fa-lightbulb"></i>
-                                <strong>This is your space to speak from the heart</strong>
-                            </div>
-                            <div class="guidance-content">
-                                You're not creating a campaign, you're opening a home for others who might feel the same way you do.
-                            </div>
-                        </div>
-                        
-                        <!-- Title -->
-                        <div class="form-section">
-                            <label class="form-label">What do you care deeply about?</label>
-                            <input type="text"
-                                   name="title"
-                                   class="form-input"
-                                   placeholder="Name the thing that matters to you"
-                                   required
-                                   value="{{ form.title.value|default:'' }}">
-                            <span class="form-helper">
-                                This doesn't need to be perfect — it just needs to be honest
-                            </span>
-                        </div>
-                        
-                        <!-- Description -->
-                        <div class="form-section">
-                            <label class="form-label">Why this matters to you</label>
-                            <textarea name="content"
-                                      class="form-textarea"
-                                      placeholder="What feels missing right now? Why does this cause stir something in you?"
-                                      required>{{ form.content.value|default:'' }}</textarea>
-                            <span class="form-helper">
-                                Speak from your experience. You're not here to impress anyone — you're here to connect
-                            </span>
-                        </div>
-                        
-                        <!-- IMAGES - FIXED WITH PREVIEW CONTAINERS -->
-                        <div class="form-section">
-                            <label class="form-label">Images for your cause <span class="optional-badge">Optional but powerful</span></label>
-                            
-                            <!-- Main Poster Upload -->
-                            <div class="file-upload">
-                                <label for="id_poster">
-                                    <i class="fas fa-image"></i>
-                                    <div class="file-upload-text">Upload an image that captures the feeling</div>
-                                    <span class="form-helper">This will be the first thing people see when you open this home</span>
-                                </label>
-                                {{ form.poster }}
-                            </div>
-                            
-                            <!-- Main Poster Preview Container -->
-                            <div id="mainPosterPreview" class="preview-container"></div>
-                            
-                            <!-- Additional Images Upload -->
-                            <div style="margin-top: 16px;">
-                                <div class="file-upload">
-                                    <label for="id_additional_images">
-                                        <i class="fas fa-layer-group"></i>
-                                        <div class="file-upload-text">Add more images to tell the full story</div>
-                                        <span class="form-helper">You can select multiple images at once (Ctrl+Click or drag & drop)</span>
-                                    </label>
-                                    {{ form.additional_images }}
-                                </div>
-                            </div>
-                            
-                            <!-- Additional Images Preview Container -->
-                            <div id="additionalPreviews" class="image-previews-grid"></div>
-                        </div>
-                        
-                        <!-- SOUND -->
-                        <div class="form-section">
-                            <label class="form-label">
-                                Sound for your cause <span class="optional-badge">Optional</span>
-                            </label>
-                            
-                            <div class="audio-guidance">
-                                <div class="audio-guidance-header">
-                                    <i class="fas fa-music"></i>
-                                    <strong>Sound creates emotional connection</strong>
-                                </div>
-                                <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 14px;">
-                                    A short audio clip can help others understand the emotional texture of your cause
-                                </p>
-                                
-                                <div class="audio-examples">
-                                    <div class="audio-example">
-                                        <i class="fas fa-microphone"></i>
-                                        <span>A personal voice note</span>
-                                    </div>
-                                    <div class="audio-example">
-                                        <i class="fas fa-wave-square"></i>
-                                        <span>Ambient sounds from a place</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="file-upload">
-                                <label for="id_audio">
-                                    <i class="fas fa-upload"></i>
-                                    <div class="file-upload-text">Upload audio (MP3, WAV, or OGG)</div>
-                                    <span class="form-helper">Keep it under 2 minutes for maximum impact</span>
-                                </label>
-                                {{ form.audio }}
-                            </div>
-                            
-                            <!-- Audio Preview Container -->
-                            <div id="audioPreview" class="preview-container"></div>
-                        </div>
-                        
-                        <!-- SECTION: HOW YOUR HOME WILL WORK -->
-                        <div class="section-label">
-                            <div class="section-icon"><i class="fas fa-home"></i></div>
-                            <div class="section-label-text">How Your Home Will Work</div>
-                        </div>
-                        
-                        <!-- Community Promise -->
-                        <div class="community-promise">
-                            <i class="fas fa-users"></i>
-                            <p>This will be a space where people who care about the same thing can find each other</p>
-                        </div>
-                        
-                        <!-- Category & Visibility -->
-                        <div class="two-column">
-                            <div class="form-section">
-                                <label class="form-label">Where does this belong?</label>
-                                <select name="category" class="form-select">
-                                    {% for category in categories %}
-                                        <option value="{{ category.0 }}"
-                                            {% if form.category.value == category.0 %}selected{% endif %}>
-                                            {{ category.1 }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                                <span class="form-helper">Help like-minded people find you</span>
-                            </div>
-                            
-                            <div class="form-section">
-                                <label class="form-label">Who can see this?</label>
-                                <select name="visibility" class="form-select">
-                                    <option value="public">Anyone (public)</option>
-                                    <option value="private">Only people I choose</option>
-                                </select>
-                                <span class="form-helper">
-                                    You can start private and open up later
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <!-- TAGS -->
-                        <div class="form-section">
-                            <label class="form-label">Help people find you <span class="optional-badge">Optional</span></label>
-                            <input type="text"
-                                   name="tags_input"
-                                   class="form-input"
-                                   placeholder="community, environment, education, justice..."
-                                   value="{{ form.tags_input.value|default:'' }}">
-                            <span class="form-helper">
-                                What words describe your cause? These help the right people find you
-                            </span>
-                            
-                            <!-- Popular Tags -->
-                            <div class="popular-tags">
-                                <div class="popular-tags-title">Common tags people use:</div>
-                                <div class="popular-tags-list">
-                                    <span class="suggested-tag" data-tag="community">community</span>
-                                    <span class="suggested-tag" data-tag="justice">justice</span>
-                                    <span class="suggested-tag" data-tag="environment">environment</span>
-                                    <span class="suggested-tag" data-tag="education">education</span>
-                                    <span class="suggested-tag" data-tag="health">health</span>
-                                    <span class="suggested-tag" data-tag="animals">animals</span>
-                                    <span class="suggested-tag" data-tag="art">art</span>
-                                    <span class="suggested-tag" data-tag="culture">culture</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- DURATION -->
-                        <div class="form-section">
-                            <label class="form-label">
-                                How long do you want to hold this space? <span class="optional-badge">Optional</span>
-                            </label>
-                            <div class="two-column">
-                                <div>
-                                    <input type="number"
-                                           name="duration"
-                                           class="form-input"
-                                           min="1"
-                                           placeholder="e.g. 30"
-                                           value="{{ form.duration.value|default:'' }}">
-                                </div>
-                                <div>
-                                    <select name="duration_unit" class="form-select">
-                                        <option value="">No limit</option>
-                                        <option value="days">Days</option>
-                                        <option value="weeks">Weeks</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <span class="form-helper">
-                                Caring can be tiring. It's okay to set a timeframe
-                            </span>
-                        </div>
-                        
-                        <!-- SUPPORT GOAL - THE EMOTIONAL REDEFINITION -->
-                        <div class="form-section">
-                            <label class="form-label">
-                                Support goal <span class="optional-badge">Completely optional</span>
-                            </label>
-                            <input type="number"
-                                   name="funding_goal"
-                                   class="form-input"
-                                   min="0"
-                                   step="0.01"
-                                   placeholder="0.00"
-                                   value="{{ form.funding_goal.value|default:'' }}">
-                            <span class="form-helper">
-                                Many causes begin with support, not money. If you do need funding, this is where you can set a goal.
-                            </span>
-                            
-                            <div class="support-reminder">
-                                <i class="fas fa-info-circle"></i>
-                                <div>Remember: The real goal is togetherness, not dollars</div>
-                            </div>
-                        </div>
-                        
-                        <!-- FINAL SUBMIT -->
-                        <button type="submit" class="submit-button">
-                            <i class="fas fa-door-open"></i> Open This Cause Home
-                        </button>
-                        
-                        <!-- Final Encouragement -->
-                        <div style="text-align: center; margin-top: 24px; color: var(--text-secondary); font-size: 14px;">
-                            <i class="fas fa-hands-helping" style="margin-right: 8px;"></i>
-                            You're taking the first step from lonely passion to powerful togetherness
-                        </div>
-                    </form>
+                <div class="paypal-status">
+                    {% if not user_profile.has_paypal %}
+                        <a href="{% url 'edit_profile' username=user_profile.user.username %}" style="color: white; text-decoration: underline;">
+                            <i class="fas fa-plus-circle"></i> Add PayPal to receive support
+                        </a>
+                    {% else %}
+                        <span>
+                            <i class="fas fa-check-circle"></i> Ready to receive support
+                        </span>
+                    {% endif %}
                 </div>
+
+                <button class="close-btn" onclick="window.history.back()">&times;</button>
+            </div>
+
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="campaignForm">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                        <div class="error-container">
+                            <strong>Let’s fix a few things:</strong>
+                            <ul>
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ field.label }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <!-- SECTION: CORE IDEA -->
+                    <div class="section-label">
+                        <div class="section-icon"><i class="fas fa-bullseye"></i></div>
+                        <div class="section-label-text">Your Cause</div>
+                    </div>
+
+                    <!-- Guidance -->
+                    <div class="emotional-guidance">
+                        <div class="guidance-header">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>Be clear about what you want to change</strong>
+                        </div>
+                        <div class="guidance-content">
+                            People support causes they understand. Focus on the problem and what progress looks like.
+                        </div>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="form-section">
+                        <label class="form-label">Cause title</label>
+                        <input type="text"
+                               name="title"
+                               class="form-input"
+                               placeholder="Give your cause a clear, specific name"
+                               required
+                               value="{{ form.title.value|default:'' }}">
+                        <span class="form-helper">
+                            A clear title helps people quickly understand your goal
+                        </span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-section">
+                        <label class="form-label">What is this cause about?</label>
+                        <textarea name="content"
+                                  class="form-textarea"
+                                  placeholder="What problem are you addressing? What do you want to achieve?"
+                                  required>{{ form.content.value|default:'' }}</textarea>
+                        <span class="form-helper">
+                            Explain the situation, why it matters, and what progress you’re working toward
+                        </span>
+                    </div>
+
+                    <!-- IMAGES -->
+                    <div class="form-section">
+                        <label class="form-label">
+                            Images for your cause <span class="optional-badge">Optional</span>
+                        </label>
+
+                        <div class="file-upload">
+                            <label for="id_poster">
+                                <i class="fas fa-image"></i>
+                                <div class="file-upload-text">Upload a main image</div>
+                                <span class="form-helper">This image represents your cause publicly</span>
+                            </label>
+                            {{ form.poster }}
+                        </div>
+
+                        <div id="mainPosterPreview" class="preview-container"></div>
+
+                        <div style="margin-top: 16px;">
+                            <div class="file-upload">
+                                <label for="id_additional_images">
+                                    <i class="fas fa-layer-group"></i>
+                                    <div class="file-upload-text">Add supporting images</div>
+                                    <span class="form-helper">Show context, progress, or impact</span>
+                                </label>
+                                {{ form.additional_images }}
+                            </div>
+                        </div>
+
+                        <div id="additionalPreviews" class="image-previews-grid"></div>
+                    </div>
+
+                 <!-- AUDIO -->
+<div class="form-section">
+    <label class="form-label">
+        Sound for your cause <span class="optional-badge">Optional</span>
+    </label>
+
+    <div class="audio-guidance">
+        <div class="audio-guidance-header">
+            <i class="fas fa-music"></i>
+            <strong>Sound sets the emotional tone</strong>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 14px;">
+            Sometimes a feeling can’t be explained in words. A short sound can help people sense the atmosphere around your cause.
+        </p>
+
+        <div class="audio-examples">
+            <div class="audio-example">
+                <i class="fas fa-wave-square"></i>
+                <span>Ambient sounds from a place</span>
+            </div>
+            <div class="audio-example">
+                <i class="fas fa-heartbeat"></i>
+                <span>Natural or emotional sound textures</span>
+            </div>
+            <div class="audio-example">
+                <i class="fas fa-microphone"></i>
+                <span>A quiet voice moment (optional)</span>
             </div>
         </div>
     </div>
+
+    <div class="file-upload">
+        <label for="id_audio">
+            <i class="fas fa-upload"></i>
+            <div class="file-upload-text">Upload an audio clip</div>
+            <span class="form-helper">
+                This doesn’t need to explain anything — it just needs to feel right
+            </span>
+        </label>
+        {{ form.audio }}
+    </div>
+
+    <!-- Audio Preview -->
+    <div id="audioPreview" class="preview-container"></div>
+</div>
+
+
+                    <!-- SECTION: VISIBILITY -->
+                    <div class="section-label">
+                        <div class="section-icon"><i class="fas fa-eye"></i></div>
+                        <div class="section-label-text">Visibility & Discovery</div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="form-section">
+                            <label class="form-label">Category</label>
+                            <select name="category" class="form-select">
+                                {% for category in categories %}
+                                    <option value="{{ category.0 }}"
+                                        {% if form.category.value == category.0 %}selected{% endif %}>
+                                        {{ category.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <span class="form-helper">Helps the right supporters find your cause</span>
+                        </div>
+
+                        <div class="form-section">
+                            <label class="form-label">Visibility</label>
+                            <select name="visibility" class="form-select">
+                                <option value="public">Public</option>
+                                <option value="private">Private (invite only)</option>
+                            </select>
+                            <span class="form-helper">
+                                You can change this later
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- TAGS -->
+                    <div class="form-section">
+                        <label class="form-label">Tags <span class="optional-badge">Optional</span></label>
+                        <input type="text"
+                               name="tags_input"
+                               class="form-input"
+                               placeholder="environment, education, health..."
+                               value="{{ form.tags_input.value|default:'' }}">
+                        <span class="form-helper">
+                            Tags improve discoverability
+                        </span>
+                    </div>
+
+                    <!-- DURATION -->
+                    <div class="form-section">
+                        <label class="form-label">
+                            Timeframe <span class="optional-badge">Optional</span>
+                        </label>
+                        <div class="two-column">
+                            <input type="number"
+                                   name="duration"
+                                   class="form-input"
+                                   min="1"
+                                   placeholder="e.g. 30"
+                                   value="{{ form.duration.value|default:'' }}">
+                            <select name="duration_unit" class="form-select">
+                                <option value="">No limit</option>
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                            </select>
+                        </div>
+                        <span class="form-helper">
+                            Set expectations for supporters
+                        </span>
+                    </div>
+
+                    <!-- SUPPORT GOAL -->
+                    <div class="form-section">
+                        <label class="form-label">
+                            Support goal <span class="optional-badge">Optional</span>
+                        </label>
+                        <input type="number"
+                               name="funding_goal"
+                               class="form-input"
+                               min="0"
+                               step="0.01"
+                               placeholder="0.00"
+                               value="{{ form.funding_goal.value|default:'' }}">
+                        <span class="form-helper">
+                            Set a goal if financial support is needed
+                        </span>
+                    </div>
+
+                    <!-- FINAL SUBMIT -->
+                    <button type="submit" class="submit-button">
+                        <i class="fas fa-rocket"></i> Publish Cause
+                    </button>
+
+                    <div style="text-align: center; margin-top: 24px; color: var(--text-secondary); font-size: 14px;">
+                        <i class="fas fa-chart-line" style="margin-right: 8px;"></i>
+                        You can post updates and track progress after publishing
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <script>
         // ===== CRITICAL FIX: Add multiple attribute to file input =====
