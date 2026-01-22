@@ -2805,31 +2805,37 @@ def create_chat(request):
     
     return render(request, 'main/create_chat.html', context)
 
+
+# views.py - Fixed send_message view
 import re
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Count
 from itertools import chain
 from collections import defaultdict
 from django.contrib.auth.models import User
+from django.views.decorators.http import require_POST
 from .models import Chat, Message, Profile, Notification, Campaign, NativeAd, Follow, Love, Comment, CampaignView, ActivityLove, ActivityComment
 from .forms import MessageForm
 from .utils import calculate_similarity
 
 @method_decorator(login_required, name='dispatch')
-@method_decorator(csrf_exempt, name='dispatch')
 class ChatDetailView(View):
     def get(self, request, chat_id):
         chat = get_object_or_404(
             Chat.objects.select_related("manager").prefetch_related("participants"),
             id=chat_id
         )
+        
+        # Check if user is a participant or manager
+        if request.user not in chat.participants.all() and request.user != chat.manager:
+            return redirect('home')
         
         category_filter = request.GET.get('category', '')
         user_profile = get_object_or_404(Profile, user=request.user)
@@ -2848,7 +2854,7 @@ class ChatDetailView(View):
         message_form = MessageForm(initial={'chat': chat})
         
         # Handle AJAX polling for new messages
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             last_message_id = request.GET.get('last_message', 0)
             try:
                 last_message_id = int(last_message_id)
@@ -2858,7 +2864,7 @@ class ChatDetailView(View):
             new_messages = Message.objects.filter(
                 chat=chat, 
                 id__gt=last_message_id
-            ).select_related("sender__profile")
+            ).select_related("sender__profile").order_by('timestamp')
             
             messages_data = []
             for msg in new_messages:
@@ -2867,7 +2873,7 @@ class ChatDetailView(View):
                     'content': msg.content,
                     'sender': msg.sender.username,
                     'sender_image': msg.sender.profile.image.url,
-                    'timestamp': msg.timestamp.strftime('%H:%M'),
+                    'timestamp': msg.timestamp.isoformat(),
                     'is_own': msg.sender == request.user,
                     'file_url': msg.file.url if msg.file else None,
                     'file_name': msg.file_name if msg.file else None,
@@ -2961,7 +2967,7 @@ class ChatDetailView(View):
             'top_contributors': top_contributors,
             'categories': categories,
             'selected_category': category_filter,
-             'user': request.user,
+            'user': request.user,
         }
 
         return render(request, 'main/chat_detail.html', context)
@@ -2978,6 +2984,10 @@ def send_message(request, chat_id):
             return JsonResponse({'success': False, 'error': 'Message cannot be empty'})
         
         chat = get_object_or_404(Chat, id=chat_id)
+        
+        # Check if user is a participant or manager
+        if request.user not in chat.participants.all() and request.user != chat.manager:
+            return JsonResponse({'success': False, 'error': 'You are not authorized to send messages in this chat'})
         
         try:
             # Auto-detect and convert URLs to clickable links if there's content
@@ -3006,7 +3016,7 @@ def send_message(request, chat_id):
                     'content': message.content,
                     'sender': message.sender.username,
                     'sender_image': message.sender.profile.image.url,
-                    'timestamp': message.timestamp.strftime('%H:%M'),
+                    'timestamp': message.timestamp.isoformat(),
                     'is_own': True,
                     'file_url': message.file.url if message.file else None,
                     'file_name': message.file_name,
@@ -3050,7 +3060,7 @@ def user_chats(request):
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
     # Combine all engagement pairs
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
+    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
     # Count number of unique campaigns each user engaged with
@@ -3076,8 +3086,8 @@ def user_chats(request):
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
     # Get suggested users with improved logic
-    current_user_following = request.user.following.all()  # Get all Follow objects
-    following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
+    current_user_following = request.user.following.all()
+    following_user_ids = [follow.followed_id for follow in current_user_following]
     
     # Exclude current user and already followed users
     all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
@@ -3100,7 +3110,7 @@ def user_chats(request):
     following_users = [follow.followed for follow in request.user.following.all()]
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     new_campaigns_from_follows = Campaign.objects.filter(
-        user__user__id__in=following_user_ids,  # Updated to use the same following_user_ids
+        user__user__id__in=following_user_ids,
         visibility='public', 
         timestamp__gt=user_profile.last_campaign_check
     )
@@ -3128,7 +3138,8 @@ def add_participants(request, chat_id):
         user_ids = request.POST.getlist('participants')
         users_to_add = User.objects.filter(id__in=user_ids)
         chat.participants.add(*users_to_add)
-    return redirect('chat_detail', chat_id=chat_id)
+        return JsonResponse({'redirect': f'/chat/{chat_id}/'})
+    return JsonResponse({'error': 'Unauthorized'}, status=403)
 
 @require_POST
 @login_required
@@ -3138,7 +3149,8 @@ def remove_participants(request, chat_id):
         user_ids = request.POST.getlist('participants')
         users_to_remove = chat.participants.filter(id__in=user_ids)
         chat.participants.remove(*users_to_remove)
-    return redirect('chat_detail', chat_id=chat_id)
+        return JsonResponse({'redirect': f'/chat/{chat_id}/'})
+    return JsonResponse({'error': 'Unauthorized'}, status=403)
 
 @require_POST
 @login_required
@@ -3146,7 +3158,9 @@ def delete_chat(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
     if request.user == chat.manager:
         chat.delete()
-    return redirect('user_chats')
+        return JsonResponse({'redirect': '/user/chats/'})
+    return JsonResponse({'error': 'Unauthorized'}, status=403)
+
 
 
 

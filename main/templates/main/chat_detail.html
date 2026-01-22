@@ -5,7 +5,10 @@
 
 <!-- Add emoji picker library -->
 <script src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js" type="module"></script>
-
+    
+    <!-- Icon Libraries -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style type="text/css">
   /* WhatsApp-inspired chat room - Compact Enhanced Version */
   .chat-room-container {
@@ -837,7 +840,7 @@
             <div class="message-info">
               <span class="message-time">{{ message.timestamp|time:"H:i" }}</span>
               <span class="message-status">
-                <i class="material-icons" style="font-size:14px;">done_all</i>
+                <i class="material-icons" style="font-size:14px;"> done_all</i>
               </span>
             </div>
           </div>
@@ -936,152 +939,120 @@
   }
 </style>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- REMOVED JQUERY - Using pure JavaScript instead -->
+
 <script>
-// Add emoji picker functionality
+// Global variables
+let timeUpdaterInterval = null;
+let filePreviewElement = null;
+let selectedFile = null;
+
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+  // ================== EMOJI PICKER FUNCTIONALITY ==================
   const picker = document.getElementById('emojiPicker');
-  const button = document.getElementById('emojiButton');
-  const input = document.getElementById('messageInput');
+  const emojiButton = document.getElementById('emojiButton');
+  const messageInput = document.getElementById('messageInput');
   
-  // Toggle emoji picker visibility
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (picker.style.display === 'block') {
-      picker.style.display = 'none';
-    } else {
-      picker.style.display = 'block';
-      // Hide when clicking outside
-      setTimeout(() => {
-        document.addEventListener('click', hidePickerOnClickOutside);
-      }, 10);
-    }
-  });
-  
-  // Insert emoji when selected
-  picker.addEventListener('emoji-click', event => {
-    const emoji = event.detail.unicode;
-    // Insert at cursor position
-    const cursorPos = input.selectionStart;
-    const textBefore = input.value.substring(0, cursorPos);
-    const textAfter = input.value.substring(cursorPos);
+  if (picker && emojiButton) {
+    emojiButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (picker.style.display === 'block') {
+        picker.style.display = 'none';
+      } else {
+        picker.style.display = 'block';
+        setTimeout(() => {
+          document.addEventListener('click', hidePickerOnClickOutside);
+        }, 10);
+      }
+    });
     
-    input.value = textBefore + emoji + textAfter;
-    
-    // Set cursor position after the inserted emoji
-    input.selectionStart = cursorPos + emoji.length;
-    input.selectionEnd = cursorPos + emoji.length;
-    
-    // Trigger input event for auto-resize
-    input.dispatchEvent(new Event('input'));
-    
-    // Focus back on input
-    input.focus();
-    
-    // Hide picker after selection
-    picker.style.display = 'none';
-    document.removeEventListener('click', hidePickerOnClickOutside);
-  });
-  
-  // Hide picker when clicking outside
-  function hidePickerOnClickOutside(event) {
-    if (!picker.contains(event.target) && event.target !== button) {
+    picker.addEventListener('emoji-click', event => {
+      const emoji = event.detail.unicode;
+      const cursorPos = messageInput.selectionStart;
+      const textBefore = messageInput.value.substring(0, cursorPos);
+      const textAfter = messageInput.value.substring(cursorPos);
+      
+      messageInput.value = textBefore + emoji + textAfter;
+      messageInput.selectionStart = cursorPos + emoji.length;
+      messageInput.selectionEnd = cursorPos + emoji.length;
+      messageInput.dispatchEvent(new Event('input'));
+      messageInput.focus();
       picker.style.display = 'none';
       document.removeEventListener('click', hidePickerOnClickOutside);
+    });
+    
+    function hidePickerOnClickOutside(event) {
+      if (!picker.contains(event.target) && event.target !== emojiButton) {
+        picker.style.display = 'none';
+        document.removeEventListener('click', hidePickerOnClickOutside);
+      }
     }
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && picker.style.display === 'block') {
+        picker.style.display = 'none';
+        document.removeEventListener('click', hidePickerOnClickOutside);
+        messageInput.focus();
+      }
+    });
   }
   
-  // Hide picker when pressing Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && picker.style.display === 'block') {
-      picker.style.display = 'none';
-      document.removeEventListener('click', hidePickerOnClickOutside);
-      input.focus();
+  // ================== IMAGE MODAL FUNCTIONALITY ==================
+  window.openImageModal = function(imageSrc, sender, timestamp) {
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const captionText = document.getElementById("modalCaption");
+    const downloadBtn = document.getElementById("downloadImageBtn");
+    
+    modal.classList.add("show");
+    modalImg.src = imageSrc;
+    downloadBtn.href = imageSrc;
+    captionText.innerHTML = `Sent by ${sender} on ${timestamp}`;
+    document.body.style.overflow = "hidden";
+  }
+
+  window.closeImageModal = function() {
+    const modal = document.getElementById("imageModal");
+    modal.classList.remove("show");
+    document.body.style.overflow = "auto";
+  }
+
+  // Close modal handlers
+  document.getElementById("imageModal").addEventListener("click", function(e) {
+    if (e.target === this || e.target.classList.contains("close-modal")) {
+      closeImageModal();
     }
   });
-  
-  // Hide picker when scrolling (on mobile)
-  window.addEventListener('scroll', function() {
-    if (picker.style.display === 'block') {
-      picker.style.display = 'none';
-      document.removeEventListener('click', hidePickerOnClickOutside);
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      closeImageModal();
     }
-  }, true);
-});
+  });
 
-
-
-// Image modal functionality
-function openImageModal(imageSrc, sender, timestamp) {
-  const modal = document.getElementById("imageModal");
-  const modalImg = document.getElementById("modalImage");
-  const captionText = document.getElementById("modalCaption");
-  const downloadBtn = document.getElementById("downloadImageBtn");
+  // ================== CHAT FUNCTIONALITY ==================
   
-  modal.classList.add("show");
-  modalImg.src = imageSrc;
-  downloadBtn.href = imageSrc;
-  
-  // Set caption with sender and timestamp
-  captionText.innerHTML = `Sent by ${sender} on ${timestamp}`;
-  
-  // Prevent background scrolling when modal is open
-  document.body.style.overflow = "hidden";
-}
-
-function closeImageModal() {
-  const modal = document.getElementById("imageModal");
-  modal.classList.remove("show");
-  
-  // Re-enable background scrolling
-  document.body.style.overflow = "auto";
-}
-
-// Close modal when clicking on close button or outside the image
-document.getElementById("imageModal").addEventListener("click", function(e) {
-  if (e.target === this || e.target.classList.contains("close-modal")) {
-    closeImageModal();
-  }
-});
-
-// Close modal with Escape key
-document.addEventListener("keydown", function(e) {
-  if (e.key === "Escape") {
-    closeImageModal();
-  }
-});
-
-$(document).ready(function() {
-  // Initialize relative time display for all existing messages
+  // Initialize
   updateAllMessageTimes();
-  
-  // Auto-scroll to bottom
   scrollToBottom();
 
-  // Variables to track file selection
-  var selectedFile = null;
-  var filePreviewElement = null;
-
-  // Toggle sections
-  $('#showParticipants').click(function(e) {
+  // Event Listeners
+  document.getElementById('showParticipants').addEventListener('click', function(e) {
     e.preventDefault();
-    $('#participantsSection').slideToggle();
-    $('#managementSection').slideUp();
-    scrollToBottom();
+    toggleSection('participantsSection', 'managementSection');
   });
 
-  $('#showManagement').click(function(e) {
-    e.preventDefault();
-    $('#managementSection').slideToggle();
-    $('#participantsSection').slideUp();
-    scrollToBottom();
-  });
+  if (document.getElementById('showManagement')) {
+    document.getElementById('showManagement').addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleSection('managementSection', 'participantsSection');
+    });
+  }
 
-  // Unified send function
-  $('#sendButton').click(sendMessage);
+  document.getElementById('sendButton').addEventListener('click', sendMessage);
   
-  // Enter key handling
-  $('#messageInput').keypress(function(e) {
+  document.getElementById('messageInput').addEventListener('keypress', function(e) {
     if (e.which == 13 && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -1089,36 +1060,37 @@ $(document).ready(function() {
   });
 
   // Auto-resize textarea
-  $('#messageInput').on('input', function() {
+  document.getElementById('messageInput').addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
   });
 
   // File upload handling
-  $('#fileButton').click(function() {
-    $('#fileInput').click();
+  document.getElementById('fileButton').addEventListener('click', function() {
+    document.getElementById('fileInput').click();
   });
   
-  $('#fileInput').change(function() {
+  document.getElementById('fileInput').addEventListener('change', function() {
     if (this.files && this.files[0]) {
       const file = this.files[0];
       
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm', 'video/ogg', 'application/pdf', 
-                           'text/plain', 'application/msword', 
-                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 
+        'video/mp4', 'video/webm', 'video/ogg', 
+        'application/pdf', 'text/plain', 'application/msword', 
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
       
       if (!allowedTypes.includes(file.type)) {
         alert('File type not allowed. Please upload images, videos, PDFs, or text documents.');
-        $(this).val('');
+        this.value = '';
         return;
       }
       
-      // Check file size (10MB limit)
       const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         alert('File size too large. Maximum size is 10MB.');
-        $(this).val('');
+        this.value = '';
         return;
       }
       
@@ -1127,433 +1099,425 @@ $(document).ready(function() {
     }
   });
 
-  // File preview functions
-  function showFilePreview(file) {
-    removeFilePreview();
-    
-    filePreviewElement = $('<div>').addClass('file-preview');
-    
-    var previewContent = $('<div>').css({
-      'display': 'flex',
-      'align-items': 'center',
-      'gap': '10px'
-    });
-    
-    var fileIcon = $('<i>').addClass('material-icons').text('insert_drive_file');
-    
-    var fileInfo = $('<div>');
-    var fileName = $('<div>').text(file.name).css({
-      'font-weight': 'bold',
-      'font-size': '14px'
-    });
-    
-    var fileSize = $('<div>').text(formatFileSize(file.size)).css({
-      'font-size': '12px',
-      'color': '#666'
-    });
-    
-    var cancelButton = $('<button>').html('<i class="material-icons">close</i>').css({
-      'background': 'transparent',
-      'border': 'none',
-      'cursor': 'pointer',
-      'color': '#666',
-      'padding': '5px',
-      'margin-left': '10px'
-    }).click(function() {
-      removeFilePreview();
-      $('#fileInput').val('');
-    });
-    
-    fileInfo.append(fileName, fileSize);
-    previewContent.append(fileIcon, fileInfo, cancelButton);
-    filePreviewElement.append(previewContent);
-    
-    // Image preview
-    if (file.type.startsWith('image/')) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var imgPreview = $('<img>').attr('src', e.target.result).css({
-          'max-width': '60px',
-          'max-height': '60px',
-          'border-radius': '4px',
-          'object-fit': 'cover'
-        });
-        previewContent.prepend(imgPreview);
-      };
-      reader.readAsDataURL(file);
+  // Management form handlers
+  const managementForms = ['addParticipantsForm', 'removeParticipantsForm', 'deleteChatForm'];
+  managementForms.forEach(formId => {
+    const form = document.getElementById(formId);
+    if (form) {
+      form.addEventListener('submit', handleManagementForm);
     }
-    
-    $('.message-input-area').before(filePreviewElement);
-    $('#sendButton').html('<i class="material-icons">file_upload</i>');
-  }
-
-  function removeFilePreview() {
-    if (filePreviewElement) {
-      filePreviewElement.remove();
-      filePreviewElement = null;
-    }
-    selectedFile = null;
-    $('#sendButton').html('<i class="material-icons">send</i>');
-  }
-
-  function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  function sendMessage() {
-    var form = document.getElementById("chatForm");
-    var formData = new FormData(form);
-
-    var content = $("#messageInput").val().trim();
-    var file = $("#fileInput")[0].files[0];
-    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
-
-    // Append CSRF token explicitly
-    formData.append('csrfmiddlewaretoken', csrfToken);
-
-    // Show loading state
-    var sendButton = $('#sendButton');
-    var originalHtml = sendButton.html();
-    sendButton.html('<span class="spinner"></span>');
-    sendButton.prop('disabled', true);
-
-    $.ajax({
-      url: '{% url "send_message" chat.id %}',
-      type: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      success: function(data) {
-        handleMessageResponse(data);
-        $("#messageInput").val(""); // clear text
-        removeFilePreview(); // This will handle clearing the preview
-        $('#fileInput').val(''); // Clear the file input after successful send
-      },
-      error: function(xhr) {
-        handleMessageError(xhr);
-        // Restore button state on error
-        sendButton.html(originalHtml);
-        sendButton.prop('disabled', false);
-      },
-      complete: function() {
-        // Restore button state when complete
-        sendButton.html(originalHtml);
-        sendButton.prop('disabled', false);
-      }
-    });
-  }
-
-  // Handle successful message response
-  function handleMessageResponse(data) {
-    if (data.success) {
-      $('#messageInput').val('');
-      $('#messageInput').css('height', 'auto');
-      $('#successMessage').text("Message sent successfully!").fadeIn().delay(2000).fadeOut();
-      addMessageToChat(data.message);
-      scrollToBottom();
-    } else {
-      $('#successMessage').text("Error: " + (data.error || "Unknown error")).fadeIn().delay(3000).fadeOut();
-      console.error('Server error:', data.error);
-    }
-  }
-
-  // Handle message error
-  function handleMessageError(xhr, status, error) {
-    var errorMsg = "Error sending message: ";
-    if (xhr.responseJSON && xhr.responseJSON.error) {
-      errorMsg += xhr.responseJSON.error;
-    } else if (xhr.responseText) {
-      errorMsg += xhr.responseText;
-    } else {
-      errorMsg += error;
-    }
-    $('#successMessage').text(errorMsg).fadeIn().delay(3000).fadeOut();
-    console.error('AJAX error:', error, xhr.responseText);
-  }
-
-  function addMessageToChat(messageData) {
-    // Check if message already exists
-    if ($('#message-' + messageData.id).length) {
-        return;
-    }
-
-    // Get the message date with validation
-    var messageDate;
-    var formattedDate;
-    
-    try {
-        messageDate = new Date(messageData.timestamp);
-        
-        // Check if date is valid
-        if (isNaN(messageDate.getTime())) {
-            console.warn('Invalid timestamp:', messageData.timestamp);
-            // Use current date as fallback
-            messageDate = new Date();
-        }
-        
-        formattedDate = formatDate(messageDate);
-    } catch (error) {
-        console.error('Date parsing error:', error);
-        messageDate = new Date();
-        formattedDate = formatDate(messageDate);
-    }
-    
-    // Check if we need to add a date divider
-    var lastDateDivider = $('.date-divider').last();
-    var lastDate = lastDateDivider.length ? lastDateDivider.find('span').text() : '';
-    
-    if (lastDate !== formattedDate) {
-        var dateDividerHtml = `
-            <div class="date-divider">
-                <span>${formattedDate}</span>
-            </div>
-        `;
-        $('#messagesContainer').append(dateDividerHtml);
-    }
-
-    // Store the original timestamp in data attribute for future updates
-    var timestampAttr = messageDate.getTime();
-    
-    var messageContent;
-    
-    if (messageData.file_url) {
-        // Handle image files
-        if (messageData.file_type && messageData.file_type.startsWith('image/')) {
-            messageContent = `
-                <div class="message-media-container" onclick="openImageModal('${messageData.file_url}', '${messageData.sender}', '${formatDate(messageDate)}')">
-                    <img src="${messageData.file_url}" alt="Shared image">
-                </div>
-            `;
-        } 
-        // Handle video files
-        else if (messageData.file_type && messageData.file_type.startsWith('video/')) {
-            messageContent = `
-                <div class="message-media-container">
-                    <video controls>
-                        <source src="${messageData.file_url}" type="${messageData.file_type}">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-            `;
-        } 
-        // Handle other file types with download option
-        else {
-            messageContent = `
-                <div class="message-file-container">
-                    <i class="material-icons file-icon">description</i>
-                    <span>${messageData.file_name}</span>
-                    <a href="${messageData.file_url}" download="${messageData.file_name}" class="file-download-btn">
-                        Download File
-                    </a>
-                </div>
-            `;
-        }
-        
-        // Add text content if available
-        if (messageData.content && messageData.content !== "say something..") {
-            messageContent += `<div style="margin-top: 8px;">${messageData.content}</div>`;
-        }
-    } else {
-        messageContent = `<div class="message-text">${messageData.content}</div>`;
-    }
-    
-    var messageHtml = `
-        <div class="message-container ${messageData.is_own ? 'own-message-container' : 'other-message-container'}">
-            ${!messageData.is_own ? `<img src="${messageData.sender_image}" class="message-profile-pic" alt="${messageData.sender}">` : ''}
-            <div class="message ${messageData.is_own ? 'own-message' : 'other-message'}" id="message-${messageData.id}" data-timestamp="${timestampAttr}">
-                ${!messageData.is_own ? `<div class="sender-name">~ ${messageData.sender}</div>` : ''}
-                ${messageContent}
-                <div class="message-info">
-                    <span class="message-time">${getRelativeTime(messageDate)}</span>
-                    ${messageData.is_own ? `<span class="message-status"><i class="material-icons" style="font-size:14px;">done_all</i></span>` : ''}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    $('#messagesContainer').append(messageHtml);
-    
-    // Add animation for new messages
-    $('#message-' + messageData.id).hide().fadeIn(300);
-    
-    // Start the updater if not already running
-    startTimeUpdater();
-  }
-
-  function formatDate(date) {
-    if (isNaN(date.getTime())) {
-        date = new Date();
-    }
-    
-    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
-  }
-
-  function getRelativeTime(date) {
-    if (isNaN(date.getTime())) {
-        return 'Just now';
-    }
-    
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 10) {
-        return 'Just now';
-    }
-    
-    if (diffInSeconds < 60) {
-        return `${diffInSeconds} sec ago`;
-    }
-    
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-        return `${diffInMinutes} min ago`;
-    }
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-        return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
-    }
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-        return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
-    }
-    
-    const diffInWeeks = Math.floor(diffInDays / 7);
-    if (diffInWeeks < 4) {
-        return `${diffInWeeks} week${diffInWeeks !== 1 ? 's' : ''} ago`;
-    }
-    
-    // If older than a month, show the actual date
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[date.getMonth()]} ${date.getDate()}`;
-  }
-
-  // Update all message times on page load
-  function updateAllMessageTimes() {
-    $('.message').each(function() {
-      const timestamp = $(this).data('timestamp');
-      if (timestamp) {
-        const messageDate = new Date(parseInt(timestamp));
-        const timeElement = $(this).find('.message-time');
-        if (timeElement.length) {
-          timeElement.text(getRelativeTime(messageDate));
-        }
-      }
-    });
-  }
-
-  // Time updater functionality
-  let timeUpdaterInterval = null;
-
-  function startTimeUpdater() {
-      if (timeUpdaterInterval) return;
-      
-      timeUpdaterInterval = setInterval(updateMessageTimes, 30000); // Update every 30 seconds
-  }
-
-  function updateMessageTimes() {
-      $('.message').each(function() {
-          const timestamp = $(this).data('timestamp');
-          if (timestamp) {
-              const messageDate = new Date(parseInt(timestamp));
-              const timeElement = $(this).find('.message-time');
-              if (timeElement.length) {
-                  timeElement.text(getRelativeTime(messageDate));
-              }
-          }
-      });
-  }
-
-  // Stop updater when needed (optional)
-  function stopTimeUpdater() {
-      if (timeUpdaterInterval) {
-          clearInterval(timeUpdaterInterval);
-          timeUpdaterInterval = null;
-      }
-  }
-
-  // Also update times when the page becomes visible again
-  document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) {
-          updateMessageTimes();
-      }
-  });
-
-  function scrollToBottom() {
-    var container = $('#messagesContainer');
-    container.scrollTop = container[0].scrollHeight;
-  }
-
-  // Poll for new messages
-  function pollForNewMessages() {
-    var lastMessageId = $('.message').last().attr('id') || '0';
-    lastMessageId = lastMessageId.replace('message-', '');
-    
-    if (lastMessageId === '0') return;
-
-    $.ajax({
-      url: window.location.href,
-      type: 'GET',
-      data: { last_message: lastMessageId },
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      success: function(data) {
-        if (data.messages && data.messages.length > 0) {
-          data.messages.forEach(function(message) {
-            addMessageToChat(message);
-          });
-          scrollToBottom();
-        }
-      },
-      error: function(xhr) {
-        console.error('Polling error:', xhr.responseText);
-      }
-    });
-  }
-
-  // Management form handling
-  $('#addParticipantsForm, #removeParticipantsForm, #deleteChatForm').submit(function(e) {
-    e.preventDefault();
-    var form = $(this);
-    var button = form.find('button[type="submit"]');
-    var originalText = button.html();
-    
-    button.html('<span class="spinner"></span> ' + originalText);
-    button.prop('disabled', true);
-
-    $.ajax({
-      url: form.attr('action'),
-      type: 'POST',
-      data: form.serialize(),
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      success: function(data) {
-        if (data.redirect) {
-          window.location.href = data.redirect;
-        } else {
-          location.reload();
-        }
-      },
-      error: function(xhr) {
-        alert('An error occurred: ' + xhr.responseText);
-        button.html(originalText);
-        button.prop('disabled', false);
-      }
-    });
   });
 
   // Start polling for new messages
   setInterval(pollForNewMessages, 3000);
+  
+  // Update times when page becomes visible
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      updateMessageTimes();
+    }
+  });
 });
+
+// ================== HELPER FUNCTIONS ==================
+
+function toggleSection(showId, hideId) {
+  const showSection = document.getElementById(showId);
+  const hideSection = document.getElementById(hideId);
+  
+  if (showSection.style.display === 'none' || showSection.style.display === '') {
+    showSection.style.display = 'block';
+    if (hideSection) hideSection.style.display = 'none';
+  } else {
+    showSection.style.display = 'none';
+  }
+  scrollToBottom();
+}
+
+function showFilePreview(file) {
+  removeFilePreview();
+  
+  filePreviewElement = document.createElement('div');
+  filePreviewElement.className = 'file-preview';
+  
+  const previewContent = document.createElement('div');
+  previewContent.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+  
+  const fileIcon = document.createElement('i');
+  fileIcon.className = 'material-icons';
+  fileIcon.textContent = 'insert_drive_file';
+  
+  const fileInfo = document.createElement('div');
+  const fileName = document.createElement('div');
+  fileName.textContent = file.name;
+  fileName.style.cssText = 'font-weight: bold; font-size: 14px;';
+  
+  const fileSize = document.createElement('div');
+  fileSize.textContent = formatFileSize(file.size);
+  fileSize.style.cssText = 'font-size: 12px; color: #666;';
+  
+  const cancelButton = document.createElement('button');
+  cancelButton.innerHTML = '<i class="material-icons">close</i>';
+  cancelButton.style.cssText = 'background: transparent; border: none; cursor: pointer; color: #666; padding: 5px; margin-left: 10px;';
+  cancelButton.onclick = function() {
+    removeFilePreview();
+    document.getElementById('fileInput').value = '';
+  };
+  
+  fileInfo.appendChild(fileName);
+  fileInfo.appendChild(fileSize);
+  previewContent.appendChild(fileIcon);
+  previewContent.appendChild(fileInfo);
+  previewContent.appendChild(cancelButton);
+  filePreviewElement.appendChild(previewContent);
+  
+  // Image preview
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const imgPreview = document.createElement('img');
+      imgPreview.src = e.target.result;
+      imgPreview.style.cssText = 'max-width: 60px; max-height: 60px; border-radius: 4px; object-fit: cover;';
+      previewContent.insertBefore(imgPreview, previewContent.firstChild);
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  const messageInputArea = document.querySelector('.message-input-area');
+  messageInputArea.parentNode.insertBefore(filePreviewElement, messageInputArea);
+  
+  document.getElementById('sendButton').innerHTML = '<i class="material-icons">file_upload</i>';
+}
+
+function removeFilePreview() {
+  if (filePreviewElement && filePreviewElement.parentNode) {
+    filePreviewElement.parentNode.removeChild(filePreviewElement);
+    filePreviewElement = null;
+  }
+  selectedFile = null;
+  document.getElementById('sendButton').innerHTML = '<i class="material-icons">send</i>';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Main send message function
+function sendMessage() {
+  const content = document.getElementById('messageInput').value.trim();
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  
+  if (!content && !file) {
+    showSuccessMessage("Message cannot be empty", true);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('csrfmiddlewaretoken', csrfToken);
+  formData.append('content', content);
+  if (file) {
+    formData.append('file', file);
+  }
+
+  // Show loading state
+  const sendButton = document.getElementById('sendButton');
+  const originalHtml = sendButton.innerHTML;
+  sendButton.innerHTML = '<span class="spinner"></span>';
+  sendButton.disabled = true;
+
+  fetch('{% url "send_message" chat.id %}', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('messageInput').value = "";
+      document.getElementById('messageInput').style.height = 'auto';
+      removeFilePreview();
+      fileInput.value = '';
+      
+      if (data.message) {
+        addMessageToChat(data.message);
+        scrollToBottom();
+      }
+      showSuccessMessage("Message sent successfully!");
+    } else {
+      showSuccessMessage("Error: " + (data.error || "Unknown error"), true);
+      console.error('Server error:', data.error);
+    }
+  })
+  .catch(error => {
+    showSuccessMessage("Error sending message: " + error, true);
+    console.error('AJAX error:', error);
+  })
+  .finally(() => {
+    sendButton.innerHTML = originalHtml;
+    sendButton.disabled = false;
+  });
+}
+
+function showSuccessMessage(message, isError = false) {
+  const successDiv = document.getElementById('successMessage');
+  successDiv.textContent = message;
+  successDiv.style.background = isError ? '#f44336' : '#4CAF50';
+  successDiv.style.display = 'block';
+  setTimeout(() => {
+    successDiv.style.display = 'none';
+  }, 3000);
+}
+
+function addMessageToChat(messageData) {
+  // Check if message already exists
+  if (document.getElementById('message-' + messageData.id)) {
+    return;
+  }
+
+  // Parse timestamp
+  let messageDate;
+  try {
+    messageDate = new Date(messageData.timestamp);
+    if (isNaN(messageDate.getTime())) {
+      messageDate = new Date();
+    }
+  } catch (error) {
+    messageDate = new Date();
+  }
+  
+  const formattedDate = formatDate(messageDate);
+  
+  // Check if we need to add a date divider
+  const dateDividers = document.querySelectorAll('.date-divider');
+  const lastDateDivider = dateDividers[dateDividers.length - 1];
+  const lastDate = lastDateDivider ? lastDateDivider.querySelector('span').textContent : '';
+  
+  if (lastDate !== formattedDate) {
+    const dateDividerHtml = `
+      <div class="date-divider">
+        <span>${formattedDate}</span>
+      </div>
+    `;
+    document.getElementById('messagesContainer').insertAdjacentHTML('beforeend', dateDividerHtml);
+  }
+
+  // Store timestamp
+  const timestampAttr = messageDate.getTime();
+  
+  // Build message content based on file type
+  let messageContent = '';
+  
+  if (messageData.file_url) {
+    if (messageData.file_type && messageData.file_type.startsWith('image/')) {
+      messageContent = `
+        <div class="message-media-container" onclick="openImageModal('${messageData.file_url}', '${messageData.sender}', '${formatDate(messageDate)}')">
+          <img src="${messageData.file_url}" alt="Shared image">
+        </div>
+      `;
+    } else if (messageData.file_type && messageData.file_type.startsWith('video/')) {
+      messageContent = `
+        <div class="message-media-container">
+          <video controls>
+            <source src="${messageData.file_url}" type="${messageData.file_type}">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      `;
+    } else {
+      messageContent = `
+        <div class="message-file-container">
+          <i class="material-icons file-icon">description</i>
+          <span>${messageData.file_name || 'File'}</span>
+          <a href="${messageData.file_url}" download="${messageData.file_name || 'download'}" class="file-download-btn">
+            Download File
+          </a>
+        </div>
+      `;
+    }
+    
+    if (messageData.content && messageData.content !== "say something..") {
+      messageContent += `<div style="margin-top: 8px;">${messageData.content}</div>`;
+    }
+  } else {
+    messageContent = `<div class="message-text">${messageData.content || ''}</div>`;
+  }
+  
+  const isOwnMessage = messageData.is_own || messageData.sender === '{{ user.username }}';
+  
+  const messageHtml = `
+    <div class="message-container ${isOwnMessage ? 'own-message-container' : 'other-message-container'}">
+      ${!isOwnMessage ? `<img src="${messageData.sender_image}" class="message-profile-pic" alt="${messageData.sender}">` : ''}
+      <div class="message ${isOwnMessage ? 'own-message' : 'other-message'}" id="message-${messageData.id}" data-timestamp="${timestampAttr}">
+        ${!isOwnMessage ? `<div class="sender-name">~ ${messageData.sender}</div>` : ''}
+        ${messageContent}
+        <div class="message-info">
+          <span class="message-time">${getRelativeTime(messageDate)}</span>
+          ${isOwnMessage ? `<span class="message-status"><i class="material-icons" style="font-size:14px;">done_all</i></span>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('messagesContainer').insertAdjacentHTML('beforeend', messageHtml);
+  
+  const newMessage = document.getElementById('message-' + messageData.id);
+  newMessage.style.display = 'none';
+  setTimeout(() => {
+    newMessage.style.display = '';
+  }, 10);
+  
+  // Start time updater if not already running
+  if (!timeUpdaterInterval) {
+    startTimeUpdater();
+  }
+}
+
+function formatDate(date) {
+  if (isNaN(date.getTime())) {
+    date = new Date();
+  }
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return months[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
+}
+
+function getRelativeTime(date) {
+  if (isNaN(date.getTime())) {
+    return 'Just now';
+  }
+  
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+  
+  if (diffInSeconds < 10) return 'Just now';
+  if (diffInSeconds < 60) return `${diffInSeconds} sec ago`;
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+  
+  const diffInWeeks = Math.floor(diffInDays / 7);
+  if (diffInWeeks < 4) return `${diffInWeeks} week${diffInWeeks !== 1 ? 's' : ''} ago`;
+  
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}`;
+}
+
+function updateAllMessageTimes() {
+  document.querySelectorAll('.message').forEach(message => {
+    const timestamp = message.getAttribute('data-timestamp');
+    if (timestamp) {
+      const messageDate = new Date(parseInt(timestamp));
+      const timeElement = message.querySelector('.message-time');
+      if (timeElement) {
+        timeElement.textContent = getRelativeTime(messageDate);
+      }
+    }
+  });
+}
+
+function startTimeUpdater() {
+  if (timeUpdaterInterval) return;
+  
+  timeUpdaterInterval = setInterval(updateMessageTimes, 30000);
+}
+
+function updateMessageTimes() {
+  document.querySelectorAll('.message').forEach(message => {
+    const timestamp = message.getAttribute('data-timestamp');
+    if (timestamp) {
+      const messageDate = new Date(parseInt(timestamp));
+      const timeElement = message.querySelector('.message-time');
+      if (timeElement) {
+        timeElement.textContent = getRelativeTime(messageDate);
+      }
+    }
+  });
+}
+
+function scrollToBottom() {
+  const container = document.getElementById('messagesContainer');
+  container.scrollTop = container.scrollHeight;
+}
+
+// Poll for new messages
+function pollForNewMessages() {
+  const messages = document.querySelectorAll('.message');
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageId = lastMessage ? lastMessage.id.replace('message-', '') : '0';
+  
+  if (lastMessageId === '0') return;
+
+  fetch(window.location.href + '?last_message=' + lastMessageId, {
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.messages && data.messages.length > 0) {
+      data.messages.forEach(function(message) {
+        addMessageToChat(message);
+      });
+      scrollToBottom();
+    }
+  })
+  .catch(error => {
+    console.error('Polling error:', error);
+  });
+}
+
+// Management form handler
+function handleManagementForm(e) {
+  e.preventDefault();
+  const form = e.target;
+  const button = form.querySelector('button[type="submit"]');
+  const originalText = button.innerHTML;
+  
+  button.innerHTML = '<span class="spinner"></span> ' + originalText;
+  button.disabled = true;
+
+  const formData = new FormData(form);
+  
+  fetch(form.action, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.redirect) {
+      window.location.href = data.redirect;
+    } else if (data.success) {
+      location.reload();
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+      button.innerHTML = originalText;
+      button.disabled = false;
+    }
+  })
+  .catch(error => {
+    alert('An error occurred: ' + error);
+    button.innerHTML = originalText;
+    button.disabled = false;
+  });
+}
 </script>
+
 {% endblock %}
