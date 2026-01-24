@@ -1273,6 +1273,9 @@ body.dark-mode .message-btn.secondary:hover {
     <p><strong>Highest level of education:</strong> {{ user_profile.highest_level_of_education }} 🎓</p>
 
     <!-- ✅ Payment Information Section -->
+   
+  {% if request.user.is_authenticated and request.user == user_profile.user %}
+    <!-- ✅ Payment Information Section -->
     <hr>
     <h3 style="font-size:19px;">Payment Information:</h3>
 
@@ -1283,15 +1286,21 @@ body.dark-mode .message-btn.secondary:hover {
     {% else %}
         <p><strong>Payment Method:</strong> PayPal ❌</p>
         <p><strong>Payment Status:</strong> Not Set Up ⚠️</p>
-        <p><small>Please add your PayPal email in your profile settings to receive payments.</small></p>
-                   <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="verification-link">
-                <i class="fas fa-plus-circle"></i> Add PayPal Email
-            </a>
+        <p>
+            <small>
+                Please add your PayPal email in your profile settings to receive payments.
+            </small>
+        </p>
+        <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="verification-link">
+            <i class="fas fa-plus-circle"></i> Add PayPal Email
+        </a>
     {% endif %}
 
     {% if user_profile.payment_message %}
         <p><strong>Last Update:</strong> {{ user_profile.payment_message }} 📝</p>
     {% endif %}
+{% endif %}
+
 
     <!-- ✅ Profile Verification -->
     {% if user_profile.profile_verified %}
