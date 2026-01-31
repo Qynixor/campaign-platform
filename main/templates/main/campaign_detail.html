@@ -38,7 +38,7 @@
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1">
-
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <!-- ==================== -->
 <!-- SOCIAL/SHARING META -->
 <!-- ==================== -->
@@ -6173,6 +6173,13 @@ body.dark-mode .campaign-category:hover {
     background: rgba(74, 222, 128, 0.1) !important;
     border-color: rgba(74, 222, 128, 0.4) !important;
 }
+/* Mobile: show only first 2 tags */
+@media (max-width: 768px) {
+    .campaign-tags .tag-badge:not(.tag-more):nth-of-type(n+3) {
+        display: none;
+    }
+}
+
 </style>
 
 
@@ -8270,9 +8277,9 @@ nav a:hover {
                   data-user-id="{{ campaign.user.user.id }}"
                   data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
                 {% if request.user in campaign.user.user.followers.all %}
-                    • Following
+                     Following
                 {% else %}
-                    • Follow
+                     Follow
                 {% endif %}
             </span>
             {% endif %}
@@ -8297,9 +8304,9 @@ nav a:hover {
                       data-user-id="{{ campaign.user.user.id }}"
                       data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
                     {% if request.user in campaign.user.user.followers.all %}
-                        • Following
+                         Following
                     {% else %}
-                        • Follow
+                         Follow
                     {% endif %}
                 </span>
                 {% endif %}
@@ -8406,16 +8413,18 @@ nav a:hover {
     </h2>
 </div>
 <!-- In your campaign detail template -->
-<div class="campaign-tags">
+<div class="campaign-tags" data-total-tags="{{ campaign.tags.count }}">
     {% for tag in campaign.tags.all|slice:":5" %}
         <span class="tag-badge">
             <i class="fas fa-tag"></i> {{ tag.name }}
         </span>
     {% endfor %}
+
     {% if campaign.tags.count > 5 %}
-        <span class="tag-badge tag-more">+{{ campaign.tags.count|add:"-5" }} more</span>
+        <span class="tag-badge tag-more"></span>
     {% endif %}
 </div>
+
 <!-- Campaign Image - Dominant Space -->
 <div class="campaign-image-section" >
 
@@ -9621,6 +9630,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function updateTagMoreCount() {
+        const isMobile = window.innerWidth <= 768;
+
+        document.querySelectorAll(".campaign-tags").forEach(container => {
+            const totalTags = parseInt(container.dataset.totalTags, 10);
+            const moreBadge = container.querySelector(".tag-more");
+
+            if (!moreBadge || !totalTags) return;
+
+            const visibleCount = isMobile ? 2 : 5;
+            const hiddenCount = totalTags - visibleCount;
+
+            if (hiddenCount > 0) {
+                moreBadge.textContent = `+${hiddenCount} more`;
+                moreBadge.style.display = "inline-block";
+            } else {
+                moreBadge.style.display = "none";
+            }
+        });
+    }
+
+    updateTagMoreCount();
+    window.addEventListener("resize", updateTagMoreCount);
 });
 </script>
 

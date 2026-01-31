@@ -65,7 +65,7 @@
 <link rel="canonical" href="https://www.rallynex.com{% block canonical_path %}{% endblock %}">
 <meta name="google-site-verification" content="2IjHwnbJp2eoJ42Ec2-vy5FHzwfpyA4qxZlA2Ct1lW8" />
 <meta name="msvalidate.01" content="2DF73531AC8292B0D47E7DEAE6EEF4CF" />
-
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <!-- ==================== -->
 <!-- PWA & MOBILE CONFIG -->
 <!-- ==================== -->
@@ -6098,6 +6098,12 @@ body.dark-mode .campaign-category:hover {
 }
 
 
+/* Mobile: show only first 2 tags */
+@media (max-width: 768px) {
+    .campaign-tags .tag-badge:not(.tag-more):nth-of-type(n+3) {
+        display: none;
+    }
+}
 
 /* PWA Install Prompt */
 .pwa-prompt {
@@ -8895,11 +8901,7 @@ nav a:hover {
 
         <li><a href="{% url 'suggest' %}" style="color: black;"><i class="fas fa-user-friends"></i> Suggested Users</a></li>
 
-        <li>
-            <a href="{% url 'index' %}" title="Explore" style="color: black;">
-                <i class="fas fa-compass" style="font-size: 14px;"> Explore</i>
-            </a>
-        </li>
+     
         
         <!-- User Profile link -->
         <li>
@@ -9177,17 +9179,18 @@ nav a:hover {
     </div>
 </div>
 
-
-<div class="campaign-tags">
+<div class="campaign-tags" data-total-tags="{{ campaign.tags.count }}">
     {% for tag in campaign.tags.all|slice:":5" %}
         <span class="tag-badge">
             <i class="fas fa-tag"></i> {{ tag.name }}
         </span>
     {% endfor %}
+
     {% if campaign.tags.count > 5 %}
-        <span class="tag-badge tag-more">+{{ campaign.tags.count|add:"-5" }} more</span>
+        <span class="tag-badge tag-more"></span>
     {% endif %}
 </div>
+
    <!-- Campaign Image - Dominant Space -->
 <div class="campaign-image-section" data-campaign-id="{{ campaign.id }}">
 
@@ -12372,6 +12375,35 @@ class SyncedLoader {
 window.addEventListener('DOMContentLoaded', function() {
     window.syncedLoader = new SyncedLoader();
     window.syncedLoader.start();
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    function updateTagMoreCount() {
+        const isMobile = window.innerWidth <= 768;
+
+        document.querySelectorAll(".campaign-tags").forEach(container => {
+            const totalTags = parseInt(container.dataset.totalTags, 10);
+            const moreBadge = container.querySelector(".tag-more");
+
+            if (!moreBadge || !totalTags) return;
+
+            const visibleCount = isMobile ? 2 : 5;
+            const hiddenCount = totalTags - visibleCount;
+
+            if (hiddenCount > 0) {
+                moreBadge.textContent = `+${hiddenCount} more`;
+                moreBadge.style.display = "inline-block";
+            } else {
+                moreBadge.style.display = "none";
+            }
+        });
+    }
+
+    updateTagMoreCount();
+    window.addEventListener("resize", updateTagMoreCount);
 });
 </script>
 
