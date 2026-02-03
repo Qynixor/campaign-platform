@@ -153,8 +153,8 @@ AUTHENTICATION_BACKENDS = (
 SITE_ID = 1
 
 # 🔧 FIX: single canonical source of truth
-SITE_URL = 'https://www.rallynex.com'
-SITE_DOMAIN = 'www.rallynex.com'
+SITE_URL = 'https://rallynex.com'
+SITE_DOMAIN = 'rallynex.com'
 SITE_NAME = "RallyNex"
 
 # =====================================================
