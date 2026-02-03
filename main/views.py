@@ -123,7 +123,7 @@ Disallow: /accounts/
 Disallow: /tinymce/
 Disallow: /static/
 
-Sitemap: https://www.rallynex.com/sitemap.xml
+Sitemap: https://rallynex.com/sitemap.xml
 
 """
     return HttpResponse(content, content_type="text/plain")
