@@ -2,254 +2,1330 @@
 {% load static %}
 
 {% block content %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ | Rallynex</title>
+    <title>FAQ & Creator Insights | Rallynex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --primary-light: #60A5FA;
+            --secondary: #7C3AED;
+            --accent: #059669;
+            --warning: #DC2626;
+            --dark: #1F2937;
+            --gray-800: #374151;
+            --gray-600: #4B5563;
+            --gray-400: #9CA3AF;
+            --gray-200: #E5E7EB;
+            --gray-100: #F3F4F6;
+            --gray-50: #F9FAFB;
+            --white: #FFFFFF;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #F8FAFF 0%, #F0F4FF 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
         }
 
-        h1 {
+        /* Hero Section */
+        .hero {
             text-align: center;
-            color: #333;
+            padding: 3rem 0 2rem;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
-        h2 {
-            margin-top: 20px;
-            color: #007BFF;
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
         }
 
-        .faq-item {
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--gray-600);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Search Bar */
+        .search-container {
+            max-width: 600px;
+            margin: 2rem auto 3rem;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem 1rem 3rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--white);
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem auto 3rem;
+            max-width: 600px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.875rem 2rem;
+            background: var(--white);
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab-btn:hover:not(.active) {
+            border-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* FAQ Sections */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-title i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* Modern FAQ Items */
+        .faq-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .faq-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid transparent;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .faq-card:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+            border-left-color: var(--primary);
+        }
+
+        .faq-card.active {
+            box-shadow: var(--shadow-md);
+            border-left-color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        .faq-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
         }
 
         .faq-question {
-            padding: 15px;
-            background: #007BFF;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--dark);
+            flex: 1;
+            line-height: 1.4;
         }
 
-        .faq-question::after {
-            content: "+";
-            font-size: 1.5em;
+        .faq-icon {
+            color: var(--primary);
+            font-size: 1.25rem;
+            min-width: 24px;
+            transition: var(--transition);
+        }
+
+        .faq-card.active .faq-icon {
+            transform: rotate(45deg);
+            color: var(--secondary);
         }
 
         .faq-answer {
-            padding: 0 15px;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--gray-600);
+            line-height: 1.6;
         }
 
-        .faq-item.active .faq-question::after {
-            content: "-";
+        .faq-card.active .faq-answer {
+            max-height: 500px;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--gray-200);
         }
 
-        .faq-item.active .faq-answer {
-            max-height: 200px;
-            padding: 15px;
-        }
-
-        .cta {
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            background: #007BFF;
+        /* Insight Badges */
+        .insight-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
             color: white;
-            border-radius: 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
 
-        .cta a {
-            color: white;
+        .badge-warning {
+            background: linear-gradient(135deg, #FCA5A5, var(--warning));
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #34D399, var(--accent));
+        }
+
+        .badge-purple {
+            background: linear-gradient(135deg, #C4B5FD, var(--secondary));
+        }
+
+        /* Read More Link */
+        .read-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: var(--primary);
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 500;
+            margin-top: 0.75rem;
+            transition: var(--transition);
         }
 
-        .cta p {
+        .read-more:hover {
+            gap: 0.5rem;
+            color: var(--primary-dark);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-lg);
+            padding: 4rem;
+            text-align: center;
             color: white;
+            margin-top: 4rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .cta a:hover {
-            text-decoration: underline;
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
         }
 
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .cta-subtitle {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            position: relative;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2.5rem;
+            background: var(--white);
+            color: var(--primary);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255,255,255,0.2);
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--gray-400);
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tab-btn {
+                justify-content: center;
+            }
+            
+            .cta-section {
+                padding: 2rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-title {
+                font-size: 1.75rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Back to Top */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            z-index: 100;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>Frequently Asked Questions</h1>
-    <p style="text-align: center; margin-bottom: 30px;">Everything you need to know about using Rallynex, the platform to start a cause, show progress, and get support.</p>
+    
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>Everything You Need to Know</h1>
+        <p class="hero-subtitle">Find answers to common questions and discover proven strategies from successful cause creators.</p>
+    </div>
 
-    <!-- FAQ Categories / Thematic Grouping (Optional) -->
-    <!-- <h2>For Cause Creators</h2> -->
+    <!-- Search Bar -->
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" class="search-input" placeholder="Search for answers..." id="faqSearch">
+    </div>
 
-    <div class="faq-item">
-        <div class="faq-question">What is Rallynex?</div>
-        <div class="faq-answer">
-            Rallynex is a platform where you can start a cause, share your progress over time with updates and photos, and receive ongoing support from a community. Support can be financial (donations) or non-financial (community presence and encouragement).
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card fade-in">
+            <div class="stat-number">40+</div>
+            <div class="stat-label">Answered Questions</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">98%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">40%</div>
+            <div class="stat-label">Higher Engagement</div>
+        </div>
+        <div class="stat-card fade-in">
+            <div class="stat-number">3x</div>
+            <div class="stat-label">More Donations</div>
         </div>
     </div>
 
-    <div class="faq-item">
-        <div class="faq-question">How do I get started?</div>
-        <div class="faq-answer">
-            Sign up for an account and create your profile. To build trust, you can verify your account by submitting ID documents to become a verified user. Once your profile is set up, you can start your first cause.
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="basics">
+            <i class="fas fa-question-circle"></i> Platform Basics
+        </button>
+        <button class="tab-btn" data-tab="insights">
+            <i class="fas fa-lightbulb"></i> Creator Insights
+        </button>
+        <button class="tab-btn" data-tab="success">
+            <i class="fas fa-trophy"></i> Success Tips
+        </button>
+    </div>
+
+    <!-- Basics Section -->
+    <div class="faq-section" id="basics-section">
+        <h2 class="section-title">
+            <i class="fas fa-book-open"></i> Platform Basics
+        </h2>
+        <div class="faq-grid" id="basics-grid">
+            <div class="faq-card active">
+                <div class="faq-header">
+                    <div class="faq-question">What is Rallynex?</div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Rallynex is an online platform that helps individuals and communities start a cause, share progress through updates, and receive ongoing support. Support can be financial (donations or pledges) or non-financial (community engagement and encouragement).</p>
+                </div>
+            </div>
+            
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">How do I start a cause on Rallynex?</div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Starting a cause is simple! Click on "Start Your Cause" and follow our guided setup process. You'll be asked to provide details about your cause, set funding goals, and customize your page. You can publish immediately or save as a draft.</p>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">What types of causes can I start?</div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Rallynex supports a wide variety of causes including personal projects, community initiatives, creative endeavors, medical expenses, educational goals, business startups, and nonprofit fundraising. As long as your cause is legal and follows our guidelines, you're welcome to start it here.</p>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">How much does it cost to use Rallynex?</div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Rallynex is free to start a cause. We charge platform fees only when you receive support: 5% for donations/pledges and 9% for product sales. There are no hidden fees or monthly charges. Payment processing fees may apply separately.</p>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">How do I receive funds from my cause?</div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Funds are transferred directly to your bank account or PayPal. You'll need to set up your payout method in your creator dashboard. Transfers typically occur within 3-5 business days after donations are received.</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="faq-item">
-        <div class="faq-question">How do I start a cause?</div>
-        <div class="faq-answer">
-            Click the <strong>"Start a Cause"</strong> button. Add a title, describe your mission, and set up your page. You can add photos, set an optional funding goal, and choose whether your cause is public or private to specific followers.
+    <!-- Insights Section -->
+    <div class="faq-section" id="insights-section" style="display: none;">
+        <h2 class="section-title">
+            <i class="fas fa-graduation-cap"></i> Creator Insights & Tips
+        </h2>
+        <div class="faq-grid" id="insights-grid">
+            <!-- Blog-style FAQ Items -->
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-warning"><i class="fas fa-exclamation-triangle"></i> Common Mistake</span>
+                        The 3 crowdfunding mistakes 90% of cause creators make (and how to avoid them)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Many new cause creators make avoidable mistakes like unclear goals, infrequent updates, and poor storytelling. Learn how to avoid these pitfalls and set your cause up for success from day one.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-comment-alt"></i> Messaging</span>
+                        Why 'Please support my cause' is the worst thing you can say
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Asking for support without context reduces engagement. Learn better ways to frame your ask that connect emotionally and drive action.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-pen-fancy"></i> Storytelling</span>
+                        How to write a cause story that converts readers to supporters
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Focus on the problem, your solution, and measurable impact. We'll show you the exact formula used by our top creators.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-purple"><i class="fas fa-music"></i> Engagement</span>
+                        Why causes with soundtracks raise 3x more (the science behind it)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Adding audio increases emotional engagement and donor retention. Discover how to use sound effectively without being distracting.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-chart-bar"></i> Analytics</span>
+                        The best time to post cause updates (data-backed)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Timing updates for when your audience is most active increases visibility and engagement by up to 47%.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-camera"></i> Visuals</span>
+                        Your cause photo matters more than your story. True or false?
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Visuals are powerful. A compelling cause photo grabs attention and sets the tone for your story.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-comment-dollar"></i> Conversion</span>
+                        The one sentence that increases donations by 40%
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Small tweaks in wording can dramatically increase donor response. Craft sentences that connect emotionally and clearly state impact.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-smile"></i> Engagement</span>
+                        Should I use emojis in my cause? (Spoiler: Yes, but like this...)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Emojis can increase engagement but should be relevant and not overused.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-bullseye"></i> Strategy</span>
+                        How to set a realistic funding goal that doesn't scare people away
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Goals should be ambitious but achievable. Learn to calculate and present your target to motivate donors.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-sync-alt"></i> Consistency</span>
+                        The update formula that keeps supporters engaged for weeks
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Regular, structured updates maintain momentum and increase trust among your backers.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-bullseye"></i> Targeting</span>
+                        Why niching down your cause actually raises more money
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Focusing on a specific audience makes your message clearer and attracts more dedicated supporters.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="faq-item">
-        <div class="faq-question">What are updates or "Activities"?</div>
-        <div class="faq-answer">
-            Updates (called "Activities") are how you show progress. You can post text, photos, or videos to share milestones, challenges, and stories. This keeps your supporters informed and builds trust in your work.
+    <!-- Success Tips Section -->
+    <div class="faq-section" id="success-section" style="display: none;">
+        <h2 class="section-title">
+            <i class="fas fa-rocket"></i> Success Tips & Strategies
+        </h2>
+        <div class="faq-grid" id="success-grid">
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-chart-line"></i> Psychology</span>
+                        The hidden power of 'We're 25% there!' vs 'Please donate'
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Progress updates create social proof and encourage others to contribute, while generic asks are less effective.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-users"></i> Social Proof</span>
+                        How to turn one donor into ten using social proof
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Highlighting support from others encourages new donors to follow and support your cause.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-warning"><i class="fas fa-clock"></i> Urgency</span>
+                        Why 48-hour countdowns work (and how to use them right)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Urgency increases engagement. Properly timed countdowns drive action without stressing supporters.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-video"></i> Multimedia</span>
+                        Do you really need a video? (The surprising answer)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Videos can significantly boost engagement, but well-written text and images can also work if crafted thoughtfully.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-heart"></i> Retention</span>
+                        The art of thanking donors in a way that brings them back
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Personalized, timely thank-yous encourage repeat support and long-term relationships.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-warning"><i class="fas fa-check-circle"></i> Preparation</span>
+                        Most cause creators forget this simple step before launching
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Proper preparation — testing your page, proofreading, and planning updates — prevents lost momentum after launch.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-mobile-alt"></i> Optimization</span>
+                        Mobile-first: Why your cause must look perfect on phones
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Most supporters use mobile. Optimizing for phones improves readability and increases engagement.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-purple"><i class="fas fa-palette"></i> Design</span>
+                        How to choose colors that trigger the right emotions
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Color psychology can influence donations and supporter perception. Pick colors that match your cause's story.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge"><i class="fas fa-brain"></i> Psychology</span>
+                        The psychology behind why people give (it's not what you think)
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Understanding donor motivation helps craft messages that resonate and encourage action.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="faq-card">
+                <div class="faq-header">
+                    <div class="faq-question">
+                        <span class="insight-badge badge-success"><i class="fas fa-star"></i> Pro Tip</span>
+                        How to use 'story milestones' to maintain momentum
+                    </div>
+                    <div class="faq-icon">+</div>
+                </div>
+                <div class="faq-answer">
+                    <p>Sharing milestones in your cause's journey keeps supporters engaged and motivates additional contributions.</p>
+                    <a href="#" class="read-more">
+                        <span>Read full article</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="faq-item">
-        <div class="faq-question">Can I edit my cause after publishing it?</div>
-        <div class="faq-answer">
-            Yes, you can edit your cause's title, description, and other details anytime from your management dashboard.
-        </div>
+    <!-- CTA Section -->
+    <div class="cta-section fade-in">
+        <h2 class="cta-title">Ready to Start Your Cause?</h2>
+        <p class="cta-subtitle" style="color: white;">
+            Have a mission you care about? Rallynex gives you the tools to launch it,
+            share progress, and build a supportive community.
+        </p>
+        <a href="{% url 'fund' %}" class="cta-button">
+            <i class="fas fa-bolt"></i>
+            <span>Start Your Cause Now</span>
+        </a>
+        <p style="margin-top: 1.5rem; opacity: 0.8; font-size: 0.875rem; color: white;">
+            Join 15,000+ creators who've raised over $4.2M for their causes
+        </p>
     </div>
 
-    <div class="faq-item">
-        <div class="faq-question">How do I track my cause's progress?</div>
-        <div class="faq-answer">
-            Your dashboard shows key metrics like total support received, number of supporters, comments, and engagement on your updates.
-        </div>
-    </div>
+    <!-- Back to Top -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
 
-    <div class="faq-item">
-        <div class="faq-question">What if I don't reach my funding goal?</div>
-        <div class="faq-answer">
-            You keep all funds raised. Setting a goal is optional and meant to inspire support. Your cause can continue to accept support even after reaching or missing its target.
-        </div>
-    </div>
+</div>
 
-    <div class="faq-item">
-        <div class="faq-question">How do I receive donations?</div>
-        <div class="faq-answer">
-            Donations are securely processed through PayPal. You need to add your PayPal email to your profile to receive funds. Once a minimum threshold is met, you can withdraw the money to your PayPal account.
-        </div>
-    </div>
-
-    <!-- <h2>For Supporters</h2> -->
-
-    <div class="faq-item">
-        <div class="faq-question">How can I support a cause?</div>
-        <div class="faq-answer">
-            You can support a cause in several ways: by making a <strong>donation</strong>, committing to a future <strong>pledge</strong>, purchasing a related <strong>product</strong>, or simply by <strong>joining</strong> the cause to follow updates, comment, and show your solidarity.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">Do I need to join a cause to support it?</div>
-        <div class="faq-answer">
-            To donate, pledge, or buy products, you need to join the cause first. However, you can like, comment, and see public updates without joining. Joining gives you full access to all activities and deeper engagement.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">How do I find causes to support?</div>
-        <div class="faq-answer">
-            Browse by category, use the search bar, explore causes your friends support, or check out featured causes on the homepage. You can mark content as "Not Interested" to improve your recommendations.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">What's the difference between a donation and a pledge?</div>
-        <div class="faq-answer">
-            A <strong>donation</strong> is an immediate financial gift. A <strong>pledge</strong> is a promise to give a certain amount in the future, which you can fulfill later. Both show incredible support.
-        </div>
-    </div>
-
-    <!-- <h2>Community & Safety</h2> -->
-
-    <div class="faq-item">
-        <div class="faq-question">How do I connect with others?</div>
-        <div class="faq-answer">
-            You can message any user directly for 1-on-1 chats or create group chats for teams. Use @mentions in comments to tag people. You'll get notifications for new messages, comments, and other interactions.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">What are private causes?</div>
-        <div class="faq-answer">
-            Private causes are visible only to the creator and the specific followers they invite. They appear in a separate "Private" tab for those users.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">How do I report a problem?</div>
-        <div class="faq-answer">
-            If you see inappropriate content or have a concern, use the "Report" button on the cause page or contact our support team directly through the help section.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">Is my payment information safe?</div>
-        <div class="faq-answer">
-            Yes. All financial transactions are handled by secure, third-party payment processors like PayPal. Rallynex does not store your full credit card or bank details.
-        </div>
-    </div>
-
-    <div class="faq-item">
-        <div class="faq-question">What are Changemaker Awards?</div>
-        <div class="faq-answer">
-            These are badges that recognize active cause creators:<br><br>
-            • <strong>Bronze</strong>: For starting your first cause.<br>
-            • <strong>Silver</strong>: For running multiple causes with good engagement.<br>
-            • <strong>Gold</strong>: For creating several high-impact causes.<br>
-        </div>
-    </div>
-
-    </div>
-
-    <div class="cta">
-        <h2 style="color: white;">Ready to Start Your Cause?</h2>
-        <p>Have a mission you care about? Rallynex gives you the tools to launch it, share the journey, and build a supportive community.</p>
-        <a href="{% url 'fund' %}">Start Your Cause Now</a>
-    </div>
-
-    <script>
-        document.querySelectorAll('.faq-question').forEach(item => {
-            item.addEventListener('click', () => {
-                item.parentElement.classList.toggle('active');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // FAQ Toggle
+        const faqCards = document.querySelectorAll('.faq-card');
+        faqCards.forEach(card => {
+            const question = card.querySelector('.faq-header');
+            question.addEventListener('click', () => {
+                // Close all other cards
+                faqCards.forEach(otherCard => {
+                    if (otherCard !== card && otherCard.classList.contains('active')) {
+                        otherCard.classList.remove('active');
+                    }
+                });
+                
+                // Toggle current card
+                card.classList.toggle('active');
             });
         });
-    </script>
+
+        // Tab Switching
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const sections = {
+            basics: document.getElementById('basics-section'),
+            insights: document.getElementById('insights-section'),
+            success: document.getElementById('success-section')
+        };
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                // Update active tab
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Show selected section
+                Object.values(sections).forEach(section => {
+                    if (section) section.style.display = 'none';
+                });
+                
+                if (sections[tab]) {
+                    sections[tab].style.display = 'block';
+                    
+                    // Add fade-in animation
+                    sections[tab].style.animation = 'fadeIn 0.5s ease-out';
+                    
+                    // Remove animation after completion
+                    setTimeout(() => {
+                        sections[tab].style.animation = '';
+                    }, 500);
+                }
+            });
+        });
+
+        // Search Functionality
+        const searchInput = document.getElementById('faqSearch');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const allFaqs = document.querySelectorAll('.faq-card');
+            let hasResults = false;
+
+            allFaqs.forEach(faq => {
+                const question = faq.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = faq.querySelector('.faq-answer').textContent.toLowerCase();
+                
+                if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                    faq.style.display = 'block';
+                    hasResults = true;
+                    
+                    // Highlight search term
+                    if (searchTerm.trim()) {
+                        highlightText(faq, searchTerm);
+                    }
+                } else {
+                    faq.style.display = 'none';
+                }
+            });
+
+            // Show empty state if no results
+            const emptyState = document.querySelector('.empty-state');
+            if (!hasResults && searchTerm.trim()) {
+                if (!emptyState) {
+                    const emptyStateDiv = document.createElement('div');
+                    emptyStateDiv.className = 'empty-state';
+                    emptyStateDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No results found for "${searchTerm}"</h3>
+                        <p>Try searching with different keywords or browse our categories above.</p>
+                    `;
+                    const currentSection = document.querySelector('.faq-section[style*="block"]');
+                    if (currentSection) {
+                        currentSection.appendChild(emptyStateDiv);
+                    }
+                }
+            } else if (emptyState) {
+                emptyState.remove();
+            }
+        });
+
+        function highlightText(element, term) {
+            const walker = document.createTreeWalker(
+                element,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+
+            let node;
+            while (node = walker.nextNode()) {
+                const parent = node.parentNode;
+                if (parent.nodeName === 'MARK') continue;
+                
+                const text = node.textContent;
+                const regex = new RegExp(`(${term})`, 'gi');
+                const newText = text.replace(regex, '<mark>$1</mark>');
+                
+                if (newText !== text) {
+                    const span = document.createElement('span');
+                    span.innerHTML = newText;
+                    parent.replaceChild(span, node);
+                }
+            }
+        }
+
+        // Back to Top
+        const backToTop = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        backToTop.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animations
+        document.querySelectorAll('.stat-card, .cta-section').forEach((el) => {
+            observer.observe(el);
+        });
+
+        // Keyboard navigation for FAQs
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Close all FAQs when escape is pressed
+                faqCards.forEach(card => {
+                    card.classList.remove('active');
+                });
+            }
+        });
+    });
+</script>
+
+<!-- FAQPage JSON-LD Schema for SEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "💡 The 3 crowdfunding mistakes 90% of cause creators make (and how to avoid them)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Many new cause creators make avoidable mistakes when launching a cause. Common errors include unclear goals, infrequent updates, and poor storytelling. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🚫 Why 'Please support my cause' is the worst thing you can say",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Asking for support without context or a compelling story reduces engagement. Learn better ways to frame your ask for maximum impact. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📈 How to write a cause story that converts readers to supporters",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your cause story is your chance to connect emotionally. Focus on the problem, your solution, and measurable impact. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🎵 Why causes with soundtracks raise 3x more (the science behind it)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Adding audio or a soundtrack can increase emotional engagement and donor retention. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🕒 The best time to post cause updates (data-backed)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Timing updates for when your audience is most active increases visibility and engagement. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📸 Your cause photo matters more than your story. True or false?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Visuals are powerful. A compelling cause photo grabs attention and sets the tone for your story. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "💬 The one sentence that increases donations by 40%",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Small tweaks in wording can dramatically increase donor response. Craft sentences that connect emotionally and clearly state impact. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🤔 'Should I use emojis in my cause?' (Spoiler: Yes, but like this...)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Emojis can increase engagement but should be relevant and not overused. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📊 How to set a realistic funding goal that doesn't scare people away",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Goals should be ambitious but achievable. Learn to calculate and present your target to motivate donors. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🔄 The update formula that keeps supporters engaged for weeks",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Regular, structured updates maintain momentum and increase trust among your backers. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🎯 Why niching down your cause actually raises more money",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Focusing on a specific audience makes your message clearer and attracts more dedicated supporters. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📣 The hidden power of 'We're 25% there!' vs 'Please donate'",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Progress updates create social proof and encourage others to contribute, while generic asks are less effective. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🤝 How to turn one donor into ten using social proof",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Highlighting support from others encourages new donors to follow and support your cause. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "⏰ Why 48-hour countdowns work (and how to use them right)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Urgency increases engagement. Properly timed countdowns drive action without stressing supporters. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📹 Do you really need a video? (The surprising answer)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Videos can significantly boost engagement, but well-written text and images can also work if crafted thoughtfully. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "💌 The art of thanking donors in a way that brings them back",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Personalized, timely thank-yous encourage repeat support and long-term relationships. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🔍 Most cause creators forget this simple step before launching",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Proper preparation — testing your page, proofreading, and planning updates — prevents lost momentum after launch. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📱 Mobile-first: Why your cause must look perfect on phones",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most supporters use mobile. Optimizing for phones improves readability and increases engagement. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "🎨 How to choose colors that trigger the right emotions",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Color psychology can influence donations and supporter perception. Pick colors that match your cause's story. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "📚 The psychology behind why people give (it's not what you think)",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Understanding donor motivation helps craft messages that resonate and encourage action. <a href='#'>Read more</a>"
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "✨ Pro tip: How to use 'story milestones' to maintain momentum",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sharing milestones in your cause's journey keeps supporters engaged and motivates additional contributions. <a href='#'>Read more</a>"
+      }
+    }
+  ]
+}
+</script>
+
 </body>
 </html>
-
 {% endblock %}
