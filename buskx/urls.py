@@ -20,7 +20,7 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from main.sitemaps import StaticViewSitemap, CampaignSitemap,ProfileSitemap
+from main.sitemaps import StaticViewSitemap, CampaignSitemap,ProfileSitemap,BlogSitemap
 from main import views as main_views
 from accounts import views as accounts_views
 from django.contrib.sitemaps.views import sitemap
