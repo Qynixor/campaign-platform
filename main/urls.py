@@ -17,6 +17,21 @@ urlpatterns = [
 path('product/<int:product_id>/mark-out-of-stock/', views.mark_out_of_stock, name='mark_out_of_stock'),
    path('campaign/<int:campaign_id>/engagement/', views.campaign_engagement_data, name='campaign_engagement'),
     path('landing/', views.explore_campaigns, name='explore_campaigns'),
+    path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
+    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
+    path('face', views.face, name='face'),
+
+       path('success-stories/', views.success_stories, name='success_stories'),
+
+ path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
+    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
+    path('project_support/', views.project_support, name='project_support'),
+    path('hiw/', views.hiw, name='hiw'),
+    path('faq/', views.faq_view, name='faq'),
+     path('about/', views.aboutus, name='aboutus'),
+         path('fund/', views.fund, name='fund'),
+       path('geno/', views.geno, name='geno'),
+    
     path('verify/', views.verify_profile, name='verify_profile'),
     path('campaign/<int:campaign_id>/join_leave/', views.join_leave_campaign, name='join_leave_campaign'),
     path('campaign/<int:campaign_id>/joiners/', views.campaign_joiners, name='campaign_joiners'),
@@ -39,8 +54,9 @@ path('product/<int:product_id>/mark-out-of-stock/', views.mark_out_of_stock, nam
     path('subscribe/', views.subscribe, name='subscribe'),
     path('jobs/', views.jobs, name='jobs'),
     path('events/', views.events, name='events'),
-    path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
-    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
+
+
+
     path('project_support/', views.project_support, name='project_support'),
 
     path('campaign/<int:campaign_id>/top-participants/', views.top_participants_view, name='top_participants'),
@@ -91,7 +107,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('thank-you/', views.thank_you, name='thank_you'),
     path('home', views.home, name='home'),
     path('manage_campaigns/', views.manage_campaigns, name='manage_campaigns'),
-    path('face', views.face, name='face'),
+
     path('create_campaign/', views.create_campaign, name='create_campaign'),
     path('edit-profile/<str:username>/', views.profile_edit, name='edit_profile'),
   path('user-profile/@<str:username>/', views.profile_view, name='profile_view'),
@@ -115,20 +131,15 @@ path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
     path('blog/', views.blog_list, name='blog_list'),  # List of all blogs
     path('blog/<slug:slug>/', views.blog_detail, name='blog_detail'),  # Single blog post
 
-    path('success-stories/', views.success_stories, name='success_stories'),
+ 
+
+
     path('campaign-stories/', campaign_story_list, name='campaign_story_list'),
     path('campaign-stories/<slug:slug>/', campaign_story_detail, name='campaign_story_detail'),
   
  path('chat/<int:chat_id>/send/', views.send_message, name='send_message'),
     path('testimonial/', views.testimonial, name='testimonial'),
- path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
-    path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
-    path('project_support/', views.project_support, name='project_support'),
-    path('hiw/', views.hiw, name='hiw'),
-    path('faq/', views.faq_view, name='faq'),
-     path('about/', views.aboutus, name='aboutus'),
-         path('fund/', views.fund, name='fund'),
-       path('geno/', views.geno, name='geno'),
+
       path('get_activity_comments/<int:activity_id>/', views.get_activity_comments, name='get_activity_comments'),
     path('post_activity_comment/', views.post_activity_comment, name='post_activity_comment'),
     path('like_activity_comment/', views.like_activity_comment, name='like_activity_comment'),

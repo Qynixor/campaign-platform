@@ -31,6 +31,7 @@ sitemaps = {
     'static': StaticViewSitemap,
     'campaigns': CampaignSitemap,
     'profiles': ProfileSitemap,
+    'blogs': BlogSitemap,
 }
 
 

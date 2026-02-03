@@ -1,19 +1,46 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from .models import Campaign, Profile
+from .models import Blog
+
+from django.contrib.sitemaps import Sitemap
+from django.urls import reverse
+
 
 class StaticViewSitemap(Sitemap):
     changefreq = "daily"
     priority = 0.5
-    protocol = "https"  # Ensure HTTPS is used
+    protocol = "https"
 
     def items(self):
-        # List of static pages
-        return ['index', 'privacy_policy', 'terms_of_service', 'project_support']
+        return [
+            'index',
+            'explore_campaigns',
+            'privacy_policy',
+            'terms_of_service',
+            'success_stories',
+            'hiw',
+            'faq',
+            'aboutus',
+            'fund',
+            'geno',
+            'face',
+            'jobs',
+            'events',
+            'library_affiliates',
+            'news_affiliates',
+            'changemakers_view',
+            'affiliate_links',
+            'platformfund',
+            'blog_list',
+            'campaign_story_list',
+            
+        ]
 
     def location(self, item):
-        # Get the URL for each static page
         return reverse(item)
+
+
 
 class CampaignSitemap(Sitemap):
     changefreq = "weekly"
@@ -48,3 +75,21 @@ class ProfileSitemap(Sitemap):
     def location(self, obj):
         # Generate the URL for the profile
         return reverse('profile_view', args=[obj.user.username])
+
+
+class BlogSitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.7
+    protocol = "https"
+
+    def items(self):
+        # Only published blog posts
+        return Blog.objects.filter(is_published=True)
+
+    def lastmod(self, obj):
+        # Use updated_at if you have it, otherwise created_at
+        return obj.updated_at if hasattr(obj, "updated_at") else obj.created_at
+
+    def location(self, obj):
+        # Blog detail URL
+        return reverse('blog_detail', args=[obj.slug])
