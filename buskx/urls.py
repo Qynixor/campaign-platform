@@ -24,6 +24,8 @@ from main.sitemaps import StaticViewSitemap, CampaignSitemap,ProfileSitemap
 from main import views as main_views
 from accounts import views as accounts_views
 from django.contrib.sitemaps.views import sitemap
+from django.views.generic import RedirectView
+
 
 sitemaps = {
     'static': StaticViewSitemap,
@@ -46,7 +48,12 @@ urlpatterns = [
     path('privacy-policy/', main_views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', main_views.terms_of_service, name='terms_of_service'),
     path('project-support/', main_views.project_support, name='project_support'),
+
     path('robots.txt', main_views.robots_txt),
+    path("favicon.ico", RedirectView.as_view(
+        url=settings.STATIC_URL + "favicon.ico",
+        permanent=True
+    )),
 ]
 
 # Configuring URL patterns for serving media files during development
