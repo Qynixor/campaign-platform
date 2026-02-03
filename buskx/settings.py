@@ -29,11 +29,10 @@ DEBUG = env.bool('DEBUG', default=False)
 # 🔧 FIX: allow BOTH domains so redirects work cleanly
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     'rallynex.com',
-    'www.rallynex.com',
+   
     'localhost',
     '127.0.0.1',
-    'rallynex1.onrender.com',
-    'campaign-platform-kmv9.onrender.com',
+
 ])
 
 # =====================================================
@@ -133,9 +132,6 @@ DATABASES = {
 # =====================================================
 CSRF_TRUSTED_ORIGINS = [
     'https://rallynex.com',
-    'https://www.rallynex.com',
-    'https://rallynex1.onrender.com',
-    'https://campaign-platform-kmv9.onrender.com',
 ]
 
 # =====================================================
