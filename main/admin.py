@@ -289,41 +289,41 @@ class ProfileAdmin(admin.ModelAdmin):
     is_changemaker.short_description = 'Changemaker'
 
 
-
-
 from django.contrib import admin
+from tinymce.widgets import TinyMCE
 from .models import Blog
+from .forms import BlogForm
 
+@admin.register(Blog)
 class BlogAdmin(admin.ModelAdmin):
-    # Fields to display in the list view
-    list_display = ('title', 'author', 'category', 'is_published', 'created_at', 'updated_at', 'estimated_reading_time')
+    form = BlogForm
+    list_display = ('title', 'category', 'status', 'created_at', 'view_count')
+    list_filter = ('status', 'category', 'created_at')
+    search_fields = ('title', 'content', 'excerpt')
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ('view_count', 'like_count', 'share_count', 'seo_score')
     
-    # Filter options on the right sidebar
-    list_filter = ('category', 'is_published', 'created_at')
-    
-    # Search bar functionality
-    search_fields = ('title', 'content', 'author__username')
-    
-    # Fields to display on the detail page, excluding non-editable fields
     fieldsets = (
-        (None, {
-            'fields': ('title', 'slug', 'content', 'author', 'category', 'estimated_reading_time', 'is_published')
+        ('Basic Information', {
+            'fields': ('title', 'slug', 'excerpt', 'content')
         }),
-        ('Image', {
-            'fields': ('image',)
+        ('SEO & Metadata', {
+            'fields': ('meta_title', 'meta_description', 'focus_keyword', 'canonical_url')
+        }),
+        ('Media', {
+            'fields': ('featured_image', 'og_image')
+        }),
+        ('Status & Organization', {
+            'fields': ('status', 'category', 'tags', 'author', 'published_at')
+        }),
+        ('Related Content', {
+            'fields': ('related_posts',)
+        }),
+        ('Statistics', {
+            'fields': ('estimated_reading_time', 'view_count', 'like_count', 'share_count', 'seo_score'),
+            'classes': ('collapse',)
         }),
     )
-    
-    # Make the slug field editable in the admin panel
-    prepopulated_fields = {'slug': ('title',)}
-
-    # Exclude 'created_at' and 'updated_at' from being editable in the admin form
-    exclude = ('created_at', 'updated_at')
-
-# Register the model and admin class
-admin.site.register(Blog, BlogAdmin)
-
-
 
 
 

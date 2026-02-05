@@ -597,7 +597,19 @@ class PledgeForm(forms.ModelForm):
         self.fields['amount'].min_value = 1
 
 
+from django import forms
+from tinymce.widgets import TinyMCE
+from .models import Blog
 
+class BlogForm(forms.ModelForm):
+    class Meta:
+        model = Blog
+        fields = '__all__'
+        widgets = {
+            'content': TinyMCE(attrs={'cols': 80, 'rows': 30}),
+            'excerpt': forms.Textarea(attrs={'rows': 4}),
+            'meta_description': forms.Textarea(attrs={'rows': 3}),
+        }
 
 # forms.py
 from django import forms

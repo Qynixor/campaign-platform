@@ -1580,6 +1580,325 @@ class Notification(models.Model):
 
 
 
+
+class ChangemakerAward(models.Model):
+    BRONZE = 'bronze'
+    SILVER = 'silver'
+    GOLD = 'gold'
+
+    AWARD_CHOICES = (
+        (BRONZE, 'Bronze'),
+        (SILVER, 'Silver'),
+        (GOLD, 'Gold'),
+    )
+
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='changemaker_awards')
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='related_awards')
+    award = models.CharField(max_length=6, choices=AWARD_CHOICES, default=BRONZE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user} - {self.award}'
+
+    @staticmethod
+    def assign_award(user):
+        """
+        Assigns the appropriate award based on the number of campaigns the user has completed.
+        """
+        campaign_count = Campaign.objects.filter(user=user).count()
+        
+        if campaign_count >= 3:
+            award = ChangemakerAward.GOLD
+        elif campaign_count == 2:
+            award = ChangemakerAward.SILVER
+        else:
+            award = ChangemakerAward.BRONZE
+
+        # Get the most recent campaign for this user
+        latest_campaign = Campaign.objects.filter(user=user).latest('timestamp')
+
+        # Check if this user already has an award for this campaign
+        if not ChangemakerAward.objects.filter(user=user, campaign=latest_campaign).exists():
+            ChangemakerAward.objects.create(user=user, campaign=latest_campaign, award=award)
+
+    @staticmethod
+    def get_awards(user):
+        """
+        Returns the list of awards earned by the user.
+        """
+        return ChangemakerAward.objects.filter(user=user)
+
+
+# marketing 
+from django.db import models
+from django.utils.text import slugify
+from django.contrib.auth.models import User
+
+from django.db import models
+from django.utils.text import slugify
+
+
+
+
+
+# models.py
+from django.db import models
+from django.utils.text import slugify
+from cloudinary.models import CloudinaryField
+from django.urls import reverse
+import re
+
+class Blog(models.Model):
+    CATEGORY_CHOICES = [
+        ('RallyNex-Led', 'RallyNex-Led'),
+        ('Tips', 'Tips'),
+        ('Spotlight', 'Spotlight'),
+        ('Other', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('archived', 'Archived'),
+    ]
+    
+    # Core fields
+    title = models.CharField(max_length=255, help_text="Blog post title (max 255 characters)")
+    slug = models.SlugField(unique=True, max_length=255, blank=True, 
+                           help_text="URL-friendly version of the title")
+    excerpt = models.TextField(max_length=500, blank=True, 
+                              help_text="Short summary (shown in listings)")
+    content = HTMLField(help_text="Full blog content")
+    
+    # Author & timestamps
+    author = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, 
+                              related_name='blog_posts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(null=True, blank=True, 
+                                       help_text="Leave empty for immediate publication")
+    
+    # SEO fields
+    meta_title = models.CharField(max_length=60, blank=True, 
+                                 help_text="SEO title tag (50-60 characters optimal)")
+    meta_description = models.TextField(max_length=160, blank=True, 
+                                       help_text="SEO description (150-160 characters optimal)")
+    focus_keyword = models.CharField(max_length=50, blank=True, 
+                                    help_text="Primary keyword for SEO")
+    canonical_url = models.URLField(max_length=500, blank=True, 
+                                   help_text="Canonical URL if republished from elsewhere")
+    
+    # Images
+    featured_image = CloudinaryField(
+        'image',
+        folder='blog/featured',
+        transformation=[
+            {'width': 1200, 'height': 630, 'crop': 'fill'},
+            {'quality': 'auto:best'},
+        ],
+        format='webp',
+        null=True,
+        blank=True,
+        help_text="Featured image (1200x630 recommended)"
+    )
+    
+    og_image = CloudinaryField(
+        'image',
+        folder='blog/og',
+        transformation=[
+            {'width': 1200, 'height': 630, 'crop': 'fill'},
+            {'quality': 'auto:best'},
+        ],
+        format='webp',
+        null=True,
+        blank=True,
+        help_text="Social sharing image (1200x630)"
+    )
+    
+    # Status & organization
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')
+    tags = models.CharField(max_length=255, blank=True, 
+                           help_text="Comma-separated tags")
+    
+    # Reading & engagement
+    estimated_reading_time = models.PositiveIntegerField(default=5, 
+                                                        help_text="Minutes to read")
+    view_count = models.PositiveIntegerField(default=0, editable=False)
+    like_count = models.PositiveIntegerField(default=0, editable=False)
+    share_count = models.PositiveIntegerField(default=0, editable=False)
+    
+    # SEO performance
+    seo_score = models.PositiveIntegerField(default=0, editable=False, 
+                                           help_text="Auto-calculated SEO score")
+    
+    # Internal linking
+    related_posts = models.ManyToManyField('self', blank=True, symmetrical=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Blog Post'
+        verbose_name_plural = 'Blog Posts'
+        indexes = [
+            models.Index(fields=['slug', 'status']),
+            models.Index(fields=['created_at', 'status']),
+            models.Index(fields=['category', 'status']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate slug if empty
+        if not self.slug:
+            base_slug = slugify(self.title)[:250]
+            slug = base_slug
+            counter = 1
+            while Blog.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        
+        # Auto-generate meta title if empty
+        if not self.meta_title:
+            self.meta_title = self.title[:60]
+        
+        # Auto-generate meta description if empty
+        if not self.meta_description:
+            # Strip HTML tags and get first 160 characters
+            clean_text = re.sub('<[^<]+?>', '', self.content)
+            self.meta_description = clean_text[:160]
+        
+        # Auto-generate excerpt if empty
+        if not self.excerpt:
+            clean_text = re.sub('<[^<]+?>', '', self.content)
+            self.excerpt = clean_text[:500]
+        
+        # Set published_at if publishing for first time
+        if self.status == 'published' and not self.published_at:
+            from django.utils import timezone
+            self.published_at = timezone.now()
+        
+        # Calculate SEO score
+        self.calculate_seo_score()
+        
+        super().save(*args, **kwargs)
+    
+    def calculate_seo_score(self):
+        """Calculate an SEO score based on content quality"""
+        score = 0
+        
+        # Title length (optimal: 50-60 chars)
+        title_len = len(self.meta_title or self.title)
+        if 50 <= title_len <= 60:
+            score += 20
+        elif 40 <= title_len <= 70:
+            score += 10
+        
+        # Meta description length (optimal: 150-160 chars)
+        desc_len = len(self.meta_description or '')
+        if 150 <= desc_len <= 160:
+            score += 20
+        elif 130 <= desc_len <= 170:
+            score += 10
+        
+        # Content length (good: 1000+ words)
+        word_count = len(self.content.split())
+        if word_count >= 2000:
+            score += 30
+        elif word_count >= 1000:
+            score += 20
+        elif word_count >= 500:
+            score += 10
+        
+        # Featured image
+        if self.featured_image:
+            score += 10
+        
+        # Focus keyword
+        if self.focus_keyword:
+            score += 10
+        
+        # Excerpt
+        if self.excerpt and len(self.excerpt) >= 100:
+            score += 10
+        
+        self.seo_score = min(score, 100)
+    
+    def get_absolute_url(self):
+        return reverse('blog_detail', args=[self.slug])
+    
+    def get_admin_url(self):
+        return reverse('admin:main_blog_change', args=[self.id])
+    
+    def __str__(self):
+        return self.title
+    
+    @property
+    def is_published(self):
+        return self.status == 'published'
+    
+    @property
+    def word_count(self):
+        return len(self.content.split())
+    
+    @property
+    def read_time_minutes(self):
+        # Assuming 200 words per minute reading speed
+        words_per_minute = 200
+        return max(1, round(len(self.content.split()) / words_per_minute))
+
+
+
+
+
+from cloudinary.models import CloudinaryField
+from django.utils.text import slugify
+
+class CampaignStory(models.Model):
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)  # For friendly URLs
+    content = models.TextField()
+
+    # ✅ Cloudinary image field
+    image = CloudinaryField(
+        'image',
+        folder='story_images',
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)  # Automatically create a URL-friendly slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+
+class FAQ(models.Model):
+    CATEGORY_CHOICES = [
+        ('general', 'General Information'),
+        ('campaigns', 'Creating & Managing Campaigns'),
+        ('funding', 'Funding & Payments'),
+        ('security', 'Security & Policies'),
+        ('backers', 'For Backers & Donors'),
+    ]
+    
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+
+    def __str__(self):
+        return self.question
+
+
+
+
+
+
+
 class AffiliateLink(models.Model):
     title = models.CharField(max_length=200)
     link = models.URLField()
@@ -1641,146 +1960,6 @@ class NativeAd(models.Model):
 
     def __str__(self):
         return self.title
-
-
-
-class ChangemakerAward(models.Model):
-    BRONZE = 'bronze'
-    SILVER = 'silver'
-    GOLD = 'gold'
-
-    AWARD_CHOICES = (
-        (BRONZE, 'Bronze'),
-        (SILVER, 'Silver'),
-        (GOLD, 'Gold'),
-    )
-
-    user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='changemaker_awards')
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='related_awards')
-    award = models.CharField(max_length=6, choices=AWARD_CHOICES, default=BRONZE)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f'{self.user} - {self.award}'
-
-    @staticmethod
-    def assign_award(user):
-        """
-        Assigns the appropriate award based on the number of campaigns the user has completed.
-        """
-        campaign_count = Campaign.objects.filter(user=user).count()
-        
-        if campaign_count >= 3:
-            award = ChangemakerAward.GOLD
-        elif campaign_count == 2:
-            award = ChangemakerAward.SILVER
-        else:
-            award = ChangemakerAward.BRONZE
-
-        # Get the most recent campaign for this user
-        latest_campaign = Campaign.objects.filter(user=user).latest('timestamp')
-
-        # Check if this user already has an award for this campaign
-        if not ChangemakerAward.objects.filter(user=user, campaign=latest_campaign).exists():
-            ChangemakerAward.objects.create(user=user, campaign=latest_campaign, award=award)
-
-    @staticmethod
-    def get_awards(user):
-        """
-        Returns the list of awards earned by the user.
-        """
-        return ChangemakerAward.objects.filter(user=user)
-
-
-# marketing 
-from django.db import models
-from django.utils.text import slugify
-from django.contrib.auth.models import User
-
-from django.db import models
-from django.utils.text import slugify
-
-
-
-class Blog(models.Model):
-    CATEGORY_CHOICES = [
-        ('RallyNex-Led', 'RallyNex-Led'),
-        ('Tips', 'Tips'),
-        ('Spotlight', 'Spotlight'),
-        ('Other', 'Other'),
-    ]
-    
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True)
-    content = models.TextField()
-    author = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    # ✅ Cloudinary image field
-    image = CloudinaryField(
-        'image',
-        folder='blog_images',
-        null=True,
-        blank=True
-    )
-
-    is_published = models.BooleanField(default=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Other')
-    estimated_reading_time = models.PositiveIntegerField(default=5)  # minutes
-    
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.title
-
-
-from cloudinary.models import CloudinaryField
-from django.utils.text import slugify
-
-class CampaignStory(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True)  # For friendly URLs
-    content = models.TextField()
-
-    # ✅ Cloudinary image field
-    image = CloudinaryField(
-        'image',
-        folder='story_images',
-        null=True,
-        blank=True
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)  # Automatically create a URL-friendly slug
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.title
-
-
-
-class FAQ(models.Model):
-    CATEGORY_CHOICES = [
-        ('general', 'General Information'),
-        ('campaigns', 'Creating & Managing Campaigns'),
-        ('funding', 'Funding & Payments'),
-        ('security', 'Security & Policies'),
-        ('backers', 'For Backers & Donors'),
-    ]
-    
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
-    question = models.CharField(max_length=255)
-    answer = models.TextField()
-
-    def __str__(self):
-        return self.question
 
 
 

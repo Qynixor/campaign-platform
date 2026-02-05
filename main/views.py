@@ -6661,22 +6661,133 @@ def search_profile_results(request):
 
 
 
-
-
-
-#marketing
-
+# main/views.py - UPDATED VERSION
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from .models import Blog
+import json
 
 def blog_list(request):
-    blogs = Blog.objects.filter(is_published=True).order_by('-created_at')  # Show latest first
-    return render(request, 'marketing/blog_list.html', {'blogs': blogs})    
-
-
+    """Display list of published blog posts"""
+    blogs = Blog.objects.filter(status='published').order_by('-created_at')
+    return render(request, 'marketing/blog_list.html', {'blogs': blogs})
 
 def blog_detail(request, slug):
-    blog_post = get_object_or_404(Blog, slug=slug, is_published=True)
-    return render(request, 'marketing/blog_detail.html', {'blog_post': blog_post})
+    """Display individual blog post"""
+    blog_post = get_object_or_404(Blog, slug=slug, status='published')
+    
+    # Increment view count
+    blog_post.view_count = blog_post.view_count + 1
+    blog_post.save()
+    
+    # Get related posts (same category, exclude current)
+    related_posts = Blog.objects.filter(
+        category=blog_post.category,
+        status='published'
+    ).exclude(id=blog_post.id).order_by('-created_at')[:3]
+    
+    # If not enough related posts, get latest
+    if len(related_posts) < 3:
+        additional = Blog.objects.filter(
+            status='published'
+        ).exclude(id=blog_post.id).order_by('-created_at')[:3-len(related_posts)]
+        related_posts = list(related_posts) + list(additional)
+    
+    # Get next/previous posts
+    next_post = Blog.objects.filter(
+        created_at__gt=blog_post.created_at,
+        status='published'
+    ).order_by('created_at').first()
+    
+    prev_post = Blog.objects.filter(
+        created_at__lt=blog_post.created_at,
+        status='published'
+    ).order_by('-created_at').first()
+    
+    # Add current year for copyright
+    current_year = timezone.now().year
+    
+    return render(request, 'marketing/blog_detail.html', {
+        'blog_post': blog_post,
+        'related_posts': related_posts,
+        'next_post': next_post,
+        'prev_post': prev_post,
+        'current_year': current_year,
+    })
+
+def blog_view_increment(request, slug):
+    """AJAX endpoint to increment view count"""
+    if request.method == 'POST':
+        try:
+            blog = Blog.objects.get(slug=slug)
+            blog.view_count += 1
+            blog.save()
+            return JsonResponse({'success': True, 'view_count': blog.view_count})
+        except Blog.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Blog not found'}, status=404)
+    return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
+
+@require_POST
+@csrf_exempt
+def blog_like(request, slug):
+    """Handle blog post likes via AJAX"""
+    blog = get_object_or_404(Blog, slug=slug)
+    
+    # Simple implementation - just increment
+    blog.like_count = blog.like_count + 1
+    blog.save()
+    
+    return JsonResponse({
+        'success': True, 
+        'like_count': blog.like_count
+    })
+
+@require_POST
+@csrf_exempt
+def newsletter_subscribe(request):
+    """Handle newsletter subscriptions"""
+    try:
+        data = json.loads(request.body)
+        email = data.get('email', '').strip()
+        
+        if email:
+            # Here you would save to your newsletter database
+            # For now, just return success
+            return JsonResponse({
+                'success': True, 
+                'message': 'Subscribed successfully!'
+            })
+        else:
+            return JsonResponse({
+                'success': False, 
+                'message': 'Please provide a valid email'
+            })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Error: {str(e)}'
+        })
+
+def blog_share(request, slug):
+    """Track social shares - redirects back to blog"""
+    blog = get_object_or_404(Blog, slug=slug)
+    
+    # Increment share count
+    blog.share_count = blog.share_count + 1
+    blog.save()
+    
+    # Get the platform from query params
+    platform = request.GET.get('platform', 'unknown')
+    
+    # Redirect back to blog
+    return redirect('blog_detail', slug=slug)
+
+
+
+
 
 
 from .models import CampaignStory

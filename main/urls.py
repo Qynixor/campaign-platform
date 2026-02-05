@@ -148,9 +148,12 @@ path('get_comments/', views.get_comments, name='get_comments'),
 path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
     path('record_campaign_view/<int:campaign_id>/', views.record_campaign_view, name='record_campaign_view'),
 # marketing 
-    path('blog/', views.blog_list, name='blog_list'),  # List of all blogs
-    path('blog/<slug:slug>/', views.blog_detail, name='blog_detail'),  # Single blog post
-
+    path('blog/', views.blog_list, name='blog_list'),
+    path('blog/<slug:slug>/', views.blog_detail, name='blog_detail'),
+    path('blog/<slug:slug>/view/', views.blog_view_increment, name='blog_view_increment'),
+    path('blog/<slug:slug>/like/', views.blog_like, name='blog_like'),
+    path('blog/<slug:slug>/share/', views.blog_share, name='blog_share'),
+    path('newsletter/subscribe/', views.newsletter_subscribe, name='newsletter_subscribe'),
  
 
 
