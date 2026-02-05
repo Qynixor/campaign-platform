@@ -18,10 +18,24 @@ path('product/<int:product_id>/mark-out-of-stock/', views.mark_out_of_stock, nam
    path('campaign/<int:campaign_id>/engagement/', views.campaign_engagement_data, name='campaign_engagement'),
        # Redirect deleted project-support to landing page
     # ADD THIS REDIRECT - when users visit /project-support/, send them to /landing/
-    path('project_support/', RedirectView.as_view(
-        pattern_name='explore_campaigns',  # Redirects to your landing page
-        permanent=True
-    ), name='project_support'),
+ # Handle both with and without trailing slash:
+path('project-support', RedirectView.as_view(
+    pattern_name='explore_campaigns',
+    permanent=True
+)),
+path('project-support/', RedirectView.as_view(
+    pattern_name='explore_campaigns',
+    permanent=True
+)),
+
+path('project_support', RedirectView.as_view(
+    pattern_name='explore_campaigns',
+    permanent=True
+)),
+path('project_support/', RedirectView.as_view(
+    pattern_name='explore_campaigns',
+    permanent=True
+)),
     path('landing/', views.explore_campaigns, name='explore_campaigns'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
