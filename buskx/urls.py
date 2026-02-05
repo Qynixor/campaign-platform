@@ -48,7 +48,7 @@ urlpatterns = [
     path('', accounts_views.index, name='index'),
     path('privacy-policy/', main_views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', main_views.terms_of_service, name='terms_of_service'),
-    path('project-support/', main_views.project_support, name='project_support'),
+    
 
     path('robots.txt', main_views.robots_txt),
     path("favicon.ico", RedirectView.as_view(

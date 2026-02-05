@@ -929,7 +929,10 @@ def privacy_policy(request):
 def terms_of_service(request):
     return render(request, 'revenue/terms_of_service.html')
 
-
+# Add this function:
+def project_support(request):
+    """Redirect from old project_support to landing page"""
+    return redirect('explore_campaigns')  # or return redirect('/landing/')
 
 
 def platformfund_view(request):
