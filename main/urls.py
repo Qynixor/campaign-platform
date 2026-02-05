@@ -25,7 +25,7 @@ path('product/<int:product_id>/mark-out-of-stock/', views.mark_out_of_stock, nam
 
  path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
-    path('project_support/', views.project_support, name='project_support'),
+  
     path('hiw/', views.hiw, name='hiw'),
     path('faq/', views.faq_view, name='faq'),
      path('about/', views.aboutus, name='aboutus'),

@@ -929,10 +929,6 @@ def privacy_policy(request):
 def terms_of_service(request):
     return render(request, 'revenue/terms_of_service.html')
 
-def project_support(request):
-    return render(request, 'revenue/support.html')
-
-
 
 
 
