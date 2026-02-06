@@ -4849,7 +4849,7 @@ def home(request):
 
 
 
-@login_required
+
 def face(request):
     form = SubscriptionForm()
     following_users = [follow.followed for follow in request.user.following.all()]
