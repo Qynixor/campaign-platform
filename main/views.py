@@ -117,6 +117,8 @@ from django.http import HttpResponse
 def robots_txt(request):
     content = """User-agent: *
 Allow: /
+Allow: /face/
+Allow: /home/
 
 Disallow: /admin/
 Disallow: /accounts/

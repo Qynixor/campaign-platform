@@ -39,7 +39,7 @@ path('project_support/', RedirectView.as_view(
     path('landing/', views.explore_campaigns, name='explore_campaigns'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', views.terms_of_service, name='terms_of_service'),
-    path('face', views.face, name='face'),
+    path('face/', views.face, name='face'),
 
        path('success-stories/', views.success_stories, name='success_stories'),
 
@@ -125,7 +125,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('campaign/<int:campaign_id>/support/', views.support, name='support'),
     path('campaign/<int:campaign_id>/support-campaign/', views.campaign_support, name='campaign_support'),
     path('thank-you/', views.thank_you, name='thank_you'),
-    path('home', views.home, name='home'),
+    path('home/', views.home, name='home'),
     path('manage_campaigns/', views.manage_campaigns, name='manage_campaigns'),
 
     path('create_campaign/', views.create_campaign, name='create_campaign'),
