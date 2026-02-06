@@ -121,7 +121,7 @@ Allow: /
 Disallow: /admin/
 Disallow: /accounts/
 Disallow: /tinymce/
-Disallow: /static/
+
 
 Sitemap: https://rallynex.com/sitemap.xml
 
