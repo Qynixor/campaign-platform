@@ -1,10 +1,7 @@
-from django.contrib.sitemaps import Sitemap
-from django.urls import reverse
-from .models import Campaign, Profile
-from .models import Blog
 
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
+from .models import Campaign, Profile, Blog
 
 
 class StaticViewSitemap(Sitemap):
@@ -34,18 +31,16 @@ class StaticViewSitemap(Sitemap):
             'platformfund',
             'blog_list',
             'campaign_story_list',
-            
         ]
 
     def location(self, item):
         return reverse(item)
 
 
-
 class CampaignSitemap(Sitemap):
     changefreq = "weekly"
     priority = 0.8
-    protocol = "https"  # Ensure HTTPS is used
+    protocol = "https"
 
     def items(self):
         # Fetch all public campaigns
@@ -59,18 +54,19 @@ class CampaignSitemap(Sitemap):
         # Generate the URL for the campaign
         return reverse('view_campaign', args=[obj.id])
 
+
 class ProfileSitemap(Sitemap):
     changefreq = "weekly"
     priority = 0.6
-    protocol = "https"  # Ensure HTTPS is used
+    protocol = "https"
 
     def items(self):
         # Fetch all profiles that should be included in the sitemap
-        return Profile.objects.filter(user__is_active=True)  # Example condition, adjust as needed
+        return Profile.objects.filter(user__is_active=True)
 
     def lastmod(self, obj):
         # Use a timestamp field to determine the last modification date
-        return obj.user.date_joined  # Or a different field indicating last profile update
+        return obj.user.date_joined
 
     def location(self, obj):
         # Generate the URL for the profile
@@ -83,12 +79,20 @@ class BlogSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # Only published blog posts
-        return Blog.objects.filter(is_published=True)
+        # Only published blog posts - use status field instead of is_published property
+        # Option 1: Filter by status='published'
+        return Blog.objects.filter(status='published')
+        
+        # Option 2: If you also want to ensure published_at is set
+        # return Blog.objects.filter(status='published', published_at__isnull=False)
+        
+        # Option 3: If you want to order by publication date
+        # return Blog.objects.filter(status='published').order_by('-published_at')
 
     def lastmod(self, obj):
-        # Use updated_at if you have it, otherwise created_at
-        return obj.updated_at if hasattr(obj, "updated_at") else obj.created_at
+        # Use updated_at if available, otherwise created_at
+        # Since your model has updated_at, we can use that
+        return obj.updated_at
 
     def location(self, obj):
         # Blog detail URL
