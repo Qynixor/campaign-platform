@@ -3,9 +3,11 @@
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-   
+        <meta name="color-scheme" content="light dark">
     <style>
+
         :root {
             --primary: #1da1f2;
             --primary-dark: #1a91da;
@@ -21,11 +23,70 @@
             --card-shadow: 0 2px 16px rgba(29, 161, 242, 0.08);
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
-            --twitter-blue: #1da1f2;
-            --twitter-blue-dark: #1a91da;
-            --twitter-blue-light: #e8f5fe;
         }
-        
+       /* === DARK MODE - FIXED VERSION === */
+.dark-mode {
+    /* Colors: Use dark grey, not pure black, with light grey text */
+    --primary: #1da1f2;
+    --primary-dark: #1a91da;
+    --primary-light: rgba(29, 161, 242, 0.2);
+    --secondary: #0f1720; /* Darker base background */
+    --text-primary: #e8e8e8; /* Light grey, not pure white */
+    --text-secondary: #a0aec0; /* Softer secondary text */
+    --border: #2d3748; /* Darker borders */
+    --card-bg: #1e2736; /* Dark grey for cards */
+    --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+
+    /* Crucial: Inform the browser to handle form controls */
+    color-scheme: dark;
+}
+
+/* Ensure form controls are styled explicitly */
+.dark-mode .form-input,
+.dark-mode .form-select,
+.dark-mode .form-textarea {
+    background-color: #2d3748; /* Explicit dark background */
+    border-color: var(--border);
+    color: var(--text-primary); /* Explicit light text */
+}
+
+.dark-mode .form-input:focus,
+.dark-mode .form-select:focus,
+.dark-mode .form-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.3);
+}
+
+.dark-mode .file-upload {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border);
+}
+
+.dark-mode .create-card,
+.dark-mode .optional-section,
+.dark-mode .welcome-message {
+    background-color: var(--card-bg);
+    border-color: var(--border);
+} 
+
+/* ===== DARK MODE FOR OPTIONAL HEADER ===== */
+.dark-mode .optional-header {
+    background: #2d3748; /* Dark grey background */
+    border-bottom-color: var(--border);
+    color: var(--text-primary); /* Light text */
+}
+
+.dark-mode .optional-header:hover {
+    background: #374151; /* Slightly lighter on hover */
+}
+
+.dark-mode .optional-header h3 {
+    color: var(--text-primary); /* Ensures the text is light */
+}
+
+.dark-mode .optional-header i {
+    color: var(--text-secondary); /* Cheveron icon in softer color */
+}
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--secondary);
@@ -49,222 +110,174 @@
             margin: 0 auto;
         }
         
-        .welcome-message {
+        /* === HEADER - STEP 2 === */
+        .create-header {
             text-align: center;
-            margin-bottom: 24px;
-            padding: 24px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: var(--card-shadow);
-            border: 1px solid var(--border);
-            border-top: 4px solid var(--primary);
+            margin-bottom: 32px;
+            padding: 0 16px;
         }
         
-        .welcome-message h2 {
+        .create-header h1 {
             margin: 0 0 8px 0;
             color: var(--text-primary);
-            font-weight: 700;
-            font-size: 20px;
+            font-weight: 800;
+            font-size: 32px;
+            line-height: 1.2;
         }
         
-        .welcome-message p {
+        .create-header p {
             margin: 0;
             color: var(--text-secondary);
-            font-size: 15px;
+            font-size: 17px;
+            max-width: 400px;
+            margin: 0 auto;
         }
         
-        .create-card {
+        /* === CORE FORM - STEP 1 === */
+        .core-form {
             background-color: var(--card-bg);
             border-radius: 16px;
             box-shadow: var(--card-shadow);
-            overflow: hidden;
+            padding: 32px;
             margin-bottom: 24px;
             border: 1px solid var(--border);
         }
         
-        .card-header {
-            padding: 24px;
-            background: var(--accent-gradient);
-            color: white;
-            position: relative;
-        }
-        
-        .card-header h1 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .card-header h1 i {
-            font-size: 22px;
-        }
-        
-        .card-subtitle {
-            margin: 8px 0 0 0;
-            font-size: 15px;
-            opacity: 0.95;
-            font-weight: 400;
-        }
-        
-        .paypal-status {
-            position: absolute;
-            right: 24px;
-            top: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            backdrop-filter: blur(8px);
-        }
-        
-        .card-body {
-            padding: 32px;
-        }
-        
-        .form-section {
-            margin-bottom: 28px;
-        }
-        
-        .section-label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--primary-light);
-        }
-        
-        .section-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--accent-gradient);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            color: white;
-        }
-        
-        .section-label-text {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--text-primary);
+        .form-group {
+            margin-bottom: 24px;
         }
         
         .form-label {
             display: block;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
             color: var(--text-primary);
             font-size: 15px;
         }
         
-        .form-input, .form-select, .form-textarea {
+        .form-input, .form-textarea, .form-select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 2px solid var(--border);
             border-radius: 12px;
             font-family: inherit;
-            font-size: 15px;
+            font-size: 16px;
             background-color: white;
             box-sizing: border-box;
             transition: var(--transition);
         }
         
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
         }
         
         .form-textarea {
-            min-height: 120px;
+            min-height: 140px;
             resize: vertical;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         
         .form-helper {
             color: var(--text-secondary);
-            font-size: 13px;
-            margin-top: 8px;
+            font-size: 14px;
+            margin-top: 6px;
             display: block;
-            font-style: normal;
         }
         
-        .optional-badge {
-            display: inline-block;
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-left: 8px;
+        /* === OPTIONAL SECTION - STEP 4 === */
+        .optional-section {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 0;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
         }
         
-        .file-upload {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 32px 24px;
-            text-align: center;
+        .optional-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: var(--transition);
-            background: #fafbfd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
         }
         
-        .file-upload:hover {
-            border-color: var(--primary);
-            background: var(--primary-light);
+        .optional-header:hover {
+            background: #f0f5fa;
         }
         
-        .file-upload i {
-            font-size: 28px;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-        
-        .file-upload-text {
-            font-size: 15px;
-            color: var(--text-primary);
+        .optional-header h3 {
+            margin: 0;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 4px;
+            color: var(--text-primary);
         }
         
-        .submit-button {
+        .optional-header i {
+            transition: transform 0.2s ease;
+            color: var(--primary);
+        }
+        
+        .optional-header.expanded i {
+            transform: rotate(180deg);
+        }
+        
+        .optional-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .optional-content.expanded {
+            padding: 24px;
+            max-height: 2000px;
+        }
+        
+        .optional-field {
+            margin-bottom: 20px;
+        }
+        
+        /* === PUBLISH BUTTON - STEP 6 === */
+        .publish-section {
+            text-align: center;
+            margin-top: 32px;
+        }
+        
+        .publish-button {
             background: var(--accent-gradient);
             color: white;
             border: none;
             border-radius: 12px;
-            padding: 16px 32px;
-            font-size: 16px;
+            padding: 16px 48px;
+            font-size: 17px;
             font-weight: 700;
             cursor: pointer;
             transition: var(--transition);
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            margin: 32px auto 0;
-            width: 100%;
+            gap: 10px;
             box-shadow: 0 4px 12px rgba(29, 161, 242, 0.2);
         }
         
-        .submit-button:hover {
+        .publish-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(29, 161, 242, 0.3);
         }
         
-        .submit-button:active {
-            transform: translateY(0);
+        .reassurance-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 12px;
+            display: block;
         }
         
-        .submit-button i {
-            margin-right: 10px;
-            font-size: 16px;
-        }
-        
+        /* === ERROR HANDLING === */
         .error-container {
             background-color: rgba(224, 36, 94, 0.05);
             border-left: 4px solid var(--error);
@@ -275,357 +288,41 @@
             font-size: 14px;
         }
         
-        .two-column {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        .error-container strong {
+            display: block;
+            margin-bottom: 8px;
         }
         
-        @media (max-width: 768px) {
-            .two-column {
-                grid-template-columns: 1fr;
-            }
-            
-            .create-wrapper {
-                padding: 16px 12px;
-            }
-            
-            .card-body {
-                padding: 24px;
-            }
-            
-            .card-header {
-                padding: 20px;
-            }
-            
-            .paypal-status {
-                position: static;
-                margin-top: 12px;
-                display: inline-block;
-            }
+        .error-container ul {
+            margin: 0;
+            padding-left: 20px;
         }
         
-        /* Connection animation */
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(29, 161, 242, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(29, 161, 242, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(29, 161, 242, 0); }
-        }
-        
-        .submit-button:hover {
-            animation: pulse-blue 2s infinite;
-        }
-        
-        /* Emotional Guidance Cards */
-        .emotional-guidance {
-            background: var(--primary-light);
+        /* === PROFILE STATUS === */
+        .profile-status {
+            background: rgba(29, 161, 242, 0.1);
             border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .guidance-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            color: var(--primary);
-        }
-        
-        .guidance-header i {
-            font-size: 18px;
-        }
-        
-        .guidance-content {
-            color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .community-promise {
-            background: var(--primary-light);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
+            padding: 16px;
+            margin-bottom: 24px;
             text-align: center;
             border: 1px solid rgba(29, 161, 242, 0.2);
         }
         
-        .community-promise i {
-            font-size: 24px;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-        
-        .community-promise p {
-            margin: 0;
-            color: var(--text-primary);
-            font-size: 15px;
-            font-weight: 500;
-        }
-        
-        /* Progress Bar */
-        .progress-bar {
-            height: 4px;
-            background-color: var(--border);
-            border-radius: 2px;
-            margin-bottom: 24px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--accent-gradient);
-            width: 0%;
-            transition: width 0.6s ease;
-            border-radius: 2px;
-        }
-        
-        .progress-text {
-            position: absolute;
-            right: 0;
-            top: -22px;
-            font-size: 13px;
+        .profile-status a {
             color: var(--primary);
             font-weight: 600;
-        }
-        
-        /* Popular Tags */
-        .popular-tags {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--primary-light);
-            border-radius: 12px;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .popular-tags-title {
-            font-size: 13px;
-            color: var(--primary);
-            margin-bottom: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .popular-tags-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .suggested-tag {
-            display: inline-block;
-            padding: 6px 14px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 13px;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-        
-        .suggested-tag:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        /* Audio Guidance */
-        .audio-guidance {
-            background: var(--primary-light);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .audio-guidance-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            color: var(--primary);
-        }
-        
-        .audio-examples {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        
-        .audio-example {
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            font-size: 13px;
-            color: var(--text-primary);
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
         }
         
-        .audio-example i {
-            color: var(--primary);
+        .profile-status a:hover {
+            text-decoration: underline;
         }
         
-        /* Responsive */
-        @media (max-width: 640px) {
-            .audio-examples {
-                grid-template-columns: 1fr;
-            }
-            
-            .card-header h1 {
-                font-size: 20px;
-            }
-            
-            .section-label-text {
-                font-size: 16px;
-            }
-            
-            .file-upload {
-                padding: 24px 16px;
-            }
-        }
-        
-        /* Support Goal Emphasis */
-        .support-reminder {
-            background: var(--primary-light);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-primary);
-        }
-        
-        .support-reminder i {
-            color: var(--primary);
-            flex-shrink: 0;
-        }
-        
-        /* Heart icon in blue */
-        .heart-blue {
-            color: var(--primary);
-        }
-        
-        /* Close button */
-        .close-btn {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-        
-        .close-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Dark Mode */
-        .dark-mode {
-            --primary: #1da1f2;
-            --primary-dark: #1a91da;
-            --primary-light: rgba(29, 161, 242, 0.15);
-            --secondary: #15202b;
-            --text-primary: #ffffff;
-            --text-secondary: #8899a6;
-            --border: #38444d;
-            --card-bg: #192734;
-            --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
-        }
-        
-        .dark-mode .create-card {
-            background-color: var(--card-bg);
-            border-color: var(--border);
-        }
-        
-        .dark-mode .form-input,
-        .dark-mode .form-select,
-        .dark-mode .form-textarea {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-color: var(--border);
-            color: var(--text-primary);
-        }
-        
-        .dark-mode .form-input:focus,
-        .dark-mode .form-select:focus,
-        .dark-mode .form-textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2);
-        }
-        
-        .dark-mode .file-upload {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: var(--border);
-        }
-        
-        .dark-mode .emotional-guidance,
-        .dark-mode .community-promise,
-        .dark-mode .popular-tags,
-        .dark-mode .audio-guidance {
-            background: var(--primary-light);
-            border-color: rgba(29, 161, 242, 0.3);
-        }
-        
-        .dark-mode .suggested-tag {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--border);
-            color: var(--text-primary);
-        }
-        
-        .dark-mode .suggested-tag:hover {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .dark-mode .support-reminder {
-            background: var(--primary-light);
-            color: var(--text-primary);
-        }
-        
-        .dark-mode .welcome-message {
-            background: var(--card-bg);
-            border-color: var(--border);
-        }
-        
-        /* File preview container */
-        .preview-container {
-            margin-top: 12px;
-            min-height: 60px;
-        }
-        
-        /* Interactive states */
-        .form-section:focus-within .form-label {
-            color: var(--primary);
-        }
-        
-        /* Selection styling */
-        ::selection {
-            background: var(--primary-light);
-            color: var(--text-primary);
-        }
-        
-        /* IMAGE PREVIEW STYLES - ADDED */
-        .image-previews-grid {
+        /* === IMAGE PREVIEW === */
+        .image-previews {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 12px;
@@ -634,16 +331,10 @@
         
         .image-preview-item {
             position: relative;
-            width: 120px;
-            height: 120px;
             border-radius: 8px;
             overflow: hidden;
             border: 2px solid var(--border);
-        }
-        
-        .image-preview-item.main-preview {
-            border-color: var(--primary);
-            border-width: 3px;
+            aspect-ratio: 1;
         }
         
         .image-preview-item img {
@@ -656,7 +347,7 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background: rgba(220, 53, 69, 0.9);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
             border: none;
             width: 24px;
@@ -668,260 +359,216 @@
             justify-content: center;
         }
         
-        .image-info {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px;
-            font-size: 11px;
-            text-align: center;
+        /* === RESPONSIVE === */
+        @media (max-width: 768px) {
+            .create-wrapper {
+                padding: 16px 12px;
+            }
+            
+            .core-form, .optional-section {
+                padding: 24px;
+            }
+            
+            .create-header h1 {
+                font-size: 28px;
+            }
         }
         
-        .no-images {
+        /* === TWO COLUMN LAYOUT FOR OPTIONAL === */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        @media (max-width: 640px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* === FILE UPLOAD === */
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
             text-align: center;
-            color: var(--text-secondary);
-            padding: 20px;
-            font-style: italic;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fafbfd;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        
+        .file-upload i {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        
+        .file-upload-text {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        /* === AUDIO PREVIEW === */
+        .audio-preview {
+            margin-top: 16px;
+        }
+        
+        .audio-preview audio {
+            width: 100%;
+            border-radius: 8px;
         }
     </style>
 </head>
 
 <body>
-    
 <div class="create-wrapper">
     <div class="create-container">
-
-        <!-- Welcome Message -->
-        <div class="welcome-message">
-            <h2>Start something that matters</h2>
-            <p>This is where you turn an idea into a cause, show real progress, and invite others to support you.</p>
+        
+        <!-- STEP 2: Simple header -->
+        <div class="create-header">
+            <h1>Share something you care about</h1>
+            <p>People can follow and support as you make progress.</p>
         </div>
-
-        <!-- Progress Indicator -->
-        <div class="progress-bar">
-            <div class="progress-fill" id="formProgress"></div>
-            <div class="progress-text" id="progressText">Create your cause</div>
+        
+        <!-- Profile status -->
+        {% if not user_profile.has_paypal %}
+        <div class="profile-status">
+            <a href="{% url 'edit_profile' username=user_profile.user.username %}">
+                <i class="fas fa-plus-circle"></i> Add PayPal to receive support
+            </a>
         </div>
-
-        <!-- Main Form Card -->
-        <div class="create-card">
-            <div class="card-header">
-                <div>
-                    <h1>
-                        <i class="fas fa-flag-checkered heart-blue"></i>
-                        Create Your Cause
-                    </h1>
-                    <p class="card-subtitle">
-                        Define what you’re working toward and invite support along the way
-                    </p>
-                </div>
-
-                <div class="paypal-status">
-                    {% if not user_profile.has_paypal %}
-                        <a href="{% url 'edit_profile' username=user_profile.user.username %}" style="color: white; text-decoration: underline;">
-                            <i class="fas fa-plus-circle"></i> Add PayPal to receive support
-                        </a>
-                    {% else %}
-                        <span>
-                            <i class="fas fa-check-circle"></i> Ready to receive support
-                        </span>
-                    {% endif %}
-                </div>
-
-                <button class="close-btn" onclick="window.history.back()">&times;</button>
+        {% endif %}
+        
+        <!-- Main form -->
+        <form method="post" enctype="multipart/form-data" id="campaignForm">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="error-container">
+                <strong>Let's fix a few things:</strong>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
             </div>
-
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data" id="campaignForm">
-                    {% csrf_token %}
-
-                    {% if form.errors %}
-                        <div class="error-container">
-                            <strong>Let’s fix a few things:</strong>
-                            <ul>
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li>{{ field.label }}: {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-
-                    <!-- SECTION: CORE IDEA -->
-                    <div class="section-label">
-                        <div class="section-icon"><i class="fas fa-bullseye"></i></div>
-                        <div class="section-label-text">Your Cause</div>
-                    </div>
-
-                    <!-- Guidance -->
-                    <div class="emotional-guidance">
-                        <div class="guidance-header">
-                            <i class="fas fa-lightbulb"></i>
-                            <strong>Be clear about what you want to change</strong>
-                        </div>
-                        <div class="guidance-content">
-                            People support causes they understand. Focus on the problem and what progress looks like.
-                        </div>
-                    </div>
-
-                    <!-- Title -->
-                    <div class="form-section">
-                        <label class="form-label">Cause title</label>
-                        <input type="text"
-                               name="title"
-                               class="form-input"
-                               placeholder="Give your cause a clear, specific name"
-                               required
-                               value="{{ form.title.value|default:'' }}">
-                        <span class="form-helper">
-                            A clear title helps people quickly understand your goal
-                        </span>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-section">
-                        <label class="form-label">What is this cause about?</label>
-                        <textarea name="content"
-                                  class="form-textarea"
-                                  placeholder="What problem are you addressing? What do you want to achieve?"
-                                  required>{{ form.content.value|default:'' }}</textarea>
-                        <span class="form-helper">
-                            Explain the situation, why it matters, and what progress you’re working toward
-                        </span>
-                    </div>
-
-                    <!-- IMAGES -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Images for your cause <span class="optional-badge">Optional</span>
-                        </label>
-
+            {% endif %}
+            
+            <!-- STEP 1: CORE FORM - Always visible -->
+            <div class="core-form">
+                <!-- Title - STEP 3 -->
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text"
+                           name="title"
+                           class="form-input"
+                           placeholder="What are you trying to change?"
+                           required
+                           value="{{ form.title.value|default:'' }}">
+                </div>
+                
+                <!-- Description - STEP 3 -->
+                <div class="form-group">
+                    <label class="form-label">What's going on?</label>
+                    <textarea name="content"
+                              class="form-textarea"
+                              placeholder="Tell people what's happening and what you're trying to do."
+                              required>{{ form.content.value|default:'' }}</textarea>
+                </div>
+                
+                <!-- Category - STEP 3 -->
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select" required>
+                        {% for category in categories %}
+                            <option value="{{ category.0 }}"
+                                {% if form.category.value == category.0 %}selected{% endif %}>
+                                {{ category.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <span class="form-helper">Helps people find your cause</span>
+                </div>
+            </div>
+            
+            <!-- STEP 4: OPTIONAL SECTION - Collapsed by default -->
+            <div class="optional-section">
+                <div class="optional-header" id="optionalToggle">
+                    <h3>▸ Add more details (optional)</h3>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                
+                <div class="optional-content" id="optionalContent">
+                    <!-- Images -->
+                    <div class="optional-field">
+                        <label class="form-label">Images</label>
                         <div class="file-upload">
                             <label for="id_poster">
                                 <i class="fas fa-image"></i>
                                 <div class="file-upload-text">Upload a main image</div>
-                                <span class="form-helper">This image represents your cause publicly</span>
                             </label>
                             {{ form.poster }}
                         </div>
-
-                        <div id="mainPosterPreview" class="preview-container"></div>
-
+                        <div id="mainPosterPreview" class="image-previews"></div>
+                        
                         <div style="margin-top: 16px;">
                             <div class="file-upload">
                                 <label for="id_additional_images">
                                     <i class="fas fa-layer-group"></i>
-                                    <div class="file-upload-text">Add supporting images</div>
-                                    <span class="form-helper">Show context, progress, or impact</span>
+                                    <div class="file-upload-text">Add more images</div>
                                 </label>
                                 {{ form.additional_images }}
                             </div>
                         </div>
-
-                        <div id="additionalPreviews" class="image-previews-grid"></div>
+                        <div id="additionalPreviews" class="image-previews"></div>
                     </div>
-
-                 <!-- AUDIO -->
-<div class="form-section">
-    <label class="form-label">
-        Sound for your cause <span class="optional-badge">Optional</span>
-    </label>
-
-    <div class="audio-guidance">
-        <div class="audio-guidance-header">
-            <i class="fas fa-music"></i>
-            <strong>Sound sets the emotional tone</strong>
-        </div>
-        <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 14px;">
-            Sometimes a feeling can’t be explained in words. A short sound can help people sense the atmosphere around your cause.
-        </p>
-
-        <div class="audio-examples">
-            <div class="audio-example">
-                <i class="fas fa-wave-square"></i>
-                <span>Ambient sounds from a place</span>
-            </div>
-            <div class="audio-example">
-                <i class="fas fa-heartbeat"></i>
-                <span>Natural or emotional sound textures</span>
-            </div>
-            <div class="audio-example">
-                <i class="fas fa-microphone"></i>
-                <span>A quiet voice moment (optional)</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="file-upload">
-        <label for="id_audio">
-            <i class="fas fa-upload"></i>
-            <div class="file-upload-text">Upload an audio clip</div>
-            <span class="form-helper">
-                This doesn’t need to explain anything — it just needs to feel right
-            </span>
-        </label>
-        {{ form.audio }}
-    </div>
-
-    <!-- Audio Preview -->
-    <div id="audioPreview" class="preview-container"></div>
-</div>
-
-
-                    <!-- SECTION: VISIBILITY -->
-                    <div class="section-label">
-                        <div class="section-icon"><i class="fas fa-eye"></i></div>
-                        <div class="section-label-text">Visibility & Discovery</div>
-                    </div>
-
-                    <div class="two-column">
-                        <div class="form-section">
-                            <label class="form-label">Category</label>
-                            <select name="category" class="form-select">
-                                {% for category in categories %}
-                                    <option value="{{ category.0 }}"
-                                        {% if form.category.value == category.0 %}selected{% endif %}>
-                                        {{ category.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <span class="form-helper">Helps the right supporters find your cause</span>
+                    
+                    <!-- Audio -->
+                    <div class="optional-field">
+                        <label class="form-label">Add audio</label>
+                        <div class="file-upload">
+                            <label for="id_audio">
+                                <i class="fas fa-music"></i>
+                                <div class="file-upload-text">Upload audio clip</div>
+                            </label>
+                            {{ form.audio }}
                         </div>
-
-                        <div class="form-section">
+                        <div id="audioPreview" class="audio-preview"></div>
+                    </div>
+                    
+                    <!-- Visibility & Tags -->
+                    <div class="two-column">
+                        <div class="optional-field">
                             <label class="form-label">Visibility</label>
                             <select name="visibility" class="form-select">
                                 <option value="public">Public</option>
                                 <option value="private">Private (invite only)</option>
                             </select>
-                            <span class="form-helper">
-                                You can change this later
-                            </span>
+                        </div>
+                        
+                        <div class="optional-field">
+                            <label class="form-label">Tags</label>
+                            <input type="text"
+                                   name="tags_input"
+                                   class="form-input"
+                                   placeholder="environment, education, health..."
+                                   value="{{ form.tags_input.value|default:'' }}">
                         </div>
                     </div>
-
-                    <!-- TAGS -->
-                    <div class="form-section">
-                        <label class="form-label">Tags <span class="optional-badge">Optional</span></label>
-                        <input type="text"
-                               name="tags_input"
-                               class="form-input"
-                               placeholder="environment, education, health..."
-                               value="{{ form.tags_input.value|default:'' }}">
-                        <span class="form-helper">
-                            Tags improve discoverability
-                        </span>
-                    </div>
-
-                    <!-- DURATION -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Timeframe <span class="optional-badge">Optional</span>
-                        </label>
+                    
+                    <!-- Timeframe -->
+                    <div class="optional-field">
+                        <label class="form-label">Timeframe</label>
                         <div class="two-column">
                             <input type="number"
                                    name="duration"
@@ -935,16 +582,11 @@
                                 <option value="weeks">Weeks</option>
                             </select>
                         </div>
-                        <span class="form-helper">
-                            Set expectations for supporters
-                        </span>
                     </div>
-
-                    <!-- SUPPORT GOAL -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Support goal <span class="optional-badge">Optional</span>
-                        </label>
+                    
+                    <!-- Funding Goal -->
+                    <div class="optional-field">
+                        <label class="form-label">Funding goal</label>
                         <input type="number"
                                name="funding_goal"
                                class="form-input"
@@ -952,378 +594,129 @@
                                step="0.01"
                                placeholder="0.00"
                                value="{{ form.funding_goal.value|default:'' }}">
-                        <span class="form-helper">
-                            Set a goal if financial support is needed
-                        </span>
                     </div>
-
-                    <!-- FINAL SUBMIT -->
-                    <button type="submit" class="submit-button">
-                        <i class="fas fa-rocket"></i> Publish Cause
-                    </button>
-
-                    <div style="text-align: center; margin-top: 24px; color: var(--text-secondary); font-size: 14px;">
-                        <i class="fas fa-chart-line" style="margin-right: 8px;"></i>
-                        You can post updates and track progress after publishing
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+            
+            <!-- STEP 6 & 8: Publish button with reassurance -->
+            <div class="publish-section">
+                <button type="submit" class="publish-button">
+                    Publish
+                </button>
+                <span class="reassurance-text">You can edit everything later</span>
+            </div>
+        </form>
     </div>
 </div>
 
-
-    <script>
-        // ===== CRITICAL FIX: Add multiple attribute to file input =====
-        document.addEventListener('DOMContentLoaded', function() {
-            const additionalInput = document.getElementById('id_additional_images');
-            
-            if (additionalInput) {
-                // Add multiple attribute for selecting multiple files
-                additionalInput.setAttribute('multiple', true);
-                additionalInput.multiple = true;
-                
-                // Add accept attribute for images only
-                additionalInput.setAttribute('accept', 'image/png, image/jpeg, image/gif, image/webp');
-                
-                console.log('✅ Multiple image selection enabled on input');
-            }
-        });
-    </script>
-
-    <script type="text/javascript">
-        // JavaScript for Slideshow Uploads
-        let additionalImages = [];
-        let mainImage = null;
-
-        // Create a hidden file input for submitting files
-        let hiddenFileInputsContainer = document.getElementById('hiddenFileInputsContainer');
-        if (!hiddenFileInputsContainer) {
-            hiddenFileInputsContainer = document.createElement('div');
-            hiddenFileInputsContainer.id = 'hiddenFileInputsContainer';
-            hiddenFileInputsContainer.style.display = 'none';
-            document.getElementById('campaignForm').appendChild(hiddenFileInputsContainer);
+<script>
+    // STEP 4: Toggle optional section
+    document.getElementById('optionalToggle').addEventListener('click', function() {
+        const content = document.getElementById('optionalContent');
+        const icon = this.querySelector('i');
+        
+        content.classList.toggle('expanded');
+        this.classList.toggle('expanded');
+        
+        // Update arrow icon
+        if (content.classList.contains('expanded')) {
+            this.querySelector('h3').innerHTML = '▾ Add more details (optional)';
+        } else {
+            this.querySelector('h3').innerHTML = '▸ Add more details (optional)';
         }
-
-        // Preview main image
-        function previewMainImage(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    mainImage = {
-                        url: e.target.result,
-                        file: file,
-                        isMain: true,
-                        inputName: 'poster'
-                    };
-                    
-                    const preview = document.getElementById('mainPosterPreview');
-                    preview.innerHTML = `
-                        <div class="image-preview-item main-preview">
-                            <img src="${e.target.result}" alt="Main poster">
-                            <div class="image-info">
-                                <i class="fas fa-star"></i> Main Poster
-                            </div>
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            }
+    });
+    
+    // Image preview functionality (same as before)
+    let additionalImages = [];
+    
+    function previewMainImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('mainPosterPreview');
+                preview.innerHTML = `
+                    <div class="image-preview-item">
+                        <img src="${e.target.result}" alt="Main poster">
+                        <button type="button" class="remove-image" onclick="clearMainImage()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
         }
-
-        // Preview additional images
-        function previewAdditionalImages(event) {
-            const files = Array.from(event.target.files);
-            const previewContainer = document.getElementById('additionalPreviews');
-            
-            // Filter out any existing files and limit to 4
-            const newFiles = files.slice(0, 4 - additionalImages.length);
-            
-            newFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const imageData = {
-                        url: e.target.result,
-                        file: file,
-                        isMain: false,
-                        id: Date.now() + index,
-                        inputName: `additional_images_${Date.now() + index}`
-                    };
-                    
-                    additionalImages.push(imageData);
-                    
-                    renderImagePreviews();
-                };
-                
-                reader.readAsDataURL(file);
-            });
-            
-            // Reset file input to allow adding more images
-            event.target.value = '';
-        }
-
-        // Render all image previews
-        function renderImagePreviews() {
-            const previewContainer = document.getElementById('additionalPreviews');
-            
-            previewContainer.innerHTML = '';
-            
-            if (additionalImages.length === 0) {
-                previewContainer.innerHTML = '<div class="no-images">No additional images added yet</div>';
-                return;
-            }
-            
-            additionalImages.forEach((image, index) => {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'image-preview-item';
-                previewItem.innerHTML = `
-                    <img src="${image.url}" alt="Additional image ${index + 1}">
-                    <button type="button" class="remove-image" onclick="removeImage(${image.id})" title="Remove image">
+    }
+    
+    function clearMainImage() {
+        document.querySelector('input[name="poster"]').value = '';
+        document.getElementById('mainPosterPreview').innerHTML = '';
+    }
+    
+    function previewAdditionalImages(event) {
+        const files = Array.from(event.target.files);
+        const previewContainer = document.getElementById('additionalPreviews');
+        
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'image-preview-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="Additional image">
+                    <button type="button" class="remove-image" onclick="this.parentElement.remove()">
                         <i class="fas fa-times"></i>
                     </button>
-                    <div class="image-info">
-                        <i class="fas fa-layer-group"></i> Image ${index + 1}
-                    </div>
                 `;
-                previewContainer.appendChild(previewItem);
-            });
-        }
-
-        // Remove an image
-        function removeImage(imageId) {
-            additionalImages = additionalImages.filter(img => img.id !== imageId);
-            renderImagePreviews();
-        }
-
-        // Handle form submission
-        document.getElementById('campaignForm').addEventListener('submit', function(e) {
-            // Clear any existing hidden inputs
-            document.getElementById('hiddenFileInputsContainer').innerHTML = '';
-            
-            // Create hidden inputs for additional images
-            additionalImages.forEach((image, index) => {
-                // Create a new file input for each additional image
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.name = 'additional_images';
-                fileInput.style.display = 'none';
-                
-                // Create a DataTransfer to hold the file
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(image.file);
-                fileInput.files = dataTransfer.files;
-                
-                // Add to form
-                document.getElementById('hiddenFileInputsContainer').appendChild(fileInput);
-            });
-            
-            // Validate at least one image
-            const mainFileInput = document.querySelector('input[name="poster"]');
-            if (!mainFileInput.files.length && additionalImages.length === 0) {
-                e.preventDefault();
-                alert('Please upload at least one image for your cause home.');
-                return;
-            }
-            
-            // Validate image count
-            if (additionalImages.length > 4) {
-                e.preventDefault();
-                alert('Maximum 4 additional images allowed.');
-                return;
-            }
-            
-            console.log('Submitting with:', {
-                mainImage: mainFileInput.files.length,
-                additionalImages: additionalImages.length
-            });
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
         });
-
-        // CONNECT FUNCTIONS TO HTML INPUTS
-        document.addEventListener('DOMContentLoaded', function() {
-            // Connect main poster input
-            const posterInput = document.querySelector('input[name="poster"]');
-            if (posterInput) {
-                posterInput.addEventListener('change', previewMainImage);
-            }
-            
-            // Connect additional images input
-            const additionalInput = document.querySelector('input[name="additional_images"]');
-            if (additionalInput) {
-                additionalInput.addEventListener('change', previewAdditionalImages);
-            }
-            
-            console.log('✅ Multi-image functions connected successfully');
-        });
-    </script>
-
-    <script>
-        // Simple tag suggestions
-        document.addEventListener('DOMContentLoaded', function() {
-            const tagsInput = document.getElementById('id_tags_input');
-            const suggestedTags = document.querySelectorAll('.suggested-tag');
-            
-            // Add suggested tag to input
-            suggestedTags.forEach(tag => {
-                tag.addEventListener('click', function() {
-                    const currentValue = tagsInput.value;
-                    const newTag = this.getAttribute('data-tag');
-                    
-                    if (currentValue === '') {
-                        tagsInput.value = newTag;
-                    } else {
-                        // Check if tag already exists
-                        const existingTags = currentValue.split(',').map(t => t.trim());
-                        if (!existingTags.includes(newTag)) {
-                            tagsInput.value = currentValue + ', ' + newTag;
-                        }
-                    }
-                    
-                    // Focus back on input
-                    tagsInput.focus();
-                });
-            });
-            
-            // Auto-format as user types
-            tagsInput.addEventListener('blur', function() {
-                // Clean up spacing when user leaves the field
-                const tags = this.value.split(',')
-                    .map(tag => tag.trim())
-                    .filter(tag => tag !== '')
-                    .join(', ');
-                this.value = tags;
-            });
-        });
-    </script>
-
-    <script>
-        // Audio preview and validation
-        function previewAudio(event) {
-            const fileInput = event.target;
-            const previewContainer = document.getElementById('audioPreview');
-            
-            // Clear previous preview
-            previewContainer.innerHTML = '';
-            
-            const file = fileInput.files[0];
-            if (!file) return;
-            
-            // File size validation (10MB)
-            const maxSize = 10 * 1024 * 1024;
-            if (file.size > maxSize) {
-                previewContainer.innerHTML = `
-                    <div style="background: rgba(224, 36, 94, 0.1); border-left: 4px solid var(--error); padding: 12px; border-radius: 8px; color: var(--error);">
-                        <i class="fas fa-exclamation-circle"></i>
-                        File too large (${(file.size/(1024*1024)).toFixed(1)}MB). Maximum size is 10MB.
-                    </div>
-                `;
-                fileInput.value = '';
-                return;
-            }
-            
-            // File type validation
-            const fileName = file.name.toLowerCase();
-            const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
-            const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
-            
-            const validMimeTypes = [
-                'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
-                'audio/ogg', 'audio/oga', 'audio/x-m4a', 'audio/aac'
-            ];
-            
-            if (!isValidExtension && !validMimeTypes.includes(file.type)) {
-                previewContainer.innerHTML = `
-                    <div style="background: rgba(224, 36, 94, 0.1); border-left: 4px solid var(--error); padding: 12px; border-radius: 8px; color: var(--error);">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Unsupported file format. Please use MP3, WAV, OGG, or M4A files.
-                    </div>
-                `;
-                fileInput.value = '';
-                return;
-            }
-            
-            // Create audio preview
-            const audioURL = URL.createObjectURL(file);
-            
-            // Create audio element
-            const audioElement = document.createElement('audio');
-            audioElement.controls = true;
-            audioElement.style.width = '100%';
-            audioElement.style.marginTop = '15px';
-            audioElement.style.borderRadius = '8px';
-            audioElement.src = audioURL;
-            
-            // Create info card
-            const infoCard = document.createElement('div');
-            infoCard.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: var(--primary-light); border-radius: 8px;">
-                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 18px;"></i>
-                    <div>
-                        <strong style="display: block; color: var(--text-primary);">${file.name}</strong>
-                        <span style="font-size: 12px; color: var(--text-secondary);">
-                            ${(file.size/(1024*1024)).toFixed(2)} MB • ${file.type || 'Audio file'}
-                        </span>
-                    </div>
+    }
+    
+    // Audio preview
+    function previewAudio(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const preview = document.getElementById('audioPreview');
+            const url = URL.createObjectURL(file);
+            preview.innerHTML = `
+                <audio controls src="${url}"></audio>
+                <div style="margin-top: 8px; font-size: 14px; color: var(--text-secondary)">
+                    <i class="fas fa-check-circle"></i> ${file.name}
                 </div>
             `;
-            
-            // Add to preview container
-            previewContainer.appendChild(infoCard);
-            previewContainer.appendChild(audioElement);
-            
-            // Clean up URL when audio element is removed
-            audioElement.onunload = function() {
-                URL.revokeObjectURL(audioURL);
-            };
         }
-
-        // Connect audio preview
-        document.addEventListener('DOMContentLoaded', function() {
-            const audioInput = document.getElementById('id_audio');
-            if (audioInput) {
-                audioInput.addEventListener('change', previewAudio);
-            }
-        });
-    </script>
-
-    <script>
-        // Progress tracking
-        const form = document.getElementById('campaignForm');
-        const progressFill = document.getElementById('formProgress');
-        const progressText = document.getElementById('progressText');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup image previews
+        const posterInput = document.querySelector('input[name="poster"]');
+        if (posterInput) posterInput.addEventListener('change', previewMainImage);
         
-        if (form && progressFill && progressText) {
-            form.addEventListener('input', function() {
-                const inputs = form.querySelectorAll('input[required], textarea[required]');
-                const filled = Array.from(inputs).filter(input => {
-                    if (input.type === 'file') {
-                        return input.files.length > 0;
-                    }
-                    return input.value.trim() !== '';
-                }).length;
-                
-                const progress = Math.min(100, (filled / inputs.length) * 100);
-                progressFill.style.width = `${progress}%`;
-                
-                // Emotional progress messages
-                if (progress < 25) {
-                    progressText.textContent = 'Start your journey';
-                } else if (progress < 50) {
-                    progressText.textContent = 'Finding your voice';
-                } else if (progress < 75) {
-                    progressText.textContent = 'Building your home';
-                } else if (progress < 100) {
-                    progressText.textContent = 'Almost there';
-                } else {
-                    progressText.textContent = 'Ready to open';
-                }
-            });
-            
-            // Initialize progress
-            form.dispatchEvent(new Event('input'));
+        const additionalInput = document.querySelector('input[name="additional_images"]');
+        if (additionalInput) {
+            additionalInput.addEventListener('change', previewAdditionalImages);
+            additionalInput.setAttribute('multiple', true);
         }
-    </script>
+        
+        // Setup audio preview
+        const audioInput = document.querySelector('input[name="audio"]');
+        if (audioInput) audioInput.addEventListener('change', previewAudio);
+        
+        // STEP 8: Auto-save simulation (you can implement real auto-save later)
+        const form = document.getElementById('campaignForm');
+        const fields = form.querySelectorAll('input, textarea, select');
+        
+        fields.forEach(field => {
+            field.addEventListener('input', function() {
+                // In a real implementation, save to localStorage or send to server
+                console.log('Auto-saving...');
+            });
+        });
+    });
+</script>
 
 </body>
 </html>
