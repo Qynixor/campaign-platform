@@ -3,13 +3,11 @@
 {% block content %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recreate Campaign | Rallynex</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <meta name="color-scheme" content="light dark">
     <style>
+        /* === BASE STYLES === */
         :root {
             --primary: #1da1f2;
             --primary-dark: #1a91da;
@@ -26,7 +24,59 @@
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
         }
-        
+
+        /* === DARK MODE === */
+        .dark-mode {
+            --primary: #1da1f2;
+            --primary-dark: #1a91da;
+            --primary-light: rgba(29, 161, 242, 0.2);
+            --secondary: #0f1720;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0aec0;
+            --border: #2d3748;
+            --card-bg: #1e2736;
+            --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
+            color-scheme: dark;
+        }
+
+        .dark-mode .form-input,
+        .dark-mode .form-select,
+        .dark-mode .form-textarea {
+            background-color: #2d3748;
+            border-color: var(--border);
+            color: var(--text-primary);
+        }
+
+        .dark-mode .form-input:focus,
+        .dark-mode .form-select:focus,
+        .dark-mode .form-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.3);
+        }
+
+        .dark-mode .create-card,
+        .dark-mode .optional-section,
+        .dark-mode .existing-images-section {
+            background-color: var(--card-bg);
+            border-color: var(--border);
+        }
+
+        .dark-mode .optional-header {
+            background: #2d3748;
+            border-bottom-color: var(--border);
+            color: var(--text-primary);
+        }
+
+        .dark-mode .optional-header:hover {
+            background: #374151;
+        }
+
+        .dark-mode .checkbox-group {
+            background: rgba(29, 161, 242, 0.05);
+            border-color: var(--border);
+        }
+
+        /* === LAYOUT STYLES === */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--secondary);
@@ -36,236 +86,412 @@
             padding: 0;
             min-height: 100vh;
         }
-        
+
         .create-wrapper {
             padding: 20px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        
+
         .create-container {
             max-width: 600px;
             width: 100%;
             margin: 0 auto;
         }
-        
-        .welcome-message {
+
+        /* === HEADER === */
+        .create-header {
             text-align: center;
-            margin-bottom: 24px;
-            padding: 24px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: var(--card-shadow);
-            border: 1px solid var(--border);
-            border-top: 4px solid var(--primary);
+            margin-bottom: 32px;
+            padding: 0 16px;
         }
-        
-        .welcome-message h2 {
+
+        .create-header h1 {
             margin: 0 0 8px 0;
             color: var(--text-primary);
-            font-weight: 700;
-            font-size: 20px;
+            font-weight: 800;
+            font-size: 32px;
+            line-height: 1.2;
         }
-        
-        .welcome-message p {
+
+        .create-header p {
             margin: 0;
             color: var(--text-secondary);
-            font-size: 15px;
+            font-size: 17px;
+            max-width: 400px;
+            margin: 0 auto;
         }
-        
-        .create-card {
+
+        /* === FORM STYLES === */
+        .core-form {
             background-color: var(--card-bg);
             border-radius: 16px;
             box-shadow: var(--card-shadow);
-            overflow: hidden;
+            padding: 32px;
             margin-bottom: 24px;
             border: 1px solid var(--border);
         }
-        
-        .card-header {
-            padding: 24px;
-            background: var(--accent-gradient);
-            color: white;
-            position: relative;
+
+        .form-group {
+            margin-bottom: 24px;
         }
-        
-        .card-header h1 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .card-header h1 i {
-            font-size: 22px;
-        }
-        
-        .card-subtitle {
-            margin: 8px 0 0 0;
-            font-size: 15px;
-            opacity: 0.95;
-            font-weight: 400;
-        }
-        
-        .paypal-status {
-            position: absolute;
-            right: 24px;
-            top: 24px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            backdrop-filter: blur(8px);
-        }
-        
-        .card-body {
-            padding: 32px;
-        }
-        
-        .form-section {
-            margin-bottom: 28px;
-        }
-        
-        .section-label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--primary-light);
-        }
-        
-        .section-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--accent-gradient);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            color: white;
-        }
-        
-        .section-label-text {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--text-primary);
-        }
-        
+
         .form-label {
             display: block;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
             color: var(--text-primary);
             font-size: 15px;
         }
-        
-        .form-input, .form-select, .form-textarea {
+
+        .form-input,
+        .form-textarea,
+        .form-select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 2px solid var(--border);
             border-radius: 12px;
             font-family: inherit;
-            font-size: 15px;
+            font-size: 16px;
             background-color: white;
             box-sizing: border-box;
             transition: var(--transition);
         }
-        
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
         }
-        
+
         .form-textarea {
-            min-height: 120px;
+            min-height: 140px;
             resize: vertical;
-            line-height: 1.5;
+            line-height: 1.6;
         }
-        
+
         .form-helper {
             color: var(--text-secondary);
-            font-size: 13px;
-            margin-top: 8px;
+            font-size: 14px;
+            margin-top: 6px;
             display: block;
-            font-style: normal;
         }
-        
-        .optional-badge {
-            display: inline-block;
-            background: var(--primary-light);
-            color: var(--primary);
-            padding: 4px 10px;
-            border-radius: 20px;
+
+        /* === EXISTING IMAGES SECTION === */
+        .existing-images-section {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            aspect-ratio: 1;
+            transition: var(--transition);
+        }
+
+        .image-item.main-image {
+            border-color: var(--primary);
+            border-width: 3px;
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
             font-size: 12px;
-            font-weight: 500;
-            margin-left: 8px;
+            text-align: center;
         }
-        
+
+        .image-controls {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .remove-checkbox {
+            accent-color: #e0245e;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .remove-label {
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* === IMAGE REMOVAL STATES === */
+        .image-item.marked-for-removal {
+            opacity: 0.6;
+            border-color: var(--error);
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(224, 36, 94, 0.1),
+                rgba(224, 36, 94, 0.1) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+
+        .image-item.marked-for-removal img {
+            filter: grayscale(80%) brightness(0.7);
+        }
+
+        .image-item.marked-for-removal .image-label {
+            background: rgba(224, 36, 94, 0.8);
+        }
+
+        /* === WARNING NOTES === */
+        .warning-note {
+            background: rgba(255, 173, 31, 0.1);
+            border: 1px solid rgba(255, 173, 31, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            color: var(--warning);
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .warning-note i {
+            color: var(--warning);
+            margin-top: 2px;
+        }
+
+        /* === OPTIONAL SECTION === */
+        .optional-section {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 0;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .optional-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            user-select: none;
+        }
+
+        .optional-header:hover {
+            background: #f0f5fa;
+        }
+
+        .optional-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .optional-header i {
+            transition: transform 0.2s ease;
+            color: var(--primary);
+        }
+
+        .optional-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .optional-content.expanded {
+            padding: 24px;
+            max-height: 2000px;
+        }
+
+        .optional-field {
+            margin-bottom: 20px;
+        }
+
+        /* === CHECKBOX GROUPS === */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: rgba(29, 161, 242, 0.05);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .checkbox-group:hover {
+            background: rgba(29, 161, 242, 0.08);
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            font-size: 15px;
+            color: var(--text-primary);
+            user-select: none;
+            flex: 1;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checkbox-group.remove-option label {
+            color: var(--error);
+        }
+
+        .checkbox-group.remove-option input[type="checkbox"] {
+            accent-color: var(--error);
+        }
+
+        /* === FILE UPLOAD === */
         .file-upload {
             border: 2px dashed var(--border);
             border-radius: 12px;
-            padding: 32px 24px;
+            padding: 24px;
             text-align: center;
             cursor: pointer;
             transition: var(--transition);
             background: #fafbfd;
         }
-        
+
         .file-upload:hover {
             border-color: var(--primary);
             background: var(--primary-light);
         }
-        
+
         .file-upload i {
-            font-size: 28px;
+            font-size: 24px;
             color: var(--primary);
             margin-bottom: 12px;
         }
-        
+
         .file-upload-text {
             font-size: 15px;
             color: var(--text-primary);
             font-weight: 600;
             margin-bottom: 4px;
         }
-        
-        .submit-button {
+
+        .file-upload-helper {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            display: block;
+        }
+
+        /* === NEW IMAGES PREVIEW === */
+        .new-images-preview {
+            margin-top: 20px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            display: block;
+            font-size: 14px;
+        }
+
+        /* === BUTTONS === */
+        .publish-section {
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .publish-button {
             background: var(--accent-gradient);
             color: white;
             border: none;
             border-radius: 12px;
-            padding: 16px 32px;
-            font-size: 16px;
+            padding: 16px 48px;
+            font-size: 17px;
             font-weight: 700;
             cursor: pointer;
             transition: var(--transition);
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            margin: 32px auto 0;
-            width: 100%;
+            gap: 10px;
             box-shadow: 0 4px 12px rgba(29, 161, 242, 0.2);
         }
-        
-        .submit-button:hover {
+
+        .publish-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(29, 161, 242, 0.3);
         }
-        
-        .submit-button:active {
-            transform: translateY(0);
+
+        .reassurance-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 12px;
+            display: block;
         }
-        
-        .submit-button i {
-            margin-right: 10px;
+
+        .cancel-button {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 32px;
             font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-right: 16px;
         }
-        
+
+        .cancel-button:hover {
+            background: rgba(101, 119, 134, 0.1);
+            border-color: var(--text-secondary);
+        }
+
+        /* === ERROR HANDLING === */
         .error-container {
             background-color: rgba(224, 36, 94, 0.05);
             border-left: 4px solid var(--error);
@@ -275,1896 +501,703 @@
             color: var(--error);
             font-size: 14px;
         }
-        
+
+        .error-container strong {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--error);
+        }
+
+        .error-container ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .error-container li {
+            margin-bottom: 4px;
+        }
+
+        /* === TWO COLUMN LAYOUT === */
         .two-column {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
-        
+
+        /* === CURRENT AUDIO SECTION === */
+        .current-audio-section {
+            margin-bottom: 24px;
+        }
+
+        .audio-player-container {
+            padding: 16px;
+            background: rgba(29, 161, 242, 0.05);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-top: 8px;
+            transition: var(--transition);
+        }
+
+        .audio-player-container audio {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .audio-player-container.marked-for-removal {
+            opacity: 0.5;
+            filter: grayscale(100%);
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(224, 36, 94, 0.1),
+                rgba(224, 36, 94, 0.1) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+
+        /* === RESPONSIVE === */
         @media (max-width: 768px) {
-            .two-column {
-                grid-template-columns: 1fr;
-            }
-            
             .create-wrapper {
                 padding: 16px 12px;
             }
-            
-            .card-body {
-                padding: 24px;
-            }
-            
-            .card-header {
+
+            .core-form,
+            .existing-images-section,
+            .optional-section {
                 padding: 20px;
             }
+
+            .create-header h1 {
+                font-size: 28px;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 12px;
+            }
+
+            .publish-button,
+            .cancel-button {
+                padding: 14px 24px;
+                font-size: 16px;
+            }
+
+            .cancel-button {
+                margin-right: 12px;
+                margin-bottom: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .images-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
             
-            .paypal-status {
-                position: static;
-                margin-top: 12px;
-                display: inline-block;
+            .checkbox-group {
+                padding: 10px 12px;
+            }
+            
+            .file-upload {
+                padding: 16px;
             }
         }
-        
-        /* Emotional Guidance Cards */
-        .emotional-guidance {
-            background: var(--primary-light);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .guidance-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            color: var(--primary);
-        }
-        
-        .guidance-header i {
-            font-size: 18px;
-        }
-        
-        .guidance-content {
-            color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .community-promise {
-            background: var(--primary-light);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .community-promise i {
-            font-size: 24px;
-            color: var(--primary);
-            margin-bottom: 12px;
-        }
-        
-        .community-promise p {
-            margin: 0;
-            color: var(--text-primary);
-            font-size: 15px;
-            font-weight: 500;
-        }
-        
-        /* Popular Tags */
-        .popular-tags {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--primary-light);
-            border-radius: 12px;
-            border: 1px solid rgba(29, 161, 242, 0.2);
-        }
-        
-        .popular-tags-title {
-            font-size: 13px;
-            color: var(--primary);
-            margin-bottom: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .popular-tags-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .suggested-tag {
-            display: inline-block;
-            padding: 6px 14px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 13px;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-        
-        .suggested-tag:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        /* Support Goal Emphasis */
-        .support-reminder {
-            background: var(--primary-light);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: var(--text-primary);
-        }
-        
-        .support-reminder i {
-            color: var(--primary);
-            flex-shrink: 0;
-        }
-        
-        /* Heart icon in blue */
-        .heart-blue {
-            color: var(--primary);
-        }
-        
-        /* Close button */
-        .close-btn {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-        }
-        
-        .close-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Image Previews */
-        .image-previews-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-        
-        .image-preview-item {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px solid var(--border);
-        }
-        
-        .image-preview-item.main-preview {
-            border-color: var(--primary);
-            border-width: 3px;
-        }
-        
-        .image-preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .remove-image {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(220, 53, 69, 0.9);
-            color: white;
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .image-info {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px;
-            font-size: 11px;
-            text-align: center;
-        }
-        
-        .no-images {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 20px;
-            font-style: italic;
-        }
-        
-        /* Current Images Styling */
-        .current-images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
-        }
-        
-        .current-image-item {
-            position: relative;
-        }
-        
-        .current-image-wrapper {
-            position: relative;
-            overflow: hidden;
-            border-radius: 8px;
-        }
-        
-        .current-image-img {
-            width: 100%;
-            height: 120px;
-            object-fit: cover;
-        }
-        
-        .current-image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .current-image-wrapper:hover .current-image-overlay {
-            opacity: 1;
-        }
-        
-        .download-image-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        
-        /* Checkbox styling */
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-primary);
-        }
-        
-        .checkbox-helper {
-            display: block;
-            margin-top: 4px;
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-        
-        /* Animation for download feedback */
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-
-        /* ===== DARK MODE DESIGN ===== */
-.dark-mode {
-    /* Dark mode color palette */
-    --primary: #1da1f2;
-    --primary-dark: #1a91da;
-    --primary-light: rgba(29, 161, 242, 0.15);
-    --secondary: #0f172a;
-    --text-primary: #e2e8f0;
-    --text-secondary: #94a3b8;
-    --border: #334155;
-    --card-bg: #1e293b;
-    --success: #10b981;
-    --error: #ef4444;
-    --warning: #f59e0b;
-    --card-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --accent-gradient: linear-gradient(135deg, #1da1f2 0%, #1a8cd8 100%);
-}
-
-/* Dark mode welcome message */
-.dark-mode .welcome-message {
-    text-align: center;
-    margin-bottom: 24px;
-    padding: 24px;
-    background: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: var(--card-shadow);
-    border: 1px solid var(--border);
-    border-top: 4px solid var(--primary);
-}
-
-.dark-mode .welcome-message h2 {
-    margin: 0 0 8px 0;
-    color: var(--text-primary);
-    font-weight: 700;
-    font-size: 20px;
-}
-
-.dark-mode .welcome-message p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 15px;
-}
-
-/* Dark mode create card */
-.dark-mode .create-card {
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
-    margin-bottom: 24px;
-    border: 1px solid var(--border);
-}
-
-/* Card header (keep gradient for visual pop) */
-.dark-mode .card-header {
-    padding: 24px;
-    background: var(--accent-gradient);
-    color: white;
-    position: relative;
-}
-
-.dark-mode .paypal-status {
-    position: absolute;
-    right: 24px;
-    top: 24px;
-    background: rgba(255, 255, 255, 0.2);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    backdrop-filter: blur(8px);
-}
-
-/* Dark mode card body */
-.dark-mode .card-body {
-    padding: 32px;
-    background: var(--card-bg);
-}
-
-/* Dark mode form elements */
-.dark-mode .form-label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--text-primary);
-    font-size: 15px;
-}
-
-.dark-mode .form-input,
-.dark-mode .form-select,
-.dark-mode .form-textarea {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 15px;
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
-    box-sizing: border-box;
-    transition: var(--transition);
-}
-
-.dark-mode .form-input:focus,
-.dark-mode .form-select:focus,
-.dark-mode .form-textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2);
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.dark-mode .form-textarea {
-    min-height: 120px;
-    resize: vertical;
-    line-height: 1.5;
-}
-
-.dark-mode .form-helper {
-    color: var(--text-secondary);
-    font-size: 13px;
-    margin-top: 8px;
-    display: block;
-    font-style: normal;
-}
-
-/* Dark mode optional badge */
-.dark-mode .optional-badge {
-    display: inline-block;
-    background: var(--primary-light);
-    color: var(--primary);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    margin-left: 8px;
-}
-
-/* Dark mode file upload */
-.dark-mode .file-upload {
-    border: 2px dashed var(--border);
-    border-radius: 12px;
-    padding: 32px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.dark-mode .file-upload:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-}
-
-.dark-mode .file-upload i {
-    font-size: 28px;
-    color: var(--primary);
-    margin-bottom: 12px;
-}
-
-.dark-mode .file-upload-text {
-    font-size: 15px;
-    color: var(--text-primary);
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-/* Dark mode submit button */
-.dark-mode .submit-button {
-    background: var(--accent-gradient);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 16px 32px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 32px auto 0;
-    width: 100%;
-    box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3);
-}
-
-.dark-mode .submit-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(29, 161, 242, 0.4);
-}
-
-.dark-mode .submit-button:active {
-    transform: translateY(0);
-}
-
-/* Dark mode error container */
-.dark-mode .error-container {
-    background-color: rgba(239, 68, 68, 0.1);
-    border-left: 4px solid var(--error);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 24px;
-    color: #fca5a5;
-    font-size: 14px;
-}
-
-/* Dark mode form sections */
-.dark-mode .form-section {
-    margin-bottom: 28px;
-}
-
-.dark-mode .section-label {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--primary-light);
-}
-
-.dark-mode .section-icon {
-    width: 36px;
-    height: 36px;
-    background: var(--accent-gradient);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 12px;
-    color: white;
-}
-
-.dark-mode .section-label-text {
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--text-primary);
-}
-
-/* Dark mode emotional guidance */
-.dark-mode .emotional-guidance {
-    background: var(--primary-light);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0;
-    border: 1px solid rgba(29, 161, 242, 0.3);
-}
-
-.dark-mode .guidance-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    color: var(--primary);
-}
-
-.dark-mode .guidance-content {
-    color: var(--text-primary);
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-/* Dark mode community promise */
-.dark-mode .community-promise {
-    background: var(--primary-light);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0;
-    text-align: center;
-    border: 1px solid rgba(29, 161, 242, 0.3);
-}
-
-.dark-mode .community-promise i {
-    font-size: 24px;
-    color: var(--primary);
-    margin-bottom: 12px;
-}
-
-.dark-mode .community-promise p {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 15px;
-    font-weight: 500;
-}
-
-/* Dark mode popular tags */
-.dark-mode .popular-tags {
-    margin-top: 16px;
-    padding: 16px;
-    background: var(--primary-light);
-    border-radius: 12px;
-    border: 1px solid rgba(29, 161, 242, 0.3);
-}
-
-.dark-mode .popular-tags-title {
-    font-size: 13px;
-    color: var(--primary);
-    margin-bottom: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.dark-mode .suggested-tag {
-    display: inline-block;
-    padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    font-size: 13px;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 500;
-}
-
-.dark-mode .suggested-tag:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Dark mode support reminder */
-.dark-mode .support-reminder {
-    background: var(--primary-light);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--text-primary);
-}
-
-.dark-mode .support-reminder i {
-    color: var(--primary);
-    flex-shrink: 0;
-}
-
-/* Dark mode close button */
-.dark-mode .close-btn {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-}
-
-.dark-mode .close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-/* Dark mode image previews */
-.dark-mode .image-previews-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.dark-mode .image-preview-item {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 2px solid var(--border);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.dark-mode .image-preview-item.main-preview {
-    border-color: var(--primary);
-    border-width: 3px;
-}
-
-.dark-mode .image-preview-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: brightness(0.95);
-}
-
-.dark-mode .image-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 4px;
-    font-size: 11px;
-    text-align: center;
-}
-
-.dark-mode .no-images {
-    text-align: center;
-    color: var(--text-secondary);
-    padding: 20px;
-    font-style: italic;
-}
-
-/* Dark mode current images */
-.dark-mode .current-images-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    margin: 16px 0;
-}
-
-.dark-mode .current-image-wrapper {
-    position: relative;
-    overflow: hidden;
-    border-radius: 8px;
-    border: 2px solid var(--border);
-}
-
-.dark-mode .current-image-img {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    filter: brightness(0.95);
-}
-
-.dark-mode .current-image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.dark-mode .current-image-wrapper:hover .current-image-overlay {
-    opacity: 1;
-}
-
-.dark-mode .download-image-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-/* Dark mode checkbox */
-.dark-mode .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-primary);
-}
-
-.dark-mode .checkbox-helper {
-    display: block;
-    margin-top: 4px;
-    color: var(--text-secondary);
-    font-size: 12px;
-}
-
-/* Dark mode responsive adjustments */
-@media (max-width: 768px) {
-    .dark-mode .two-column {
-        grid-template-columns: 1fr;
-    }
-    
-    .dark-mode .create-wrapper {
-        padding: 16px 12px;
-    }
-    
-    .dark-mode .card-body {
-        padding: 24px;
-    }
-    
-    .dark-mode .card-header {
-        padding: 20px;
-    }
-    
-    .dark-mode .paypal-status {
-        position: static;
-        margin-top: 12px;
-        display: inline-block;
-    }
-}
-
-/* Dark mode specific enhancements */
-
-/* Selection styling */
-.dark-mode ::selection {
-    background: rgba(29, 161, 242, 0.3);
-    color: #ffffff;
-}
-
-/* Placeholder text */
-.dark-mode ::placeholder {
-    color: var(--text-secondary);
-    opacity: 0.7;
-}
-
-/* Scrollbar styling */
-.dark-mode ::-webkit-scrollbar {
-    width: 10px;
-}
-
-.dark-mode ::-webkit-scrollbar-track {
-    background: #1e293b;
-    border-radius: 4px;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 4px;
-    border: 2px solid #1e293b;
-}
-
-.dark-mode ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
-
-/* Focus outlines for accessibility */
-.dark-mode *:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-
-/* Disabled state styling */
-.dark-mode :disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Input range styling */
-.dark-mode input[type="range"] {
-    background: var(--border);
-}
-
-.dark-mode input[type="range"]::-webkit-slider-thumb {
-    background: var(--primary);
-}
-
-/* Heart icon styling */
-.dark-mode .heart-blue {
-    color: var(--primary);
-}
-
-/* Card subtitle */
-.dark-mode .card-subtitle {
-    margin: 8px 0 0 0;
-    font-size: 15px;
-    opacity: 0.95;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-/* Card header h1 icon */
-.dark-mode .card-header h1 i {
-    font-size: 22px;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-/* Remove image button */
-.dark-mode .remove-image {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(220, 53, 69, 0.9);
-    color: white;
-    border: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Pulse animation for submit button */
-@keyframes pulse-blue-dark {
-    0% { box-shadow: 0 0 0 0 rgba(29, 161, 242, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(29, 161, 242, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(29, 161, 242, 0); }
-}
-
-.dark-mode .submit-button:hover {
-    animation: pulse-blue-dark 2s infinite;
-}
-
-/* Two column layout adjustment */
-.dark-mode .two-column {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
     </style>
 </head>
 
 <body>
-    
-<div class="create-wrapper">
-    <div class="create-container">
-        
-        <!-- Welcome Message - UPDATED CONTENT -->
-        <div class="welcome-message">
-            <h2>Refresh and update your cause</h2>
-            <p>This is where you update your cause content, refresh your message, and keep everything current.</p>
-        </div>
-        
-        <!-- Progress Indicator - UPDATED CONTENT -->
-        <div class="progress-bar">
-            <div class="progress-fill" id="formProgress"></div>
-            <div class="progress-text" id="progressText">Update your cause</div>
-        </div>
-        
-        <!-- Main Form Card -->
-        <div class="create-card">
-            <div class="card-header">
-                <div>
-                    <!-- UPDATED CONTENT -->
-                    <h1>
-                        <i class="fas fa-sync-alt heart-blue"></i>
-                        Update Your Cause
-                    </h1>
-                    <p class="card-subtitle">Refresh your content, update your details, and keep everything current</p>
-                </div>
-                
-                <div class="paypal-status">
-                    {% if not user_profile.has_paypal %}
-                        <a href="{% url 'edit_profile' username=user_profile.user.username %}" style="color: white; text-decoration: underline;">
-                            <i class="fas fa-plus-circle"></i> Add PayPal to receive support
-                        </a>
-                    {% else %}
-                        <span>
-                            <i class="fas fa-check-circle"></i> Ready to receive support
-                        </span>
-                    {% endif %}
-                </div>
-                
-                <button class="close-btn" onclick="window.history.back()">&times;</button>
+    <div class="create-wrapper">
+        <div class="create-container">
+
+            <!-- Header -->
+            <div class="create-header">
+                <h1>Edit Campaign</h1>
+                <p>Update your campaign to keep your supporters informed.</p>
             </div>
 
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data" id="campaignForm">
-                    {% csrf_token %}
+            <!-- Main form -->
+            <form method="post" enctype="multipart/form-data" id="campaignForm">
+                {% csrf_token %}
+                
+                <!-- Hidden field to track existing images -->
+                <input type="hidden" name="existing_images_data" id="existingImagesData" 
+                       value="{{ existing_images_json|default:'[]' }}">
+
+                <!-- Error Display -->
+                {% if form.errors %}
+                <div class="error-container">
+                    <strong>Let's fix a few things:</strong>
+                    <ul>
+                        {% for field in form %}
+                        {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Current Images Section -->
+                {% if existing_images %}
+                <div class="existing-images-section">
+                    <h3>Current Images</h3>
+                    <p class="form-helper">Check images you want to remove. Unchecked images will be kept automatically.</p>
                     
-                    {% if form.errors %}
-                        <div class="error-container">
-                            <strong>Let's fix these together:</strong>
-                            <ul>
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li>{{ field.label }}: {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
+                    <!-- Warning note -->
+                    <div class="warning-note">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>
+                            <strong>Important:</strong> Images will only be removed if you check them below. 
+                            Leaving them unchecked means they'll stay in your campaign.
                         </div>
+                    </div>
+
+                    <!-- Main Poster Checkbox (REMOVE OPTION) -->
+                    {% if existing_campaign.poster %}
+                    <div class="checkbox-group remove-option">
+                        <input type="checkbox" id="remove_current_poster" name="remove_current_poster">
+                        <label for="remove_current_poster">
+                            <i class="fas fa-trash-alt"></i> Remove current main image
+                        </label>
+                    </div>
                     {% endif %}
+
+                    <!-- Images Grid -->
+                    <div class="images-grid">
+                        {% for image in existing_images %}
+                        <div class="image-item {% if image.is_main %}main-image{% endif %}" 
+                             id="existing-image-{{ image.index }}">
+                            <img src="{{ image.url }}" alt="Campaign image {{ image.index }}"
+                                onerror="this.src='{% static 'images/default-campaign.png' %}'">
+                            <div class="image-label">
+                                {% if image.is_main %}Main Image{% else %}Slide {{ image.index }}{% endif %}
+                            </div>
+                            {% if not image.is_main %}
+                            <div class="image-controls">
+                                <input type="checkbox" 
+                                       id="remove_existing_image_{{ image.index }}" 
+                                       name="remove_existing_image_{{ image.index }}" 
+                                       class="remove-checkbox"
+                                       data-index="{{ image.index }}">
+                                <label for="remove_existing_image_{{ image.index }}" class="remove-label">
+                                    Remove
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Remove All Additional Images Checkbox -->
+                    {% if has_additional_images %}
+                    <div class="checkbox-group remove-option" style="margin-top: 20px;">
+                        <input type="checkbox" id="remove_all_additional" name="remove_all_additional">
+                        <label for="remove_all_additional">
+                            <i class="fas fa-trash-alt"></i> Remove all additional images
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Current Audio Section -->
+                {% if has_audio and existing_campaign.audio %}
+                <div class="existing-images-section current-audio-section">
+                    <h3>Current Audio</h3>
+                    <p class="form-helper">Your campaign currently has audio. Upload a new file to replace it or check below to remove.</p>
                     
-                    <!-- SECTION: REFRESH YOUR HEART - UPDATED CONTENT -->
-                    <div class="section-label">
-                        <div class="section-icon"><i class="fas fa-edit"></i></div>
-                        <div class="section-label-text">Update Your Cause Content</div>
+                    <!-- Audio removal checkbox -->
+                    <div class="checkbox-group remove-option" style="margin-bottom: 16px;">
+                        <input type="checkbox" id="remove_current_audio" name="remove_current_audio">
+                        <label for="remove_current_audio">
+                            <i class="fas fa-trash-alt"></i> Remove current audio
+                        </label>
                     </div>
                     
-                    <!-- Emotional Guidance for Updates - UPDATED CONTENT -->
-                    <div class="emotional-guidance">
-                        <div class="guidance-header">
-                            <i class="fas fa-sync"></i>
-                            <strong>Keep your cause content fresh and current</strong>
-                        </div>
-                        <div class="guidance-content">
-                            Update your cause details to reflect where things are today. Current information helps supporters stay connected.
+                    <div class="audio-player-container" id="currentAudioContainer">
+                        <audio controls>
+                            <source src="{{ existing_campaign.audio }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <div style="margin-top: 8px; font-size: 14px; color: var(--text-secondary); text-align: center;">
+                            Current audio file
                         </div>
                     </div>
-                    
-                    <!-- Title - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">Update cause title</label>
-                        <input type="text"
-                               name="title"
-                               class="form-input"
-                               placeholder="Update or refine your cause title"
-                               required
+                </div>
+                {% endif %}
+
+                <!-- Core Form -->
+                <div class="core-form">
+                    <!-- Title -->
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
+                        <input type="text" 
+                               name="title" 
+                               class="form-input" 
+                               placeholder="What are you trying to change?"
+                               required 
                                value="{{ form.title.value|default:existing_campaign.title }}">
-                        <span class="form-helper">
-                            Keep it current and relevant to your updated cause
-                        </span>
+                        <span class="form-helper">Make it clear and compelling</span>
                     </div>
-                    
-                    <!-- Description - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">Update your cause description</label>
-                        <textarea name="content"
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label class="form-label">What's going on?</label>
+                        <textarea name="content" 
                                   class="form-textarea"
-                                  placeholder="Update your cause description to reflect current details"
+                                  placeholder="Tell people what's happening and what you're trying to do."
                                   required>{{ form.content.value|default:existing_campaign.content }}</textarea>
-                        <span class="form-helper">
-                            Update the details to keep your cause information current
-                        </span>
+                        <span class="form-helper">Share your story and goals</span>
                     </div>
-                    
-                    <!-- SECTION: VISUAL VOICE UPDATE - UPDATED CONTENT -->
-                    <div class="section-label">
-                        <div class="section-icon"><i class="fas fa-images"></i></div>
-                        <div class="section-label-text">Update Visuals & Media</div>
+
+                    <!-- Category -->
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select" required>
+                            {% for category in categories %}
+                            <option value="{{ category.0 }}"
+                                {% if form.category.value|default:existing_campaign.category == category.0 %}selected{% endif %}>
+                                {{ category.1 }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <span class="form-helper">Helps people find your cause</span>
                     </div>
-                    
-                    <!-- Current Images Section - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">Update cause images <span class="optional-badge">Optional</span></label>
-                        
-                        <!-- Important Information Banner - UPDATED CONTENT -->
-                        <div class="emotional-guidance" style="background: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.3);">
-                            <div class="guidance-header">
-                                <i class="fas fa-download" style="color: #ffc107;"></i>
-                                <strong>Save current images before updating</strong>
-                            </div>
-                            <div class="guidance-content">
-                                Download any current images you want to keep before uploading updated versions.
-                            </div>
-                        </div>
-                        
-                        <!-- Current Poster Display -->
-                        {% if existing_campaign.poster %}
-                        <div class="existing-poster-section" style="margin: 20px 0;">
-                            <div class="community-promise" style="background: rgba(29, 161, 242, 0.1); margin: 0; text-align: left;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <i class="fas fa-image" style="color: var(--primary); flex-shrink: 0;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">
-                                            Current main image
-                                        </div>
-                                        <div style="color: var(--text-secondary); font-size: 14px;">
-                                            This is your current cause image
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="current-poster-display" style="margin-top: 12px;">
-                                <div class="current-poster-container" style="display: flex; gap: 16px; align-items: center; background: var(--primary-light); padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
-                                    <img src="{{ existing_campaign.poster.url }}" 
-                                         alt="Current main image" 
-                                         class="current-poster-img" 
-                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                    <div class="current-poster-info" style="flex: 1;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                            <span style="color: var(--text-primary); font-weight: 500;">Current cause image</span>
-                                            <button type="button" 
-                                                    class="suggested-tag" 
-                                                    onclick="downloadImage('{{ existing_campaign.poster.url }}', 'main_poster.jpg')"
-                                                    style="background: white; border: 1px solid var(--primary); color: var(--primary);">
-                                                <i class="fas fa-download"></i> Save image
-                                            </button>
-                                        </div>
-                                        <div class="keep-poster-option">
-                                            <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; color: var(--text-primary);">
-                                                <input type="checkbox" 
-                                                       name="keep_current_poster" 
-                                                       id="keep_current_poster" 
-                                                       checked
-                                                       onchange="togglePosterUpload(this)"
-                                                       style="width: 16px; height: 16px; accent-color: var(--primary);">
-                                                Keep this as main image
-                                            </label>
-                                            <small class="checkbox-helper" style="display: block; margin-top: 4px; color: var(--text-secondary); font-size: 12px;">
-                                                Uncheck to upload an updated main image
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- New Poster Upload (hidden if keeping current) -->
-                        <div class="upload-group" id="newPosterUpload" {% if existing_campaign.poster %}style="display: none;"{% endif %}>
-                            <div class="file-upload">
-                                <label for="id_poster">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <div class="file-upload-text">Upload updated main image</div>
-                                    <span class="form-helper">Refresh your cause with an updated main image</span>
-                                </label>
-                                <input type="file" name="poster" id="id_poster" accept="image/*" style="display: none;">
-                            </div>
-                            <div id="mainPosterPreview" class="preview-container"></div>
-                        </div>
-                        
-                        <!-- Current Additional Images -->
-                        {% if existing_campaign.additional_images.exists %}
-                        <div class="existing-images-section" style="margin: 28px 0;">
-                            <div style="background: var(--primary-light); padding: 16px; border-radius: 12px; border: 1px solid rgba(29, 161, 242, 0.2); margin-bottom: 16px;">
-                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                    <i class="fas fa-images" style="color: var(--primary);"></i>
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--text-primary);">Current cause images</div>
-                                        <div style="color: var(--text-secondary); font-size: 14px;">These are your current cause images</div>
-                                    </div>
-                                </div>
-                                
-                                <button type="button" 
-                                        class="suggested-tag" 
-                                        onclick="downloadAllAdditionalImages()"
-                                        style="background: var(--primary); color: white; border: none; padding: 8px 16px; display: inline-flex; align-items: center; gap: 8px;">
-                                    <i class="fas fa-download"></i> Save all current images
-                                </button>
-                            </div>
-                            
-                            <div class="current-images-grid">
-                                {% for image in existing_campaign.additional_images.all %}
-                                {% if not forloop.first or existing_campaign.additional_images.count > 1 %}
-                                <div class="current-image-item">
-                                    <div class="current-image-wrapper">
-                                        <img src="{{ image.image.url }}" 
-                                             alt="Cause image {{ forloop.counter }}" 
-                                             class="current-image-img"
-                                             data-image-url="{{ image.image.url }}"
-                                             data-image-index="{{ forloop.counter0 }}">
-                                        <div class="current-image-overlay">
-                                            <button type="button" 
-                                                    class="download-image-btn"
-                                                    onclick="downloadImage('{{ image.image.url }}', 'cause_image_{{ forloop.counter0 }}.jpg')">
-                                                <i class="fas fa-download"></i>
-                                                <span>Save</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="image-number" style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Image {{ forloop.counter }}</div>
-                                </div>
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                            
-                            <div style="background: var(--primary-light); padding: 12px; border-radius: 8px; margin-top: 16px; border: 1px dashed rgba(29, 161, 242, 0.3);">
-                                <div style="display: flex; align-items: flex-start; gap: 8px; color: var(--text-secondary); font-size: 14px;">
-                                    <i class="fas fa-info-circle" style="color: var(--primary); flex-shrink: 0;"></i>
-                                    <span>After saving images, upload updated versions to refresh your cause</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Additional Images Upload - UPDATED CONTENT -->
-                        <div class="upload-group" style="margin-top: 24px;">
-                            <label class="form-label">
-                                Add updated images <span class="optional-badge">Optional</span>
-                            </label>
-                            
-                            <div class="file-upload" style="margin-top: 12px;">
-                                <label for="id_additional_images">
-                                    <i class="fas fa-plus-circle"></i>
-                                    <div class="file-upload-text">Upload updated images</div>
-                                    <span class="form-helper">Add new or updated images for your refreshed cause</span>
-                                    <div style="margin-top: 12px; color: var(--text-secondary); font-size: 13px; background: rgba(29, 161, 242, 0.1); padding: 8px 12px; border-radius: 6px;">
-                                        <i class="fas fa-sync-alt" style="margin-right: 6px;"></i>
-                                        New uploads will update your cause's image collection
-                                    </div>
-                                </label>
-                                <input type="file" name="additional_images" id="id_additional_images" 
-                                       multiple accept="image/png, image/jpeg, image/gif, image/webp" 
+                </div>
+
+                <!-- Optional Section -->
+                <div class="optional-section">
+                    <div class="optional-header" id="optionalToggle">
+                        <h3>▸ Update media & details (optional)</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+
+                    <div class="optional-content" id="optionalContent">
+                        <!-- New Main Image -->
+                        <div class="optional-field">
+                            <label class="form-label">Upload New Main Image</label>
+                            <div class="file-upload" id="mainImageUpload">
+                                <i class="fas fa-image"></i>
+                                <div class="file-upload-text">Choose a new main image</div>
+                                <span class="file-upload-helper">
+                                    {% if existing_campaign.poster %}
+                                    Will replace current main image unless you checked "Remove current main image"
+                                    {% else %}
+                                    Add a main image to your campaign
+                                    {% endif %}
+                                </span>
+                                <input type="file" 
+                                       name="poster" 
+                                       id="id_poster" 
+                                       accept="image/*" 
                                        style="display: none;">
                             </div>
-                            <div id="additionalPreviews" class="image-previews-grid"></div>
+                            <div id="mainPosterPreview" class="new-images-preview"></div>
                         </div>
-                    </div>
-                    
-                    <!-- SOUND UPDATE - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Update cause audio <span class="optional-badge">Optional</span>
-                        </label>
-                        
-                        <div class="emotional-guidance">
-                            <div class="guidance-header">
+
+                        <!-- Additional Images -->
+                        <div class="optional-field">
+                            <label class="form-label">Add More Images</label>
+                            <div class="file-upload" id="additionalImagesUpload">
+                                <i class="fas fa-layer-group"></i>
+                                <div class="file-upload-text">Add new images to slideshow</div>
+                                <span class="file-upload-helper">
+                                    Select multiple images (up to 4 total with existing)
+                                </span>
+                                <input type="file" 
+                                       name="additional_images" 
+                                       id="id_additional_images" 
+                                       accept="image/*" 
+                                       multiple 
+                                       style="display: none;">
+                            </div>
+                            <div id="additionalPreviews" class="new-images-preview"></div>
+                        </div>
+
+                        <!-- New Audio -->
+                        <div class="optional-field">
+                            <label class="form-label">{% if has_audio %}Replace{% else %}Add{% endif %} Audio</label>
+                            <div class="file-upload" id="audioUpload">
                                 <i class="fas fa-music"></i>
-                                <strong>Update your cause's audio</strong>
-                            </div>
-                            <div class="guidance-content">
-                                Update the audio to refresh the atmosphere of your cause.
-                            </div>
-                        </div>
-                        
-                        <!-- Current Audio Display -->
-                        {% if existing_campaign.audio %}
-                        <div style="background: var(--primary-light); padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(29, 161, 242, 0.2);">
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                <i class="fas fa-volume-up" style="color: var(--primary);"></i>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 600; color: var(--text-primary);">Current audio</div>
-                                    <audio controls style="width: 100%; margin-top: 8px;">
-                                        <source src="{{ existing_campaign.audio.url }}" type="audio/mpeg">
-                                        Your browser does not support the audio element.
-                                    </audio>
+                                <div class="file-upload-text">
+                                    {% if has_audio %}Upload new audio file{% else %}Add audio to your campaign{% endif %}
                                 </div>
+                                <span class="file-upload-helper">
+                                    Supported formats: MP3, WAV, OGG
+                                </span>
+                                <input type="file" 
+                                       name="audio" 
+                                       id="id_audio" 
+                                       accept="audio/*" 
+                                       style="display: none;">
                             </div>
-                            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px;">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Upload new audio to update your cause's sound</span>
-                            </div>
+                            <div id="audioPreview" class="new-images-preview"></div>
                         </div>
-                        {% endif %}
-                        
-                        <!-- File Upload Area - UPDATED CONTENT -->
-                        <div class="file-upload">
-                            <label for="id_audio">
-                                <i class="fas fa-wave-square"></i>
-                                <div class="file-upload-text">Update your cause's audio</div>
-                                <span class="form-helper">Upload updated audio to refresh your cause's atmosphere (MP3, WAV, or OGG, max 10MB)</span>
-                            </label>
-                            <input type="file" id="id_audio" name="audio" 
-                                   accept="audio/mpeg, audio/wav, audio/ogg" 
-                                   style="display: none;">
-                        </div>
-                        <div id="audioPreview" class="preview-container"></div>
-                    </div>
-                    
-                    <!-- SECTION: REFINE YOUR HOME - UPDATED CONTENT -->
-                    <div class="section-label">
-                        <div class="section-icon"><i class="fas fa-cog"></i></div>
-                        <div class="section-label-text">Update Settings</div>
-                    </div>
-                    
-                    <div class="community-promise">
-                        <i class="fas fa-users"></i>
-                        <p>Update your settings to keep everything current</p>
-                    </div>
-                    
-                    <!-- Category & Visibility - UPDATED CONTENT -->
-                    <div class="two-column">
-                        <div class="form-section">
-                            <label class="form-label">Update category</label>
-                            <select name="category" class="form-select">
-                                {% for category in categories %}
-                                    <option value="{{ category.0 }}"
-                                        {% if form.category.value|default:existing_campaign.category == category.0 %}selected{% endif %}>
-                                        {{ category.1 }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <span class="form-helper">Update the category if needed</span>
-                        </div>
-                        
-                        <div class="form-section">
-                            <label class="form-label">Update visibility</label>
-                            <select name="visibility" class="form-select">
-                                <option value="public" {% if form.visibility.value|default:existing_campaign.visibility == "public" %}selected{% endif %}>Anyone (public)</option>
-                                <option value="private" {% if form.visibility.value|default:existing_campaign.visibility == "private" %}selected{% endif %}>Only people I choose</option>
-                            </select>
-                            <span class="form-helper">Update who can see your refreshed cause</span>
-                        </div>
-                    </div>
-                    
-                    <!-- TAGS - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">Update tags <span class="optional-badge">Optional</span></label>
-                        <input type="text"
-                               name="tags_input"
-                               id="id_tags_input"
-                               class="form-input"
-                               placeholder="Update or add tags for your refreshed cause"
-                               value="{% if existing_campaign.tags.all %}{% for tag in existing_campaign.tags.all %}{% if not forloop.first %}, {% endif %}{{ tag.name }}{% endfor %}{% endif %}">
-                        <span class="form-helper">
-                            Update tags to keep your cause discoverable
-                        </span>
-                        
-                        <!-- Popular Tags - UPDATED CONTENT -->
-                        <div class="popular-tags">
-                            <div class="popular-tags-title">Common update tags:</div>
-                            <div class="popular-tags-list">
-                                <span class="suggested-tag" data-tag="updated">updated</span>
-                                <span class="suggested-tag" data-tag="refresh">refresh</span>
-                                <span class="suggested-tag" data-tag="renewed">renewed</span>
-                                <span class="suggested-tag" data-tag="current">current</span>
-                                <span class="suggested-tag" data-tag="fresh">fresh</span>
-                                <span class="suggested-tag" data-tag="community">community</span>
-                                <span class="suggested-tag" data-tag="support">support</span>
-                                <span class="suggested-tag" data-tag="active">active</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- DURATION - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Update timeframe <span class="optional-badge">Optional</span>
-                        </label>
+
+                        <!-- Visibility & Tags -->
                         <div class="two-column">
-                            <div>
-                                <input type="number"
-                                       name="duration"
+                            <div class="optional-field">
+                                <label class="form-label">Visibility</label>
+                                <select name="visibility" class="form-select">
+                                    <option value="public"
+                                        {% if form.visibility.value|default:existing_campaign.visibility == 'public' %}selected{% endif %}>
+                                        Public (Everyone can see)
+                                    </option>
+                                    <option value="private"
+                                        {% if form.visibility.value|default:existing_campaign.visibility == 'private' %}selected{% endif %}>
+                                        Private (Invite only)
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="optional-field">
+                                <label class="form-label">Tags</label>
+                                <input type="text" 
+                                       name="tags_input" 
                                        class="form-input"
+                                       placeholder="environment, education, health..."
+                                       value="{{ form.tags_input.value|default:'' }}">
+                                <span class="form-helper">Separate with commas</span>
+                            </div>
+                        </div>
+
+                        <!-- Timeframe -->
+                        <div class="optional-field">
+                            <label class="form-label">Timeframe</label>
+                            <div class="two-column">
+                                <input type="number" 
+                                       name="duration" 
+                                       class="form-input" 
                                        min="1"
                                        placeholder="e.g. 30"
                                        value="{{ form.duration.value|default:existing_campaign.duration }}">
-                            </div>
-                            <div>
                                 <select name="duration_unit" class="form-select">
-                                    <option value="" {% if not existing_campaign.duration_unit %}selected{% endif %}>No limit</option>
-                                    <option value="days" {% if existing_campaign.duration_unit == "days" %}selected{% endif %}>Days</option>
-                                    <option value="weeks" {% if existing_campaign.duration_unit == "weeks" %}selected{% endif %}>Weeks</option>
+                                    <option value=""
+                                        {% if not existing_campaign.duration_unit %}selected{% endif %}>
+                                        No limit
+                                    </option>
+                                    <option value="days"
+                                        {% if existing_campaign.duration_unit == 'days' %}selected{% endif %}>
+                                        Days
+                                    </option>
+                                    <option value="weeks"
+                                        {% if existing_campaign.duration_unit == 'weeks' %}selected{% endif %}>
+                                        Weeks
+                                    </option>
                                 </select>
                             </div>
+                            <span class="form-helper">Leave empty for ongoing campaigns</span>
                         </div>
-                        <span class="form-helper">
-                            Update the timeframe for your refreshed cause
-                        </span>
-                    </div>
-                    
-                    <!-- SUPPORT GOAL UPDATE - UPDATED CONTENT -->
-                    <div class="form-section">
-                        <label class="form-label">
-                            Update support goal <span class="optional-badge">Optional</span>
-                        </label>
-                        <input type="number"
-                               name="funding_goal"
-                               class="form-input"
-                               min="0"
-                               step="0.01"
-                               placeholder="0.00"
-                               value="{{ form.funding_goal.value|default:existing_campaign.funding_goal }}">
-                        <span class="form-helper">
-                            Update your funding goal if needed
-                        </span>
-                        
-                        <div class="support-reminder">
-                            <i class="fas fa-hands-helping"></i>
-                            <div>Keeping your cause updated helps maintain supporter engagement</div>
+
+                        <!-- Funding Goal -->
+                        <div class="optional-field">
+                            <label class="form-label">Funding Goal</label>
+                            <input type="number" 
+                                   name="funding_goal" 
+                                   class="form-input" 
+                                   min="0" 
+                                   step="0.01"
+                                   placeholder="0.00"
+                                   value="{{ form.funding_goal.value|default:existing_campaign.funding_goal }}">
+                            <span class="form-helper">Set to 0 for non-fundraising campaigns</span>
                         </div>
                     </div>
-                    
-                    <!-- FINAL SUBMIT - UPDATED CONTENT -->
-                    <button type="submit" class="submit-button">
-                        <i class="fas fa-sync-alt"></i> Update & Refresh Cause
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="publish-section">
+                    <button type="button" class="cancel-button"
+                        onclick="window.location.href='{% url 'view_campaign' campaign_id=existing_campaign.id %}'">
+                        <i class="fas fa-times"></i> Cancel
                     </button>
-                    
-                    <!-- Final Encouragement - UPDATED CONTENT -->
-                    <div style="text-align: center; margin-top: 24px; color: var(--text-secondary); font-size: 14px;">
-                        <i class="fas fa-sync-alt" style="margin-right: 8px;"></i>
-                        Regular updates keep your cause fresh and engaging
-                    </div>
-                </form>
-            </div>
+                    <button type="submit" class="publish-button">
+                        <i class="fas fa-save"></i> Update Campaign
+                    </button>
+                    <span class="reassurance-text">Your supporters will see the changes immediately</span>
+                </div>
+            </form>
         </div>
     </div>
-</div>
-
-    <!-- Hidden container for file inputs -->
-    <div id="hiddenFileInputsContainer" style="display: none;"></div>
 
     <script>
-        // ===== CRITICAL FIX: Add multiple attribute to file input =====
-        document.addEventListener('DOMContentLoaded', function() {
-            const additionalInput = document.getElementById('id_additional_images');
+        // Toggle optional section
+        document.getElementById('optionalToggle').addEventListener('click', function () {
+            const content = document.getElementById('optionalContent');
+            content.classList.toggle('expanded');
+            this.classList.toggle('expanded');
             
-            if (additionalInput) {
-                // Add multiple attribute for selecting multiple files
-                additionalInput.setAttribute('multiple', true);
-                additionalInput.multiple = true;
-                
-                // Add accept attribute for images only
-                additionalInput.setAttribute('accept', 'image/png, image/jpeg, image/gif, image/webp');
+            if (content.classList.contains('expanded')) {
+                this.querySelector('h3').innerHTML = '▾ Update media & details (optional)';
+            } else {
+                this.querySelector('h3').innerHTML = '▸ Update media & details (optional)';
             }
-            
-            // Initialize tag suggestions
-            initializeTagSuggestions();
-            
-            // Initialize form handlers
-            initializeFormHandlers();
-            
-            // Initialize poster preview
-            initializePosterPreview();
-            
-            // Initialize additional images preview
-            initializeAdditionalImages();
         });
-        
-       
-        // ===== IMAGE UPLOAD AND PREVIEW =====
-        let additionalImages = [];
-        let mainImage = null;
-        
-        function initializePosterPreview() {
-            const posterInput = document.getElementById('id_poster');
-            if (posterInput) {
-                posterInput.addEventListener('change', previewMainImage);
-            }
-        }
-        
-        function initializeAdditionalImages() {
-            const additionalInput = document.getElementById('id_additional_images');
-            if (additionalInput) {
-                additionalInput.addEventListener('change', previewAdditionalImages);
-            }
-        }
-        
+
+        // Image preview functionality
         function previewMainImage(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    mainImage = {
-                        url: e.target.result,
-                        file: file,
-                        isMain: true,
-                        inputName: 'poster'
-                    };
-                    
+                reader.onload = function (e) {
                     const preview = document.getElementById('mainPosterPreview');
                     preview.innerHTML = `
-                        <div class="image-preview-item main-preview">
-                            <img src="${e.target.result}" alt="Main poster">
-                            <div class="image-info">
-                                <i class="fas fa-star"></i> New Main Poster
+                        <span class="preview-label">New main image preview:</span>
+                        <div class="images-grid">
+                            <div class="image-item main-image">
+                                <img src="${e.target.result}" alt="New main image">
+                                <div class="image-label">New Main</div>
                             </div>
                         </div>
                     `;
+                    
+                    // If user uploads new main image, automatically uncheck "remove current"
+                    const removeMainCheckbox = document.getElementById('remove_current_poster');
+                    if (removeMainCheckbox) {
+                        removeMainCheckbox.checked = false;
+                        const mainImage = document.querySelector('.image-item.main-image');
+                        if (mainImage) {
+                            mainImage.classList.remove('marked-for-removal');
+                        }
+                    }
                 };
                 reader.readAsDataURL(file);
             }
         }
-        
+
         function previewAdditionalImages(event) {
             const files = Array.from(event.target.files);
             const previewContainer = document.getElementById('additionalPreviews');
+            previewContainer.innerHTML = '<span class="preview-label">New additional images preview:</span>';
             
-            // Filter out any existing files and limit to 4
-            const newFiles = files.slice(0, 4 - additionalImages.length);
+            const grid = document.createElement('div');
+            grid.className = 'images-grid';
             
-            newFiles.forEach((file, index) => {
+            files.slice(0, 4).forEach((file, index) => {
                 const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const imageData = {
-                        url: e.target.result,
-                        file: file,
-                        isMain: false,
-                        id: Date.now() + index,
-                        inputName: `additional_images_${Date.now() + index}`
-                    };
-                    
-                    additionalImages.push(imageData);
-                    renderImagePreviews();
+                reader.onload = function (e) {
+                    const div = document.createElement('div');
+                    div.className = 'image-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="Additional image ${index + 1}">
+                        <div class="image-label">New Slide ${index + 1}</div>
+                    `;
+                    grid.appendChild(div);
                 };
-                
                 reader.readAsDataURL(file);
             });
             
-            // Reset file input to allow adding more images
-            event.target.value = '';
-        }
-        
-        function renderImagePreviews() {
-            const previewContainer = document.getElementById('additionalPreviews');
+            previewContainer.appendChild(grid);
             
-            previewContainer.innerHTML = '';
-            
-            if (additionalImages.length === 0) {
-                previewContainer.innerHTML = '<div class="no-images">No new images added yet</div>';
-                return;
+            // If user uploads new images, uncheck "remove all"
+            const removeAllCheckbox = document.getElementById('remove_all_additional');
+            if (removeAllCheckbox) {
+                removeAllCheckbox.checked = false;
+                removeAllCheckbox.indeterminate = false;
             }
-            
-            additionalImages.forEach((image, index) => {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'image-preview-item';
-                previewItem.innerHTML = `
-                    <img src="${image.url}" alt="Additional image ${index + 1}">
-                    <button type="button" class="remove-image" onclick="removeImage(${image.id})" title="Remove image">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    <div class="image-info">
-                        <i class="fas fa-layer-group"></i> New Image ${index + 1}
+        }
+
+        // Audio preview
+        function previewAudio(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const preview = document.getElementById('audioPreview');
+                const url = URL.createObjectURL(file);
+                preview.innerHTML = `
+                    <span class="preview-label">Audio preview:</span>
+                    <div class="audio-player-container">
+                        <audio controls src="${url}"></audio>
+                        <div style="margin-top: 8px; font-size: 14px; color: var(--text-secondary)">
+                            <i class="fas fa-check-circle"></i> ${file.name}
+                            <br><small>Size: ${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                        </div>
                     </div>
                 `;
-                previewContainer.appendChild(previewItem);
+                
+                // When user uploads new audio, automatically uncheck "remove current audio"
+                const removeAudioCheckbox = document.getElementById('remove_current_audio');
+                if (removeAudioCheckbox) {
+                    removeAudioCheckbox.checked = false;
+                    const audioContainer = document.getElementById('currentAudioContainer');
+                    if (audioContainer) {
+                        audioContainer.classList.remove('marked-for-removal');
+                    }
+                }
+            }
+        }
+
+        // Setup image removal logic
+        function setupImageRemovalLogic() {
+            // Main poster removal
+            const removeMainPoster = document.getElementById('remove_current_poster');
+            if (removeMainPoster) {
+                removeMainPoster.addEventListener('change', function() {
+                    const mainImage = document.querySelector('.image-item.main-image');
+                    if (mainImage) {
+                        mainImage.classList.toggle('marked-for-removal', this.checked);
+                    }
+                });
+            }
+            
+            // Additional images removal
+            const removeCheckboxes = document.querySelectorAll('.remove-checkbox');
+            removeCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const index = this.getAttribute('data-index');
+                    const imageDiv = document.getElementById(`existing-image-${index}`);
+                    if (imageDiv) {
+                        imageDiv.classList.toggle('marked-for-removal', this.checked);
+                    }
+                    updateRemoveAllCheckbox();
+                });
             });
+            
+            // "Remove all additional" checkbox
+            const removeAllAdditional = document.getElementById('remove_all_additional');
+            if (removeAllAdditional && removeCheckboxes.length > 0) {
+                removeAllAdditional.addEventListener('change', function() {
+                    removeCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                        const index = checkbox.getAttribute('data-index');
+                        const imageDiv = document.getElementById(`existing-image-${index}`);
+                        if (imageDiv) {
+                            imageDiv.classList.toggle('marked-for-removal', this.checked);
+                        }
+                    });
+                });
+                
+                // Update "remove all" checkbox state
+                function updateRemoveAllCheckbox() {
+                    const allChecked = Array.from(removeCheckboxes).every(cb => cb.checked);
+                    const someChecked = Array.from(removeCheckboxes).some(cb => cb.checked);
+                    
+                    removeAllAdditional.checked = allChecked;
+                    removeAllAdditional.indeterminate = someChecked && !allChecked;
+                }
+                
+                // Initialize
+                updateRemoveAllCheckbox();
+            }
+            
+            // Audio removal logic
+            const removeAudioCheckbox = document.getElementById('remove_current_audio');
+            if (removeAudioCheckbox) {
+                removeAudioCheckbox.addEventListener('change', function() {
+                    const audioContainer = document.getElementById('currentAudioContainer');
+                    if (audioContainer) {
+                        audioContainer.classList.toggle('marked-for-removal', this.checked);
+                    }
+                });
+            }
         }
         
-        function removeImage(imageId) {
-            additionalImages = additionalImages.filter(img => img.id !== imageId);
-            renderImagePreviews();
+        // Audio validation
+        function validateAudioFile(file) {
+            const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'];
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a valid audio file (MP3, WAV, or OGG)');
+                return false;
+            }
+            
+            if (file.size > maxSize) {
+                alert('Audio file is too large. Maximum size is 50MB.');
+                return false;
+            }
+            
+            return true;
         }
         
-        // ===== AUDIO PREVIEW =====
-        function initializeAudioPreview() {
+        // Form validation
+        function validateForm(event) {
+            const audioInput = document.getElementById('id_audio');
+            const removeAudioCheckbox = document.getElementById('remove_current_audio');
+            
+            // Check audio file if uploaded
+            if (audioInput.files.length > 0) {
+                const audioFile = audioInput.files[0];
+                if (!validateAudioFile(audioFile)) {
+                    audioInput.value = '';
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            
+            // Confirm if removing audio without uploading new
+            if (removeAudioCheckbox && removeAudioCheckbox.checked && 
+                (!audioInput || audioInput.files.length === 0)) {
+                if (!confirm("You're removing the current audio without uploading a new one. Continue?")) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            
+            // Confirm if removing all images without uploading new ones
+            const removeMain = document.getElementById('remove_current_poster');
+            const removeAllAdditional = document.getElementById('remove_all_additional');
+            const newPoster = document.getElementById('id_poster').files.length;
+            const newAdditional = document.getElementById('id_additional_images').files.length;
+            
+            if ((removeMain && removeMain.checked) && 
+                (removeAllAdditional && removeAllAdditional.checked) && 
+                newPoster === 0 && newAdditional === 0) {
+                if (!confirm("You're removing all existing images without uploading new ones. Your campaign will have no images. Continue?")) {
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            // Setup image previews
+            const posterInput = document.getElementById('id_poster');
+            if (posterInput) {
+                posterInput.addEventListener('change', previewMainImage);
+                document.getElementById('mainImageUpload').addEventListener('click', function() {
+                    posterInput.click();
+                });
+            }
+            
+            const additionalInput = document.getElementById('id_additional_images');
+            if (additionalInput) {
+                additionalInput.addEventListener('change', previewAdditionalImages);
+                document.getElementById('additionalImagesUpload').addEventListener('click', function() {
+                    additionalInput.click();
+                });
+            }
+            
+            // Setup audio preview
             const audioInput = document.getElementById('id_audio');
             if (audioInput) {
                 audioInput.addEventListener('change', previewAudio);
-            }
-        }
-        
-        function previewAudio(event) {
-            const fileInput = event.target;
-            const previewContainer = document.getElementById('audioPreview');
-            
-            // Clear previous preview
-            previewContainer.innerHTML = '';
-            
-            const file = fileInput.files[0];
-            if (!file) return;
-            
-            // File size validation (10MB)
-            const maxSize = 10 * 1024 * 1024;
-            if (file.size > maxSize) {
-                previewContainer.innerHTML = `
-                    <div style="background: rgba(224, 36, 94, 0.1); border-left: 4px solid var(--error); padding: 12px; border-radius: 8px; color: var(--error);">
-                        <i class="fas fa-exclamation-circle"></i>
-                        File too large (${(file.size/(1024*1024)).toFixed(1)}MB). Maximum size is 10MB.
-                    </div>
-                `;
-                fileInput.value = '';
-                return;
-            }
-            
-            // File type validation
-            const fileName = file.name.toLowerCase();
-            const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
-            const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
-            
-            const validMimeTypes = [
-                'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
-                'audio/ogg', 'audio/oga', 'audio/x-m4a', 'audio/aac'
-            ];
-            
-            if (!isValidExtension && !validMimeTypes.includes(file.type)) {
-                previewContainer.innerHTML = `
-                    <div style="background: rgba(224, 36, 94, 0.1); border-left: 4px solid var(--error); padding: 12px; border-radius: 8px; color: var(--error);">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Unsupported file format. Please use MP3, WAV, OGG, or M4A files.
-                    </div>
-                `;
-                fileInput.value = '';
-                return;
-            }
-            
-            // Create audio preview
-            const audioURL = URL.createObjectURL(file);
-            
-            // Create audio element
-            const audioElement = document.createElement('audio');
-            audioElement.controls = true;
-            audioElement.style.width = '100%';
-            audioElement.style.marginTop = '15px';
-            audioElement.style.borderRadius = '8px';
-            audioElement.src = audioURL;
-            
-            // Create info card
-            const infoCard = document.createElement('div');
-            infoCard.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: var(--primary-light); border-radius: 8px;">
-                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 18px;"></i>
-                    <div>
-                        <strong style="display: block; color: var(--text-primary);">${file.name}</strong>
-                        <span style="font-size: 12px; color: var(--text-secondary);">
-                            ${(file.size/(1024*1024)).toFixed(2)} MB • ${file.type || 'Audio file'}
-                        </span>
-                    </div>
-                </div>
-            `;
-            
-            // Add to preview container
-            previewContainer.appendChild(infoCard);
-            previewContainer.appendChild(audioElement);
-            
-            // Clean up URL when audio element is removed
-            audioElement.onunload = function() {
-                URL.revokeObjectURL(audioURL);
-            };
-        }
-        
-        // ===== FORM SUBMISSION HANDLING =====
-        function initializeFormHandlers() {
-            const form = document.getElementById('campaignForm');
-            
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    // Handle additional images
-                    handleAdditionalImagesSubmission();
-                    
-                    // Basic validation
-                    const keepPosterCheckbox = document.getElementById('keep_current_poster');
-                    const posterInput = document.getElementById('id_poster');
-                    
-                    // If not keeping current poster and no new poster uploaded
-                    if (!keepPosterCheckbox?.checked && !posterInput?.files.length) {
-                        e.preventDefault();
-                        alert('Please upload a new main image or keep the current one.');
-                        return false;
-                    }
+                document.getElementById('audioUpload').addEventListener('click', function() {
+                    audioInput.click();
                 });
             }
-        }
-        
-        function handleAdditionalImagesSubmission() {
-            const hiddenContainer = document.getElementById('hiddenFileInputsContainer');
-            hiddenContainer.innerHTML = '';
             
-            additionalImages.forEach((image, index) => {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.name = 'additional_images';
-                fileInput.style.display = 'none';
-                
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(image.file);
-                fileInput.files = dataTransfer.files;
-                
-                hiddenContainer.appendChild(fileInput);
-            });
-        }
-        
-        // ===== DOWNLOAD FUNCTIONS =====
-        function downloadImage(imageUrl, fileName) {
-            const link = document.createElement('a');
-            link.href = imageUrl;
-            link.download = fileName || 'campaign_image.jpg';
-            link.target = '_blank';
+            // Setup image and audio removal logic
+            setupImageRemovalLogic();
             
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showDownloadFeedback(fileName);
-        }
-        
-        function downloadAllAdditionalImages() {
-            const images = document.querySelectorAll('.current-image-img[data-image-url]');
-            
-            if (images.length === 0) {
-                alert('No additional images found to download.');
-                return;
+            // Auto-expand optional section if there are errors
+            {% if form.errors %}
+            const optionalToggle = document.getElementById('optionalToggle');
+            if (optionalToggle) {
+                optionalToggle.click();
             }
+            {% endif %}
             
-            if (!confirm(`Download all ${images.length} additional images?`)) {
-                return;
-            }
-            
-            const downloadBtn = document.querySelector('.download-all-btn');
-            const originalText = downloadBtn ? downloadBtn.innerHTML : '';
-            
-            if (downloadBtn) {
-                downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-                downloadBtn.disabled = true;
-            }
-            
-            let downloadedCount = 0;
-            
-            images.forEach((img, index) => {
-                setTimeout(() => {
-                    const imageUrl = img.getAttribute('data-image-url');
-                    const imageIndex = img.getAttribute('data-image-index');
-                    const fileName = `additional_image_${parseInt(imageIndex) + 1}.jpg`;
-                    
-                    downloadImage(imageUrl, fileName);
-                    downloadedCount++;
-                    
-                    if (downloadedCount === images.length && downloadBtn) {
-                        setTimeout(() => {
-                            downloadBtn.innerHTML = originalText;
-                            downloadBtn.disabled = false;
-                            showDownloadComplete(images.length);
-                        }, 500);
-                    }
-                }, index * 500);
-            });
-        }
-        
-        function showDownloadFeedback(fileName) {
-            const feedback = document.createElement('div');
-            feedback.className = 'download-feedback';
-            feedback.innerHTML = `
-                <i class="fas fa-check-circle"></i>
-                <span>Downloaded: ${fileName}</span>
-            `;
-            feedback.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: #4caf50;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-size: 0.95rem;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            document.body.appendChild(feedback);
-            
-            setTimeout(() => {
-                feedback.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => feedback.remove(), 300);
-            }, 3000);
-        }
-        
-        function showDownloadComplete(count) {
-            const feedback = document.createElement('div');
-            feedback.className = 'download-feedback complete';
-            feedback.innerHTML = `
-                <i class="fas fa-check-circle"></i>
-                <span>Successfully downloaded ${count} images!</span>
-            `;
-            feedback.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                background: #2196f3;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-size: 0.95rem;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            document.body.appendChild(feedback);
-            
-            setTimeout(() => {
-                feedback.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => feedback.remove(), 300);
-            }, 4000);
-        }
-        
-        // ===== POSTER TOGGLE =====
-        function togglePosterUpload(checkbox) {
-            const newPosterUpload = document.getElementById('newPosterUpload');
-            const posterInput = document.getElementById('id_poster');
-            
-            if (checkbox.checked) {
-                newPosterUpload.style.display = 'none';
-                if (posterInput) {
-                    posterInput.value = '';
-                    posterInput.removeAttribute('required');
-                    document.getElementById('mainPosterPreview').innerHTML = '';
-                }
-            } else {
-                newPosterUpload.style.display = 'block';
-                if (posterInput) {
-                    posterInput.setAttribute('required', 'required');
-                }
-            }
-        }
-        
-        // Add download instructions tooltip on hover
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.download-image-btn').forEach(btn => {
-                btn.setAttribute('title', 'Click to download this image');
-            });
+            // Add form validation on submit
+            const form = document.getElementById('campaignForm');
+            form.addEventListener('submit', validateForm);
         });
     </script>
-<script>
-    // ===== TAG SUGGESTIONS - WORKING VERSION =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const tagsInput = document.getElementById('id_tags_input');
-        const suggestedTags = document.querySelectorAll('.suggested-tag');
-        
-        console.log('Found', suggestedTags.length, 'suggested tags'); // Debug
-        
-        // Add click event to each suggested tag
-        suggestedTags.forEach(tag => {
-            tag.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const currentValue = tagsInput.value;
-                const newTag = this.getAttribute('data-tag');
-                
-                console.log('Clicked tag:', newTag, 'Current value:', currentValue); // Debug
-                
-                if (!currentValue.trim()) {
-                    // If input is empty, just add the tag
-                    tagsInput.value = newTag;
-                } else {
-                    // Split existing tags
-                    const existingTags = currentValue.split(',')
-                        .map(t => t.trim())
-                        .filter(t => t !== '');
-                    
-                    // Check if tag already exists
-                    if (!existingTags.includes(newTag)) {
-                        // Add new tag at the end
-                        tagsInput.value = currentValue + ', ' + newTag;
-                    }
-                }
-                
-                // Trigger input event to update any listeners
-                tagsInput.dispatchEvent(new Event('input'));
-                
-                // Focus back on input
-                tagsInput.focus();
-            });
-        });
-        
-        // Auto-format when user leaves the field
-        if (tagsInput) {
-            tagsInput.addEventListener('blur', function() {
-                // Clean up extra spaces and commas
-                const tags = this.value.split(',')
-                    .map(tag => tag.trim())
-                    .filter(tag => tag !== '')
-                    .join(', ');
-                this.value = tags;
-            });
-            
-            // Also clean up before form submission
-            const form = tagsInput.closest('form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    // Clean up tags before submitting
-                    const tags = tagsInput.value.split(',')
-                        .map(tag => tag.trim())
-                        .filter(tag => tag !== '')
-                        .join(', ');
-                    tagsInput.value = tags;
-                });
-            }
-        }
-        
-        // Add hover effects to suggested tags
-        suggestedTags.forEach(tag => {
-            // Add cursor pointer
-            tag.style.cursor = 'pointer';
-            
-            // Add hover effect
-            tag.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-2px)';
-                this.style.boxShadow = '0 4px 8px rgba(29, 161, 242, 0.2)';
-            });
-            
-            tag.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-                this.style.boxShadow = 'none';
-            });
-        });
-    });
-</script>
+
 </body>
 </html>
 {% endblock content %}
