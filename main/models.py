@@ -548,39 +548,20 @@ class Campaign(models.Model):
     is_active = models.BooleanField(default=True)  # Stops donations when target is met
    
     CATEGORY_CHOICES = (
-
-        # Basic Needs
-        ('Poverty and Hunger', 'Poverty and Hunger'),
-        ('Clean Water and Sanitation', 'Clean Water and Sanitation'),
-        ('Disaster Relief', 'Disaster Relief'),
-    
-         # Health
-        ('Healthcare and Medicine', 'Healthcare and Medicine'),
-        ('Mental Health', 'Mental Health'),
-    
-        # Social Justice
-        ('Human Rights and Equality', 'Human Rights and Equality'),
-        ('Peace and Justice', 'Peace and Justice'),
-    
-         # Education/Economy
-        ('Education for All', 'Education for All'),
-        ('Economic Empowerment', 'Economic Empowerment'),
-    
-         # Environment
-        ('Climate Action', 'Climate Action'),
-        ('Wildlife and Conservation', 'Wildlife and Conservation'),
-    
-        # Technology
-       ('Tech for Humanity', 'Tech for Humanity'),
-    
-       # Community
-       ('Community Development', 'Community Development'),
-       ('Arts and Culture', 'Arts and Culture'),
-    
-       # Other
-       ('Other', 'Other'),
+    ('Personal Empowerment', 'Personal Empowerment'),
+    ('Health & Wellbeing Causes', 'Health & Wellbeing Causes'),
+    ('Economic Support & Financial Causes', 'Economic Support & Financial Causes'),
+    ('Creative & Cultural Causes', 'Creative & Cultural Causes'),
+    ('Mental Health & Emotional Support', 'Mental Health & Emotional Support'),
+    ('Career, Work & Opportunity', 'Career, Work & Opportunity'),
+    ('Housing, Living & Stability', 'Housing, Living & Stability'),
+    ('Community & Social Impact', 'Community & Social Impact'),
+    ('Education & Skill Building', 'Education & Skill Building'),
+    ('Exploration, Sports & Challenges', 'Exploration, Sports & Challenges'),
+    ('Other Causes', 'Other Causes'),
     )
-    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default='Education for All')
+
+    category = models.CharField(max_length=40, choices=CATEGORY_CHOICES, default='Personal Empowerment')
 
     VISIBILITY_CHOICES = (
         ('public', 'Public'),
@@ -786,212 +767,164 @@ class Campaign(models.Model):
                 award=award_type,
                 timestamp=timezone.now()
             )
+        def get_goals_and_activities(self):
+            goals_activities = {
+        'Personal Empowerment': {
+            'Goals': [
+                'Empower an individual or group to overcome limitations and unlock potential.',
+                'Support personal transformation that leads to long-term independence.'
+            ],
+            'Activities': [
+                'Share weekly updates documenting growth, challenges, and breakthroughs.',
+                'Run a skills-building challenge with community accountability.',
+                'Host live or recorded talks sharing lessons learned.',
+                'Provide tools, resources, or mentorship tied to the cause.',
+                'Document impact stories from supporters or beneficiaries.'
+            ]
+        },
 
-   
-    def get_goals_and_activities(self):
-        goals_activities = {
-        'Poverty and Hunger': {
+        'Health & Wellbeing Causes': {
             'Goals': [
-                'Reduce poverty and hunger by providing immediate and long-term support.',
-                'Empower communities with resources for food security and income generation.'
+                'Improve physical health outcomes for yourself or others.',
+                'Raise awareness and support for health-related challenges.'
             ],
             'Activities': [
-                'Distribute food packages or meals to low-income families.',
-                'Fund community farming or cooperative initiatives.',
-                'Launch skills training or small-business grants for unemployed individuals.',
-                'Support food banks or hunger relief programs.',
-                'Organize donation drives for clothes and daily essentials.'
+                'Post recovery, training, or treatment updates with proof and milestones.',
+                'Share educational content about the health condition or goal.',
+                'Organize a fitness or wellness challenge supporters can join.',
+                'Document the use of funds for medical or wellness needs.',
+                'Highlight supporter stories and encouragement.'
             ]
         },
-        'Clean Water and Sanitation': {
+
+        'Economic Support & Financial Causes': {
             'Goals': [
-                'Ensure access to clean drinking water and improved sanitation.',
-                'Raise awareness about hygiene and waterborne diseases.'
+                'Provide financial relief, stability, or opportunity.',
+                'Mobilize support to overcome economic barriers.'
             ],
             'Activities': [
-                'Build or repair wells, boreholes, or water systems.',
-                'Distribute water filters or hygiene kits to communities.',
-                'Conduct sanitation awareness campaigns.',
-                'Partner with engineers to develop sustainable water solutions.',
-                'Install toilets and handwashing facilities in underserved areas.'
+                'Share transparent breakdowns of financial needs and progress.',
+                'Post updates showing how funds are being used.',
+                'Offer products or services that directly support the cause.',
+                'Highlight milestones such as debts cleared or resources secured.',
+                'Educate supporters on the broader financial issue being addressed.'
             ]
         },
-        'Disaster Relief': {
+
+        'Creative & Cultural Causes': {
             'Goals': [
-                'Provide emergency aid to victims of natural or human-made disasters.',
-                'Support recovery and rebuilding efforts.'
+                'Preserve, promote, or fund creative and cultural expression.',
+                'Turn creativity into a sustainable source of impact.'
             ],
             'Activities': [
-                'Distribute emergency supplies like food, blankets, and medicine.',
-                'Raise funds for rebuilding homes and schools.',
-                'Mobilize volunteers for rescue and relief operations.',
-                'Partner with emergency response organizations.',
-                'Provide temporary shelter and medical services.'
+                'Share behind-the-scenes creation updates.',
+                'Release exclusive content to supporters.',
+                'Sell creative works or merchandise tied to the cause.',
+                'Document cultural impact or community engagement.',
+                'Collaborate with other creators or communities.'
             ]
         },
-        'Healthcare and Medicine': {
+
+        'Mental Health & Emotional Support': {
             'Goals': [
-                'Improve access to medical care and essential medicines.',
-                'Support health infrastructure in low-resource settings.'
+                'Support emotional wellbeing and mental health awareness.',
+                'Create safe spaces for healing and shared experiences.'
             ],
             'Activities': [
-                'Fund surgeries or treatments for patients in need.',
-                'Provide medical equipment or ambulances to rural clinics.',
-                'Organize blood donation or vaccination drives.',
-                'Train health workers in local communities.',
-                'Create mobile health clinics or telemedicine services.'
+                'Post honest updates about mental health journeys or programs.',
+                'Share educational resources and coping strategies.',
+                'Host guided sessions, talks, or reflections.',
+                'Highlight stories of hope, progress, and recovery.',
+                'Use funds to access therapy, support groups, or outreach.'
             ]
         },
-        'Mental Health': {
+
+        'Career, Work & Opportunity': {
             'Goals': [
-                'Raise awareness about mental health challenges.',
-                'Provide accessible support and counseling services.'
+                'Create access to jobs, skills, or professional growth.',
+                'Support career transitions or workforce development.'
             ],
             'Activities': [
-                'Launch online or in-person mental health counseling programs.',
-                'Train community members as mental health first responders.',
-                'Fund hotlines or mental health apps.',
-                'Host awareness events to fight stigma.',
-                'Create support groups for anxiety, depression, or trauma recovery.'
+                'Share progress toward certifications, training, or job placement.',
+                'Offer mentorship or workshops to supporters.',
+                'Document outcomes such as employment or business launches.',
+                'Sell services or products that fund the cause.',
+                'Highlight community success stories.'
             ]
         },
-        'Human Rights and Equality': {
+
+        'Housing, Living & Stability': {
             'Goals': [
-                'Promote and protect fundamental human rights.',
-                'Fight discrimination and injustice in all forms.'
+                'Secure safe, stable, and dignified living conditions.',
+                'Improve quality of life through better housing or resources.'
             ],
             'Activities': [
-                'Advocate for refugee rights or gender equality.',
-                'Organize legal aid or education workshops.',
-                'Support organizations working on human rights issues.',
-                'Launch campaigns to expose injustice or systemic discrimination.',
-                'Provide safe havens or shelters for vulnerable groups.'
+                'Share updates on housing progress or improvements.',
+                'Post photos/videos showing before-and-after impact.',
+                'Break down costs and needs transparently.',
+                'Document how support improves daily living.',
+                'Engage supporters in long-term stability planning.'
             ]
         },
-        'Peace and Justice': {
+
+        'Community & Social Impact': {
             'Goals': [
-                'Support justice systems and conflict resolution.',
-                'Promote peacebuilding and reconciliation in conflict zones.'
+                'Strengthen communities and address social challenges.',
+                'Mobilize people around a shared cause or mission.'
             ],
             'Activities': [
-                'Train youth in conflict resolution and mediation.',
-                'Support rehabilitation programs for former offenders or soldiers.',
-                'Organize peace dialogues between divided communities.',
-                'Fund legal defense for marginalized populations.',
-                'Document and report human rights abuses.'
+                'Post updates from community actions or events.',
+                'Share stories from people impacted by the cause.',
+                'Organize campaigns, drives, or collective actions.',
+                'Highlight supporter contributions and involvement.',
+                'Track measurable community impact over time.'
             ]
         },
-        'Education for All': {
+
+        'Education & Skill Building': {
             'Goals': [
-                'Ensure equitable access to quality education.',
-                'Reduce school dropout rates and promote literacy.'
+                'Expand access to education and practical skills.',
+                'Empower learners through knowledge and opportunity.'
             ],
             'Activities': [
-                'Build classrooms or learning centers.',
-                'Fund school supplies, tuition, or scholarships.',
-                'Train teachers and provide educational resources.',
-                'Host community literacy campaigns.',
-                'Create inclusive education programs for girls and disabled students.'
+                'Share learning progress and teaching outcomes.',
+                'Post educational content or mini-lessons.',
+                'Fundraise for courses, materials, or training.',
+                'Showcase student or participant success stories.',
+                'Offer paid or free educational resources.'
             ]
         },
-        'Economic Empowerment': {
+
+        'Exploration, Sports & Challenges': {
             'Goals': [
-                'Promote entrepreneurship and job creation.',
-                'Support marginalized groups through income-generating activities.'
+                'Use challenges and exploration to inspire or fund impact.',
+                'Turn personal feats into collective motivation.'
             ],
             'Activities': [
-                'Provide startup capital to small businesses.',
-                'Offer vocational training and mentorship programs.',
-                'Launch financial literacy and savings programs.',
-                'Support women-led enterprises.',
-                'Connect job seekers to employment opportunities.'
+                'Document challenge progress with photos, videos, or audio.',
+                'Tie milestones to donation or pledge triggers.',
+                'Engage supporters with live updates or check-ins.',
+                'Share lessons learned and motivation.',
+                'Celebrate achievements with the community.'
             ]
         },
-        'Climate Action': {
+
+        'Other Causes': {
             'Goals': [
-                'Combat climate change and its effects.',
-                'Promote community-based solutions to environmental challenges.'
+                'Support a unique or emerging cause.',
+                'Experiment with new forms of impact and storytelling.'
             ],
             'Activities': [
-                'Raise awareness about carbon emissions and climate change.',
-                'Organize reforestation or carbon offset programs.',
-                'Support renewable energy projects.',
-                'Develop sustainable agriculture initiatives.',
-                'Advocate for green policies and eco-justice.'
-            ]
-        },
-        'Wildlife and Conservation': {
-            'Goals': [
-                'Protect biodiversity, forests, oceans, and wildlife.',
-                'Promote sustainable and ethical environmental practices.'
-            ],
-            'Activities': [
-                'Fund rescue and rehabilitation of endangered species.',
-                'Organize beach cleanups and marine conservation efforts.',
-                'Create campaigns to stop deforestation.',
-                'Partner with conservation groups on wildlife protection.',
-                'Educate communities on eco-friendly lifestyles.'
-            ]
-        },
-        'Tech for Humanity': {
-            'Goals': [
-                'Leverage technology to solve social and environmental problems.',
-                'Bridge the digital divide.'
-            ],
-            'Activities': [
-                'Donate laptops or tablets to students in need.',
-                'Develop tech tools for health, education, or disaster response.',
-                'Offer coding and digital literacy workshops.',
-                'Support innovation hubs or tech incubators for social good.',
-                'Create platforms or apps that connect underserved communities.'
-            ]
-        },
-        'Community Development': {
-            'Goals': [
-                'Enhance the quality of life in local communities.',
-                'Build strong and resilient local systems.'
-            ],
-            'Activities': [
-                'Renovate community centers or build shared spaces.',
-                'Support local artists or cultural initiatives.',
-                'Create neighborhood safety and youth empowerment programs.',
-                'Fund micro-infrastructure like street lights or boreholes.',
-                'Organize community festivals and forums.'
-            ]
-        },
-        'Arts and Culture': {
-            'Goals': [
-                'Encourage creativity and artistic expression.'
-                'Preserve and promote cultural heritage.',
-                
-            ],
-            'Activities': [
-                'Fund art exhibitions and cultural festivals.',
-                'Support local artisans and craftspeople.',
-                'Provide arts education for youth.',
-                'Document and archive cultural traditions.',
-                'Promote cultural exchange programs.'
-            ]
-        },
-        'Other': {
-            'Goals': [
-                'Support causes that don’t fit into predefined categories.',
-                'Provide flexibility for unique community needs.'
-            ],
-            'Activities': [
-                'Launch one-time campaigns for urgent needs.',
-                'Fundraise for emerging or unexpected challenges.',
-                'Engage in storytelling to raise awareness.',
-                'Partner with local influencers or activists.',
-                'Customize support efforts to individual or group-specific cases.'
+                'Define custom updates that fit the cause.',
+                'Combine storytelling, funding, and community building.',
+                'Test new engagement or support models.',
+                'Document learnings and outcomes openly.',
+                'Let supporters help shape the direction of the cause.'
             ]
         },
     }
 
         return goals_activities.get(self.category, {})
-
-
-
 
 
 class CampaignView(models.Model):
