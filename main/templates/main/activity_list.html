@@ -508,33 +508,7 @@ body.dark-mode {
 
 <div class="journey-stories">
     
-    <!-- === HEADER === -->
-    <div class="stories-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <a href="{% url 'view_campaign' campaign_id=campaign.pk %}" style="color: var(--text-primary); font-size: 24px; text-decoration: none; display: flex;">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <div>
-                <a href="{% url 'view_campaign' campaign_id=campaign.pk %}" style="color: var(--text-primary); font-weight: 700; text-decoration: none; font-size: 16px; display: block;">
-                    {{ campaign.title|truncatechars:30 }}
-                </a>
-                <div style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
-                    <i class="fas fa-user-circle"></i> {{ campaign.user.user.username }}
-                </div>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            {% if user == campaign.user.user %}
-                <a href="{% url 'create_activity' campaign_id=campaign.id %}" style="color: var(--text-primary); font-size: 20px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--button-bg); border-radius: 50%; text-decoration: none;">
-                    <i class="fas fa-plus"></i>
-                </a>
-            {% endif %}
-            <span style="color: var(--text-primary); font-size: 20px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--button-bg); border-radius: 50%; cursor: pointer;" onclick="toggleMobileMenu()">
-                <i class="fas fa-ellipsis-h"></i>
-            </span>
-        </div>
-    </div>
-    
+  
     <!-- === DAY PROGRESS === -->
     <div class="day-progress-container">
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -729,12 +703,7 @@ body.dark-mode {
         </div>
     {% endif %}
     
-    <!-- === FLOATING CREATE BUTTON === -->
-    {% if user == campaign.user.user and activities %}
-        <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="create-story-btn">
-            <i class="fas fa-plus"></i>
-        </a>
-    {% endif %}
+   
     
     <!-- === MOBILE MENU === -->
     <div id="mobile-popup-menu" class="mobile-popup-menu">
@@ -1002,5 +971,121 @@ document.addEventListener('click', function(e) {
         });
     });
 })();
+
+// =============================================
+// MINIMAL AUTO-ENHANCEMENT FOR MEDIA
+// =============================================
+
+(function() {
+    // Ultra minimal - only enhances quality without any visual overlays
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Ultra minimal enhancement - just slight quality boost */
+        .story-media.auto-enhanced {
+            filter: 
+                contrast(1.05) 
+                saturate(1.03) 
+                !important;
+            transition: none;
+        }
+        
+        /* No overlays, no gradients, no effects */
+        .story-media-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* No background overlays at all */
+        .media-meta, .story-content-overlay {
+            background: transparent;
+            backdrop-filter: none;
+        }
+        
+        /* Simple fade in */
+        .story-media {
+            animation: simpleFade 0.3s ease forwards;
+            opacity: 0;
+        }
+        
+        @keyframes simpleFade {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        /* Clean progress bar */
+        .day-progress-container div:last-child div {
+            background: #1DA1F2;
+        }
+        
+        /* Simple dots */
+        .dot.active {
+            background: #1DA1F2;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Simple enhancer - only adjusts contrast and saturation slightly
+    class SimpleEnhancer {
+        constructor() {
+            this.enhanced = new Set();
+            this.init();
+        }
+        
+        init() {
+            // Enhance existing media
+            document.querySelectorAll('.story-media').forEach(media => {
+                this.enhance(media);
+            });
+            
+            // Watch for new media
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            if (node.matches && node.matches('.story-media')) {
+                                this.enhance(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.story-media').forEach(media => {
+                                    this.enhance(media);
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        enhance(media) {
+            if (this.enhanced.has(media)) return;
+            
+            // Just add minimal enhancement class
+            media.classList.add('auto-enhanced');
+            this.enhanced.add(media);
+            
+            // For videos, ensure smooth playback
+            if (media.tagName === 'VIDEO') {
+                media.setAttribute('playsinline', '');
+                media.setAttribute('webkit-playsinline', '');
+                media.setAttribute('preload', 'auto');
+            }
+        }
+    }
+    
+    // Initialize when ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            window.simpleEnhancer = new SimpleEnhancer();
+        });
+    } else {
+        window.simpleEnhancer = new SimpleEnhancer();
+    }
+})();
+
 </script>
 {% endblock %}
