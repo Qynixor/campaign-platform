@@ -3400,8 +3400,6 @@ def thank_you(request):
 
 
 
-
-
 def activity_list(request, campaign_id):
     # Get data from request
     following_users = [follow.followed for follow in request.user.following.all()]
@@ -3419,6 +3417,28 @@ def activity_list(request, campaign_id):
     # List of image extensions
     image_extensions = ['.jpg', '.jpeg', '.png', '.gif']
     activity_count = activities.count()
+    
+    # Calculate progress percentage based on real-time duration
+    if campaign.duration and campaign.duration > 0:
+        if campaign.duration_unit == 'minutes':
+            total_duration = campaign.duration
+            elapsed = min(activity_count, total_duration)
+            progress_percentage = (elapsed / total_duration) * 100
+        else:
+            # For days, use the days_left property for real-time tracking
+            if campaign.days_left is not None:
+                elapsed_days = campaign.duration - campaign.days_left
+                progress_percentage = (elapsed_days / campaign.duration) * 100
+            else:
+                progress_percentage = (activity_count / campaign.duration) * 100
+    else:
+        # Ongoing campaign with no set duration
+        progress_percentage = activity_count * 10  # Just a placeholder
+        if progress_percentage > 100:
+            progress_percentage = 100
+    
+    # Ensure progress percentage doesn't exceed 100
+    progress_percentage = min(progress_percentage, 100)
     
     # Notification and messaging data
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
@@ -3508,6 +3528,7 @@ def activity_list(request, campaign_id):
         'image_extensions': image_extensions,
         'user_profile': user_profile,
         'activity_count': activity_count,
+        'progress_percentage': progress_percentage,
         'unread_notifications': unread_notifications,
         'new_campaigns_from_follows': new_campaigns_from_follows,
         'suggested_users': suggested_users,
@@ -3850,28 +3871,21 @@ class ActivityForm(forms.ModelForm):
         
         return file
 
-
-
-
 @login_required
 def create_activity(request, campaign_id):
     """
-    PROGRESSIVE ACTIVITY CREATION VIEW
-    --------------------------------
-    First visit: Show 1 empty form
-    Second visit: Show previous activity (editable) + 1 empty form
-    Third visit: Show 2 previous activities + 1 empty form
-    ...up to max 10 forms total
-    Empty forms are allowed - user doesn't have to fill every form
+    PROGRESSIVE ACTIVITY CREATION VIEW WITH DAY LOCKING
+    ---------------------------------------------------
+    Users can only post activities for days that have actually arrived.
+    Future days are locked until their real-time date.
     """
     
-    # 🔒 CHECK USER CAMPAIGN LIMIT
+    # 🔒 CHECK USER CAMPAIGN LIMIT (keep your existing code)
     subscription = UserSubscription.get_for_user(request.user)
     user_campaign_count = Campaign.objects.filter(user=request.user.profile).count()
     
     # Check if user has active subscription
     if not subscription.has_active_subscription():
-        # If user has reached their free campaign limit, restrict activity creation
         if user_campaign_count >= subscription.campaign_limit:
             messages.warning(
                 request,
@@ -3884,35 +3898,49 @@ def create_activity(request, campaign_id):
     user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    # 🔒 ADDITIONAL CHECK: Ensure user owns the campaign
+    # 🔒 Ensure user owns the campaign
     if campaign.user != user_profile:
         messages.error(request, "You can only create activities for your own campaigns.")
-        # Redirect to activity_list instead of view_campaign
         return redirect('activity_list', campaign_id=campaign_id)
 
-    # Get existing activities for this campaign, ordered newest first
-    existing_activities = Activity.objects.filter(campaign=campaign).order_by('-timestamp')
-    
-    # Calculate how many forms to show
-    # Show existing activities + 1 empty form, but max 10 total
-    MAX_FORMS = 10
+    # Get existing activities for this campaign, ordered by timestamp
+    existing_activities = Activity.objects.filter(campaign=campaign).order_by('timestamp')
     existing_count = existing_activities.count()
     
+    # ===== FIXED: REAL-TIME DAY CALCULATION =====
+    # Use the campaign's get_current_day() method to determine which day we're on
+    current_real_day = campaign.get_current_day()
+    
+    # Calculate next available day (the day users can actually post)
+    next_available_day = existing_count + 1
+    
+    # Determine if the next day is locked
+    # A day is locked if the next day number is greater than the current real day
+    is_next_day_locked = next_available_day > current_real_day
+    
+    # Calculate days until unlock
+    if is_next_day_locked:
+        days_until_unlock = next_available_day - current_real_day
+    else:
+        days_until_unlock = 0
+    
+    # Calculate how many forms to show
+    MAX_FORMS = 10
+    
     if existing_count >= MAX_FORMS:
-        # Already at max, show all existing (no empty form)
         forms_to_show = MAX_FORMS
         empty_forms = 0
     else:
-        # Show existing + 1 empty form
+        # Show existing + 1 empty form (the next day)
         forms_to_show = existing_count + 1
         empty_forms = 1
     
-    # Create the formset with dynamic number of forms
+    # Create the formset
     ActivityFormSet = inlineformset_factory(
         Campaign,
         Activity,
         form=ActivityForm,
-        extra=empty_forms,  # Add empty forms
+        extra=empty_forms,
         can_delete=True,
         max_num=MAX_FORMS,
         fields=['content', 'file']
@@ -3923,7 +3951,7 @@ def create_activity(request, campaign_id):
             request.POST, 
             request.FILES, 
             instance=campaign,
-            queryset=existing_activities  # Pre-populate with existing activities
+            queryset=existing_activities
         )
         
         if formset.is_valid():
@@ -3935,32 +3963,41 @@ def create_activity(request, campaign_id):
                     new_count = 0
                     updated_count = 0
                     
-                    for instance in instances:
-                        # Skip COMPLETELY empty forms (no content AND no file)
-                        # Also skip if it's an existing activity with no changes
+                    # Track if user tried to post a locked day
+                    locked_day_attempt = False
+                    
+                    for idx, instance in enumerate(instances):
+                        # Check if this is a new activity (no pk)
+                        if not instance.pk:
+                            # This is a new activity - check if its day is locked
+                            activity_day = existing_count + 1
+                            
+                            # Use campaign.is_day_locked() method for consistency
+                            if campaign.is_day_locked(activity_day):
+                                # User is trying to post a future day - reject it
+                                locked_day_attempt = True
+                                continue
+                        
+                        # Skip completely empty forms
                         if not instance.content and not instance.file:
-                            # Check if this is an existing activity with no changes
                             if instance.pk:
-                                # Get the original instance
                                 original = Activity.objects.get(pk=instance.pk)
-                                # If no changes at all, skip
                                 if (instance.content == original.content and 
                                     instance.file == original.file):
                                     continue
                             else:
-                                # New form with no content or file, skip
                                 continue
                             
                         # If there's a file but no content, add default content
                         if instance.file and not instance.content:
-                            instance.content = "Shared a file"
+                            instance.content = f"Shared a file for Day {activity_day if not instance.pk else 'update'}"
                             
                         instance.save()
                         saved_count += 1
                         
-                        if not instance.pk:  # New activity
+                        if not instance.pk:
                             new_count += 1
-                        else:  # Updated activity
+                        else:
                             updated_count += 1
                     
                     # Handle deleted forms
@@ -3970,55 +4007,77 @@ def create_activity(request, campaign_id):
                             form.instance.delete()
                             deleted_count += 1
                     
-                    # Create success message based on actions
-                    if saved_count > 0 or deleted_count > 0:
+                    # Create appropriate messages
+                    if locked_day_attempt:
+                        messages.warning(
+                            request, 
+                            f"Day {next_available_day} is locked. It will be available in {days_until_unlock} day{'s' if days_until_unlock > 1 else ''}. Your other changes were saved."
+                        )
+                    elif saved_count > 0 or deleted_count > 0:
                         action_messages = []
                         if new_count > 0:
-                            action_messages.append(f"Created {new_count} new activity{'s' if new_count > 1 else ''}")
+                            action_messages.append(f"Created Day {next_available_day - 1}")
                         if updated_count > 0:
-                            action_messages.append(f"Updated {updated_count} existing activity{'s' if updated_count > 1 else ''}")
+                            action_messages.append(f"Updated {updated_count} existing day{'s' if updated_count > 1 else ''}")
                         if deleted_count > 0:
-                            action_messages.append(f"Deleted {deleted_count} activity{'s' if deleted_count > 1 else ''}")
+                            action_messages.append(f"Deleted {deleted_count} day{'s' if deleted_count > 1 else ''}")
                         
-                        if action_messages:
-                            messages.success(request, ' • '.join(action_messages))
-                        else:
-                            messages.success(request, 'Changes saved successfully!')
+                        messages.success(request, ' • '.join(action_messages))
                     else:
-                        # Check if user submitted completely empty forms
                         messages.info(request, 'No changes were made.')
                     
-                    # CHANGED: Redirect to activity_list instead of view_campaign
                     return redirect('activity_list', campaign_id=campaign_id)
                     
             except Exception as e:
                 messages.error(request, f'Error saving activities: {str(e)}')
                 print(f"Error in create_activity: {e}")
         else:
-            # Show form errors
-            error_count = 0
-            error_messages = []
-            for i, form in enumerate(formset):
-                if form.errors:
-                    error_count += len(form.errors)
-                    for field, errors in form.errors.items():
-                        for error in errors:
-                            error_messages.append(f"Form {i+1} - {field}: {error}")
-            
-            if error_count > 0:
-                messages.error(request, f'Please correct the {error_count} error{"s" if error_count > 1 else ""} below.')
-                # Print errors to console for debugging
-                print("Form errors:", error_messages)
-            else:
-                messages.error(request, 'Please correct the errors below.')
+            error_count = sum(len(form.errors) for form in formset)
+            messages.error(request, f'Please correct the {error_count} error{"s" if error_count > 1 else ""} below.')
     else:
-        # GET request - show forms with existing activities + empty form(s)
         formset = ActivityFormSet(
             instance=campaign,
             queryset=existing_activities
         )
 
-    # Get context data for notifications, etc.
+    # Calculate campaign progress information using the campaign's methods
+    if campaign.duration and campaign.days_left is not None:
+        if campaign.duration_unit == 'days':
+            total_duration = campaign.duration
+            progress_percentage = (current_real_day / total_duration) * 100 if total_duration > 0 else 0
+        else:
+            total_duration = campaign.duration
+            progress_percentage = (current_real_day / total_duration) * 100 if total_duration > 0 else 0
+    else:
+        progress_percentage = existing_count * 10
+        if progress_percentage > 100:
+            progress_percentage = 100
+    
+    progress_percentage = min(progress_percentage, 100)
+    
+    # Calculate if user is ahead/behind schedule
+    if campaign.duration and campaign.days_left is not None:
+        if existing_count > current_real_day:
+            schedule_status = "ahead"
+            schedule_diff = existing_count - current_real_day
+        elif existing_count < current_real_day:
+            schedule_status = "behind"
+            schedule_diff = current_real_day - existing_count
+        else:
+            schedule_status = "on_track"
+            schedule_diff = 0
+    else:
+        schedule_status = "ongoing"
+        schedule_diff = 0
+
+    # Get detailed day status for the next day (optional, for template)
+    next_day_status = campaign.get_day_status(next_available_day) if hasattr(campaign, 'get_day_status') else None
+
+    # Rest of your context data collection...
+    # (keep all your existing context gathering code - unread_notifications, 
+    # new_campaigns_from_follows, ads, suggested_users, trending_campaigns, 
+    # top_contributors, categories, emojis, etc.)
+
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users,
@@ -4090,7 +4149,7 @@ def create_activity(request, campaign_id):
 
     categories = Campaign.objects.values_list('category', flat=True).distinct()
 
-    # Emojis for the emoji picker
+    # Emojis
     emojis = [
         '📢', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥', '🌟', 
         '🌳', '🌍', '🌱', '🌲', '🌿', '🍃', '🏞️', '🦋', '🐝', '🐞', '🦜', '🐢', '🐘', '🐆', '🐅', '🐬',
@@ -4102,7 +4161,6 @@ def create_activity(request, campaign_id):
     ]
 
     initial_emojis = emojis[:10]
-    additional_emojis = emojis[10:]
 
     context = {
         'ads': ads,
@@ -4112,7 +4170,6 @@ def create_activity(request, campaign_id):
         'unread_notifications': unread_notifications,
         'new_campaigns_from_follows': new_campaigns_from_follows,
         'initial_emojis': initial_emojis,
-        'additional_emojis': additional_emojis,
         'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
@@ -4124,15 +4181,17 @@ def create_activity(request, campaign_id):
         'existing_activities_count': existing_count,
         'max_forms': MAX_FORMS,
         'is_at_max': existing_count >= MAX_FORMS,
+        'next_available_day': next_available_day,
+        'current_real_day': current_real_day,
+        'is_next_day_locked': is_next_day_locked,
+        'days_until_unlock': days_until_unlock,
+        'progress_percentage': progress_percentage,
+        'schedule_status': schedule_status,
+        'schedule_diff': schedule_diff,
+        'next_day_status': next_day_status,  # Optional, for more detailed display
     }
 
     return render(request, 'main/activity_create.html', context)
-
-
-
-
-
-
 
 
 
@@ -5200,11 +5259,14 @@ def campaign_support(request, campaign_id):
 
 
 
+
+
 @login_required
 def recreate_campaign(request, campaign_id):
-    # Import Campaign at the top of the function to avoid scope issues
+    # Import models at the top of the function
     from main.models import Campaign, Profile, Tag, CampaignTag, Love, Comment, CampaignView, \
-                           ActivityLove, ActivityComment, Notification, NativeAd, Follow
+                           ActivityLove, ActivityComment, Notification, NativeAd, Follow, \
+                           UserSubscription, SoundTribe
     
     # ================ SECURITY CHECK ================
     # Get the campaign first to check ownership
@@ -5232,7 +5294,7 @@ def recreate_campaign(request, campaign_id):
             )
             return redirect('subscription_required')
     
-    # Get following user IDs using the improved pattern
+    # Get following user IDs
     current_user_following = request.user.following.all()
     following_user_ids = [follow.followed_id for follow in current_user_following]
     
@@ -5258,7 +5320,6 @@ def recreate_campaign(request, campaign_id):
                         campaign.poster.save(img_name, img_content, save=False)
                 except Exception as e:
                     print(f"Error processing Canva poster: {e}")
-                    # Continue without Canva poster if there's an error
             
             # =================== HANDLE IMAGE REMOVAL LOGIC ===================
             # DEFAULT BEHAVIOR: All existing images are kept unless explicitly removed
@@ -5352,7 +5413,7 @@ def recreate_campaign(request, campaign_id):
                 campaign.poster = campaign.additional_images[0]
                 campaign.additional_images = campaign.additional_images[1:4]  # Keep next 3
             
-            # 5. Handle audio - FIXED: Removed duplicate resource_type
+            # 5. Handle audio
             remove_current_audio = request.POST.get('remove_current_audio') == 'on'
             new_audio = request.FILES.get('audio')
             
@@ -5362,10 +5423,10 @@ def recreate_campaign(request, campaign_id):
             elif new_audio:
                 # User uploaded new audio - replace existing
                 try:
-                    # Upload to Cloudinary - FIXED: removed duplicate resource_type
+                    # Upload to Cloudinary
                     audio_upload_result = cloudinary.uploader.upload(
                         new_audio,
-                        resource_type='auto',  # FIXED: Only one resource_type parameter
+                        resource_type='auto',
                         folder="campaign_files/audio",
                         allowed_formats=['mp3', 'wav', 'ogg', 'm4a', 'mp4', 'aac']
                     )
@@ -5526,6 +5587,8 @@ def recreate_campaign(request, campaign_id):
     }
     
     return render(request, 'main/recreatecampaign_form.html', context)
+
+
 
 
 

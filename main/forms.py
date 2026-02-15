@@ -307,28 +307,11 @@ def validate_no_long_words(value):
         if len(word) > 20:  # Check if any word exceeds 20 characters
             raise ValidationError(f"Word '{word}' exceeds the allowed length of 20 characters.")
 
-from django.core.exceptions import ValidationError
-from PIL import Image
-import os
-from .models import Campaign, Tag, CampaignTag
-
 from django import forms
 from .models import Campaign, Tag, CampaignTag
 from django.core.exceptions import ValidationError
 import os
 from PIL import Image
-
-# Your existing validation function
-def validate_no_long_words(value, max_length=50):
-    words = value.split()
-    for word in words:
-        if len(word) > max_length:
-            raise ValidationError(f"Word '{word[:20]}...' is too long. Maximum word length is {max_length} characters.")
-
-
-
-
-
 
 class CampaignForm(forms.ModelForm):
     tags_input = forms.CharField(
@@ -376,7 +359,6 @@ class CampaignForm(forms.ModelForm):
             }),
             'duration_unit': forms.Select(attrs={
                 'class': 'form-select',
-                # Add empty option
             }),
             'funding_goal': forms.NumberInput(attrs={
                 'class': 'form-input',
@@ -397,7 +379,7 @@ class CampaignForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Required fields (only title and content)
+        # Required fields
         self.fields['title'].required = True
         self.fields['content'].required = True
         self.fields['category'].required = True
@@ -419,10 +401,10 @@ class CampaignForm(forms.ModelForm):
             ('minutes', 'Minutes'),
         ]
         
-        # Set defaults for required fields
-        if not self.instance.pk:  # Only for new campaigns
+        # Set defaults for required fields for new campaigns
+        if not self.instance.pk:
             self.fields['visibility'].initial = 'public'
-            self.fields['category'].initial = 'Education for All'
+            self.fields['category'].initial = 'Personal Empowerment'
         
         # Pre-populate with existing tags if editing
         if self.instance and self.instance.pk:
@@ -440,7 +422,7 @@ class CampaignForm(forms.ModelForm):
         """Validate duration is positive if provided"""
         duration = self.cleaned_data.get('duration')
         
-        # If duration is empty string, set to None (optional)
+        # If duration is empty string, set to None
         if duration == '':
             return None
             
@@ -449,34 +431,26 @@ class CampaignForm(forms.ModelForm):
         
         return duration
     
-    def clean_duration_unit(self):
-        """Handle duration unit"""
-        duration_unit = self.cleaned_data.get('duration_unit')
-        duration = self.cleaned_data.get('duration')
-        
-        # If no duration is provided, duration_unit should be None
-        if duration is None or duration == '':
-            return None
-        
-        # If duration is provided but unit is empty, default to 'days'
-        if duration and (duration_unit is None or duration_unit == ''):
-            return 'days'
-        
-        return duration_unit
-    
     def clean(self):
         """Custom validation for duration fields"""
         cleaned_data = super().clean()
         duration = cleaned_data.get('duration')
         duration_unit = cleaned_data.get('duration_unit')
         
-        # If duration is provided but unit is not, show error
-        if duration and not duration_unit:
-            self.add_error('duration_unit', 'Please select a duration unit if you set a duration.')
-        
-        # If unit is provided but no duration, show error
-        if duration_unit and not duration:
-            self.add_error('duration', 'Please enter a duration if you select a unit.')
+        # If this is an existing campaign
+        if self.instance and self.instance.pk:
+            # If duration is being changed but unit not provided, use existing unit
+            if duration and not duration_unit:
+                cleaned_data['duration_unit'] = self.instance.duration_unit
+            # If unit is being changed but duration not provided, use existing duration
+            elif duration_unit and not duration:
+                cleaned_data['duration'] = self.instance.duration
+        else:
+            # New campaign validation
+            if duration and not duration_unit:
+                self.add_error('duration_unit', 'Please select a duration unit if you set a duration.')
+            if duration_unit and not duration:
+                self.add_error('duration', 'Please enter a duration if you select a unit.')
         
         return cleaned_data
     
@@ -515,6 +489,8 @@ class CampaignForm(forms.ModelForm):
                     instance.tags.add(tag)
         
         return instance
+
+
 
 
 

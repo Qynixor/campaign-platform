@@ -512,25 +512,25 @@ class Tag(models.Model):
     
     def __str__(self):
         return self.name
-
-from django.db.models import Sum
-
-
 from django.db import models
 from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError
-
-from django.db import models
-from django.utils import timezone
 from datetime import timedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import json
+import requests
+from django.core.files.base import ContentFile
+import cloudinary
+import cloudinary.uploader
 
 class Campaign(models.Model):
     user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='user_campaigns')
     title = models.CharField(max_length=300)
     timestamp = models.DateTimeField(auto_now_add=True)
+    # NEW FIELD: When the actual journey/content started
+    journey_start_date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     content = models.TextField()
     poster = CloudinaryField('image', folder='campaign_files', null=True, blank=True)
     # Add this new field for multiple images
@@ -574,6 +574,8 @@ class Campaign(models.Model):
         ('minutes', 'Minutes'),
         ('days', 'Days'),
     )
+
+    # Original duration fields
     duration = models.PositiveIntegerField(null=True, blank=True, help_text="Enter duration.")
     duration_unit = models.CharField(
         max_length=10, 
@@ -582,6 +584,13 @@ class Campaign(models.Model):
         blank=True,  # Allow blank in forms
         default='days'  # Keep default but allow null
     )
+    
+    # NEW FIELDS FOR REAL-TIME DURATION TRACKING
+    end_date = models.DateTimeField(null=True, blank=True, help_text="Calculated end date based on duration")
+    duration_last_updated = models.DateTimeField(null=True, blank=True, help_text="When the duration was last changed")
+    original_duration = models.PositiveIntegerField(null=True, blank=True, help_text="Original duration when campaign started")
+    original_duration_unit = models.CharField(max_length=10, null=True, blank=True, help_text="Original duration unit when campaign started")
+    
     funding_goal = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
@@ -592,19 +601,25 @@ class Campaign(models.Model):
     
     tags = models.ManyToManyField(Tag, through='CampaignTag', related_name='campaigns', blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['timestamp']),
+            models.Index(fields=['end_date']),
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['journey_start_date']),
+        ]
+        ordering = ['-timestamp']
 
+    def __str__(self):
+        return self.title
 
-
+    # ==================== SOUND TRIBE METHODS ====================
     def get_sound_tribe_members_count(self):
-        """
-        Get the number of members in the sound tribe for this campaign
-        """
+        """Get the number of members in the sound tribe for this campaign"""
         return SoundTribe.objects.filter(campaign=self).count()
     
     def has_user_joined_tribe(self, user_profile):
-        """
-        Check if a specific user has joined the sound tribe
-        """
+        """Check if a specific user has joined the sound tribe"""
         if not user_profile:
             return False
         return SoundTribe.objects.filter(
@@ -613,9 +628,7 @@ class Campaign(models.Model):
         ).exists()
     
     def get_recent_tribe_members(self, limit=6):
-        """
-        Get recent tribe members with profile data
-        """
+        """Get recent tribe members with profile data"""
         recent_members = SoundTribe.objects.filter(
             campaign=self
         ).select_related('user__user', 'user').order_by('-timestamp')[:limit]
@@ -630,19 +643,18 @@ class Campaign(models.Model):
             for member in recent_members
         ]
 
-
+    # ==================== FUNDING PROPERTIES ====================
     @property
     def total_pledges(self):
         return self.pledge_set.aggregate(total=models.Sum('amount'))['total'] or 0
+    
     @property
     def total_donations(self):
-        """
-        Calculate total donations for this campaign.
-        Only counts donations where fulfilled=True to avoid counting cancelled payments.
-        """
+        """Calculate total donations for this campaign."""
         return self.donations.filter(fulfilled=True).aggregate(
             total=models.Sum('amount')
         )['total'] or 0
+    
     @property
     def donation_percentage(self):
         if self.funding_goal == 0:
@@ -651,65 +663,312 @@ class Campaign(models.Model):
 
     @property
     def donation_remaining(self):
-        return max(self.funding_goal - self.total_donations, 0)    
-   
+        return max(self.funding_goal - self.total_donations, 0)
+
+    @property
+    def love_count(self):
+        return self.loves.count()
+    
+    @property
+    def is_changemaker(self):
+        """Check if the user qualifies as a changemaker."""
+        activity_count = self.activity_set.count()
+        activity_love_count = ActivityLove.objects.filter(activity__campaign=self).count()
+        return activity_count >= 1 and activity_love_count >= 1
+
+    # ==================== TIME/DURATION PROPERTIES ====================
     @property
     def is_outdated(self):
-        """Check if the campaign is outdated based on duration and unit."""
-        if self.duration is None:
+        """Check if the campaign is outdated based on end_date."""
+        if self.end_date is None:
             return False  # Ongoing campaigns never expire
-
-        if self.duration_unit == 'minutes':
-            expiration_date = self.timestamp + timedelta(minutes=self.duration)
-        else:
-            expiration_date = self.timestamp + timedelta(days=self.duration)
-
-        return timezone.now() > expiration_date
+        return timezone.now() > self.end_date
     
     @property
     def days_left(self):
-        if self.duration is None:
+        """Calculate days/minutes left based on end_date (real-time)."""
+        if self.end_date is None:
             return None
-
+        
+        remaining = self.end_date - timezone.now()
+        
+        if remaining.total_seconds() <= 0:
+            return 0
+            
         if self.duration_unit == 'minutes':
-            end_time = self.timestamp + timedelta(minutes=self.duration)
-            remaining = end_time - timezone.now()
             return max(int(remaining.total_seconds() // 60), 0)
         else:
-            end_time = self.timestamp + timedelta(days=self.duration)
-            remaining = end_time - timezone.now()
             return max(remaining.days, 0)
 
+    @property
+    def elapsed_time(self):
+        """Calculate how much time has elapsed since journey start"""
+        start_date = self.journey_start_date or self.timestamp
+        elapsed = timezone.now() - start_date
+        return elapsed
+    
+    @property
+    def remaining_percentage(self):
+        """Calculate percentage of time remaining"""
+        if not self.duration or not self.duration_unit or not self.end_date:
+            return 100
+        
+        total_duration = None
+        if self.duration_unit == 'minutes':
+            total_duration = timedelta(minutes=self.duration)
+        else:
+            total_duration = timedelta(days=self.duration)
+        
+        start_date = self.journey_start_date or self.timestamp
+        elapsed = timezone.now() - start_date
+        remaining = max(total_duration - elapsed, timedelta(0))
+        
+        if total_duration.total_seconds() == 0:
+            return 0
+        
+        percentage = (remaining.total_seconds() / total_duration.total_seconds()) * 100
+        return max(0, min(100, percentage))
 
+    # ==================== FIXED DAY TRACKING METHODS ====================
+    def get_current_day(self):
+        """
+        Calculate which day of the journey the user is on RIGHT NOW.
+        
+        CORRECT BEHAVIOR:
+        - Started Feb 15 at 10:00 AM
+        - Feb 15 10:00 AM - Feb 16 9:59 AM = Day 1
+        - Feb 16 10:00 AM - Feb 17 9:59 AM = Day 2
+        - Feb 17 10:00 AM - Feb 18 9:59 AM = Day 3
+        """
+        start_date = self.journey_start_date or self.timestamp
+        
+        if not start_date:
+            return 1
+        
+        # If campaign has ended, return the final day
+        if self.is_outdated and self.duration:
+            return self.duration
+        
+        # Calculate time since start
+        now = timezone.now()
+        time_since_start = now - start_date
+        
+        if self.duration_unit == 'minutes':
+            # Minutes since start (floor division)
+            minutes_since = int(time_since_start.total_seconds() / 60)
+            # Current day = minutes_since + 1
+            # Example: minute 0-59 = Day 1, minute 60-119 = Day 2
+            current_day = minutes_since + 1
+        else:
+            # Days since start (floor division)
+            days_since = time_since_start.days
+            # Current day = days_since + 1
+            # Example: day 0 = Day 1, day 1 = Day 2
+            current_day = days_since + 1
+        
+        # Cap at total duration
+        if self.duration and current_day > self.duration:
+            return self.duration
+        
+        return current_day
 
+    def is_day_locked(self, day_number):
+        """
+        Check if a specific day number is still locked.
+        
+        EXAMPLE: Started Feb 15, today is Feb 15
+        - Day 1: is_day_locked(1) → False (available)
+        - Day 2: is_day_locked(2) → True (locked until tomorrow)
+        - Day 3: is_day_locked(3) → True (locked)
+        """
+        current_day = self.get_current_day()
+        return day_number > current_day
 
+    def get_day_unlock_date(self, day_number):
+        """
+        Calculate exactly when a specific day becomes available.
+        
+        EXAMPLE: Started Feb 15 at 3:30 PM
+        - Day 1 unlocks: Feb 15 at 3:30 PM (immediately)
+        - Day 2 unlocks: Feb 16 at 3:30 PM
+        - Day 3 unlocks: Feb 17 at 3:30 PM
+        """
+        start_date = self.journey_start_date or self.timestamp
+        
+        if day_number <= 1:
+            return start_date
+        
+        # Day N unlocks at start_date + (N-1) days/minutes
+        if self.duration_unit == 'minutes':
+            # For minute-based campaigns
+            unlock_time = start_date + timedelta(minutes=day_number - 1)
+        else:
+            # For day-based campaigns
+            unlock_time = start_date + timedelta(days=day_number - 1)
+        
+        return unlock_time
 
+    def get_day_status(self, day_number):
+        """
+        Get detailed status for a specific day.
+        Returns a dictionary with all the information needed for templates.
+        """
+        now = timezone.now()
+        current_day = self.get_current_day()
+        
+        # Case 1: Day is in the past or present (available)
+        if day_number < current_day:
+            # Past day - completed
+            return {
+                'status': 'completed',
+                'can_upload': False,  # Can't upload to past days
+                'message': f'Day {day_number} completed',
+                'unlock_date': None,
+                'unlock_date_formatted': None,
+                'hours_remaining': 0,
+                'days_remaining': 0,
+            }
+        
+        elif day_number == current_day:
+            # Current day - available now
+            return {
+                'status': 'available',
+                'can_upload': True,
+                'message': f'Day {day_number} is available now',
+                'unlock_date': None,
+                'unlock_date_formatted': None,
+                'hours_remaining': 0,
+                'days_remaining': 0,
+            }
+        
+        else:
+            # Future day - locked
+            unlock_date = self.get_day_unlock_date(day_number)
+            time_until_unlock = unlock_date - now
+            
+            # Calculate time remaining
+            days_remaining = time_until_unlock.days
+            hours_remaining = int(time_until_unlock.total_seconds() / 3600)
+            minutes_remaining = int(time_until_unlock.total_seconds() / 60)
+            
+            # Create user-friendly message
+            if days_remaining > 0:
+                message = f'Day {day_number} unlocks in {days_remaining} day{"s" if days_remaining != 1 else ""}'
+            elif hours_remaining > 0:
+                message = f'Day {day_number} unlocks in {hours_remaining} hour{"s" if hours_remaining != 1 else ""}'
+            else:
+                message = f'Day {day_number} unlocks in {minutes_remaining} minute{"s" if minutes_remaining != 1 else ""}'
+            
+            return {
+                'status': 'locked',
+                'can_upload': False,
+                'message': message,
+                'unlock_date': unlock_date,
+                'unlock_date_formatted': unlock_date.strftime('%b %d, %Y at %I:%M %p'),
+                'days_remaining': days_remaining,
+                'hours_remaining': hours_remaining,
+                'minutes_remaining': minutes_remaining,
+            }
 
+    def get_day_range(self, max_days=None):
+        """
+        Get list of day numbers to display in templates.
+        """
+        if max_days:
+            return range(1, max_days + 1)
+        elif self.duration:
+            return range(1, self.duration + 1)
+        else:
+            # If no duration, show first 7 days by default
+            return range(1, 8)
 
-    def __str__(self):
-        return self.title
+    def get_completed_days_count(self):
+        """
+        Get the number of days that have been completed (have updates).
+        """
+        return self.activity_set.count()
 
+    def get_remaining_days_count(self):
+        """
+        Get the number of days remaining in the journey.
+        """
+        if not self.duration:
+            return 0
+        completed = self.get_completed_days_count()
+        return max(0, self.duration - completed)
+
+    # ==================== SAVE METHOD & HELPERS ====================
+    def has_duration_changed(self):
+        """Check if duration fields have changed"""
+        if not self.pk:
+            return True
+        try:
+            old = Campaign.objects.get(pk=self.pk)
+            return (old.duration != self.duration or 
+                    old.duration_unit != self.duration_unit)
+        except Campaign.DoesNotExist:
+            return True
+
+    def calculate_end_date(self):
+        """Calculate end date based on duration and start date"""
+        if not self.duration or not self.duration_unit:
+            return None
+        
+        # Use journey_start_date as base for end date calculation
+        base_time = self.journey_start_date or self.timestamp
+        
+        if self.duration_unit == 'minutes':
+            return base_time + timedelta(minutes=self.duration)
+        else:
+            return base_time + timedelta(days=self.duration)
 
     def save(self, *args, **kwargs):
-        # Check if the campaign is new or if visibility has changed
         is_new = self.pk is None
-        if not is_new:
+        
+        # Set journey_start_date if this is a new campaign
+        if is_new and not self.journey_start_date:
+            self.journey_start_date = timezone.now()
+        
+        # Handle existing campaign
+        if is_new:
+            # Set original duration values for new campaign
+            self.original_duration = self.duration
+            self.original_duration_unit = self.duration_unit
+            self.duration_last_updated = self.journey_start_date or self.timestamp
+            
+            # Calculate end date for new campaign
+            if self.duration and self.duration_unit:
+                self.end_date = self.calculate_end_date()
+            
+            visibility_changed = False
+        else:
+            # Existing campaign - check if duration changed
             old_instance = Campaign.objects.get(pk=self.pk)
             visibility_changed = old_instance.visibility != self.visibility
-        else:
-            visibility_changed = False
-
+            
+            if self.has_duration_changed():
+                # Store original duration if not already set
+                if not self.original_duration:
+                    self.original_duration = old_instance.original_duration or old_instance.duration
+                if not self.original_duration_unit:
+                    self.original_duration_unit = old_instance.original_duration_unit or old_instance.duration_unit
+                
+                # Update the last updated time to NOW
+                self.duration_last_updated = timezone.now()
+                
+                # Calculate new end date based on current time + new duration
+                self.end_date = self.calculate_end_date()
+        
         # Save the campaign
         super().save(*args, **kwargs)
 
-        # Notify followers if the campaign has become private or if it's a new campaign
-        if self.visibility == 'private' or is_new:
-            if is_new or visibility_changed:
-                self.notify_visible_to_followers()
+        # Handle visibility notifications for existing campaigns
+        if not is_new and visibility_changed and self.visibility == 'private':
+            self.notify_visible_to_followers()
 
     def notify_visible_to_followers(self):
         for profile in self.visible_to_followers.all():
-            user = profile.user  # Ensure this relationship is correctly set
+            user = profile.user
             message = (
                 f'You have been granted access to a private cause: {self.title}. '
                 f'<a href="{reverse("view_campaign", kwargs={"campaign_id": self.pk})}">View Cause</a>'
@@ -722,27 +981,6 @@ class Campaign(models.Model):
                 campaign=self,
                 redirect_link=f'/campaigns/{self.pk}/'
             )
-
-
-    @property
-    def love_count(self):
-        return self.loves.count()
-        
-
-    @property
-    def is_changemaker(self):
-        """Check if the user qualifies as a changemaker."""
-        activity_count = self.activity_set.count()
-        activity_love_count = ActivityLove.objects.filter(activity__campaign=self).count()
-        return activity_count >= 1 and activity_love_count >= 1
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-
-        # Automatically award changemaker status if criteria are met
-        if self.is_changemaker:
-            self.award_changemaker_status()
 
     def award_changemaker_status(self):
         """Award changemaker status and assign the correct award type."""
@@ -767,6 +1005,10 @@ class Campaign(models.Model):
                 award=award_type,
                 timestamp=timezone.now()
             )
+
+
+
+
         def get_goals_and_activities(self):
             goals_activities = {
         'Personal Empowerment': {
