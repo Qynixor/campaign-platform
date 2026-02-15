@@ -1,1672 +1,1463 @@
 {% extends 'main/face.html' %}
 {% load custom_filters %}
-
-
 {% load static %}
+
 {% block content %}
 
-
 <style type="text/css">
+/* ===== MODERN PROFILE PAGE - JOURNEY/CAMPAIGN PLATFORM ===== */
+:root {
+    --primary: #1DA1F2;
+    --primary-dark: #1a8cd8;
+    --primary-light: #9bd0f5;
+    --success: #17bf63;
+    --danger: #e0245e;
+    --warning: #ff8c00;
+    --dark: #14171a;
+    --light: #ffffff;
+    --gray: #657786;
+    --light-gray: #f5f8fa;
+    --border: #e1e8ed;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --modal-overlay: rgba(0, 0, 0, 0.5);
+}
 
+/* ===== DARK MODE ===== */
+body.dark-mode {
+    --primary: #1DA1F2;
+    --primary-dark: #1a8cd8;
+    --success: #17bf63;
+    --danger: #e0245e;
+    --dark: #ffffff;
+    --light: #15202b;
+    --gray: #8899a6;
+    --light-gray: #192734;
+    --border: #38444d;
+    --modal-overlay: rgba(0, 0, 0, 0.8);
+    background: #15202b;
+}
 
-.container {
-    max-width: 100%;
+/* ===== MAIN LAYOUT ===== */
+.profile-container {
+    max-width: 1000px;
     margin: 20px auto;
-    border-radius: 12px;
-    padding: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.rectangle-container {
-    width: 100%;
-    height: 200px; /* Increased height for more prominence */
-    margin-bottom: 15px;
-    border: 1px solid #8FBC8F;
-    border-radius: 20px;
+    background: var(--light);
+    border-radius: 16px;
     overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+/* ===== COVER SECTION ===== */
+.profile-cover {
     position: relative;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    height: 280px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    overflow: hidden;
 }
 
-.rectangle-container:hover {
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); /* Hover effect */
-    transform: scale(1.02); /* Slight zoom on hover */
-}
-
-.rectangle-container img {
+.profile-cover img {
     width: 100%;
-    height: 100%; /* Ensures the image covers the container */
-    object-fit: cover; /* Ensures proper aspect ratio */
-    opacity: 0.3; /* Semi-transparent */
-    transition: opacity 0.3s ease;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.15;
 }
 
-.rectangle-container:hover img {
-    opacity: 0.7; /* Slightly clearer on hover */
-}
-
-.rectangle-container::before {
-    content: '';
+.profile-cover-overlay {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6); /* Black overlay */
-    transition: background 0.3s ease;
-    z-index: 1;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
 }
 
-.rectangle-container:hover::before {
-    background: rgba(0, 0, 0, 0.3); /* Lighter black on hover */
-}
-
-.rectangle-container a {
+/* ===== PROFILE AVATAR ===== */
+.profile-avatar-section {
     position: relative;
-    z-index: 2; /* Bring link above the overlay */
-}
-
-
-.profile-img-container img {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease;
-}
-
-.profile-info {
-    max-width: 100%;
-    padding: 0 15px;
-    text-align: center;
-}
-
-.profile-info h2 {
-    font-size: 22px; /* Slightly smaller font size */
-    color: #2C3E50; /* Darker color for better contrast */
-    margin-top: 15px;
-}
-
-.profile-info p {
-    font-size: 12px; /* Smaller font size */
-    color: #7F8C8D; /* Lighter gray for a softer look */
-}
-
-/* More compact styles for profile details */
-.more-profile-info a {
-    display: inline-block;
-    margin: 5px 0;
-    color: #2980B9; /* Changed link color to a more vibrant shade */
-}
-
-.details {
-    text-align: left;
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
-}
-
-@media (max-width: 768px) {
-    .container {
-        padding: 0;
-    }
-
-    .rectangle-container {
-        height: 150px; /* Increased height for better visibility on mobile */
-    }
-
-    .rectangle-container img {
-        height: 100%; /* Ensure the image covers the container */
-        object-fit: cover; /* Proper scaling for the image */
-    }
-
-    .profile-img-container img {
-        width: 120px;
-        height: 120px;
-    }
-
-    .profile-info h2 {
-        font-size: 18px; /* Smaller font size */
-    }
-
-    .profile-info p {
-        font-size: 11px; /* Smaller font size */
-    }
-
-    .details {
-        padding: 0 10px;
-    }
-
-    .details p {
-        font-size: 12px; /* Smaller font size */
-        margin: 5px 0;
-    }
-
-    .more-profile-info {
-        font-size: 12px; /* Smaller font size */
-    }
-}
-
-/* Default styling for larger screens */
-.button {
-    background-color: limegreen;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-bottom: 10px;
-}
-
-.button:hover {
-    background-color: #32CD32;
-}
-
-.details {
-    text-align: left;
-    margin-top: 20px;
-    width: 100%;
-}
-
-.details h3 {
-    margin-top: 0;
-}
-
-.details p {
-    margin: 5px 0;
-}
-
-.bio {
-    width: 100%;
-    border: 1px solid #ddd;
-    padding: 10px;
-    font-size: 14px;
-}
-
-.bio p {
-    margin: 5px 0;
-}
-
-.edit-profile-button {
-    text-align: center;
-    margin-top: 20px;
-}
-
-
-
-/* Mobile styles */
-@media (max-width: 768px) {
-    .button {
-        padding: 8px 16px;
-        font-size: 12px; /* Decreased font size */
-    }
-
-    .details {
-        margin-top: 15px;
-    }
-
-    .bio {
-        padding: 8px;
-        font-size: 12px; /* Decreased font size */
-    }
-
-    .edit-profile-button {
-        margin-top: 15px;
-    }
-
-
-}
-
-
-
-        .cm {
-            font-size: 12px;
-        }
-
-        .blue-tick {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-
-        .action-item {
-            display: inline-block;
-            padding: 10px 20px;
-            margin-right: 10px;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 12px;
-        }
-
-        .action-item a {
-            color: #000;
-            text-decoration: none;
-            font-size: inherit;
-        }
-
-        .action-item i {
-            margin-right: 5px;
-        }
-
-
-
-.more-profile-info {
-    background: #f9f9f9; /* Light background for contrast */
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    font-size: 14px;
-    text-align: left;
-    margin-top: 10px;
-}
-
-.username-display {
-    font-size: 20px;
-    font-weight: bold;
-    color: #2C3E50;
-    text-align: center;
-    margin-bottom: 10px;
-    font-family: 'Arial', sans-serif;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 5px;
-}
-
-.more-profile-info a {
-    color: #007BFF;
-    text-decoration: none;
-    margin: 0 5px;
-    transition: color 0.3s ease;
-}
-
-.more-profile-info a:hover {
-    text-decoration: underline;
-    color: #0056b3;
-}
-
-/* Light Mode - Base Styles */
-.changemakers {
+    padding: 0 24px;
+    margin-top: -70px;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
-    padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 10px;
-    border: 1px solid #e1e5eb;
-    transition: all 0.3s ease;
+    align-items: flex-end;
+    gap: 24px;
 }
 
-.changemaker-badge {
+.profile-avatar {
+    position: relative;
+    z-index: 10;
+}
+
+.profile-avatar img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 4px solid var(--light);
+    background: var(--light);
+    object-fit: cover;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.2s;
+}
+
+.profile-avatar img:hover {
+    transform: scale(1.02);
+}
+
+/* ===== PROFILE ACTIONS BAR ===== */
+.profile-actions-bar {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+/* Buttons */
+.btn {
     display: inline-flex;
     align-items: center;
-    font-size: 13px;
-    font-family: 'Segoe UI', 'Roboto', sans-serif;
-    padding: 7px 12px;
-    background-color: #ffffff;
-    border: 1px solid #e1e5eb;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    color: #333333; /* Added text color for better contrast */
-}
-
-.changemaker-badge:hover {
-    background-color: #f0f7ff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.category-keyboard {
-    margin-left: 8px;
-    color: #2e8b57;
-    font-weight: 600;
-    font-size: 0.9em;
-    background-color: #f0fff4;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-family: 'SF Mono', 'Roboto Mono', monospace;
-    border: 1px solid #c8e6c9;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
-}
-
-/* Dark Mode Overrides */
-body.dark-mode .changemakers {
-    background-color: #1e1e1e;
-    border-color: #2d2d2d;
-}
-
-body.dark-mode .changemaker-badge {
-    background-color: #2d2d2d;
-    border-color: #3d3d3d;
-    color: #e0e0e0; /* Light text for dark mode */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-body.dark-mode .changemaker-badge:hover {
-    background-color: #253341;
-}
-
-body.dark-mode .category-keyboard {
-    color: #4cceac;
-    background-color: #1e3a34;
-    border-color: #2d4a43;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-.verification-section {
-    margin-top: 15px;
-    text-align: center;
-}
-
-.custom-btn {
-    color: #fff;
-    background-color: limegreen;
-    border: none;
-    font-size: 14px;
-    padding: 8px 12px;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-    text-decoration: none;
-    display: inline-block;
-}
-
-.custom-btn:hover {
-    background-color: #32CD32;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-/* Styles for the verification link */
-.verification-link {
-    display: inline-block;
-    margin-top: 10px;
-    padding: 10px 15px; /* Added padding for better spacing */
-    background: linear-gradient(135deg, #007BFF, #0056b3); /* Gradient background */
-    color: #ffffff; /* White text for contrast */
-    text-decoration: none; /* Remove underline */
-    border-radius: 5px; /* Slightly rounded corners */
-    font-size: 1em; /* Adjust font size */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-    transition: background 0.3s ease; /* Smooth background transition */
-}
-
-.verification-link:hover {
-    background: linear-gradient(135deg, #0056b3, #003f7f); /* Darker gradient on hover */
-}
-
-
-
-/* Twitter Blue Edit Button */
-.edit-btn {
-    background-color: #1DA1F2; /* Twitter Blue */
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 50px; /* Twitter's signature rounded corners */
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 10px;
-    width: auto;
-    font-weight: 600; /* Twitter's button font weight */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-}
-
-.edit-btn:hover {
-    background-color: #1a91da; /* Slightly darker Twitter Blue */
-    transform: translateY(-1px); /* Slight lift on hover */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
-}
-
-.edit-btn:active {
-    transform: translateY(0); /* Reset when clicked */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* Focus state for accessibility */
-.edit-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.3); /* Twitter blue glow */
-}
-
-/* Mobile version */
-@media (max-width: 768px) {
-    .edit-btn {
-        padding: 6px 14px;
-        font-size: 13px;
-        border-radius: 25px; /* Slightly less rounded on mobile */
-    }
-}
-
-/* Dark mode support */
-body.dark-mode .edit-btn {
-    background-color: #1DA1F2; /* Same Twitter Blue works in dark mode */
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-body.dark-mode .edit-btn:hover {
-    background-color: #1a91da;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-.silver-btn {
-    background-color: #f0f0f0; /* Lighter silver background */
-    color: black;             /* Black text for readability */
-    border: 1px solid #dcdcdc; /* Subtle border for contrast */
-    padding: 5px 10px;        /* Smaller padding for compact size */
-    text-decoration: none;    /* Remove underline from links */
-    border-radius: 5px;       /* Rounded corners */
-    font-size: 14px;          /* Smaller font size */
-    cursor: pointer;          /* Show pointer on hover */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Softer shadow */
-}
-
-.silver-btn:hover {
-    background-color: #e6e6e6; /* Slightly darker on hover */
-    color: black;              /* Keep text black */
-}
-.campaigns {
-    padding: 0;
-    background-color: #f9f9f9;
-}
-
-.campaign-list {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Default: 4 columns layout */
-    gap: 10px; /* Spacing between posters */
-    padding: 10px;
-    justify-items: center; /* Centers each campaign item */
-}
-
-.campaign-item {
-    position: relative; /* Enables positioning of child elements */
-    background-color: #333; /* Dark background for mystery */
-    border-radius: 8px;
-    overflow: hidden; /* Ensures rounded corners are maintained */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Adds shadow for depth */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.campaign-item:hover {
-    transform: scale(1.05); /* Slight zoom on hover */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Darker shadow on hover */
-}
-
-.campaign-poster {
-    display: block;
-    position: relative;
-}
-
-.campaign-poster img {
-    width: 100%;
-    height: 200px; /* Fixed height for consistency */
-    object-fit: cover;
-    border-radius: 8px;
-    transition: opacity 0.3s ease;
-}
-
-.campaign-poster:hover img {
-    opacity: 0.8; /* Slight fade on hover */
-}
-
-/* View count overlay inside poster */
-.view {
-    position: absolute;
-    bottom: 10px; /* Positions it at the bottom of the poster */
-    left: 10px; /* Adds some spacing from the edge */
-    display: flex;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.6); /* Transparent black background */
-    color: #fff; /* White text for contrast */
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
-.view i {
-    margin-right: 5px; /* Space between icon and text */
-    color: #f39c12; /* Gold color for eye icon */
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-    .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Three columns for tablets */
-        gap: 8px; /* Smaller gap for medium screens */
-
-    }
-}
-
-@media (max-width: 768px) {
-    .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Two columns on smaller screens */
-        gap: 5px; /* Even smaller gap for mobile */
-    }
-
-    .campaign-poster img {
-        height: 150px; /* Smaller height for mobile view */
-    }
-
-    .view {
-        font-size: 12px; /* Smaller text on mobile */
-        padding: 3px 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Ensure 2 columns even on very small screens */
-        
-    }
-}
-
-/* Campaigns Section Title */
-.campaign-title {
-    padding-top: 10px;
-    font-size: 16px; /* Reduced font size */
-    font-family: 'Arial', sans-serif;
-    color: #2ecc71; /* Lemon green color */
-    text-align: center;
-    margin-bottom: 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px; /* Slightly reduced spacing */
-}
-
-/* Mobile Adjustments */
-@media (max-width: 768px) {
-    .campaign-title {
-        font-size: 14px; /* Smaller font size for mobile */
-        margin-bottom: 15px; /* Reduced space below title */
-        letter-spacing: 0.5px; /* Compact spacing for smaller screens */
-    }
-}
-
-/* Dark Mode Styles */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: #e0e0e0; /* Light text with a softer tone */
-    font-family: 'Arial', sans-serif; /* Consistent font */
-}
-
-body.dark-mode .more-profile-info {
-    background-color: #1e1e1e; /* Slightly lighter dark background */
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
-}
-
-body.dark-mode .username-display {
-    color: #ffffff; /* Bright white for username */
-    font-size: 24px;
-    margin-bottom: 15px;
-}
-
-
-
-body.dark-mode .changemaker-badge {
-    background-color: #333333; /* Darker background for badge */
-    color: #64b5f6; /* Light blue for text */
-    padding: 8px 12px;
-    border-radius: 5px;
-    display: inline-block;
-    margin-top: 10px;
-}
-
-body.dark-mode .category-keyboard {
-    color: #ffffff; /* White for category text */
-    font-weight: bold;
-}
-
-
-
-body.dark-mode .custom-btn {
-    background-color: #3498db; /* Accent color for buttons */
-    color: #ffffff;
-    border: none;
+    gap: 8px;
     padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-body.dark-mode .custom-btn:hover {
-    background-color: #2980b9; /* Darker accent color on hover */
-}
-
-body.dark-mode .silver-btn {
-    background-color: #7f8c8d; /* Silver color for verify button */
-}
-
-body.dark-mode .silver-btn:hover {
-    background-color: #95a5a6; /* Lighter silver on hover */
-}
-
-body.dark-mode .material-icons {
-    vertical-align: middle; /* Align icons with text */
-}
-
-
-body.dark-mode .follow-unfollow-section {
-    margin-top: 20px;
-}
-
-body.dark-mode .follow-unfollow-section .custom-btn {
-    width: 100%;
-    max-width: 200px;
-    text-align: center;
-}
-
-body.dark-mode .follow-unfollow-section .custom-btn:hover {
-    transform: scale(1.05); /* Slight scale effect on hover */
-}
-
-body.dark-mode .affiliate-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    padding: 10px 15px;
-    background-color: #3498db; /* Accent color for buttons */
-    color: #ffffff;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
-
-body.dark-mode .affiliate-link:hover {
-    background-color: #2980b9; /* Darker accent color on hover */
-}
-
-body.dark-mode .affiliate-link i {
-    margin-right: 8px; /* Space between icon and text */
-}
-
-body.dark-mode .love-count,
-body.dark-mode #view-count,
-body.dark-mode .comment-count {
-    color: #ffffff; /* Light text for counts */
-    font-weight: bold;
-}
-
-body.dark-mode .search-container input[type="text"] {
-    background-color: #333333; /* Dark background for input */
-    color: #ffffff; /* Light text */
-    border: 1px solid #444444; /* Dark border */
-    padding: 10px;
-    border-radius: 5px;
-}
-
-body.dark-mode .search-container .btn-reset {
-    color: #b0b0b0; /* Light icon color */
-}
-
-body.dark-mode button:not(.btn-search, .btn-reset) {
-    background-color: #262626; /* Dark background for buttons */
-    color: #ffffff; /* Light text */
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-body.dark-mode button:not(.btn-search, .btn-reset):hover {
-    background-color: #333333; /* Slightly lighter on hover */
-}
-
-body.dark-mode .explore-link i {
-    color: #ffffff; /* Light icon color */
-}
-
-body.dark-mode .objectives-activities {
-    background-color: #262626; /* Dark background for objectives */
-    border-left: 4px solid #3498db; /* Accent border */
-    color: #ffffff; /* Light text */
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 15px;
-}
-
-
-
-body.dark-mode .category-keyboard {
-    color: #ffffff; /* White for the category text */
-}
-
-
-/* Dark Mode Overrides */
-body.dark-mode .verification-section {
-    background-color: #1e1e1e; /* Dark background for the section */
-    padding: 10px;
-    border-radius: 8px;
-    margin-top: 15px;
-}
-
-body.dark-mode .custom-btn.silver-btn {
-    background-color: #555555; /* Darker silver for dark mode */
-    color: #ffffff; /* White text */
-}
-
-body.dark-mode .custom-btn.silver-btn:hover {
-    background-color: #666666; /* Slightly lighter on hover */
-}
-
-/* Dark Mode Overrides */
-body.dark-mode .campaigns {
-    background-color: #1e1e1e; /* Dark background for the section */
-    padding: 0;
-}
-
-body.dark-mode .campaign-list {
-    background-color: #1e1e1e; /* Dark background for the grid */
-    padding: 10px;
-}
-
-body.dark-mode .campaign-item {
-    background-color: #333333; /* Darker background for campaign items */
-    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1); /* Subtle shadow for depth */
-}
-
-body.dark-mode .campaign-item:hover {
-    transform: scale(1.05); /* Slight zoom on hover */
-    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.2); /* Stronger shadow on hover */
-}
-
-body.dark-mode .campaign-poster img {
-    filter: brightness(0.9); /* Slightly darken images for better contrast */
-}
-
-body.dark-mode .campaign-poster:hover img {
-    opacity: 0.8; /* Slight fade on hover */
-}
-
-body.dark-mode .view {
-    background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white for view count */
-    color: #ffffff; /* White text for contrast */
-}
-
-body.dark-mode .view i {
-    color: #f39c12; /* Gold color for eye icon (unchanged) */
-}
-
-body.dark-mode .campaign-title {
-    color: #2ecc71; /* Keep the lemon green color for the title */
-}
-
-/* Responsive adjustments (unchanged, but ensure they work in dark mode) */
-@media (max-width: 1024px) {
-    body.dark-mode .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Three columns for tablets */
-        gap: 8px; /* Smaller gap for medium screens */
-    }
-}
-
-@media (max-width: 768px) {
-    body.dark-mode .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Two columns on smaller screens */
-        gap: 5px; /* Even smaller gap for mobile */
-    }
-
-    body.dark-mode .campaign-poster img {
-        height: 150px; /* Smaller height for mobile view */
-    }
-
-    body.dark-mode .view {
-        font-size: 12px; /* Smaller text on mobile */
-        padding: 3px 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    body.dark-mode .campaign-list {
-        grid-template-columns: repeat(3, 1fr); /* Ensure 2 columns even on very small screens */
-    }
-}
-
-/* Mobile Adjustments */
-@media (max-width: 768px) {
-    body.dark-mode .campaign-title {
-        font-size: 14px; /* Smaller font size for mobile */
-        margin-bottom: 15px; /* Reduced space below title */
-        letter-spacing: 0.5px; /* Compact spacing for smaller screens */
-    }
-}
-
-
-
-
-
-.edit-icon-link {
-  display: inline-flex;
-  text-decoration: none;
-  position: relative;
-  padding-bottom: 2px; /* Space for underline */
-}
-
-.edit-icon-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background-color: #c0c0c0; /* Silver underline */
-  opacity: 0.5;
-  transition: all 0.2s ease;
-}
-
-.username-display svg {
-  width: 14px;
-  height: 14px;
-  color: #c0c0c0; /* Silver icon */
-  opacity: 0.9;
-  transition: all 0.2s ease;
-}
-
-/* Hover effects */
-.edit-icon-link:hover::after {
-  opacity: 0.8;
-  background-color: #a0a0a0;
-}
-
-.edit-icon-link:hover svg {
-  opacity: 1;
-  color: #a0a0a0;
-  transform: scale(1.1);
-}
-
-</style>
-
-<style type="text/css">
-  .follow-btn {
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid #1DA1F2;
-    background: white;
-    color: #1DA1F2;
-    cursor: pointer;
-    font-size: 14px;
+    border-radius: 9999px;
     font-weight: 600;
+    font-size: 14px;
+    line-height: 1;
+    text-decoration: none;
     transition: all 0.2s ease;
-    margin-left: 10px;
-    min-width: 80px;
-    text-align: center;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    cursor: pointer;
+    border: 1px solid transparent;
 }
 
-.follow-btn:hover {
-    background: rgba(29, 161, 242, 0.1);
-}
-
-.follow-btn.following {
-    background: #1DA1F2;
+.btn-primary {
+    background: var(--primary);
     color: white;
 }
 
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline:hover {
+    background: rgba(29, 161, 242, 0.1);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dark);
+}
+
+.btn-secondary:hover {
+    background: var(--light-gray);
+}
+
+/* Follow Button */
+.follow-btn {
+    min-width: 100px;
+    justify-content: center;
+    background: var(--primary);
+    color: white;
+    position: relative;
+}
+
+.follow-btn.following {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dark);
+}
+
+body.dark-mode .follow-btn.following {
+    color: white;
+    border-color: var(--gray);
+}
+
 .follow-btn.following:hover {
-    background: #e0245e;
+    background: var(--danger);
+    border-color: var(--danger);
+    color: white;
 }
 
-/* Simple text swap - no fancy transitions */
-.follow-btn .btn-text {
-    display: block;
-}
-
-.follow-btn .unfollow-text {
-    display: none;
-}
-
-.follow-btn.following:hover .btn-text {
-    display: none;
-}
-
-.follow-btn.following:hover .unfollow-text {
-    display: block;
-}
-
+/* Follow Button Loading State */
 .follow-btn.loading {
     opacity: 0.7;
     pointer-events: none;
-    padding-left: 30px;
+    color: transparent !important;
 }
 
-.follow-btn.loading:before {
-    content: "";
+.follow-btn.loading::after {
+    content: '';
     position: absolute;
-    left: 12px;
+    left: 50%;
     top: 50%;
-    width: 16px;
-    height: 16px;
-    margin-top: -8px;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    margin-top: -9px;
     border: 2px solid rgba(255,255,255,0.3);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
+.follow-btn.following.loading::after {
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: var(--primary);
+}
+
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
-.followers-count {
-    font-size: 12px;
-    color: #666;
-    margin-left: 15px;
-    display: inline-block;
-}
-</style>
-
-
-
-    <style type="text/css">
-        
-
-
-    .sub {
-    display: flex;
-    align-items: center;
-    gap: 12px; /* slightly bigger */
-    margin-bottom: 14px; 
-    padding: 14px; /* increased */
-    border-radius: 10px; 
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    transition: transform 0.2s ease;
-}
-
-.sub:hover {
-    transform: translateY(-2px); 
-}
-
-.sub i {
-    display: flex;
+/* Message Badge */
+.message-badge {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 38px;   /* increased */
-    height: 38px;  /* increased */
-    font-size: 16px; /* slightly bigger */
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #4b5563;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 1px solid #f9fafb;
-}
-
-.sub h2 {
-    margin: 0;
-    font-size: 18px;  /* slightly larger */
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--danger);
+    color: white;
+    font-size: 12px;
     font-weight: 600;
-    color: #1f2937;
+    margin-left: 5px;
 }
 
-.sub p {
-    margin: 5px 0 0;
-    font-size: 13px;  /* increased */
-    color: #6b7280;
-    line-height: 1.45;
+/* ===== PROFILE INFO SECTION ===== */
+.profile-info-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
 }
 
-        /* Dark mode for sub elements */
-        body.dark-mode .sub {
-            background: #1e1e1e;
-            border: 1px solid #333;
-        }
-        
-        body.dark-mode .sub i {
-            background: linear-gradient(135deg, #2d2d2d 0%, #252525 100%);
-            color: #b0b0b0;
-            border: 1px solid #333;
-        }
-        
-        body.dark-mode .sub h2 {
-            color: #f0f0f0;
-        }
-        
-        body.dark-mode .sub p {
-            color: #a0a0a0;
-        }
-</style>
-  
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
 
-<style>
-/* Modern Message Button Styles */
-.message-btn {
+.profile-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--dark);
+    margin: 0;
+}
+
+.profile-username {
+    font-size: 15px;
+    color: var(--gray);
+    margin-bottom: 12px;
+}
+
+/* Email Row with Details Icon */
+.email-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.email-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark);
+    font-size: 15px;
+    background: var(--light-gray);
+    padding: 8px 16px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+}
+
+.email-display i {
+    color: var(--primary);
+    font-size: 14px;
+}
+
+/* Details Icon Button */
+.details-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    font-size: 16px;
+}
+
+.details-icon:hover {
+    background: var(--primary);
+    color: white;
+    transform: scale(1.05);
+    border-color: var(--primary);
+}
+
+/* Edit Icon */
+.edit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: var(--gray);
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.edit-icon:hover {
+    background: rgba(29, 161, 242, 0.1);
+    color: var(--primary);
+}
+
+/* Verification Badge */
+.verification-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--success);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.verification-badge i {
+    font-size: 14px;
+}
+
+/* Changemaker Badge */
+.changemaker-badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 18px;
-    border-radius: 25px;
-    font-weight: 500;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #f9e6b3, #f1c40f);
+    border-radius: 9999px;
+    color: #2c3e50;
+    font-weight: 600;
     font-size: 14px;
-    text-decoration: none;
+    margin: 8px 0;
+    border: 1px solid #f39c12;
+}
+
+body.dark-mode .changemaker-badge {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    color: #f1c40f;
+    border-color: #f1c40f;
+}
+
+.changemaker-badge i {
+    color: #f39c12;
+}
+
+.category-keyboard {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* ===== STATS GRID ===== */
+.profile-stats {
+    display: flex;
+    gap: 40px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.stat-item {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--dark);
     transition: all 0.3s ease;
-    border: 1px solid transparent;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Message Button for other users' profiles */
-.message-btn.primary {
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    border: none;
-}
-
-.message-btn.primary:hover {
-    background: linear-gradient(135deg, #2575fc 0%, #6a11cb 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
-    color: white;
-}
-
-/* Check Your Messages Button for own profile */
-.message-btn.secondary {
-    background: #ffffff;
-    color: #4a5568;
-    border: 1px solid #e2e8f0;
-}
-
-.message-btn.secondary:hover {
-    background: #f7fafc;
-    border-color: #cbd5e0;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    color: #2d3748;
-}
-
-/* Dark mode adjustments */
-body.dark-mode .message-btn.secondary {
-    background: #2d3748;
-    color: #e2e8f0;
-    border: 1px solid #4a5568;
-}
-
-body.dark-mode .message-btn.secondary:hover {
-    background: #4a5568;
-    border-color: #718096;
-    color: #ffffff;
-}
-
-/* Button icons */
-.message-btn i {
-    font-size: 14px;
-    transition: transform 0.3s ease;
-}
-
-.message-btn:hover i {
+.stat-value.updating {
+    color: var(--primary);
     transform: scale(1.1);
 }
 
-/* Unread message badge */
-.message-badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: #ff4757;
-    color: white;
+.stat-label {
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.stat-item a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.stat-item a:hover .stat-label {
+    color: var(--primary);
+}
+
+/* ===== BIO SECTION ===== */
+.bio-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+.bio-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0 0 10px 0;
+}
+
+.bio-content {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--dark);
+    white-space: pre-wrap;
+}
+
+/* ===== MODAL STYLES ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--modal-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-container {
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--light);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-container {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--light);
+    z-index: 10;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-header h3 i {
+    color: var(--primary);
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    animation: pulse 2s infinite;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+.modal-close:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
 }
 
-/* Message button container */
-.message-buttons-container {
+.modal-body {
+    padding: 24px;
+}
+
+.modal-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.modal-info-item {
     display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--light-gray);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.modal-info-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.modal-info-content {
+    flex: 1;
+}
+
+.modal-info-label {
+    font-size: 12px;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.modal-info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark);
+    word-break: break-word;
+}
+
+.modal-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--gray);
+    background: var(--light-gray);
+    border-radius: 12px;
+}
+
+.modal-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    text-align: right;
+}
+
+/* ===== PAYMENT SECTION ===== */
+.payment-section {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, var(--primary-light), #e8f5fe);
+    border-bottom: 1px solid var(--border);
+}
+
+body.dark-mode .payment-section {
+    background: #192734;
+}
+
+.payment-header {
+    display: flex;
+    align-items: center;
     gap: 12px;
-    margin: 15px 0;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
+    margin-bottom: 15px;
 }
 
-/* For mobile responsiveness */
+.payment-header i {
+    font-size: 24px;
+    color: var(--primary);
+}
+
+.payment-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.payment-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.payment-status.active {
+    background: var(--success);
+    color: white;
+}
+
+.payment-status.inactive {
+    background: var(--danger);
+    color: white;
+}
+
+.payment-detail {
+    margin: 10px 0;
+    font-size: 14px;
+    color: var(--dark);
+}
+
+.payment-detail strong {
+    color: var(--primary);
+}
+
+/* ===== VERIFICATION LINK ===== */
+.verification-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 20px 24px;
+    transition: all 0.2s;
+}
+
+.verification-link:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+/* ===== CAMPAIGNS SECTION ===== */
+.campaigns-section {
+    padding: 20px 24px;
+}
+
+.campaigns-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.campaigns-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+.campaigns-header h2 i {
+    color: var(--primary);
+    margin-right: 8px;
+}
+
+.campaign-count {
+    background: var(--light-gray);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.campaign-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background: var(--light-gray);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.campaign-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.campaign-card a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.campaign-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.campaign-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.campaign-views {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 9999px;
+}
+
+.campaign-views i {
+    font-size: 12px;
+}
+
+.empty-campaigns {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--gray);
+    background: var(--light-gray);
+    border-radius: 12px;
+}
+
+.empty-campaigns i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+}
+
+.toast {
+    background: var(--light);
+    color: var(--dark);
+    padding: 14px 24px;
+    border-radius: 9999px;
+    margin-top: 10px;
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--success);
+    animation: slideIn 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 250px;
+    max-width: 350px;
+    border: 1px solid var(--border);
+}
+
+.toast.error {
+    border-left-color: var(--danger);
+}
+
+.toast.success {
+    border-left-color: var(--success);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .message-btn {
-        padding: 6px 14px;
+    .profile-cover {
+        height: 180px;
+    }
+
+    .profile-avatar-section {
+        margin-top: -50px;
+        padding: 0 16px;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-avatar img {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-actions-bar {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-name-row {
+        justify-content: center;
+    }
+
+    .profile-username {
+        text-align: center;
+    }
+
+    .email-row {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .profile-stats {
+        justify-content: center;
+        gap: 24px;
+    }
+
+    .campaign-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .modal-container {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+    }
+    
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .campaign-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .profile-stats {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .btn {
+        padding: 8px 16px;
         font-size: 13px;
     }
     
-    .message-buttons-container {
-        gap: 8px;
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .message-btn {
+    .email-display {
         width: 100%;
         justify-content: center;
     }
 }
 </style>
 
-
-<div class="sub">
-   <i class="fas fa-user-circle"></i>
-   <div>
-       <h2>User Profile</h2>
-       <p>View your profile, update personal info, and track your cause activities.</p>
-   </div>
-</div>
-
-<div class="container">
-<div class="rectangle-container">
-    <a href="{{ user_profile.image.url }}"  target="_blank">
-        <img src="{{ user_profile.image.url }}" alt="Profile Picture">
-    </a>
-</div>
-<div class="profile-img-container">
-    <a href="{{ user_profile.image.url }}" target="_blank">
-        <img src="{{ user_profile.image.url }}" alt="Profile Picture">
-    </a>
-</div>
-
-<div class="more-profile-info">
-<h3 class="username-display">
-  @{{ user_profile.user.username }}
-  <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="edit-icon-link">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-    </svg>
-  </a>
-</h3>
-    <a href="{% url 'follower_list' user_profile.user.username %}">Followers: ({{ followers_count|format_count }})</a> |
-    <a href="{% url 'following_list' user_profile.user.username %}">Following: ({{ following_count|format_count }})</a> |
-    User Public Causes:({{ public_campaigns_count|format_count }}) | Loves: ({{ user_profile.total_loves|format_count }})
-    
-<div class="changemakers">
-    {% if changemaker_category %}
-        <div class="changemaker-badge">
-            Changemaker -
-            <span class="category-keyboard">{{ changemaker_category }}</span>
-        </div>
-    {% endif %}
-</div>
-
-{% if user_profile.profile_verified %}
-    <p><strong>Account:</strong> <span>verified</span>
-    <i class="material-icons" style="font-size:20px;color:green">verified_user</i></p>
-{% else %}
-    <div class="verification-section">
-        <a href="{% url 'verify_profile' %}" class="custom-btn silver-btn">Verify Your Account</a>
+<!-- Main Container -->
+<div class="profile-container">
+    <!-- Cover Image -->
+    <div class="profile-cover">
+        <img src="{{ user_profile.image.url }}" alt="Cover">
+        <div class="profile-cover-overlay"></div>
     </div>
-{% endif %}
-    
-<div><br>
 
-<!-- Message Buttons Container -->
-<div class="message-buttons-container">
-    {% if not user_profile.user == request.user %}
-        <!-- FOLLOW BUTTON -->
-        <button class="follow-btn {% if following_profile %}following{% endif %}" 
-                data-user-id="{{ user_profile.user.id }}"
-                data-is-following="{% if following_profile %}true{% else %}false{% endif %}">
-            <span class="btn-text">{% if following_profile %}Following{% else %}Follow{% endif %}</span>
-            <span class="unfollow-text">Unfollow</span>
-        </button>
-        
-        <!-- MESSAGE BUTTON for other users -->
-        {% if request.user.is_authenticated and request.user.id != user_profile.user.id %}
-            <a href="{% url 'start_dm' user_id=user_profile.user.id %}" 
-               class="message-btn primary">
-                <i class="fas fa-comment-alt"></i>
-                <span>Message</span>
-                {% if user_profile.unread_messages_count > 0 %}
-                    <span class="message-badge">{{ user_profile.unread_messages_count }}</span>
-                {% endif %}
+    <!-- Avatar and Actions -->
+    <div class="profile-avatar-section">
+        <div class="profile-avatar">
+            <a href="{{ user_profile.image.url }}" target="_blank">
+                <img src="{{ user_profile.image.url }}" alt="{{ user_profile.user.username }}">
             </a>
-        {% endif %}
-    {% endif %}
-    
-    <!-- CHECK YOUR MESSAGES button for own profile -->
-    {% if user.is_authenticated and user == user_profile.user %}
-        <a href="{% url 'dm_inbox' %}" 
-           class="message-btn secondary">
-            <i class="fas fa-inbox"></i>
-            <span>Check Your Messages</span>
-            {% if user_profile.unread_messages_count > 0 %}
-                <span class="message-badge">{{ user_profile.unread_messages_count }}</span>
-            {% endif %}
-        </a>
-    {% endif %}
-</div>
+        </div>
 
-</div>
-</div>
-
-
-<div class="details">
-    <hr>
-    <h3 style="font-size:19px;">User Details:</h3>
-
-    <p><strong>Email:</strong> {{ user_profile.user.email }} ✉️</p>
-    {% if user_profile.date_of_birth %}
-        <p><strong>Age:</strong> {{ user_profile.age }} 🎂</p>
-    {% endif %}
-    <p><strong>Contact:</strong> {{ user_profile.contact }} 📞</p>
-    <p><strong>Gender:</strong> {{ user_profile.gender }} ♂️♀️</p>
-    <p><strong>Location:</strong> {{ user_profile.location }} 🌍</p>
-    <p><strong>Date of Birth:</strong> {{ user_profile.date_of_birth }} 🎉</p>
-    <p><strong>Highest level of education:</strong> {{ user_profile.highest_level_of_education }} 🎓</p>
-
-    <!-- ✅ Payment Information Section -->
-   
-  {% if request.user.is_authenticated and request.user == user_profile.user %}
-    <!-- ✅ Payment Information Section -->
-    <hr>
-    <h3 style="font-size:19px;">Payment Information:</h3>
-
-    {% if user_profile.has_paypal %}
-        <p><strong>Payment Method:</strong> PayPal ✅</p>
-        <p><strong>PayPal Email:</strong> {{ user_profile.paypal_email }}</p>
-        <p><strong>Payment Status:</strong> Ready to Receive 🟢</p>
-    {% else %}
-        <p><strong>Payment Method:</strong> PayPal ❌</p>
-        <p><strong>Payment Status:</strong> Not Set Up ⚠️</p>
-        <p>
-            <small>
-                Please add your PayPal email in your profile settings to receive payments.
-            </small>
-        </p>
-        <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="verification-link">
-            <i class="fas fa-plus-circle"></i> Add PayPal Email
-        </a>
-    {% endif %}
-
-    {% if user_profile.payment_message %}
-        <p><strong>Last Update:</strong> {{ user_profile.payment_message }} 📝</p>
-    {% endif %}
-{% endif %}
-
-
-    <!-- ✅ Profile Verification -->
-    {% if user_profile.profile_verified %}
-        <p>
-            <strong>Status:</strong>
-            <span>Verified</span>
-            <i class="material-icons" style="font-size:20px;color:green">verified_user</i>
-        </p>
-    {% else %}
-        <p>
-            <strong>Status:</strong>
-            <span>Not Verified</span>
-            <i class="material-icons" style="font-size:20px;color:red">error</i>
-        </p>
-    {% endif %}
-</div>
-
-    
-
-
-<div class="bio">
-    <h3 style="font-size:16px;">Bio:</h3>
-    <p>{{ user_profile.bio }}</p>
-</div>
-{% if user_profile.user == request.user %}
-    <div class="edit-profile-container">
-        <a href="{% url 'edit_profile' username=user_profile.user.username %}">
-            <button class="edit-btn">Edit Profile</button>  <!-- Updated class name -->
-        </a>
-    </div>
-{% endif %}
-
-
-
-</div>
-
-<div class="campaigns">
-    <!-- Title for Campaigns Section -->
-    <h3 class="campaign-title">  Public Causes ({{ public_campaigns|length }})</h3>
-
-    <div class="campaign-list">
-        {% for campaign in public_campaigns %}
-            <div class="campaign-item">
-                <!-- Campaign Poster -->
-                {% if campaign.poster %}
-                    <a href="{% url 'view_campaign' campaign_id=campaign.pk %}" class="campaign-poster">
-                        <img src="{{ campaign.poster.url }}" alt="Campaign Image">
-                        <!-- View Count Overlay -->
-                        <div class="view">
-                            <i class="far fa-eye"></i>
-                            <span class="reaction-count">
-                                {{ campaign.campaignview_set.count|format_count }} views
-                            </span>
-                        </div>
+        <div class="profile-actions-bar">
+            {% if not user_profile.user == request.user %}
+                <!-- Follow Button - Single text approach for clarity -->
+                <button class="btn follow-btn {% if following_profile %}following{% endif %}" 
+                        data-user-id="{{ user_profile.user.id }}"
+                        data-is-following="{% if following_profile %}true{% else %}false{% endif %}">
+                    <span class="btn-text">
+                        {% if following_profile %}Following{% else %}Follow{% endif %}
+                    </span>
+                </button>
+                
+                <!-- Message Button -->
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'start_dm' user_id=user_profile.user.id %}" class="btn btn-primary">
+                        <i class="fas fa-comment-alt"></i>
+                        Message
                     </a>
                 {% endif %}
+            {% else %}
+                <!-- Messages Button (Own Profile) -->
+                <a href="{% url 'dm_inbox' %}" class="btn btn-primary">
+                    <i class="fas fa-inbox"></i>
+                    Messages
+                    {% if user_profile.unread_messages_count > 0 %}
+                        <span class="message-badge">{{ user_profile.unread_messages_count }}</span>
+                    {% endif %}
+                </a>
+                
+                <!-- Edit Profile Button -->
+                <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="btn btn-outline">
+                    <i class="fas fa-pencil-alt"></i>
+                    Edit Profile
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Profile Info -->
+    <div class="profile-info-section">
+        <div class="profile-name-row">
+            <h1 class="profile-name">{{ user_profile.user.get_full_name|default:user_profile.user.username }}</h1>
+            {% if user_profile.user == request.user %}
+                <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="edit-icon">
+                    <i class="fas fa-pencil-alt"></i>
+                </a>
+            {% endif %}
+            
+            {% if user_profile.profile_verified %}
+                <span class="verification-badge">
+                    <i class="fas fa-check-circle"></i> Verified
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="profile-username">
+            @{{ user_profile.user.username }}
+        </div>
+
+        <!-- Email Row with Details Icon -->
+        <div class="email-row">
+            <div class="email-display">
+                <i class="fas fa-envelope"></i>
+                <span>{{ user_profile.user.email }}</span>
             </div>
-        {% empty %}
-            <p style="padding:20px;">No public Causes available.</p>
-        {% endfor %}
+            <button class="details-icon" onclick="openDetailsModal()" title="View more details">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+        </div>
+
+        <!-- Changemaker Badge -->
+        {% if changemaker_category %}
+            <div class="changemaker-badge">
+                <i class="fas fa-crown"></i>
+                <span>Changemaker</span>
+                <span class="category-keyboard">{{ changemaker_category }}</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-stats">
+        <div class="stat-item">
+            <a href="{% url 'follower_list' user_profile.user.username %}">
+                <span class="stat-value" id="follower-count">{{ followers_count|format_count }}</span>
+                <span class="stat-label">Followers</span>
+            </a>
+        </div>
+        <div class="stat-item">
+            <a href="{% url 'following_list' user_profile.user.username %}">
+                <span class="stat-value">{{ following_count|format_count }}</span>
+                <span class="stat-label">Following</span>
+            </a>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">{{ public_campaigns_count|format_count }}</span>
+            <span class="stat-label">Causes</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">{{ user_profile.total_loves|format_count }}</span>
+            <span class="stat-label">Loves</span>
+        </div>
+    </div>
+
+    <!-- Bio -->
+    {% if user_profile.bio %}
+    <div class="bio-section">
+        <h3>Bio</h3>
+        <div class="bio-content">
+            {{ user_profile.bio|linebreaksbr }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Information (Owner Only) -->
+    {% if request.user.is_authenticated and request.user == user_profile.user %}
+    <div class="payment-section">
+        <div class="payment-header">
+            <i class="fab fa-paypal"></i>
+            <h3>Payment Information</h3>
+        </div>
+
+        {% if user_profile.has_paypal %}
+            <span class="payment-status active">
+                <i class="fas fa-check-circle"></i> PayPal Connected
+            </span>
+            <div class="payment-detail">
+                <strong>Email:</strong> {{ user_profile.paypal_email }}
+            </div>
+            <div class="payment-detail">
+                <strong>Status:</strong> Ready to receive payments
+            </div>
+        {% else %}
+            <span class="payment-status inactive">
+                <i class="fas fa-exclamation-circle"></i> Not Set Up
+            </span>
+            <div class="payment-detail">
+                Add your PayPal email to receive payments from your causes.
+            </div>
+            <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="btn btn-primary" style="margin-top: 15px; display: inline-flex;">
+                <i class="fas fa-plus-circle"></i>
+                Add PayPal Email
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Verification Link (if not verified) -->
+    {% if not user_profile.profile_verified %}
+        <a href="{% url 'verify_profile' %}" class="verification-link">
+            <i class="fas fa-shield-alt"></i>
+            Verify Your Account
+        </a>
+    {% endif %}
+
+    <!-- Public Causes -->
+    <div class="campaigns-section">
+        <div class="campaigns-header">
+            <h2>
+                <i class="fas fa-flag"></i>
+                Public Causes
+            </h2>
+            <span class="campaign-count">{{ public_campaigns|length }} total</span>
+        </div>
+
+        <div class="campaign-grid">
+            {% for campaign in public_campaigns %}
+                <div class="campaign-card">
+                    <a href="{% url 'view_campaign' campaign_id=campaign.pk %}">
+                        {% if campaign.poster %}
+                            <img src="{{ campaign.poster.url }}" alt="{{ campaign.title }}">
+                        {% else %}
+                            <div style="width:100%; height:100%; background: var(--light-gray); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-image" style="color: var(--gray); font-size: 24px;"></i>
+                            </div>
+                        {% endif %}
+                        <div class="campaign-overlay">
+                            <div class="campaign-views">
+                                <i class="far fa-eye"></i>
+                                {{ campaign.campaignview_set.count|format_count }}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% empty %}
+                <div class="empty-campaigns">
+                    <i class="fas fa-flag"></i>
+                    <p>No public causes yet.</p>
+                    {% if request.user == user_profile.user %}
+                        <a href="{% url 'campaign_create' %}" class="btn btn-primary" style="margin-top: 15px; display: inline-flex;">
+                            <i class="fas fa-plus"></i>
+                            Create Your First Cause
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
-      
+<!-- Details Modal -->
+<div id="detailsModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-user-circle"></i>
+                User Details
+            </h3>
+            <button class="modal-close" onclick="closeDetailsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="modal-info-grid">
+                <!-- Contact -->
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Contact</div>
+                        <div class="modal-info-value">{{ user_profile.contact|default:"Not provided" }}</div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Location</div>
+                        <div class="modal-info-value">{{ user_profile.location|default:"Not specified" }}</div>
+                    </div>
+                </div>
+
+                <!-- Gender -->
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-venus-mars"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Gender</div>
+                        <div class="modal-info-value">{{ user_profile.gender|default:"Not specified" }}</div>
+                    </div>
+                </div>
+
+                <!-- Age -->
+                {% if user_profile.age %}
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-birthday-cake"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Age</div>
+                        <div class="modal-info-value">{{ user_profile.age }} years</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Date of Birth -->
+                {% if user_profile.date_of_birth %}
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Birth Date</div>
+                        <div class="modal-info-value">{{ user_profile.date_of_birth }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Education -->
+                {% if user_profile.highest_level_of_education %}
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Education</div>
+                        <div class="modal-info-value">{{ user_profile.highest_level_of_education }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Member Since -->
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Member Since</div>
+                        <div class="modal-info-value">{{ user_profile.user.date_joined|date:"F j, Y" }}</div>
+                    </div>
+                </div>
+
+                <!-- Last Active -->
+                <div class="modal-info-item">
+                    <div class="modal-info-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <div class="modal-info-content">
+                        <div class="modal-info-label">Last Active</div>
+                        <div class="modal-info-value">{{ user_profile.user.last_login|date:"F j, Y"|default:"Never" }}</div>
+                    </div>
+                </div>
+
+                <!-- If no additional info -->
+                {% if not user_profile.contact and not user_profile.location and not user_profile.gender and not user_profile.age and not user_profile.date_of_birth and not user_profile.highest_level_of_education %}
+                <div class="modal-empty">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No additional details provided yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDetailsModal()">
+                Close
+            </button>
+        </div>
     </div>
-   
+</div>
 
+<!-- Toast Container for Notifications -->
+<div class="toast-container" id="toastContainer"></div>
 
-
-
-
-    <script>
-function toggleFollow(button) {
-    const userId = button.dataset.userId;
-    const isFollowing = button.dataset.following === 'true';
-    const url = isFollowing ? `/unfollow_user/${userId}/` : `/follow_user/${userId}/`;
-    
-    // Add loading state
-    const originalText = button.textContent;
-    button.disabled = true;
-    button.textContent = '...';
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `csrfmiddlewaretoken={{ csrf_token }}`
-    })
-    .then(response => {
-        if (response.ok) {
-            // Toggle button state
-            button.dataset.following = isFollowing ? 'false' : 'true';
-            button.textContent = isFollowing ? 'Follow' : 'Unfollow';
-            
-            // Optional: Update follower count dynamically
-            const followerCount = document.getElementById('follower-count');
-            if (followerCount) {
-                const currentCount = parseInt(followerCount.textContent);
-                followerCount.textContent = isFollowing ? currentCount - 1 : currentCount + 1;
-            }
-        }
-        return response.json();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        button.textContent = originalText; // Revert on error
-    })
-    .finally(() => {
-        button.disabled = false;
-    });
+<!-- JavaScript -->
+<script>
+// ===== MODAL FUNCTIONS =====
+function openDetailsModal() {
+    document.getElementById('detailsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
-</script>
-<script type="text/javascript">
-function switchColor() {
-    const body = document.body;
-    const isDarkMode = body.classList.toggle('dark-mode'); // Toggle dark mode class
-    var reactDivs = document.querySelectorAll('.react');
 
-    // Update background and text colors for all elements
-    const elementsToUpdate = document.querySelectorAll(
-        'header, footer, section, .left-aside, .right-aside, .upper-post, .campaign-content, .react, .search-container input, .search-container .btn-reset'
-    );
+function closeDetailsModal() {
+    document.getElementById('detailsModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
 
-    elementsToUpdate.forEach(element => {
-        element.classList.toggle('dark-mode', isDarkMode);
-    });
-
-    // Update text colors for specific elements
-    const textElements = document.querySelectorAll(
-        'h1, h2, h3, h4, p, li, .campaign-nav, .campaign-nav a, .btn, .reaction, .action-item, .action-item a, .carousel, .ad, .slide, .ad a, .explore-link, .love-count, #view-count, .comment-count'
-    );
-
-    textElements.forEach(element => {
-        element.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update buttons
-    const buttons = document.querySelectorAll('button:not(.btn-search, .btn-reset)');
-    buttons.forEach(button => {
-        button.style.backgroundColor = isDarkMode ? '#262626' : '';
-        button.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update `.react` divs
-    if (reactDivs.length > 0) {
-        reactDivs.forEach(function(reactDiv) {
-            reactDiv.style.backgroundColor = isDarkMode ? "#262626" : "";
-            reactDiv.style.color = isDarkMode ? "white" : "black";
-
-            if (isDarkMode) {
-                reactDiv.classList.add('react-hover');
-            } else {
-                reactDiv.classList.remove('react-hover');
-                reactDiv.style.backgroundColor = "";
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('detailsModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDetailsModal();
             }
         });
     }
+});
 
-    // Update input field and reset button
-    const inputField = document.querySelector('.search-container input[type="text"]');
-    const inputResetButton = document.querySelector('.search-container .btn-reset');
-
-    if (inputField) {
-        inputField.style.backgroundColor = isDarkMode ? '#333333' : '#ffffff';
-        inputField.style.color = isDarkMode ? '#ffffff' : '#000000';
-    }
-
-    if (inputResetButton) {
-        inputResetButton.style.color = '#b0b0b0';
-    }
-}
-
-</script>
-
-
-
-<script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", function() {
-    const navbarToggle = document.getElementById("navbarToggle");
-    const navbar = document.getElementById("navbar");
-    const popupClose = document.getElementById("popupClose");
-
-    // Toggle navbar visibility
-    navbarToggle.addEventListener("click", function() {
-        if (navbar.style.display === "block") {
-            navbar.style.display = "none";
-        } else {
-            navbar.style.display = "block";
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('detailsModal');
+        if (modal && modal.classList.contains('active')) {
+            closeDetailsModal();
         }
-    });
-
-    // Close popup when clicking the close button
-    popupClose.addEventListener("click", function() {
-        navbar.style.display = "none";
-    });
-
-    // Adjust navbar display on window resize
-    window.addEventListener("resize", function() {
-        if (window.innerWidth > 768) {
-            navbar.style.display = "none";
-        } else if (navbar.style.display === "block") {
-            navbar.style.display = "block";
-        } else {
-            navbar.style.display = "none";
-        }
-    });
-
-    // Ensure the navbar is initially hidden on page load for larger screens
-    if (window.innerWidth > 768) {
-        navbar.style.display = "none";
-    } else {
-        navbar.style.display = "none"; // or "block" based on your initial requirement
     }
 });
-</script>
-<script type="text/javascript">
 
+// ===== TOAST NOTIFICATION SYSTEM =====
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s reverse';
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
 
- 
-        // Function to handle file upload and playback
-        function uploadAudio() {
-            var input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'audio/*, video/*'; // Limit file selection to audio files
+// ===== NUMBER FORMATTING =====
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+}
 
-            // Listen for file selection
-            input.onchange = function(e) {
-                var file = e.target.files[0];
-                var audio = document.getElementById('bgAudio');
+function parseNumber(str) {
+    if (!str) return 0;
+    str = str.toString().replace(/[^0-9.]/g, '');
+    return parseInt(str) || 0;
+}
 
-                // Pause the current audio playback
-                audio.pause();
-
-                // Store the selected audio file and its playback position in local storage
-                localStorage.setItem('bgAudioFile', URL.createObjectURL(file));
-                localStorage.setItem('bgAudioPosition', audio.currentTime);
-
-                // Set the audio source to the selected file
-                audio.src = localStorage.getItem('bgAudioFile');
-
-                // Resume audio playback
-                audio.play();
-            };
-
-            // Trigger the file input
-            input.click();
+// ===== ANIMATE COUNT CHANGE =====
+function animateCount(element, start, end) {
+    if (!element) return;
+    
+    const duration = 500;
+    const steps = 20;
+    const increment = (end - start) / steps;
+    let current = start;
+    let step = 0;
+    
+    element.classList.add('updating');
+    
+    const timer = setInterval(() => {
+        step++;
+        current += increment;
+        if (step >= steps) {
+            element.textContent = formatNumber(end);
+            element.classList.remove('updating');
+            clearInterval(timer);
+        } else {
+            element.textContent = formatNumber(Math.round(current));
         }
+    }, duration / steps);
+}
 
-        // Function to set background audio on page load
-        window.onload = function() {
-            var audio = document.getElementById('bgAudio');
-            var bgAudioFile = localStorage.getItem('bgAudioFile');
-            var audioPosition = parseFloat(localStorage.getItem('bgAudioPosition'));
-
-            // Check if there's a stored audio file
-            if (bgAudioFile) {
-                // Set the audio source to the stored file
-                audio.src = bgAudioFile;
-
-                // Set the playback position if available
-                if (!isNaN(audioPosition)) {
-                    audio.currentTime = audioPosition;
-                }
-
-                // Autoplay the audio
-                audio.play();
+// ===== FOLLOW BUTTON FUNCTIONALITY =====
+document.addEventListener('DOMContentLoaded', function() {
+    const followBtn = document.querySelector('.follow-btn');
+    if (!followBtn) return;
+    
+    followBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        const userId = this.dataset.userId;
+        const isFollowing = this.dataset.isFollowing === 'true';
+        const buttonText = this.querySelector('.btn-text');
+        
+        // Store original state for revert
+        const originalState = isFollowing;
+        const originalText = buttonText.textContent;
+        const followerStat = document.getElementById('follower-count');
+        const originalCount = followerStat ? parseInt(followerStat.textContent.replace(/[^0-9]/g, '')) || 0 : null;
+        
+        // OPTIMISTIC UPDATE
+        if (originalState) {
+            buttonText.textContent = 'Follow';
+            this.classList.remove('following');
+            this.dataset.isFollowing = 'false';
+            if (followerStat && originalCount !== null) {
+                followerStat.textContent = formatNumber(originalCount - 1);
             }
-        };</script>
+        } else {
+            buttonText.textContent = 'Following';
+            this.classList.add('following');
+            this.dataset.isFollowing = 'true';
+            if (followerStat && originalCount !== null) {
+                followerStat.textContent = formatNumber(originalCount + 1);
+            }
+        }
+        
+        // Add loading state
+        this.classList.add('loading');
+        this.disabled = true;
+        
+        try {
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('action', originalState ? 'unfollow' : 'follow');
+            
+            const response = await fetch('/toggle-follow/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Update with server data
+                if (followerStat && data.followers_count !== undefined) {
+                    followerStat.textContent = formatNumber(data.followers_count);
+                }
+                showToast(data.message, 'success');
+            } else {
+                // Revert on error
+                if (originalState) {
+                    buttonText.textContent = 'Following';
+                    this.classList.add('following');
+                    this.dataset.isFollowing = 'true';
+                    if (followerStat && originalCount !== null) {
+                        followerStat.textContent = formatNumber(originalCount);
+                    }
+                } else {
+                    buttonText.textContent = 'Follow';
+                    this.classList.remove('following');
+                    this.dataset.isFollowing = 'false';
+                    if (followerStat && originalCount !== null) {
+                        followerStat.textContent = formatNumber(originalCount);
+                    }
+                }
+                showToast(data.message || 'Error updating follow status', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Revert on error
+            if (originalState) {
+                buttonText.textContent = 'Following';
+                this.classList.add('following');
+                this.dataset.isFollowing = 'true';
+                if (followerStat && originalCount !== null) {
+                    followerStat.textContent = formatNumber(originalCount);
+                }
+            } else {
+                buttonText.textContent = 'Follow';
+                this.classList.remove('following');
+                this.dataset.isFollowing = 'false';
+                if (followerStat && originalCount !== null) {
+                    followerStat.textContent = formatNumber(originalCount);
+                }
+            }
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            this.classList.remove('loading');
+            this.disabled = false;
+        }
+    });
+});
+</script>
 
 <script src="{% static 'main/js/base.js' %}"></script>
-<script>
-// Persistent follow state management
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all follow buttons
-    document.querySelectorAll('.follow-btn').forEach(button => {
-        const userId = button.getAttribute('data-user-id');
-        
-        // Get server-side initial state
-        const serverState = button.getAttribute('data-is-following') === 'true';
-        
-        // Check localStorage for updated state
-        const storageKey = `followState_${userId}`;
-        const storedState = localStorage.getItem(storageKey);
-        
-        // Determine which state to use (stored state takes precedence)
-        const initialState = storedState !== null ? 
-            storedState === 'true' : 
-            serverState;
-        
-        // Apply initial state
-        button.classList.toggle('following', initialState);
-        button.textContent = initialState ? 'Following' : 'Follow';
-        button.setAttribute('data-is-following', initialState.toString());
 
-        // Add click handler
-        button.addEventListener('click', async function() {
-            const userId = this.getAttribute('data-user-id');
-            const isFollowing = this.getAttribute('data-is-following') === 'true';
-            const action = isFollowing ? 'unfollow' : 'follow';
-            
-            // Add loading state
-            const originalText = this.textContent;
-            this.disabled = true;
-            this.classList.add('loading');
-            this.textContent = '...';
-            
-            try {
-                const response = await fetch('/toggle_follow/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({
-                        'user_id': userId,
-                        'action': action
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    // Update button state
-                    const newState = data.is_following;
-                    this.classList.toggle('following', newState);
-                    this.textContent = newState ? 'Following' : 'Follow';
-                    this.setAttribute('data-is-following', newState.toString());
-                    
-                    // Update followers count
-                    const followersCount = document.getElementById(`followers-count-${userId}`);
-                    if (followersCount) {
-                        followersCount.textContent = `(${data.followers_count} followers)`;
-                    }
-                    
-                    // Persist state in localStorage
-                    localStorage.setItem(`followState_${userId}`, newState.toString());
-                } else {
-                    console.error('Error:', data.message);
-                    this.textContent = originalText;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                this.textContent = originalText;
-            } finally {
-                this.disabled = false;
-                this.classList.remove('loading');
-            }
-        });
-    });
-});
-</script>
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
