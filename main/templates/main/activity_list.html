@@ -1316,4 +1316,530 @@ document.addEventListener('click', function(e) {
 })();
 
 </script>
+<script type="text/javascript">
+    // =============================================
+// HIGH RESOLUTION MEDIA OPTIMIZER - PRODUCTION READY
+// =============================================
+
+(function() {
+    'use strict';
+
+    // Production configuration with safe defaults
+    const CONFIG = {
+        image: {
+            preferredWidth: 1920,
+            preferredHeight: 1080,
+            quality: 85, // Slightly lower for better performance
+            lazyLoad: true,
+            retryAttempts: 2,
+            timeout: 10000 // 10 second timeout
+        },
+        video: {
+            preferredWidth: 1920,
+            preferredHeight: 1080,
+            preload: 'metadata', // Better for performance
+            retryAttempts: 2,
+            timeout: 30000 // 30 second timeout for videos
+        },
+        performance: {
+            batchSize: 5, // Process images in batches
+            enableLogging: false, // Disable in production
+            intersectionThreshold: 0.1
+        }
+    };
+
+    // =============================================
+    // UTILITY FUNCTIONS
+    // =============================================
+    const Utils = {
+        // Safe logging
+        log: function() {
+            if (CONFIG.performance.enableLogging) {
+                console.log('[HD Media]', ...arguments);
+            }
+        },
+
+        // Error logging without breaking
+        error: function() {
+            if (CONFIG.performance.enableLogging) {
+                console.error('[HD Media Error]', ...arguments);
+            }
+        },
+
+        // Check if element is in viewport
+        isInViewport: function(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        },
+
+        // Debounce for performance
+        debounce: function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+
+        // Get file extension safely
+        getFileExtension: function(url) {
+            try {
+                return url.split('.').pop()?.toLowerCase().split('?')[0] || '';
+            } catch {
+                return '';
+            }
+        },
+
+        // Check if URL is valid
+        isValidUrl: function(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    };
+
+    // =============================================
+    // IMAGE OPTIMIZER
+    // =============================================
+    const ImageOptimizer = {
+        processedImages: new WeakSet(),
+        pendingImages: new Set(),
+        observer: null,
+        retryMap: new WeakMap(),
+
+        init: function() {
+            // Check for IntersectionObserver support
+            if (CONFIG.image.lazyLoad && 'IntersectionObserver' in window) {
+                this.observer = new IntersectionObserver(
+                    this.handleIntersection.bind(this),
+                    {
+                        rootMargin: '50px',
+                        threshold: CONFIG.performance.intersectionThreshold
+                    }
+                );
+            }
+
+            // Process existing images
+            this.processImages();
+            
+            // Watch for new images
+            this.observeMutations();
+            
+            // Process images on scroll (fallback)
+            if (!this.observer) {
+                window.addEventListener('scroll', Utils.debounce(this.processImages.bind(this), 200));
+                window.addEventListener('resize', Utils.debounce(this.processImages.bind(this), 200));
+            }
+
+            Utils.log('Image optimizer initialized');
+        },
+
+        processImages: function() {
+            const images = document.querySelectorAll('img.story-media');
+            
+            // Process in batches for performance
+            for (let i = 0; i < images.length; i += CONFIG.performance.batchSize) {
+                const batch = Array.from(images).slice(i, i + CONFIG.performance.batchSize);
+                setTimeout(() => {
+                    batch.forEach(img => this.optimizeImage(img));
+                }, 0);
+            }
+        },
+
+        optimizeImage: function(img) {
+            // Skip if already processed or no src
+            if (this.processedImages.has(img) || !img.src) {
+                return;
+            }
+
+            const originalSrc = img.src || img.dataset.src;
+            
+            // Validate URL
+            if (!originalSrc || originalSrc === '#' || !Utils.isValidUrl(originalSrc)) {
+                return;
+            }
+
+            // Mark as processing
+            this.processedImages.add(img);
+            
+            // Store original
+            img.dataset.originalSrc = originalSrc;
+            
+            // Generate high-res URL
+            const highResUrl = this.getHighResUrl(originalSrc);
+            
+            // Setup timeout
+            const timeoutId = setTimeout(() => {
+                this.handleImageError(img);
+            }, CONFIG.image.timeout);
+
+            // Load high-res version
+            if (this.observer && CONFIG.image.lazyLoad) {
+                // Lazy load
+                img.dataset.highResSrc = highResUrl;
+                this.observer.observe(img);
+                clearTimeout(timeoutId);
+            } else {
+                // Load immediately
+                this.loadHighResImage(img, highResUrl, timeoutId);
+            }
+        },
+
+        handleIntersection: function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.highResSrc) {
+                        const timeoutId = setTimeout(() => {
+                            this.handleImageError(img);
+                        }, CONFIG.image.timeout);
+                        
+                        this.loadHighResImage(img, img.dataset.highResSrc, timeoutId);
+                        this.observer.unobserve(img);
+                    }
+                }
+            });
+        },
+
+        loadHighResImage: function(img, highResUrl, timeoutId) {
+            const testImage = new Image();
+            
+            testImage.onload = () => {
+                clearTimeout(timeoutId);
+                img.src = highResUrl;
+                img.classList.add('hd-loaded');
+                Utils.log('High-res image loaded:', highResUrl);
+            };
+            
+            testImage.onerror = () => {
+                clearTimeout(timeoutId);
+                this.handleImageError(img);
+            };
+            
+            testImage.src = highResUrl;
+        },
+
+        handleImageError: function(img) {
+            const retryCount = this.retryMap.get(img) || 0;
+            
+            if (retryCount < CONFIG.image.retryAttempts) {
+                // Retry with original
+                this.retryMap.set(img, retryCount + 1);
+                img.src = img.dataset.originalSrc;
+                Utils.log('Retrying image with original:', img.dataset.originalSrc);
+            } else {
+                // Max retries reached
+                Utils.error('Failed to load image after retries:', img.dataset.originalSrc);
+            }
+        },
+
+        getHighResUrl: function(url) {
+            if (!url) return url;
+
+            try {
+                // Remove existing cache busters
+                url = url.split('?')[0];
+
+                // Cloudinary
+                if (url.includes('cloudinary.com')) {
+                    return url.replace('/upload/', `/upload/q_auto:${CONFIG.image.quality},f_auto,w_${CONFIG.image.preferredWidth},c_limit/`);
+                }
+                
+                // AWS S3 / CloudFront
+                if (url.includes('amazonaws.com') || url.includes('cloudfront.net')) {
+                    return `${url}?w=${CONFIG.image.preferredWidth}&h=${CONFIG.image.preferredHeight}&q=${CONFIG.image.quality}&fit=max`;
+                }
+                
+                // Imgix
+                if (url.includes('imgix.net')) {
+                    return `${url}?w=${CONFIG.image.preferredWidth}&h=${CONFIG.image.preferredHeight}&fit=max&q=${CONFIG.image.quality}&auto=format`;
+                }
+                
+                // Local/other - just add cache buster
+                return `${url}?v=${Date.now()}`;
+            } catch (error) {
+                Utils.error('Error generating high-res URL:', error);
+                return url;
+            }
+        },
+
+        observeMutations: function() {
+            const observer = new MutationObserver((mutations) => {
+                let hasNewImages = false;
+                
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.tagName === 'IMG' && node.classList.contains('story-media')) {
+                                hasNewImages = true;
+                            } else if (node.querySelectorAll) {
+                                const imgs = node.querySelectorAll('img.story-media');
+                                if (imgs.length > 0) hasNewImages = true;
+                            }
+                        }
+                    });
+                });
+
+                if (hasNewImages) {
+                    this.processImages();
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    };
+
+    // =============================================
+    // VIDEO OPTIMIZER
+    // =============================================
+    const VideoOptimizer = {
+        processedVideos: new WeakSet(),
+        retryMap: new WeakMap(),
+
+        init: function() {
+            this.processVideos();
+            this.observeMutations();
+            Utils.log('Video optimizer initialized');
+        },
+
+        processVideos: function() {
+            document.querySelectorAll('video.story-media').forEach(video => {
+                if (!this.processedVideos.has(video)) {
+                    this.optimizeVideo(video);
+                    this.processedVideos.add(video);
+                }
+            });
+        },
+
+        optimizeVideo: function(video) {
+            // Get source
+            let originalSrc = video.src;
+            
+            if (!originalSrc) {
+                const source = video.querySelector('source');
+                originalSrc = source?.src;
+            }
+
+            if (!originalSrc || !Utils.isValidUrl(originalSrc)) {
+                return;
+            }
+
+            // Store original
+            video.dataset.originalSrc = originalSrc;
+
+            // Generate high-res source
+            const highResSrc = this.getHighResUrl(originalSrc);
+            
+            // Create new source elements
+            this.setVideoSources(video, highResSrc, originalSrc);
+            
+            // Add error handling
+            video.addEventListener('error', this.handleVideoError.bind(this, video), { once: true });
+            
+            // Reload if needed
+            if (video.readyState > 0) {
+                video.load();
+            }
+        },
+
+        setVideoSources: function(video, highResSrc, originalSrc) {
+            // Clear existing sources safely
+            while (video.firstChild) {
+                video.removeChild(video.firstChild);
+            }
+
+            // Create high-res source
+            const highResSource = document.createElement('source');
+            highResSource.src = highResSrc;
+            highResSource.type = this.getVideoType(highResSrc);
+            
+            // Create fallback source
+            const fallbackSource = document.createElement('source');
+            fallbackSource.src = originalSrc;
+            fallbackSource.type = this.getVideoType(originalSrc);
+            
+            video.appendChild(highResSource);
+            video.appendChild(fallbackSource);
+        },
+
+        handleVideoError: function(video, event) {
+            const retryCount = this.retryMap.get(video) || 0;
+            
+            if (retryCount < CONFIG.video.retryAttempts) {
+                this.retryMap.set(video, retryCount + 1);
+                
+                // Fall back to original
+                video.src = video.dataset.originalSrc;
+                video.load();
+                
+                Utils.log('Video error, falling back to original:', video.dataset.originalSrc);
+            } else {
+                Utils.error('Video failed after retries:', video.dataset.originalSrc);
+            }
+        },
+
+        getHighResUrl: function(url) {
+            if (!url) return url;
+
+            try {
+                url = url.split('?')[0];
+
+                // Cloudinary
+                if (url.includes('cloudinary.com')) {
+                    return url.replace('/upload/', `/upload/q_auto:good,f_auto,w_${CONFIG.video.preferredWidth},h_${CONFIG.video.preferredHeight},c_limit/`);
+                }
+                
+                // AWS/CloudFront
+                if (url.includes('amazonaws.com') || url.includes('cloudfront.net')) {
+                    return `${url}?width=${CONFIG.video.preferredWidth}&height=${CONFIG.video.preferredHeight}&bitrate=8000000`;
+                }
+                
+                return url;
+            } catch (error) {
+                Utils.error('Error generating video URL:', error);
+                return url;
+            }
+        },
+
+        getVideoType: function(url) {
+            const ext = Utils.getFileExtension(url);
+            const types = {
+                'mp4': 'video/mp4',
+                'webm': 'video/webm',
+                'ogg': 'video/ogg',
+                'mov': 'video/quicktime',
+                'm3u8': 'application/x-mpegURL'
+            };
+            return types[ext] || 'video/mp4';
+        },
+
+        observeMutations: function() {
+            const observer = new MutationObserver((mutations) => {
+                let hasNewVideos = false;
+                
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.tagName === 'VIDEO' && node.classList.contains('story-media')) {
+                                hasNewVideos = true;
+                            } else if (node.querySelectorAll) {
+                                const videos = node.querySelectorAll('video.story-media');
+                                if (videos.length > 0) hasNewVideos = true;
+                            }
+                        }
+                    });
+                });
+
+                if (hasNewVideos) {
+                    setTimeout(() => this.processVideos(), 100);
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    };
+
+    // =============================================
+    // PRESERVE EXISTING FUNCTIONS
+    // =============================================
+    
+    // Wrap existing toggleVideoPlayPause if it exists
+    if (typeof window.toggleVideoPlayPause === 'function') {
+        const originalToggle = window.toggleVideoPlayPause;
+        window.toggleVideoPlayPause = function(video, event) {
+            try {
+                originalToggle(video, event);
+            } catch (error) {
+                Utils.error('Error in toggleVideoPlayPause:', error);
+            }
+        };
+    }
+
+    // Add helper functions (non-intrusive)
+    window.checkMediaResolution = function() {
+        const report = {
+            images: [],
+            videos: []
+        };
+        
+        document.querySelectorAll('img.story-media').forEach(img => {
+            report.images.push({
+                src: img.src?.split('?')[0] || '',
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                loaded: img.complete
+            });
+        });
+        
+        document.querySelectorAll('video.story-media').forEach(video => {
+            report.videos.push({
+                src: video.src?.split('?')[0] || '',
+                width: video.videoWidth,
+                height: video.videoHeight
+            });
+        });
+        
+        return report;
+    };
+
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+    function init() {
+        try {
+            // Check if we should initialize (avoid double init)
+            if (window.__hdMediaInitialized) {
+                return;
+            }
+
+            // Initialize optimizers
+            ImageOptimizer.init();
+            VideoOptimizer.init();
+            
+            // Mark as initialized
+            window.__hdMediaInitialized = true;
+            
+            Utils.log('High Resolution Media Optimizer initialized successfully');
+        } catch (error) {
+            Utils.error('Failed to initialize:', error);
+            // Fail silently - site should still work
+        }
+    }
+
+    // Start when DOM is safe
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        // Use setTimeout to ensure DOM is fully ready
+        setTimeout(init, 0);
+    }
+
+    // Handle SPA navigation
+    window.addEventListener('popstate', () => {
+        setTimeout(() => {
+            ImageOptimizer.processImages();
+            VideoOptimizer.processVideos();
+        }, 100);
+    });
+
+})();
+</script>
 {% endblock %}
