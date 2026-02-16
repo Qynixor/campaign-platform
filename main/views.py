@@ -6386,90 +6386,95 @@ def following_list(request, username):
 
     return render(request, 'main/following_list.html', context)
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib.auth.models import User
+from .models import Follow, Profile
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 @require_POST
 def toggle_follow(request):
     try:
-        data = json.loads(request.body)
+        # Parse JSON data
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError as e:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Invalid JSON data'
+            }, status=400)
+
         user_to_follow_id = data.get('user_id')
         
         if not user_to_follow_id:
-            return JsonResponse({'status': 'error', 'message': 'User ID required'}, status=400)
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'User ID required'
+            }, status=400)
 
         try:
             user_to_follow = User.objects.get(pk=user_to_follow_id)
         except User.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'User not found'
+            }, status=404)
 
         if request.user == user_to_follow:
-            return JsonResponse({'status': 'error', 'message': 'Cannot follow yourself'}, status=400)
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Cannot follow yourself'
+            }, status=400)
 
-        follow, created = Follow.objects.get_or_create(
+        # Check if follow relationship exists
+        follow = Follow.objects.filter(
             follower=request.user,
             followed=user_to_follow
-        )
-
-        if not created:
+        ).first()
+        
+        if follow:
+            # UNFOLLOW - Delete the relationship
             follow.delete()
-            action = 'unfollowed'
             is_following = False
+            action = 'unfollowed'
+            logger.info(f"User {request.user.id} UNFOLLOWED {user_to_follow_id}")
         else:
-            action = 'followed'
+            # FOLLOW - Create new relationship
+            Follow.objects.create(
+                follower=request.user,
+                followed=user_to_follow
+            )
             is_following = True
+            action = 'followed'
+            logger.info(f"User {request.user.id} FOLLOWED {user_to_follow_id}")
+
+        # Get updated followers count
+        followers_count = user_to_follow.followers.count()
 
         return JsonResponse({
             'status': 'success',
             'action': action,
-            'followers_count': user_to_follow.followers.count(),
-            'is_following': is_following  # Explicit state
+            'followers_count': followers_count,
+            'is_following': is_following,
+            'user_id': user_to_follow_id
         })
 
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        logger.error(f"Error in toggle_follow: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=500)
 
 
 
-# views.py
-from django.http import JsonResponse
 
-@require_POST
-def follow_user(request, user_id):
-    if not request.user.is_authenticated:
-        return JsonResponse({'status': 'error', 'message': 'Login required'}, status=403)
-    
-    user_to_follow = get_object_or_404(User, id=user_id)
-    
-    if request.user == user_to_follow:
-        return JsonResponse({'status': 'error', 'message': 'Cannot follow yourself'}, status=400)
-    
-    _, created = Follow.objects.get_or_create(
-        follower=request.user,
-        followed=user_to_follow
-    )
-    
-    return JsonResponse({
-        'status': 'success',
-        'action': 'follow',
-        'followed_id': user_id
-    })
-
-@require_POST
-def unfollow_user(request, user_id):
-    if not request.user.is_authenticated:
-        return JsonResponse({'status': 'error', 'message': 'Login required'}, status=403)
-    
-    user_to_unfollow = get_object_or_404(User, id=user_id)
-    deleted, _ = Follow.objects.filter(
-        follower=request.user,
-        followed=user_to_unfollow
-    ).delete()
-    
-    return JsonResponse({
-        'status': 'success',
-        'action': 'unfollow',
-        'unfollowed_id': user_id
-    })
 
 
 @login_required

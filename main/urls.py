@@ -131,9 +131,8 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('create_campaign/', views.create_campaign, name='create_campaign'),
     path('edit-profile/<str:username>/', views.profile_edit, name='edit_profile'),
   path('user-profile/@<str:username>/', views.profile_view, name='profile_view'),
-path('toggle_follow/', views.toggle_follow, name='toggle_follow'),
-      path('follow_user/<int:user_id>/', views.follow_user, name='follow_user'),
-    path('unfollow_user/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
+   path('toggle-follow/', views.toggle_follow, name='toggle_follow'),
+    
     path('followers/<str:username>/', views.follower_list, name='follower_list'),
     path('following/<str:username>/', views.following_list, name='following_list'),
     path('private-campaign/', views.private_campaign, name='private_campaign'),

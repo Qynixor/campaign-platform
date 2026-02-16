@@ -159,64 +159,130 @@ body.dark-mode {
     background: var(--light-gray);
 }
 
-/* Follow Button */
-.follow-btn {
-    min-width: 100px;
+/* ===== ICON-BASED FOLLOW BUTTON ===== */
+.follow-btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
     justify-content: center;
+    padding: 0;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+}
+
+.follow-btn-icon i {
+    font-size: 18px;
+}
+
+.follow-btn-icon:not(.following) {
+    background: transparent;
+    color: var(--gray);
+    border-color: var(--border);
+}
+
+.follow-btn-icon:not(.following):hover {
     background: var(--primary);
     color: white;
-    position: relative;
+    border-color: var(--primary);
+    transform: scale(1.05);
 }
 
-.follow-btn.following {
+.follow-btn-icon.following {
     background: transparent;
-    border: 1px solid var(--border);
-    color: var(--dark);
+    color: var(--primary);
+    border-color: var(--primary);
 }
 
-body.dark-mode .follow-btn.following {
-    color: white;
-    border-color: var(--gray);
-}
-
-.follow-btn.following:hover {
+.follow-btn-icon.following:hover {
     background: var(--danger);
-    border-color: var(--danger);
     color: white;
+    border-color: var(--danger);
+    transform: scale(1.05);
 }
 
-/* Follow Button Loading State */
-.follow-btn.loading {
+.follow-btn-icon.loading {
     opacity: 0.7;
     pointer-events: none;
+    position: relative;
     color: transparent !important;
 }
 
-.follow-btn.loading::after {
+.follow-btn-icon.loading i {
+    opacity: 0;
+}
+
+.follow-btn-icon.loading::after {
     content: '';
     position: absolute;
-    left: 50%;
+    width: 20px;
+    height: 20px;
     top: 50%;
-    width: 18px;
-    height: 18px;
-    margin-left: -9px;
-    margin-top: -9px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-.follow-btn.following.loading::after {
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
     border: 2px solid rgba(0,0,0,0.1);
     border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: button-loading-spinner 0.8s linear infinite;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.follow-btn-icon.following.loading::after {
+    border-top-color: var(--danger);
 }
 
-/* Message Badge */
+@keyframes button-loading-spinner {
+    from { transform: rotate(0turn); }
+    to { transform: rotate(1turn); }
+}
+
+.follow-btn-icon {
+    position: relative;
+}
+
+.follow-btn-icon:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dark);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: var(--shadow);
+}
+
+.follow-btn-icon:hover::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent var(--dark) transparent;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+body.dark-mode .follow-btn-icon:hover::before {
+    background: var(--light);
+    color: var(--dark);
+}
+
+body.dark-mode .follow-btn-icon:hover::after {
+    border-color: transparent transparent var(--light) transparent;
+}
+
 .message-badge {
     display: inline-flex;
     align-items: center;
@@ -259,7 +325,6 @@ body.dark-mode .follow-btn.following {
     margin-bottom: 12px;
 }
 
-/* Email Row with Details Icon */
 .email-row {
     display: flex;
     align-items: center;
@@ -284,7 +349,6 @@ body.dark-mode .follow-btn.following {
     font-size: 14px;
 }
 
-/* Details Icon Button */
 .details-icon {
     display: inline-flex;
     align-items: center;
@@ -307,7 +371,6 @@ body.dark-mode .follow-btn.following {
     border-color: var(--primary);
 }
 
-/* Edit Icon */
 .edit-icon {
     display: inline-flex;
     align-items: center;
@@ -325,7 +388,6 @@ body.dark-mode .follow-btn.following {
     color: var(--primary);
 }
 
-/* Verification Badge */
 .verification-badge {
     display: inline-flex;
     align-items: center;
@@ -343,7 +405,6 @@ body.dark-mode .follow-btn.following {
     font-size: 14px;
 }
 
-/* Changemaker Badge */
 .changemaker-badge {
     display: inline-flex;
     align-items: center;
@@ -434,165 +495,6 @@ body.dark-mode .changemaker-badge {
     line-height: 1.6;
     color: var(--dark);
     white-space: pre-wrap;
-}
-
-/* ===== MODAL STYLES ===== */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--modal-overlay);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.modal-container {
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    background: var(--light);
-    border-radius: 16px;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(20px);
-    transition: transform 0.3s ease;
-}
-
-.modal-overlay.active .modal-container {
-    transform: translateY(0);
-}
-
-.modal-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    background: var(--light);
-    z-index: 10;
-    border-radius: 16px 16px 0 0;
-}
-
-.modal-header h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--dark);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.modal-header h3 i {
-    color: var(--primary);
-}
-
-.modal-close {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--gray);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 16px;
-}
-
-.modal-close:hover {
-    background: var(--danger);
-    color: white;
-    border-color: var(--danger);
-}
-
-.modal-body {
-    padding: 24px;
-}
-
-.modal-info-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-}
-
-.modal-info-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: var(--light-gray);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-}
-
-.modal-info-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--primary);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-}
-
-.modal-info-content {
-    flex: 1;
-}
-
-.modal-info-label {
-    font-size: 12px;
-    color: var(--gray);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-}
-
-.modal-info-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--dark);
-    word-break: break-word;
-}
-
-.modal-empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--gray);
-    background: var(--light-gray);
-    border-radius: 12px;
-}
-
-.modal-empty i {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border);
-    text-align: right;
 }
 
 /* ===== PAYMENT SECTION ===== */
@@ -783,6 +685,165 @@ body.dark-mode .payment-section {
     opacity: 0.5;
 }
 
+/* ===== MODAL STYLES ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--modal-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-container {
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--light);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-container {
+    transform: translateY(0);
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--light);
+    z-index: 10;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-header h3 i {
+    color: var(--primary);
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.modal-close:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.modal-info-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--light-gray);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.modal-info-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.modal-info-content {
+    flex: 1;
+}
+
+.modal-info-label {
+    font-size: 12px;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.modal-info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark);
+    word-break: break-word;
+}
+
+.modal-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--gray);
+    background: var(--light-gray);
+    border-radius: 12px;
+}
+
+.modal-empty i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    text-align: right;
+}
+
 /* ===== TOAST NOTIFICATIONS ===== */
 .toast-container {
     position: fixed;
@@ -826,17 +887,33 @@ body.dark-mode .payment-section {
     }
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 768px) {
     .profile-cover {
         height: 180px;
     }
 
-    .profile-avatar-section {
-        margin-top: -50px;
-        padding: 0 16px;
+    .profile-container {
+        display: flex;
         flex-direction: column;
+    }
+
+    /* SECTION 1: Name and Username */
+    .profile-info-section {
+        order: 1;
+        padding: 16px 16px 8px;
+        border-bottom: none;
+    }
+
+    /* SECTION 2: Avatar + Follow/Message buttons */
+    .profile-avatar-section {
+        order: 2;
+        margin-top: 0;
+        padding: 0 16px;
+        display: flex;
+        flex-direction: row;
         align-items: center;
+        gap: 12px;
     }
 
     .profile-avatar img {
@@ -845,26 +922,57 @@ body.dark-mode .payment-section {
     }
 
     .profile-actions-bar {
-        width: 100%;
+        flex: 1;
+        justify-content: flex-end;
+        margin-bottom: 0;
+    }
+
+    /* SECTION 3: Stats */
+    .profile-stats {
+        order: 3;
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+        justify-content: center;
+        gap: 24px;
+    }
+
+    /* SECTION 4: Email (now below stats) */
+    .email-row {
+        order: 4;
+        padding: 0 16px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
         justify-content: center;
     }
 
+    /* SECTION 5: Bio */
+    .bio-section { 
+        order: 5; 
+    }
+    
+    /* SECTION 6: Payment */
+    .payment-section { 
+        order: 6; 
+    }
+    
+    /* SECTION 7: Verification Link */
+    .verification-link { 
+        order: 7; 
+    }
+    
+    /* SECTION 8: Campaigns */
+    .campaigns-section { 
+        order: 8; 
+    }
+
+    /* Center text elements */
     .profile-name-row {
         justify-content: center;
+        text-align: center;
     }
 
     .profile-username {
         text-align: center;
-    }
-
-    .email-row {
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .profile-stats {
-        justify-content: center;
-        gap: 24px;
     }
 
     .campaign-grid {
@@ -908,18 +1016,87 @@ body.dark-mode .payment-section {
         width: 100%;
         justify-content: center;
     }
+
+    .follow-btn-icon {
+        width: 38px;
+        height: 38px;
+    }
+}
+
+
+/* ===== EMAIL ROW ===== */
+.email-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+}
+
+.email-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dark);
+    font-size: 15px;
+    background: var(--light-gray);
+    padding: 8px 16px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    transition: all 0.2s ease;
+}
+
+.email-display:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.email-display:hover i,
+.email-display:hover span {
+    color: var(--primary-dark);
+}
+
+.email-display i {
+    color: var(--primary);
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .email-row {
+        order: 4;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: center;
+        margin-bottom: 0;
+    }
+    
+    .email-display {
+        width: auto;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .email-display {
+        width: 100%;
+        justify-content: center;
+    }
 }
 </style>
 
-<!-- Main Container -->
+<!-- ===== MAIN PROFILE CONTAINER ===== -->
 <div class="profile-container">
-    <!-- Cover Image -->
+    
+    <!-- ===== COVER SECTION ===== -->
     <div class="profile-cover">
         <img src="{{ user_profile.image.url }}" alt="Cover">
         <div class="profile-cover-overlay"></div>
     </div>
 
-    <!-- Avatar and Actions -->
+    <!-- ===== AVATAR + ACTION BUTTONS ===== -->
     <div class="profile-avatar-section">
         <div class="profile-avatar">
             <a href="{{ user_profile.image.url }}" target="_blank">
@@ -929,24 +1106,27 @@ body.dark-mode .payment-section {
 
         <div class="profile-actions-bar">
             {% if not user_profile.user == request.user %}
-                <!-- Follow Button - Single text approach for clarity -->
-                <button class="btn follow-btn {% if following_profile %}following{% endif %}" 
-                        data-user-id="{{ user_profile.user.id }}"
-                        data-is-following="{% if following_profile %}true{% else %}false{% endif %}">
-                    <span class="btn-text">
-                        {% if following_profile %}Following{% else %}Follow{% endif %}
-                    </span>
-                </button>
+                <!-- Viewing Another User's Profile -->
+                <div class="follow-btn-container">
+                    <button class="btn follow-btn-icon {% if following_profile %}following{% endif %}" 
+                            id="follow-button"
+                            data-user-id="{{ user_profile.user.id }}"
+                            data-follow-url="{% url 'toggle_follow' %}"
+                            data-is-following="{% if following_profile %}true{% else %}false{% endif %}"
+                            title="{% if following_profile %}Following - Click to unfollow{% else %}Not following - Click to follow{% endif %}">
+                        <i class="fas {% if following_profile %}fa-user-minus{% else %}fa-user-plus{% endif %}"></i>
+                    </button>
+                </div>
                 
-                <!-- Message Button -->
                 {% if request.user.is_authenticated %}
                     <a href="{% url 'start_dm' user_id=user_profile.user.id %}" class="btn btn-primary">
                         <i class="fas fa-comment-alt"></i>
                         Message
                     </a>
                 {% endif %}
+                
             {% else %}
-                <!-- Messages Button (Own Profile) -->
+                <!-- Viewing Own Profile -->
                 <a href="{% url 'dm_inbox' %}" class="btn btn-primary">
                     <i class="fas fa-inbox"></i>
                     Messages
@@ -955,7 +1135,6 @@ body.dark-mode .payment-section {
                     {% endif %}
                 </a>
                 
-                <!-- Edit Profile Button -->
                 <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="btn btn-outline">
                     <i class="fas fa-pencil-alt"></i>
                     Edit Profile
@@ -964,10 +1143,11 @@ body.dark-mode .payment-section {
         </div>
     </div>
 
-    <!-- Profile Info -->
+    <!-- ===== PROFILE INFO (NAME & USERNAME ONLY) ===== -->
     <div class="profile-info-section">
         <div class="profile-name-row">
             <h1 class="profile-name">{{ user_profile.user.get_full_name|default:user_profile.user.username }}</h1>
+            
             {% if user_profile.user == request.user %}
                 <a href="{% url 'edit_profile' username=user_profile.user.username %}" class="edit-icon">
                     <i class="fas fa-pencil-alt"></i>
@@ -985,18 +1165,7 @@ body.dark-mode .payment-section {
             @{{ user_profile.user.username }}
         </div>
 
-        <!-- Email Row with Details Icon -->
-        <div class="email-row">
-            <div class="email-display">
-                <i class="fas fa-envelope"></i>
-                <span>{{ user_profile.user.email }}</span>
-            </div>
-            <button class="details-icon" onclick="openDetailsModal()" title="View more details">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-        </div>
-
-        <!-- Changemaker Badge -->
+        <!-- Changemaker Badge (if applicable) -->
         {% if changemaker_category %}
             <div class="changemaker-badge">
                 <i class="fas fa-crown"></i>
@@ -1006,7 +1175,7 @@ body.dark-mode .payment-section {
         {% endif %}
     </div>
 
-    <!-- Stats -->
+    <!-- ===== STATS SECTION ===== -->
     <div class="profile-stats">
         <div class="stat-item">
             <a href="{% url 'follower_list' user_profile.user.username %}">
@@ -1030,7 +1199,18 @@ body.dark-mode .payment-section {
         </div>
     </div>
 
-    <!-- Bio -->
+    <!-- ===== EMAIL + DETAILS BUTTON ===== -->
+    <div class="email-row">
+        <div class="email-display">
+            <i class="fas fa-envelope"></i>
+            <span>{{ user_profile.user.email }}</span>
+        </div>
+        <button class="details-icon" onclick="openDetailsModal()" title="View more details">
+            <i class="fas fa-ellipsis-h"></i>
+        </button>
+    </div>
+
+    <!-- ===== BIO SECTION ===== -->
     {% if user_profile.bio %}
     <div class="bio-section">
         <h3>Bio</h3>
@@ -1040,7 +1220,7 @@ body.dark-mode .payment-section {
     </div>
     {% endif %}
 
-    <!-- Payment Information (Owner Only) -->
+    <!-- ===== PAYMENT INFORMATION (Owner Only) ===== -->
     {% if request.user.is_authenticated and request.user == user_profile.user %}
     <div class="payment-section">
         <div class="payment-header">
@@ -1073,7 +1253,7 @@ body.dark-mode .payment-section {
     </div>
     {% endif %}
 
-    <!-- Verification Link (if not verified) -->
+    <!-- ===== VERIFICATION LINK (if not verified) ===== -->
     {% if not user_profile.profile_verified %}
         <a href="{% url 'verify_profile' %}" class="verification-link">
             <i class="fas fa-shield-alt"></i>
@@ -1081,7 +1261,7 @@ body.dark-mode .payment-section {
         </a>
     {% endif %}
 
-    <!-- Public Causes -->
+    <!-- ===== PUBLIC CAUSES SECTION ===== -->
     <div class="campaigns-section">
         <div class="campaigns-header">
             <h2>
@@ -1115,7 +1295,7 @@ body.dark-mode .payment-section {
                     <i class="fas fa-flag"></i>
                     <p>No public causes yet.</p>
                     {% if request.user == user_profile.user %}
-                        <a href="{% url 'campaign_create' %}" class="btn btn-primary" style="margin-top: 15px; display: inline-flex;">
+                        <a href="{% url 'create_campaign' %}" class="btn btn-primary" style="margin-top: 15px; display: inline-flex;">
                             <i class="fas fa-plus"></i>
                             Create Your First Cause
                         </a>
@@ -1126,7 +1306,7 @@ body.dark-mode .payment-section {
     </div>
 </div>
 
-<!-- Details Modal -->
+<!-- ===== DETAILS MODAL ===== -->
 <div id="detailsModal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
@@ -1253,12 +1433,12 @@ body.dark-mode .payment-section {
     </div>
 </div>
 
-<!-- Toast Container for Notifications -->
+<!-- ===== TOAST NOTIFICATIONS ===== -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- JavaScript -->
+<!-- ===== JAVASCRIPT ===== -->
 <script>
-// ===== MODAL FUNCTIONS =====
+// Modal Functions
 function openDetailsModal() {
     document.getElementById('detailsModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -1291,7 +1471,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ===== TOAST NOTIFICATION SYSTEM =====
+// Toast Notification System
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -1309,155 +1489,123 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// ===== NUMBER FORMATTING =====
-function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-}
-
-function parseNumber(str) {
-    if (!str) return 0;
-    str = str.toString().replace(/[^0-9.]/g, '');
-    return parseInt(str) || 0;
-}
-
-// ===== ANIMATE COUNT CHANGE =====
-function animateCount(element, start, end) {
-    if (!element) return;
-    
-    const duration = 500;
-    const steps = 20;
-    const increment = (end - start) / steps;
-    let current = start;
-    let step = 0;
-    
-    element.classList.add('updating');
-    
-    const timer = setInterval(() => {
-        step++;
-        current += increment;
-        if (step >= steps) {
-            element.textContent = formatNumber(end);
-            element.classList.remove('updating');
-            clearInterval(timer);
-        } else {
-            element.textContent = formatNumber(Math.round(current));
-        }
-    }, duration / steps);
-}
-
-// ===== FOLLOW BUTTON FUNCTIONALITY =====
+// Follow Button Functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const followBtn = document.querySelector('.follow-btn');
-    if (!followBtn) return;
+    const followButton = document.getElementById('follow-button');
     
-    followBtn.addEventListener('click', async function(e) {
+    if (!followButton) return;
+    
+    const icon = followButton.querySelector('i');
+    const userId = followButton.dataset.userId;
+    const followerCountElement = document.getElementById('follower-count');
+    const isFollowing = followButton.dataset.isFollowing === 'true';
+    
+    // Set initial state
+    if (icon) {
+        if (isFollowing) {
+            icon.className = 'fas fa-user-minus';
+            followButton.title = 'Following - Click to unfollow';
+        } else {
+            icon.className = 'fas fa-user-plus';
+            followButton.title = 'Not following - Click to follow';
+        }
+    }
+    
+    followButton.addEventListener('click', function(e) {
         e.preventDefault();
         
-        const userId = this.dataset.userId;
-        const isFollowing = this.dataset.isFollowing === 'true';
-        const buttonText = this.querySelector('.btn-text');
+        const button = this;
+        const currentIcon = icon ? icon.className : '';
+        const csrfToken = getCookie('csrftoken');
         
-        // Store original state for revert
-        const originalState = isFollowing;
-        const originalText = buttonText.textContent;
-        const followerStat = document.getElementById('follower-count');
-        const originalCount = followerStat ? parseInt(followerStat.textContent.replace(/[^0-9]/g, '')) || 0 : null;
+        button.disabled = true;
+        button.classList.add('loading');
         
-        // OPTIMISTIC UPDATE
-        if (originalState) {
-            buttonText.textContent = 'Follow';
-            this.classList.remove('following');
-            this.dataset.isFollowing = 'false';
-            if (followerStat && originalCount !== null) {
-                followerStat.textContent = formatNumber(originalCount - 1);
-            }
-        } else {
-            buttonText.textContent = 'Following';
-            this.classList.add('following');
-            this.dataset.isFollowing = 'true';
-            if (followerStat && originalCount !== null) {
-                followerStat.textContent = formatNumber(originalCount + 1);
-            }
-        }
-        
-        // Add loading state
-        this.classList.add('loading');
-        this.disabled = true;
-        
-        try {
-            const formData = new FormData();
-            formData.append('user_id', userId);
-            formData.append('action', originalState ? 'unfollow' : 'follow');
-            
-            const response = await fetch('/toggle-follow/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-            
+        fetch("{% url 'toggle_follow' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                user_id: parseInt(userId)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
             if (data.status === 'success') {
-                // Update with server data
-                if (followerStat && data.followers_count !== undefined) {
-                    followerStat.textContent = formatNumber(data.followers_count);
+                if (icon) {
+                    if (data.is_following) {
+                        icon.className = 'fas fa-user-minus';
+                        button.classList.add('following');
+                        button.title = 'Following - Click to unfollow';
+                    } else {
+                        icon.className = 'fas fa-user-plus';
+                        button.classList.remove('following');
+                        button.title = 'Not following - Click to follow';
+                    }
                 }
-                showToast(data.message, 'success');
+                
+                button.dataset.isFollowing = data.is_following;
+                
+                if (followerCountElement) {
+                    followerCountElement.classList.add('updating');
+                    followerCountElement.textContent = data.followers_count;
+                    
+                    setTimeout(() => {
+                        followerCountElement.classList.remove('updating');
+                    }, 300);
+                }
+                
+                showToast(data.is_following ? 'Followed successfully!' : 'Unfollowed successfully!', 'success');
             } else {
-                // Revert on error
-                if (originalState) {
-                    buttonText.textContent = 'Following';
-                    this.classList.add('following');
-                    this.dataset.isFollowing = 'true';
-                    if (followerStat && originalCount !== null) {
-                        followerStat.textContent = formatNumber(originalCount);
-                    }
-                } else {
-                    buttonText.textContent = 'Follow';
-                    this.classList.remove('following');
-                    this.dataset.isFollowing = 'false';
-                    if (followerStat && originalCount !== null) {
-                        followerStat.textContent = formatNumber(originalCount);
-                    }
+                showToast(data.message || 'An error occurred', 'error');
+                if (icon) {
+                    icon.className = currentIcon;
                 }
-                showToast(data.message || 'Error updating follow status', 'error');
             }
-        } catch (error) {
+        })
+        .catch(error => {
             console.error('Error:', error);
-            // Revert on error
-            if (originalState) {
-                buttonText.textContent = 'Following';
-                this.classList.add('following');
-                this.dataset.isFollowing = 'true';
-                if (followerStat && originalCount !== null) {
-                    followerStat.textContent = formatNumber(originalCount);
-                }
-            } else {
-                buttonText.textContent = 'Follow';
-                this.classList.remove('following');
-                this.dataset.isFollowing = 'false';
-                if (followerStat && originalCount !== null) {
-                    followerStat.textContent = formatNumber(originalCount);
-                }
-            }
             showToast('Network error. Please try again.', 'error');
-        } finally {
-            this.classList.remove('loading');
-            this.disabled = false;
-        }
+            if (icon) {
+                icon.className = currentIcon;
+            }
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.classList.remove('loading');
+        });
     });
 });
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 
 <script src="{% static 'main/js/base.js' %}"></script>
+
+<!-- Debug info (remove in production) -->
+{% if debug %}
+<div style="position:fixed; bottom:10px; right:10px; background:black; color:lime; padding:8px; border-radius:4px; font-size:11px; z-index:9999; opacity:0.8;">
+    <strong>Debug:</strong><br>
+    following_profile: {{ following_profile }}<br>
+    user: {{ request.user.username }}<br>
+    viewing: {{ user_profile.user.username }}
+</div>
+{% endif %}
 
 {% endblock %}
