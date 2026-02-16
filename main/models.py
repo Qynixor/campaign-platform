@@ -1617,7 +1617,22 @@ class Activity(models.Model):
                 Notification.objects.create(user=follower, message=message_follower)
 
         super().save(*args, **kwargs)
-
+    
+    @property
+    def day_number(self):
+        """
+        Calculate which day of the campaign this activity belongs to
+        based on when it was posted relative to the campaign start.
+        """
+        if not self.campaign or not self.campaign.timestamp:
+            return 1
+            
+        # Calculate days difference between campaign start and activity post
+        delta = self.timestamp.date() - self.campaign.timestamp.date()
+        day_num = delta.days + 1  # +1 because day 1 is the first day
+        
+        # Ensure we don't go below 1
+        return max(1, day_num)
 
 
 class ActivityLove(models.Model):
