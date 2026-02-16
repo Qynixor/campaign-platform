@@ -11511,8 +11511,6 @@ function toggleFullContent(button) {
 }
 </script>
 
-
-
 <script>
 // Store follow state in localStorage
 function updateFollowState(userId, isFollowing) {
@@ -11538,11 +11536,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (finalState) {
             element.classList.add('following');
-            element.textContent = ' Following';
+            element.textContent = '• Following';
             element.setAttribute('data-is-following', 'true');
         } else {
             element.classList.remove('following');
-            element.textContent = ' Follow';
+            element.textContent = '• Follow';
             element.setAttribute('data-is-following', 'false');
         }
     });
@@ -11551,19 +11549,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.follow-text').forEach(element => {
         element.addEventListener('click', async function() {
             const userId = this.getAttribute('data-user-id');
-            const isFollowing = this.getAttribute('data-is-following') === 'true';
-            const action = isFollowing ? 'unfollow' : 'follow';
             
             try {
-                const response = await fetch('/toggle_follow/', {
+                const response = await fetch('/toggle-follow/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': '{{ csrf_token }}'
                     },
                     body: JSON.stringify({
-                        'user_id': userId,
-                        'action': action
+                        'user_id': userId
                     })
                 });
 
@@ -11573,7 +11568,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update text state
                     const newState = data.action === 'followed';
                     this.classList.toggle('following', newState);
-                    this.textContent = newState ? ' Following' : ' Follow';
+                    this.textContent = newState ? '• Following' : '• Follow';
                     this.setAttribute('data-is-following', newState.toString());
                     
                     // Update followers count
@@ -11595,8 +11590,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-
 
 <script>
 function refreshTrending() {
