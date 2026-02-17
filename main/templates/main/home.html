@@ -9640,6 +9640,58 @@ nav a:hover {
     background: rgba(255, 0, 0, 0.5) !important;
 }
 
+
+
+
+.activities-link-container {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.view-activities-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+.view-activities-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.view-activities-btn i {
+    margin: 0 8px;
+}
+
+.activities-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+.join-btn-count, .audio-listener-count {
+    background: #ff6b6b;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+
+
 </style>
 
 
@@ -10334,16 +10386,7 @@ nav a:hover {
                 <!-- Sound Community Icon - ONLY SHOW IF AUDIO EXISTS -->
               
   <!-- Audio Player Icon - Renamed -->
-{% if campaign.audio %}
-<div class="campaign-audio-trigger" onclick="soundManager.openPopup({{ campaign.id }})">
-    <i class="fas fa-headphones-alt"></i>
-    {% with tribe_count=campaign.get_sound_tribe_members_count %}
-        {% if tribe_count > 0 %}
-            <span class="audio-listener-count">{{ tribe_count }}</span>
-        {% endif %}
-    {% endwith %}
-</div>
-{% endif %}
+
 
 
         <div class="campaign-views-overlay" aria-label="Total campaign views">
@@ -10523,17 +10566,18 @@ nav a:hover {
         </button>
     </div>
     
-    {% if user.profile in campaign.user_profiles.all %}
-    <a href="{% url 'join_leave_campaign' campaign.id %}" class="camp-join-btn camp-leave-btn">
-        <i class="fas fa-user-minus"></i>
-        <span>Leave</span>
-    </a>
-    {% else %}
-    <a href="{% url 'join_leave_campaign' campaign.id %}" class="camp-join-btn">
-        <i class="fas fa-user-plus"></i>
-        <span>Join</span>
-    </a>
-    {% endif %}
+<!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
+<!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
+<button onclick="soundManager.openPopup({{ campaign.id }})" class="camp-join-btn">
+    <i class="fas fa-headphones-alt"></i>
+    <span>Join</span>
+    {% with tribe_count=campaign.get_sound_tribe_members_count %}
+        {% if tribe_count > 0 %}
+            <span class="join-btn-count">{{ tribe_count }}</span>
+        {% endif %}
+    {% endwith %}
+</button>
+
 </div>
         
         <!-- Hidden content that was in your original HTML -->
@@ -10679,7 +10723,15 @@ nav a:hover {
                         <i class="fas fa-music"></i> Join Soundmark Tribe
                     </button>
                 </div>
-
+            <!-- ACTIVITIES LINK - THIS IS KEY -->
+            <div class="activities-link-container">
+                <button onclick="soundManager.viewActivities()" class="view-activities-btn">
+                    <i class="fas fa-map-signs"></i> 
+                    View Cause Journey & Activities 
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <p class="activities-hint">See photos, updates, and how this cause is growing</p>
+            </div>
                 <!-- Recent Members -->
                 <div class="recent-members-container">
                     <h5 class="recent-members-header">
@@ -10955,18 +11007,7 @@ nav a:hover {
             {% endif %}
         </div>
         
-                  <!-- Sound Community Icon - ONLY SHOW IF AUDIO EXISTS -->
-              <!-- Audio Player Icon - Renamed -->
-{% if campaign.audio %}
-<div class="campaign-audio-trigger" onclick="soundManager.openPopup({{ campaign.id }})">
-    <i class="fas fa-headphones-alt"></i>
-    {% with tribe_count=campaign.get_sound_tribe_members_count %}
-        {% if tribe_count > 0 %}
-            <span class="audio-listener-count">{{ tribe_count }}</span>
-        {% endif %}
-    {% endwith %}
-</div>
-{% endif %}
+
 
         <div class="campaign-views-overlay" aria-label="Total campaign views">
             <i class="far fa-eye"></i>
@@ -11146,18 +11187,18 @@ nav a:hover {
             <span class="camp-label">Share</span>
         </button>
     </div>
-    
-    {% if user.profile in campaign.user_profiles.all %}
-    <a href="{% url 'join_leave_campaign' campaign.id %}" class="camp-join-btn camp-leave-btn">
-        <i class="fas fa-user-minus"></i>
-        <span>Leave</span>
-    </a>
-    {% else %}
-    <a href="{% url 'join_leave_campaign' campaign.id %}" class="camp-join-btn">
-        <i class="fas fa-user-plus"></i>
-        <span>Join</span>
-    </a>
-    {% endif %}
+<!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
+<!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
+<button onclick="soundManager.openPopup({{ campaign.id }})" class="camp-join-btn">
+    <i class="fas fa-headphones-alt"></i>
+    <span>Join</span>
+    {% with tribe_count=campaign.get_sound_tribe_members_count %}
+        {% if tribe_count > 0 %}
+            <span class="join-btn-count">{{ tribe_count }}</span>
+        {% endif %}
+    {% endwith %}
+</button>
+
 </div>
  
 
@@ -12725,7 +12766,7 @@ class SoundTribeManager {
     }
 
     updateBadgeCount(count) {
-        const badges = document.querySelectorAll('.sound-badge');
+        const badges = document.querySelectorAll('.sound-badge, .join-btn-count, .audio-listener-count');
         badges.forEach(badge => {
             badge.textContent = count;
         });
@@ -12736,11 +12777,11 @@ class SoundTribeManager {
         if (!joinBtn) return;
 
         if (hasJoined) {
-            joinBtn.innerHTML = '<i class="fas fa-check"></i> In the Tribe!';
+            joinBtn.innerHTML = '<i class="fas fa-check"></i> You\'re in the Sound Tribe!';
             joinBtn.classList.add('joined');
             joinBtn.disabled = true;
         } else {
-            joinBtn.innerHTML = '<i class="fas fa-music"></i> Join Soundmark Tribe';
+            joinBtn.innerHTML = '<i class="fas fa-headphones-alt"></i> Join Sound Tribe & Share Reaction';
             joinBtn.classList.remove('joined');
             joinBtn.disabled = false;
         }
@@ -12754,19 +12795,20 @@ class SoundTribeManager {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-music"></i>
-                    <span>Be the first to join the sound tribe!</span>
+                    <span>Be the first to share your reaction!</span>
                 </div>
             `;
             return;
         }
 
         const membersHTML = members.map(member => `
-            <a href="${member.profile_url}" class="member-badge" title="@${member.username} - Joined at ${member.timestamp}">
+            <a href="${member.profile_url}" class="member-badge" title="@${member.username} - ${member.reaction || 'Shared a reaction'}">
                 <img src="${member.profile_pic || '/static/default-avatar.png'}" 
                      alt="${member.username}" 
                      class="member-avatar"
                      onerror="this.src='/static/default-avatar.png'">
                 <span class="member-username">${this.escapeHtml(member.username)}</span>
+                ${member.reaction_emoji ? `<span class="member-reaction">${member.reaction_emoji}</span>` : ''}
             </a>
         `).join('');
 
@@ -12815,9 +12857,18 @@ class SoundTribeManager {
         }
     }
 
+    // ==================== VIEW ACTIVITIES ====================
+    viewActivities() {
+        if (!this.currentCampaignId) return;
+        
+        // Close popup and redirect to activities
+        this.closePopup();
+        window.location.href = `/campaign/${this.currentCampaignId}/activity_list/`;
+    }
+
     // ==================== UTILITY METHODS ====================
     animateBadge() {
-        const badges = document.querySelectorAll('.sound-badge');
+        const badges = document.querySelectorAll('.sound-badge, .join-btn-count, .audio-listener-count');
         badges.forEach(badge => {
             badge.style.transform = 'scale(1.3)';
             setTimeout(() => {
@@ -12834,6 +12885,19 @@ class SoundTribeManager {
     showNotification(message, type = 'info') {
         // Your notification implementation
         console.log(`${type}: ${message}`);
+    }
+
+    showError(message) {
+        const popupContent = document.querySelector('.popup-content');
+        if (popupContent) {
+            popupContent.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>${message}</p>
+                    <button onclick="soundManager.closePopup()">Close</button>
+                </div>
+            `;
+        }
     }
 
     escapeHtml(text) {
