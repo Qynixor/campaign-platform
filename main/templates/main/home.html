@@ -8628,20 +8628,11 @@ nav a:hover {
         display: none !important;
     }
 }
-/* ===== CREATOR INFO CONTAINER ===== */
-.creator-info {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    position: relative;
-    justify-content: space-between; /* Ensure space between details and menu */
-}
 
-.creator-details {
-    flex-grow: 1;
-    min-width: 0; /* Allow text to truncate properly */
+/* Ensure the menu button stays in place */
+.campaign-menu {
+    margin-left: auto;
 }
-
 /* Campaign menu positioning */
 .campaign-menu {
     position: relative;
@@ -9967,6 +9958,102 @@ nav a:hover {
         font-size: 10px;
     }
     
+/* Mobile version fixes */
+.mobile-version .mobile-line-1 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    width: auto; /* Change from 100% to auto */
+    max-width: 100%; /* Allow it to take space but not force stretching */
+}
+
+.mobile-version .creator-name-text {
+    margin-right: 0;
+    line-height: 1.4;
+    white-space: nowrap; /* Prevent username from wrapping */
+}
+
+/* Badge dot styling - appears BETWEEN elements */
+.mobile-version .badge-dot {
+    color: #777;
+    font-size: 14px;
+    margin: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Badge containers */
+.mobile-version .verified-badge,
+.mobile-version .changemaker-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0; /* Prevent badges from shrinking */
+}
+
+.mobile-version .verified-badge i,
+.mobile-version .changemaker-badge i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 14px;
+}
+
+.mobile-version .verified-badge i {
+    color: #3897f0;
+}
+
+.mobile-version .follow-text {
+    color: #0095f6;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.4;
+    white-space: nowrap;
+    margin-left: 0; /* Remove any left margin */
+    flex-shrink: 0; /* Prevent follow button from shrinking */
+}
+
+.mobile-version .follow-text.following {
+    color: #777;
+}
+
+/* Fix for the container */
+.creator-details {
+    flex-grow: 1;
+    min-width: 0; /* Allow text to truncate properly */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make sure the mobile version doesn't stretch */
+.mobile-version {
+    width: 100%;
+}
+
+/* Ensure the menu button stays in place */
+.campaign-menu {
+    margin-left: auto;
+    flex-shrink: 0; /* Prevent menu from shrinking */
+}
+
+/* Fix the creator-info to properly align items */
+.creator-info {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    position: relative;
+    justify-content: space-between;
+    width: 100%;
+}
     /* Hide desktop progress elements on mobile */
     .progress-info,
     .progress-container,
@@ -10368,27 +10455,30 @@ nav a:hover {
     z-index: 1000;
     transition: transform 0.3s ease, background-color 0.3s ease;
 ">
-  <!-- Rallynex Logo/Name on the left -->
+    <!-- Rallynex Logo/Name on the left -->
     <div class="rallynex-name" style="
         font-family: 'Courier New', monospace;
-        color: #000000;
+        color: white;
         font-weight: bold;
         letter-spacing: 3px;
         font-size: 22px;
         display: flex;
         align-items: center;
         gap: 10px;
-        text-shadow: none;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     ">
         <img src="{% static 'main/files/w.png' %}" alt="Rallynex Logo" style="
             height: 40px; 
             width: 40px; 
             transition: all 0.3s ease;
-            filter: none;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
         "> 
         <span style="
-            color: #000000;
-            text-shadow: none;
+            background: linear-gradient(135deg, #ffffff 0%, #e6f7ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 1px 2px rgba(29, 155, 240, 0.3);
         "></span>
     </div>
 
@@ -10620,7 +10710,7 @@ nav a:hover {
         </li>
 
         <li>
-            <a href="#" onclick="switchColor()">
+            <a href="#" onclick="switchColor()" style="color: black; position: relative;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M12 3V5M18.36 5.64L16.95 7.05M21 12H19M18.36 18.36L16.95 16.95M12 19V21M7.05 16.95L5.64 18.36M5 12H3M7.05 7.05L5.64 5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -10668,7 +10758,7 @@ nav a:hover {
      
         <!-- Logout link -->
         <li>
-            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"style="color: black; position: relative;">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
             <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
@@ -10796,27 +10886,30 @@ nav a:hover {
             <!-- Desktop: All in one line -->
             <span class="creator-name-text">{{ campaign.user.user.username }}</span>
             
-            {% if request.user != campaign.user.user %}
-            <span id="follow-btn-{{ campaign.user.user.id }}" 
-                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                  data-user-id="{{ campaign.user.user.id }}"
-                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                {% if request.user in campaign.user.user.followers.all %}
-                    • Following
-                {% else %}
-                    • Follow
-                {% endif %}
-            </span>
-            {% endif %}
             
             {% if campaign.user.profile_verified %}
             <span class="verified-badge">
                 <i class="fas fa-check-circle"></i>
             </span>
             {% endif %}
-            
+            •
             {% if campaign.is_changemaker %}
             <span class="changemaker-badge"><i class="far fa-star"></i></span>
+            {% endif %}
+            •
+
+
+            {% if request.user != campaign.user.user %}
+            <span id="follow-btn-{{ campaign.user.user.id }}" 
+                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+                  data-user-id="{{ campaign.user.user.id }}"
+                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
+                {% if request.user in campaign.user.user.followers.all %}
+                     Following
+                {% else %}
+                     Follow
+                {% endif %}
+            </span>
             {% endif %}
         </div>
         
@@ -10827,48 +10920,62 @@ nav a:hover {
             <i class="fas fa-map-marker-alt"></i> {{ campaign.user.location }}
         </div>
         
-        <!-- Mobile: Two lines with proper alignment -->
-        <div class="creator-info-line mobile-version">
-            <!-- Line 1: Username + Verification + Changemaker + Follow (all on one line) -->
-            <div class="mobile-line-1">
-                <span class="creator-name-text">{{ campaign.user.user.username }}</span>
-                
-                {% if campaign.user.profile_verified %}
-                <span class="verified-badge">
-                    <i class="fas fa-check-circle"></i>
-                </span>
+       <!-- Mobile: Two lines with proper alignment -->
+<!-- Mobile: Two lines with proper alignment -->
+<!-- Mobile: Two lines with proper alignment -->
+<!-- Mobile: Two lines with proper alignment -->
+<div class="creator-info-line mobile-version">
+    <!-- Line 1: Username + Verification + Changemaker + Follow (all on one line) -->
+    <div class="mobile-line-1">
+        <span class="creator-name-text">{{ campaign.user.user.username }}</span>
+        
+        <!-- Dot before verified badge if it exists -->
+        {% if campaign.user.profile_verified %}
+       
+        <span class="verified-badge">
+            <i class="fas fa-check-circle"></i>
+        </span>
+        {% endif %}
+        
+        <!-- Dot before changemaker badge if it exists -->
+        {% if campaign.is_changemaker %}
+            <!-- Add dot before changemaker if verified exists, otherwise no dot needed yet -->
+            {% if campaign.user.profile_verified %}
+            <span class="badge-dot">•</span>
+            {% endif %}
+            <span class="changemaker-badge">
+                <i class="far fa-star"></i>
+            </span>
+        {% endif %}
+        
+        <!-- Dot before follow button if any badges exist -->
+        {% if request.user != campaign.user.user %}
+            {% if campaign.user.profile_verified or campaign.is_changemaker %}
+            <span class="badge-dot">•</span>
+            {% endif %}
+            <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
+                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+                  data-user-id="{{ campaign.user.user.id }}"
+                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
+                {% if request.user in campaign.user.user.followers.all %}
+                    Following
+                {% else %}
+                    Follow
                 {% endif %}
-                
-                {% if campaign.is_changemaker %}
-                <span class="changemaker-badge">
-                    <i class="far fa-star"></i>
-                </span>
-                {% endif %}
-                
-                {% if request.user != campaign.user.user %}
-                <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
-                      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                      data-user-id="{{ campaign.user.user.id }}"
-                      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                    {% if request.user in campaign.user.user.followers.all %}
-                        Following
-                    {% else %}
-                        Follow
-                    {% endif %}
-                </span>
-                {% endif %}
-            </div>
-            
-            <!-- Line 2: Time and location with icons -->
-            <div class="mobile-line-2">
-                <span class="campaign-time">
-                     {{ campaign.timestamp|timesince }} ago
-                    <span class="location-dot">•</span>
-                    <i class="fas fa-map-marker-alt"></i> {{ campaign.user.location }}
-                </span>
-            </div>
-        </div>
+            </span>
+        {% endif %}
     </div>
+    
+    <!-- Line 2: Time and location with icons -->
+    <div class="mobile-line-2">
+        <span class="campaign-time">
+             {{ campaign.timestamp|timesince }} ago
+            <span class="location-dot">•</span>
+            <i class="fas fa-map-marker-alt"></i> {{ campaign.user.location }}
+        </span>
+    </div>
+</div>
+</div>
 
     <!-- Campaign Menu - Positioned to the right -->
     <div class="campaign-menu" onclick="togglaMenu(this)" style="position: relative;">
@@ -11459,9 +11566,9 @@ nav a:hover {
                   data-user-id="{{ campaign.user.user.id }}"
                   data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
                 {% if request.user in campaign.user.user.followers.all %}
-                    • Following
+                     Following
                 {% else %}
-                    • Follow
+                     Follow
                 {% endif %}
             </span>
             {% endif %}
@@ -11485,47 +11592,61 @@ nav a:hover {
         </div>
         
         <!-- Mobile: Two lines with proper alignment -->
-        <div class="creator-info-line mobile-version">
-            <!-- Line 1: Username + Verification + Changemaker + Follow (all on one line) -->
-            <div class="mobile-line-1">
-                <span class="creator-name-text">{{ campaign.user.user.username }}</span>
-                
-                {% if campaign.user.profile_verified %}
-                <span class="verified-badge">
-                    <i class="fas fa-check-circle"></i>
-                </span>
+<!-- Mobile: Two lines with proper alignment -->
+<!-- Mobile: Two lines with proper alignment -->
+<!-- Mobile: Two lines with proper alignment -->
+<div class="creator-info-line mobile-version">
+    <!-- Line 1: Username + Verification + Changemaker + Follow (all on one line) -->
+    <div class="mobile-line-1">
+        <span class="creator-name-text">{{ campaign.user.user.username }}</span>
+        
+        <!-- Dot before verified badge if it exists -->
+        {% if campaign.user.profile_verified %}
+      
+        <span class="verified-badge">
+            <i class="fas fa-check-circle"></i>
+        </span>
+        {% endif %}
+        
+        <!-- Dot before changemaker badge if it exists -->
+        {% if campaign.is_changemaker %}
+            <!-- Add dot before changemaker if verified exists, otherwise no dot needed yet -->
+            {% if campaign.user.profile_verified %}
+            <span class="badge-dot">•</span>
+            {% endif %}
+            <span class="changemaker-badge">
+                <i class="far fa-star"></i>
+            </span>
+        {% endif %}
+        
+        <!-- Dot before follow button if any badges exist -->
+        {% if request.user != campaign.user.user %}
+            {% if campaign.user.profile_verified or campaign.is_changemaker %}
+            <span class="badge-dot">•</span>
+            {% endif %}
+            <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
+                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+                  data-user-id="{{ campaign.user.user.id }}"
+                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
+                {% if request.user in campaign.user.user.followers.all %}
+                    Following
+                {% else %}
+                    Follow
                 {% endif %}
-                
-                {% if campaign.is_changemaker %}
-                <span class="changemaker-badge">
-                    <i class="far fa-star"></i>
-                </span>
-                {% endif %}
-                
-                {% if request.user != campaign.user.user %}
-                <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
-                      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                      data-user-id="{{ campaign.user.user.id }}"
-                      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                    {% if request.user in campaign.user.user.followers.all %}
-                        Following
-                    {% else %}
-                        Follow
-                    {% endif %}
-                </span>
-                {% endif %}
-            </div>
-            
-            <!-- Line 2: Time and location with icons -->
-            <div class="mobile-line-2">
-                <span class="campaign-time">
-                     {{ campaign.timestamp|timesince }} ago
-                    <span class="location-dot">•</span>
-                    <i class="fas fa-map-marker-alt"></i> {{ campaign.user.location }}
-                </span>
-            </div>
-        </div>
+            </span>
+        {% endif %}
     </div>
+    
+    <!-- Line 2: Time and location with icons -->
+    <div class="mobile-line-2">
+        <span class="campaign-time">
+             {{ campaign.timestamp|timesince }} ago
+            <span class="location-dot">•</span>
+            <i class="fas fa-map-marker-alt"></i> {{ campaign.user.location }}
+        </span>
+    </div>
+</div>
+</div>
 
     <!-- Campaign Menu - Positioned to the right -->
     <div class="campaign-menu" onclick="togglaMenu(this)" style="position: relative;">
@@ -12820,11 +12941,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (finalState) {
             element.classList.add('following');
-            element.textContent = '• Following';
+            element.textContent = ' Following';
             element.setAttribute('data-is-following', 'true');
         } else {
             element.classList.remove('following');
-            element.textContent = '• Follow';
+            element.textContent = ' Follow';
             element.setAttribute('data-is-following', 'false');
         }
     });
@@ -12852,7 +12973,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Update text state
                     const newState = data.action === 'followed';
                     this.classList.toggle('following', newState);
-                    this.textContent = newState ? '• Following' : '• Follow';
+                    this.textContent = newState ? ' Following' : ' Follow';
                     this.setAttribute('data-is-following', newState.toString());
                     
                     // Update followers count
