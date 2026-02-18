@@ -132,7 +132,8 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('edit-profile/<str:username>/', views.profile_edit, name='edit_profile'),
   path('user-profile/@<str:username>/', views.profile_view, name='profile_view'),
    path('toggle-follow/', views.toggle_follow, name='toggle_follow'),
-    
+    # In your urls.py
+path('campaign/<int:campaign_id>/leave-sound-tribe/', views.leave_sound_tribe, name='leave_sound_tribe'),
     path('followers/<str:username>/', views.follower_list, name='follower_list'),
     path('following/<str:username>/', views.following_list, name='following_list'),
     path('private-campaign/', views.private_campaign, name='private_campaign'),

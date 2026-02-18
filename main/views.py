@@ -3300,31 +3300,59 @@ from .models import Campaign, SoundTribe, Profile
 @csrf_exempt
 def join_sound_tribe(request, campaign_id):
     """
-    Handle user joining the sound tribe for a campaign
+    Handle user joining the sound tribe for a campaign - NO LOGIN REQUIRED!
+    Uses session tracking for anonymous users
     """
     try:
-        if not request.user.is_authenticated:
-            return JsonResponse({
-                'success': False, 
-                'error': 'Please log in to join the sound tribe'
-            })
-        
         campaign = Campaign.objects.get(id=campaign_id)
-        profile = request.user.profile
         
-        # Create or get tribe entry
-        tribe_entry, created = SoundTribe.objects.get_or_create(
-            user=profile,
-            campaign=campaign
-        )
+        # Handle based on authentication status
+        if request.user.is_authenticated:
+            # Logged in user - use profile
+            profile = request.user.profile
+            
+            # Check if already joined
+            if SoundTribe.objects.filter(user=profile, campaign=campaign).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'You have already joined this tribe'
+                })
+            
+            # Create tribe entry
+            tribe_entry = SoundTribe.objects.create(
+                user=profile,
+                campaign=campaign
+            )
+            created = True
+            
+        else:
+            # For anonymous users, we'll store in session
+            if 'joined_tribes' not in request.session:
+                request.session['joined_tribes'] = []
+            
+            # Check if already joined in this session
+            if str(campaign_id) in request.session['joined_tribes']:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'You have already joined this tribe in this session'
+                })
+            
+            # Add to session
+            request.session['joined_tribes'].append(str(campaign_id))
+            request.session.modified = True
+            created = True
+            
+            # Note: No database entry for anonymous users since user field can't be null
+            # They're only tracked via session
         
-        # Get updated tribe data
-        member_count = campaign.get_sound_tribe_members_count()
+        # Get updated tribe data (only count database members)
+        member_count = SoundTribe.objects.filter(campaign=campaign).count()
         
-        # Get recent members with profile data
+        # Get recent members with profile data (only database members)
         recent_members = SoundTribe.objects.filter(
-            campaign=campaign
-        ).select_related('user__user', 'user').order_by('-timestamp')[:6]
+            campaign=campaign,
+            user__isnull=False  # Only get members with actual user accounts
+        ).select_related('user__user').order_by('-timestamp')[:6]
         
         recent_members_data = [
             {
@@ -3341,7 +3369,8 @@ def join_sound_tribe(request, campaign_id):
             'member_count': member_count,
             'recent_members': recent_members_data,
             'is_new': created,
-            'message': 'Welcome to the Soundmark Tribe! 🎵'
+            'message': 'Welcome to the Soundmark Tribe! 🎵',
+            'is_authenticated': request.user.is_authenticated
         })
         
     except Campaign.DoesNotExist:
@@ -3352,22 +3381,32 @@ def join_sound_tribe(request, campaign_id):
 
 def get_sound_tribe_data(request, campaign_id):
     """
-    Get current sound tribe data for popup display
+    Get current sound tribe data for popup display - NO LOGIN REQUIRED!
     """
     try:
         campaign = Campaign.objects.get(id=campaign_id)
         has_joined = False
         
-        # Check if current user has joined the tribe
+        # Check if user has joined (based on auth status)
         if request.user.is_authenticated:
-            has_joined = campaign.has_user_joined_tribe(request.user.profile)
+            # Check database for logged in user
+            has_joined = SoundTribe.objects.filter(
+                user=request.user.profile,
+                campaign=campaign
+            ).exists()
+        else:
+            # Check session for anonymous user
+            if 'joined_tribes' in request.session:
+                has_joined = str(campaign_id) in request.session['joined_tribes']
         
-        member_count = campaign.get_sound_tribe_members_count()
+        # Get member count (only database members)
+        member_count = SoundTribe.objects.filter(campaign=campaign).count()
         
-        # Get recent members with profile data
+        # Get recent members with profile data (only database members)
         recent_members = SoundTribe.objects.filter(
-            campaign=campaign
-        ).select_related('user__user', 'user').order_by('-timestamp')[:6]
+            campaign=campaign,
+            user__isnull=False
+        ).select_related('user__user').order_by('-timestamp')[:6]
         
         recent_members_data = [
             {
@@ -3383,8 +3422,82 @@ def get_sound_tribe_data(request, campaign_id):
             'success': True,
             'member_count': member_count,
             'has_joined': has_joined,
-            'recent_members': recent_members_data
+            'recent_members': recent_members_data,
+            'is_authenticated': request.user.is_authenticated
         })
+        
+    except Campaign.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Campaign not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@require_POST
+@csrf_exempt
+def leave_sound_tribe(request, campaign_id):
+    """
+    Handle user leaving the sound tribe for a campaign
+    """
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please log in to leave the sound tribe'
+            })
+        
+        campaign = Campaign.objects.get(id=campaign_id)
+        profile = request.user.profile
+        
+        # Get the tribe entry before deleting
+        tribe_entry = SoundTribe.objects.filter(
+            user=profile,
+            campaign=campaign
+        ).first()
+        
+        if tribe_entry:
+            # Store info for notification
+            username = profile.user.username
+            campaign_owner = campaign.user.user
+            
+            # Delete the entry
+            tribe_entry.delete()
+            
+            # Create leave notification HERE, after deletion
+            message = f"{username} left your Soundmark Tribe. <a href='{reverse('view_campaign', kwargs={'campaign_id': campaign.pk})}'>View Cause</a>"
+            Notification.objects.create(user=campaign_owner, message=message)
+            
+            deleted_count = 1
+        else:
+            deleted_count = 0
+        
+        # Get updated tribe data
+        member_count = campaign.get_sound_tribe_members_count()
+        
+        recent_members = SoundTribe.objects.filter(
+            campaign=campaign
+        ).select_related('user__user', 'user').order_by('-timestamp')[:6]
+        
+        recent_members_data = [
+            {
+                'username': member.user.user.username,
+                'profile_pic': member.user.image.url if member.user.image else '',
+                'profile_url': reverse('profile_view', kwargs={'username': member.user.user.username}),
+                'timestamp': member.timestamp.strftime('%H:%M')
+            }
+            for member in recent_members
+        ]
+        
+        if deleted_count > 0:
+            return JsonResponse({
+                'success': True,
+                'member_count': member_count,
+                'recent_members': recent_members_data,
+                'message': 'You have left the Soundmark Tribe'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not a member of this tribe'
+            })
         
     except Campaign.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Campaign not found'})
@@ -3396,9 +3509,6 @@ def get_sound_tribe_data(request, campaign_id):
 def thank_you(request):
     
     return render(request, 'main/thank_you.html')
-
-
-
 
 def activity_list(request, campaign_id):
     # Get data from request
@@ -6385,6 +6495,22 @@ def following_list(request, username):
     }
 
     return render(request, 'main/following_list.html', context)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
