@@ -6150,7 +6150,21 @@ def home(request):
             continue
 
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
- 
+    # Create a dictionary to store join status for each campaign
+
+    # Create a dictionary to store join status for each campaign
+    user_joined_status = {}
+    
+    # Use user_profile instead of request.user
+    joined_campaign_ids = SoundTribe.objects.filter(
+        user=user_profile  # Changed from request.user to user_profile
+    ).values_list('campaign_id', flat=True)
+    
+    # Convert to set for faster lookup
+    joined_set = set(joined_campaign_ids)
+    
+    for campaign in campaigns:
+        user_joined_status[campaign.id] = campaign.id in joined_set
     return render(request, 'main/home.html', {
         'ads': ads,
         'public_campaigns': campaigns_to_display if campaigns_to_display.exists() else trending_campaigns,
@@ -6160,12 +6174,13 @@ def home(request):
         'unread_notifications': unread_notifications,
         'unread_messages_count': unread_messages_count,
         'new_campaigns_from_follows': new_campaigns_from_follows,
-      
+        'user_joined_status': user_joined_status,  # Pass to template
         'categories': categories,
         'selected_category': category_filter,
         'trending_campaigns': trending_campaigns,
         'suggested_users': suggested_users,
         'top_contributors': top_contributors,
+
     })
 
 
