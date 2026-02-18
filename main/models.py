@@ -123,6 +123,9 @@ class Profile(models.Model):
         activity_count = Activity.objects.filter(campaign__user=self).count()
         activity_love_count = ActivityLove.objects.filter(activity__campaign__user=self).count()
         return activity_count >= 1 and activity_love_count >= 1
+
+
+
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:

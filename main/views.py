@@ -4988,7 +4988,7 @@ def home(request):
             continue
 
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
- 
+
     return render(request, 'main/home.html', {
         'ads': ads,
         'public_campaigns': campaigns_to_display if campaigns_to_display.exists() else trending_campaigns,
@@ -4998,8 +4998,7 @@ def home(request):
         'unread_notifications': unread_notifications,
         'unread_messages_count': unread_messages_count,
         'new_campaigns_from_follows': new_campaigns_from_follows,
-      
-        'categories': categories,
+               'categories': categories,
         'selected_category': category_filter,
         'trending_campaigns': trending_campaigns,
         'suggested_users': suggested_users,

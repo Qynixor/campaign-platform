@@ -64,3 +64,22 @@ def digits_only(value):
     if not value:
         return ""
     return re.sub(r'[^0-9]', '', value)
+
+
+
+
+
+@register.filter
+def has_joined_tribe(campaign, user_profile):
+    """Check if a user has joined the campaign's sound tribe"""
+    if not user_profile:
+        return False
+    return campaign.has_user_joined_tribe(user_profile)
+
+# Alternative: Create a simpler filter that just takes the campaign and user
+@register.filter
+def user_in_tribe(campaign, user):
+    """Check if user is in campaign's tribe"""
+    if not user or not user.is_authenticated:
+        return False
+    return campaign.has_user_joined_tribe(user.profile)
