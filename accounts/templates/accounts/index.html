@@ -11120,16 +11120,18 @@ nav a:hover {
 
 
             {% if request.user != campaign.user.user %}
-            <span id="follow-btn-{{ campaign.user.user.id }}" 
-                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                  data-user-id="{{ campaign.user.user.id }}"
-                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                {% if request.user in campaign.user.user.followers.all %}
-                     Following
-                {% else %}
-                     Follow
-                {% endif %}
-            </span>
+           <span id="follow-btn-{{ campaign.user.user.id }}" 
+      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+      data-user-id="{{ campaign.user.user.id }}"
+      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}"
+      onclick="handleFollowClick(this, '{{ campaign.user.user.id }}')"
+      {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    {% if request.user in campaign.user.user.followers.all %}
+         Following
+    {% else %}
+         Follow
+    {% endif %}
+</span>
             {% endif %}
         </div>
         
@@ -11173,16 +11175,18 @@ nav a:hover {
             {% if campaign.user.profile_verified or campaign.is_changemaker %}
             <span class="badge-dot">•</span>
             {% endif %}
-            <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
-                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                  data-user-id="{{ campaign.user.user.id }}"
-                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                {% if request.user in campaign.user.user.followers.all %}
-                    Following
-                {% else %}
-                    Follow
-                {% endif %}
-            </span>
+          <span id="follow-btn-{{ campaign.user.user.id }}" 
+      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+      data-user-id="{{ campaign.user.user.id }}"
+      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}"
+      onclick="handleFollowClick(this, '{{ campaign.user.user.id }}')"
+      {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    {% if request.user in campaign.user.user.followers.all %}
+         Following
+    {% else %}
+         Follow
+    {% endif %}
+</span>
         {% endif %}
     </div>
     
@@ -11206,14 +11210,8 @@ nav a:hover {
                 <i class="fas fa-eye"></i> View Details
             </a>
 
-            <a href="{% url 'campaign_joiners' campaign.id %}" class="comment-count" aria-label="View joiners of this campaign">
-                <i class="fas fa-user-plus"></i> Joiners ({{ campaign.user_profiles.count|format_count }})
-            </a>
-
-            <a href="{% url 'top_participants' campaign_id=campaign.pk %}" class="top-supporters-link">
-                <i class="fas fa-trophy"></i> Top Participants
-            </a>
-
+          
+            
             <a href="{% url 'report_campaign' campaign.id %}">
                 <i class="fas fa-flag"></i> Report
             </a>
@@ -11362,9 +11360,12 @@ nav a:hover {
 
 
         <!-- Your existing # icon that triggers the popup -->
-<div class="campaign-views-overlay" aria-label="Total campaign views" onclick="showTagsPopup('{{ campaign.id }}')">
+<div class="campaign-views-overlay" 
+     aria-label="Total campaign views" 
+     onclick="handleTagsPopupClick('{{ campaign.id }}')"
+     {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
     #
-</div> 
+</div>
         
         
         <div class="image-overlay-bottom">
@@ -11517,11 +11518,13 @@ nav a:hover {
             <span class="camp-label">Like</span>
         </button>
         
-        <button class="camp-action-btn camp-comment-btn" onclick="showCommentPopup({{ campaign.id }})">
-            <i class="far fa-comment"></i> 
-            <span id="comment-count-{{ campaign.id }}" class="camp-count">{{ campaign.comments.count|default:0 }}</span>
-            <span class="camp-label">Comment</span>
-        </button>
+      <button class="camp-action-btn camp-comment-btn" 
+        onclick="handleCommentClick({{ campaign.id }})"
+        {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    <i class="far fa-comment"></i> 
+    <span id="comment-count-{{ campaign.id }}" class="camp-count">{{ campaign.comments.count|default:0 }}</span>
+    <span class="camp-label">Comment</span>
+</button>
         
         <button class="camp-action-btn camp-share-btn" onclick="showSharePopup({{ campaign.id }})">
             <i class="fas fa-share-alt"></i> 
@@ -11531,12 +11534,12 @@ nav a:hover {
     
 <!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
 <!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
-<button onclick="soundManager.openPopup({{ campaign.id }})" 
+<button onclick="handleJoinClick({{ campaign.id }})" 
         class="camp-join-btn {% if user_joined_status and user_joined_status|get_item:campaign.id %}joined{% endif %}"
-        data-campaign-id="{{ campaign.id }}">
+        data-campaign-id="{{ campaign.id }}"
+        {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
     <i class="fas {% if user_joined_status and user_joined_status|get_item:campaign.id %}fa-sign-out-alt{% else %}fa-headphones-alt{% endif %}"></i>
     <span>{% if user_joined_status and user_joined_status|get_item:campaign.id %}Leave{% else %}Join{% endif %}</span>
-
 </button>
 
 </div>
@@ -11745,16 +11748,18 @@ nav a:hover {
 
 
             {% if request.user != campaign.user.user %}
-            <span id="follow-btn-{{ campaign.user.user.id }}" 
-                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                  data-user-id="{{ campaign.user.user.id }}"
-                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                {% if request.user in campaign.user.user.followers.all %}
-                     Following
-                {% else %}
-                     Follow
-                {% endif %}
-            </span>
+          <span id="follow-btn-{{ campaign.user.user.id }}" 
+      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+      data-user-id="{{ campaign.user.user.id }}"
+      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}"
+      onclick="handleFollowClick(this, '{{ campaign.user.user.id }}')"
+      {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    {% if request.user in campaign.user.user.followers.all %}
+         Following
+    {% else %}
+         Follow
+    {% endif %}
+</span>
             {% endif %}
         </div>
         
@@ -11799,16 +11804,18 @@ nav a:hover {
             {% if campaign.user.profile_verified or campaign.is_changemaker %}
             <span class="badge-dot">•</span>
             {% endif %}
-            <span id="follow-btn-mobile-{{ campaign.user.user.id }}" 
-                  class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
-                  data-user-id="{{ campaign.user.user.id }}"
-                  data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}">
-                {% if request.user in campaign.user.user.followers.all %}
-                    Following
-                {% else %}
-                    Follow
-                {% endif %}
-            </span>
+            <span id="follow-btn-{{ campaign.user.user.id }}" 
+      class="follow-text {% if request.user in campaign.user.user.followers.all %}following{% endif %}" 
+      data-user-id="{{ campaign.user.user.id }}"
+      data-is-following="{% if request.user in campaign.user.user.followers.all %}true{% else %}false{% endif %}"
+      onclick="handleFollowClick(this, '{{ campaign.user.user.id }}')"
+      {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    {% if request.user in campaign.user.user.followers.all %}
+         Following
+    {% else %}
+         Follow
+    {% endif %}
+</span>
         {% endif %}
     </div>
     
@@ -11832,13 +11839,9 @@ nav a:hover {
                 <i class="fas fa-eye"></i> View Details
             </a>
 
-            <a href="{% url 'campaign_joiners' campaign.id %}" class="comment-count" aria-label="View joiners of this campaign">
-                <i class="fas fa-user-plus"></i> Joiners ({{ campaign.user_profiles.count|format_count }})
-            </a>
+          
 
-            <a href="{% url 'top_participants' campaign_id=campaign.pk %}" class="top-supporters-link">
-                <i class="fas fa-trophy"></i> Top Participants
-            </a>
+           
 
             <a href="{% url 'report_campaign' campaign.id %}">
                 <i class="fas fa-flag"></i> Report
@@ -11957,7 +11960,7 @@ nav a:hover {
         </div>
         {% endfor %}
     {% endif %}
-</div>..
+</div>
             
             <!-- Slideshow Controls (only show if multiple images) -->
             {% if campaign.additional_images %}
@@ -11982,9 +11985,12 @@ nav a:hover {
         </div>
 
       <!-- Your existing # icon that triggers the popup -->
-<div class="campaign-views-overlay" aria-label="Total campaign views" onclick="showTagsPopup('{{ campaign.id }}')">
+<div class="campaign-views-overlay" 
+     aria-label="Total campaign views" 
+     onclick="handleTagsPopupClick('{{ campaign.id }}')"
+     {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
     #
-</div> 
+</div>
       
         
         
@@ -12143,11 +12149,13 @@ nav a:hover {
             <span class="camp-label">Like</span>
         </button>
         
-        <button class="camp-action-btn camp-comment-btn" onclick="showCommentPopup({{ campaign.id }})">
-            <i class="far fa-comment"></i> 
-            <span id="comment-count-{{ campaign.id }}" class="camp-count">{{ campaign.comments.count|default:0 }}</span>
-            <span class="camp-label">Comment</span>
-        </button>
+      <button class="camp-action-btn camp-comment-btn" 
+        onclick="handleCommentClick({{ campaign.id }})"
+        {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
+    <i class="far fa-comment"></i> 
+    <span id="comment-count-{{ campaign.id }}" class="camp-count">{{ campaign.comments.count|default:0 }}</span>
+    <span class="camp-label">Comment</span>
+</button>
         
         <button class="camp-action-btn camp-share-btn" onclick="showSharePopup({{ campaign.id }})">
             <i class="fas fa-share-alt"></i> 
@@ -12157,12 +12165,12 @@ nav a:hover {
 <!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
 <!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
 <!-- SIMPLE JOIN BUTTON - TRIGGERS SOUND POPUP -->
-<button onclick="soundManager.openPopup({{ campaign.id }})" 
+<button onclick="handleJoinClick({{ campaign.id }})" 
         class="camp-join-btn {% if user_joined_status and user_joined_status|get_item:campaign.id %}joined{% endif %}"
-        data-campaign-id="{{ campaign.id }}">
+        data-campaign-id="{{ campaign.id }}"
+        {% if not user.is_authenticated %}data-login-required="true"{% endif %}>
     <i class="fas {% if user_joined_status and user_joined_status|get_item:campaign.id %}fa-sign-out-alt{% else %}fa-headphones-alt{% endif %}"></i>
     <span>{% if user_joined_status and user_joined_status|get_item:campaign.id %}Leave{% else %}Join{% endif %}</span>
- 
 </button>
 
 </div>
@@ -12206,7 +12214,13 @@ nav a:hover {
     {% endfor %}
 </div>
 
-<!-- Sound Tribe Popup - Redesigned & Fixed -->
+
+
+
+
+
+
+<!-- Sound Tribe Popup - Redesigned -->
 <div id="soundCommunityPopup" class="sound-tribe-popup">
     <div class="popup-overlay"></div>
     <div class="popup-container">
@@ -12221,7 +12235,7 @@ nav a:hover {
             <div class="popup-header">
                 <div class="header-left">
                     <div class="header-icon">
-                        <i class="fas fa-music"></i>
+                        <i class="fas fa-users"></i>
                     </div>
                     <h2>Soundmark Tribe</h2>
                 </div>
@@ -12235,7 +12249,7 @@ nav a:hover {
                 <div class="cover-gradient"></div>
                 <div class="cover-content">
                     <div class="tribe-badge">
-                        <i class="fas fa-headphones-alt"></i>
+                        <i class="fas fa-music"></i>
                         <span>Sound Tribe</span>
                     </div>
                 </div>
@@ -12256,39 +12270,43 @@ nav a:hover {
                         <span class="stat-label">Tribe Members</span>
                     </div>
                     <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="tribeActiveCount">24</span>
-                        <span class="stat-label">Active Today</span>
-                    </div>
+                  
                 </div>
+<!-- Update the Action Section in your popup -->
+<div class="action-section">
+    <!-- Join/Leave Button Container -->
+    <div id="tribeActionContainer">
+        <!-- Join Button (shown when not joined) -->
+        <button id="joinTribeBtn" onclick="soundManager.joinSoundTribe()" class="join-button">
+            <i class="fas fa-headphones-alt"></i>
+            <span>Join Sound Tribe</span>
+        </button>
+        
+        <!-- Leave Button (shown after joining) - Hidden by default -->
+        <button id="leaveTribeBtn" onclick="soundManager.leaveSoundTribe()" class="leave-button" style="display: none;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Leave Sound Tribe</span>
+        </button>
+    </div>
 
-                <!-- Action Section -->
-                <div class="action-section">
-                    <!-- Join Button -->
-                    <button id="joinTribeBtn" onclick="soundManager.joinSoundTribe()" class="join-button">
-                        <i class="fas fa-headphones-alt"></i>
-                        <span>Join Sound Tribe</span>
-                    </button>
-
-                    <!-- Activities Link - Shows after joining -->
-                    <div id="activitiesContainer" class="activities-container" style="display: none;">
-                        <div class="activities-divider">
-                            <span>You're a member!</span>
-                        </div>
-                        
-                        <button onclick="soundManager.viewActivities()" class="activities-button">
-                            <div class="activities-icon">
-                                <i class="fas fa-map-marked-alt"></i>
-                            </div>
-                            <div class="activities-text">
-                                <span class="activities-title">View Cause Journey</span>
-                                <span class="activities-subtitle">See photos, updates & activities</span>
-                            </div>
-                            <i class="fas fa-arrow-right activities-arrow"></i>
-                        </button>
-                    </div>
-                </div>
-
+    <!-- Activities Link - Shows after joining -->
+    <div id="activitiesContainer" class="activities-container" style="display: none;">
+        <div class="activities-divider">
+            <span>You're a member!</span>
+        </div>
+        
+        <button onclick="soundManager.viewActivities()" class="activities-button">
+            <div class="activities-icon">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <div class="activities-text">
+                <span class="activities-title">View Cause Journey</span>
+                <span class="activities-subtitle">See photos, updates & activities</span>
+            </div>
+            <i class="fas fa-arrow-right activities-arrow"></i>
+        </button>
+    </div>
+</div>
                 <!-- Recent Members -->
                 <div class="members-section">
                     <div class="members-header">
@@ -12305,6 +12323,35 @@ nav a:hover {
                     </div>
                 </div>
             </div>
+
+            <!-- Footer -->
+            <div class="popup-footer">
+                <span class="footer-text" style="padding-left: 14px;">Soundmark • Building community through sound</span>
+            </div>
+        </div>
+    </div>
+</div>.
+      
+
+<!-- Tags Section (hidden by default, shown in popup) -->
+<div class="campaign-tags-popup" id="tagsPopup-{{ campaign.id }}" style="display: none;">
+    <div class="tags-popup-content">
+        <div class="tags-popup-header">
+            <span>Tags</span>
+            <button class="close-popup" onclick="CampaignTags.hidePopup('{{ campaign.id }}')">&times;</button>
+        </div>
+        <div class="tags-list">
+            {% for tag in campaign.tags.all %}
+            <span class="popup-tag-badge">
+                #{{ tag.name }}
+            </span>
+            {% empty %}
+            <span class="no-tags">No tags available</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
 </div>
@@ -12382,14 +12429,12 @@ nav a:hover {
         </div>
     </div>
 </div>
-
-
 <!-- Tags Section (hidden by default, shown in popup) -->
-<div class="campaign-tags-popup" id="tags-popup-{{ campaign.id }}" style="display: none;">
+<div class="campaign-tags-popup" id="tagsPopup-{{ campaign.id }}" style="display: none;">
     <div class="tags-popup-content">
         <div class="tags-popup-header">
             <span>Tags</span>
-            <button class="close-popup" onclick="closeTagsPopup('{{ campaign.id }}')">&times;</button>
+            <button class="close-popup" onclick="CampaignTags.hidePopup('{{ campaign.id }}')">&times;</button>
         </div>
         <div class="tags-list">
             {% for tag in campaign.tags.all %}
@@ -12723,6 +12768,15 @@ document.addEventListener('click', function(event) {
 </script>
 
 
+<script>
+function handleJoinClick(campaignId) {
+    {% if not user.is_authenticated %}
+        window.location.href = "{% url 'account_login' %}?next=" + encodeURIComponent(window.location.pathname);
+    {% else %}
+        soundManager.openPopup(campaignId);
+    {% endif %}
+}
+</script>
 
 
 
@@ -14929,42 +14983,54 @@ function collapseContent(button) {
 }
 </script>
 
+
+
 <script type="text/javascript">
-  function showTagsPopup(campaignId) {
-    // Close any other open popups first
-    closeAllTagPopups();
-    
-    // Show the popup for this campaign
-    const popup = document.getElementById(`tags-popup-${campaignId}`);
-    if (popup) {
+  const CampaignTags = {
+    showPopup(campaignId) {
+      // Close any other open popups first
+      this.hideAllPopups();
+      
+      // Show the popup for this campaign
+      const popup = document.getElementById(`tagsPopup-${campaignId}`);
+      if (popup) {
         popup.style.display = 'flex';
         
         // Add click event listener to close when clicking outside
         setTimeout(() => {
-            document.addEventListener('click', function closePopup(e) {
-                if (!popup.contains(e.target) && !e.target.closest('.campaign-views-overlay')) {
-                    popup.style.display = 'none';
-                    document.removeEventListener('click', closePopup);
-                }
-            });
+          const handleOutsideClick = (e) => {
+            if (!popup.contains(e.target) && !e.target.closest('.campaign-views-overlay')) {
+              popup.style.display = 'none';
+              document.removeEventListener('click', handleOutsideClick);
+            }
+          };
+          
+          document.addEventListener('click', handleOutsideClick);
         }, 100);
-    }
-}
+      }
+    },
 
-function closeTagsPopup(campaignId) {
-    const popup = document.getElementById(`tags-popup-${campaignId}`);
-    if (popup) {
+    hidePopup(campaignId) {
+      const popup = document.getElementById(`tagsPopup-${campaignId}`);
+      if (popup) {
         popup.style.display = 'none';
-    }
-}
+      }
+    },
 
-function closeAllTagPopups() {
-    const popups = document.querySelectorAll('[id^="tags-popup-"]');
-    popups.forEach(popup => {
+    hideAllPopups() {
+      const popups = document.querySelectorAll('[id^="tagsPopup-"]');
+      popups.forEach(popup => {
         popup.style.display = 'none';
-    });
-}
+      });
+    }
+  };
 </script>
+
+
+
+
+
+
 <script type="text/javascript">
 // In your main JS file
 document.addEventListener('DOMContentLoaded', () => {
@@ -15009,6 +15075,48 @@ async leaveSoundTribe() {
         this.updateMainButton(false); // Add this line
         // ... rest of the code ...
     }
+}
+</script>
+
+
+<script>
+function handleCommentClick(campaignId) {
+    {% if not user.is_authenticated %}
+        window.location.href = "{% url 'account_login' %}?next=" + encodeURIComponent(window.location.pathname);
+    {% else %}
+        showCommentPopup(campaignId);
+    {% endif %}
+}
+</script>
+
+
+<script>
+function handleTagsPopupClick(campaignId) {
+    {% if not user.is_authenticated %}
+        window.location.href = "{% url 'account_login' %}?next=" + encodeURIComponent(window.location.pathname);
+    {% else %}
+        showTagsPopup(campaignId);
+    {% endif %}
+}
+</script>
+
+
+
+<script>
+function handleFollowClick(element, userId) {
+    {% if not user.is_authenticated %}
+        window.location.href = "{% url 'account_login' %}?next=" + encodeURIComponent(window.location.pathname);
+    {% else %}
+        // Call your existing follow function here
+        // This depends on how your follow functionality is implemented
+        toggleFollow(userId, element);
+    {% endif %}
+}
+
+// If you have a separate follow function, keep it as is
+function toggleFollow(userId, element) {
+    // Your existing follow logic here
+    // This might be an AJAX call to follow/unfollow
 }
 </script>
  <script src="{% static 'main/js/comments.js' %}"></script>
