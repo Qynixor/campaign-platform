@@ -565,6 +565,25 @@ class Campaign(models.Model):
     )
 
     category = models.CharField(max_length=40, choices=CATEGORY_CHOICES, default='Personal Empowerment')
+    DEFAULT_CATEGORY_AUDIO = {
+    'Personal Empowerment': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201319/peace_lgzimr.mp3',
+    'Health & Wellbeing Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201314/health_ni0stj.mp3',
+    'Economic Support & Financial Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201320/economic_jx8yp7.mp3',
+    'Creative & Cultural Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201312/art_kit66w.mp3',
+    'Mental Health & Emotional Support': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201320/environment_hhemfx.mp3',
+    'Career, Work & Opportunity': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201324/digital_goeor8.mp3',
+    'Housing, Living & Stability': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201321/community_p574mv.mp3',
+    'Community & Social Impact': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
+    'Education & Skill Building': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201304/education_wi2ywe.mp3',
+    'Exploration, Sports & Challenges': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201367/Sustainable_llqh66.mp3',
+    'Other Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
+}
+
+    def get_default_audio(self):
+        return self.DEFAULT_CATEGORY_AUDIO.get(
+            self.category,
+            'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3'
+    )
 
     VISIBILITY_CHOICES = (
         ('public', 'Public'),
