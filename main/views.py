@@ -3162,7 +3162,12 @@ def delete_chat(request, chat_id):
     return JsonResponse({'error': 'Unauthorized'}, status=403)
 
 
-
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Count, Q
+from collections import defaultdict
+from itertools import chain
+import json
+from django.core import serializers
 
 def view_campaign(request, campaign_id):
     category_filter = request.GET.get('category', '')  # Get category filter from request
@@ -3259,8 +3264,38 @@ def view_campaign(request, campaign_id):
 
     categories = Campaign.objects.values_list('category', flat=True).distinct()
 
+    # ====== FIX: Get campaign tags ======
+    # Get all tags for this campaign
+    campaign_tags = list(campaign.tags.all().values_list('name', flat=True))
+    
+    # Create a dictionary with this campaign's tags (for consistency with the previous approach)
+    # But since this is a single campaign view, we can just pass the tags directly
+    campaign_tags_dict = {
+        str(campaign.id): campaign_tags
+    }
+    
+    # Convert to JSON for JavaScript
+    campaign_tags_json = json.dumps(campaign_tags_dict)
+    # Fetch public campaigns, filter by category if selected
+    campaigns = Campaign.objects.filter(visibility='public')
+    # Create a dictionary to store join status for each campaign
+    user_joined_status = {}
+    
+    # Use user_profile instead of request.user
+    joined_campaign_ids = SoundTribe.objects.filter(
+        user=user_profile  # Changed from request.user to user_profile
+    ).values_list('campaign_id', flat=True)
+    
+    # Convert to set for faster lookup
+    joined_set = set(joined_campaign_ids)
+    
+    for campaign in campaigns:
+        user_joined_status[campaign.id] = campaign.id in joined_set
+
     context = {
         'campaign': campaign,
+        'campaign_tags': campaign_tags,  # Direct list of tags for Django template
+        'campaign_tags_json': campaign_tags_json,  # JSON for JavaScript
         'ads': ads,
         'user_profile': user_profile,
         'already_loved': already_loved,
@@ -3271,12 +3306,10 @@ def view_campaign(request, campaign_id):
         'top_contributors': top_contributors,
         'categories': categories,
         'selected_category': category_filter,
+        'user_joined_status': user_joined_status,  # Pass to template
     }
 
     return render(request, 'main/campaign_detail.html', context)
-
-
-
 
 def campaign_detail(request, pk):
     # Retrieve the campaign object using its primary key (pk)

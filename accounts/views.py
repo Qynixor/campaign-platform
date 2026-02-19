@@ -51,7 +51,7 @@ from itertools import chain
 from collections import defaultdict
 
 from main.models import Campaign
-
+from main.models import SoundTribe
 def index(request):
     user_profile = None
     unread_notifications = []
@@ -150,7 +150,19 @@ def index(request):
 
     form = SubscriptionForm()
     ads = NativeAd.objects.all()
-
+    # Create a dictionary to store join status for each campaign
+    user_joined_status = {}
+    
+    # Use user_profile instead of request.user
+    joined_campaign_ids = SoundTribe.objects.filter(
+        user=user_profile  # Changed from request.user to user_profile
+    ).values_list('campaign_id', flat=True)
+    
+    # Convert to set for faster lookup
+    joined_set = set(joined_campaign_ids)
+    
+    for campaign in campaigns:
+        user_joined_status[campaign.id] = campaign.id in joined_set
     context = {
         'campaigns': campaigns,
         'user_profile': user_profile,
@@ -164,6 +176,7 @@ def index(request):
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
         'suggested_users': suggested_users,
+        'user_joined_status': user_joined_status,  # Pass to template
     }
 
     return render(request, 'accounts/index.html', context)
