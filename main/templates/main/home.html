@@ -2030,23 +2030,6 @@ body.dark-mode .comment-count {
     margin-bottom: 10px;
 }
 
-.image-overlay-top, .image-overlay-bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    padding: 10px;
-    color: white;
-}
-
-.image-overlay-top {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
-}
-
-.image-overlay-bottom {
-    bottom: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
-}
 
 /* ==================== ENHANCED CAMPAIGN CATEGORY STYLES ==================== */
 
@@ -10421,7 +10404,215 @@ nav a:hover {
     font-style: italic;
     padding: 10px 0;
 }
+/* ==================== CAMPAIGN INTERACTION BUTTONS (formerly campaign-action-icons) ==================== */
+.campaign-interaction-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 15px 0;
+    z-index: 15;
+}
 
+/* Individual Interaction Button (formerly action-icon) */
+.interaction-btn {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.interaction-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.interaction-btn:hover {
+    transform: translateY(-5px) scale(1.1);
+    background: rgba(255, 255, 255, 0.35);
+    border-color: white;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.interaction-btn:hover::before {
+    opacity: 1;
+}
+
+.interaction-btn:active {
+    transform: translateY(-2px) scale(1.05);
+}
+
+.interaction-btn i {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    z-index: 2;
+}
+
+/* Individual Button Color Variants */
+.interaction-btn.donate-btn {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 107, 107, 0.5));
+    border-color: rgba(255, 107, 107, 0.8);
+}
+
+.interaction-btn.pledge-btn {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(78, 205, 196, 0.5));
+    border-color: rgba(78, 205, 196, 0.8);
+}
+
+.interaction-btn.shop-btn {
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.3), rgba(255, 209, 102, 0.5));
+    border-color: rgba(255, 209, 102, 0.8);
+}
+
+/* Tooltip for Interaction Buttons (formerly just .tooltip) */
+.interaction-tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.8);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 30;
+}
+
+.interaction-btn:hover .interaction-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1);
+    bottom: -40px;
+}
+
+/* Pulse Animation for Interaction Buttons */
+.interaction-btn.pulse-animation {
+    animation: softPulse 2s infinite;
+}
+
+@keyframes softPulse {
+    0%, 100% {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+    50% {
+        box-shadow: 0 8px 30px rgba(255, 255, 255, 0.4);
+    }
+}
+
+/* Mobile styles for interaction buttons */
+@media (max-width: 768px) {
+    .campaign-interaction-buttons {
+        gap: 25px;
+        margin-bottom: 20px;
+        margin-top: 25px;
+    }
+    
+    .interaction-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 26px;
+        border-width: 2.5px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Ensure touch targets are large enough */
+    .interaction-btn {
+        min-width: 56px;
+        min-height: 56px;
+    }
+    
+    /* Adjust tooltip for mobile */
+    .interaction-tooltip {
+        font-size: 11px;
+        padding: 5px 12px;
+        bottom: -35px;
+    }
+    
+    .interaction-btn:hover .interaction-tooltip {
+        bottom: -45px;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .campaign-interaction-buttons {
+        gap: 20px;
+    }
+    
+    .interaction-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 22px;
+    }
+    
+    .interaction-tooltip {
+        font-size: 10px;
+        padding: 4px 10px;
+    }
+}
+
+/* Dark mode adjustments */
+.dark-mode .interaction-btn {
+    background: rgba(30, 30, 30, 0.4);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.dark-mode .interaction-btn.donate-btn {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(255, 107, 107, 0.6));
+}
+
+.dark-mode .interaction-btn.pledge-btn {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(78, 205, 196, 0.6));
+}
+
+.dark-mode .interaction-btn.shop-btn {
+    background: linear-gradient(135deg, rgba(255, 209, 102, 0.4), rgba(255, 209, 102, 0.6));
+}
+
+.dark-mode .interaction-tooltip {
+    background: rgba(40, 40, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Optional: Add a subtle glow effect for primary actions */
+.interaction-btn.primary-action {
+    border-color: #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.interaction-btn.primary-action:hover {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
 
 </style>
 
@@ -11146,31 +11337,32 @@ nav a:hover {
         
         <div class="image-overlay-bottom">
             <!-- Action icons with data-title instead of title -->
-            <div class="campaign-action-icons">
-                <!-- Donate icon - only show if donation is enabled -->
-                {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
-                    <a href="{% url 'create_donation' campaign_id=campaign.id %}" class="action-icon" data-title="Donate">
-                        <i class="fas fa-hand-holding-heart"></i>
-                        <span class="tooltip">Donate</span>
-                    </a>
-                {% endif %}
-               
-                <!-- Pledge icon - only show if pledge is enabled -->
-                {% if campaign.supportcampaign_set.first.pledge_visible %}
-                    <a href="{% url 'create_pledge' campaign_id=campaign.id %}" class="action-icon" data-title="Pledge">
-                        <i class="fas fa-handshake"></i>
-                        <span class="tooltip">Pledge</span>
-                    </a>
-                {% endif %}
+         <!-- Campaign Interaction Buttons - with new design -->
+    <div class="campaign-interaction-buttons">
+        <!-- Donate button - only show if donation is enabled -->
+        {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
+            <a href="{% url 'create_donation' campaign_id=campaign.id %}" class="interaction-btn donate-btn pulse-animation" data-title="Donate">
+                <i class="fas fa-hand-holding-heart"></i>
+                <span class="interaction-tooltip">Donate</span>
+            </a>
+        {% endif %}
+       
+        <!-- Pledge button - only show if pledge is enabled -->
+        {% if campaign.supportcampaign_set.first.pledge_visible %}
+            <a href="{% url 'create_pledge' campaign_id=campaign.id %}" class="interaction-btn pledge-btn" data-title="Pledge">
+                <i class="fas fa-handshake"></i>
+                <span class="interaction-tooltip">Pledge</span>
+            </a>
+        {% endif %}
 
-                <!-- Purchase Products icon - only show if campaign product is enabled -->
-                {% if campaign.supportcampaign_set.first.campaign_product_visible %}
-                    <a href="{% url 'product_manage' campaign_id=campaign.id %}" class="action-icon" data-title="Purchase Products">
-                       <i class="fas fa-shopping-cart"></i>
-                        <span class="tooltip">Purchase Products</span>
-                    </a>
-                {% endif %}
-            </div>
+        <!-- Purchase Products button - only show if campaign product is enabled -->
+        {% if campaign.supportcampaign_set.first.campaign_product_visible %}
+            <a href="{% url 'product_manage' campaign_id=campaign.id %}" class="interaction-btn shop-btn" data-title="Purchase Products">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="interaction-tooltip">Shop</span>
+            </a>
+        {% endif %}
+    </div>
             
             {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
             <div class="progress-info">
@@ -11812,31 +12004,32 @@ nav a:hover {
         
         <div class="image-overlay-bottom">
             <!-- Action icons with data-title instead of title -->
-            <div class="campaign-action-icons">
-                <!-- Donate icon - only show if donation is enabled -->
-                {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
-                    <a href="{% url 'create_donation' campaign_id=campaign.id %}" class="action-icon" data-title="Donate">
-                        <i class="fas fa-hand-holding-heart"></i>
-                        <span class="tooltip">Donate</span>
-                    </a>
-                {% endif %}
-               
-                <!-- Pledge icon - only show if pledge is enabled -->
-                {% if campaign.supportcampaign_set.first.pledge_visible %}
-                    <a href="{% url 'create_pledge' campaign_id=campaign.id %}" class="action-icon" data-title="Pledge">
-                        <i class="fas fa-handshake"></i>
-                        <span class="tooltip">Pledge</span>
-                    </a>
-                {% endif %}
+              <!-- Campaign Interaction Buttons - with new design -->
+    <div class="campaign-interaction-buttons">
+        <!-- Donate button - only show if donation is enabled -->
+        {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
+            <a href="{% url 'create_donation' campaign_id=campaign.id %}" class="interaction-btn donate-btn pulse-animation" data-title="Donate">
+                <i class="fas fa-hand-holding-heart"></i>
+                <span class="interaction-tooltip">Donate</span>
+            </a>
+        {% endif %}
+       
+        <!-- Pledge button - only show if pledge is enabled -->
+        {% if campaign.supportcampaign_set.first.pledge_visible %}
+            <a href="{% url 'create_pledge' campaign_id=campaign.id %}" class="interaction-btn pledge-btn" data-title="Pledge">
+                <i class="fas fa-handshake"></i>
+                <span class="interaction-tooltip">Pledge</span>
+            </a>
+        {% endif %}
 
-                <!-- Purchase Products icon - only show if campaign product is enabled -->
-                {% if campaign.supportcampaign_set.first.campaign_product_visible %}
-                    <a href="{% url 'product_manage' campaign_id=campaign.id %}" class="action-icon" data-title="Purchase Products">
-                       <i class="fas fa-shopping-cart"></i>
-                        <span class="tooltip">Purchase Products</span>
-                    </a>
-                {% endif %}
-            </div>
+        <!-- Purchase Products button - only show if campaign product is enabled -->
+        {% if campaign.supportcampaign_set.first.campaign_product_visible %}
+            <a href="{% url 'product_manage' campaign_id=campaign.id %}" class="interaction-btn shop-btn" data-title="Purchase Products">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="interaction-tooltip">Shop</span>
+            </a>
+        {% endif %}
+    </div>
             
             {% if campaign.supportcampaign_set.first.donate_monetary_visible %}
             <div class="progress-info">
