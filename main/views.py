@@ -3307,6 +3307,7 @@ def view_campaign(request, campaign_id):
         'categories': categories,
         'selected_category': category_filter,
         'user_joined_status': user_joined_status,  # Pass to template
+
     }
 
     return render(request, 'main/campaign_detail.html', context)
@@ -4514,6 +4515,36 @@ def private_campaign(request):
         Q(user__user__id__in=following_user_ids) | Q(user=user_profile),
         visibility='private'
     ).values_list('category', flat=True).distinct()
+    # =============================
+    # BUILD TAGS DICTIONARY (SAFE)
+    # =============================
+    campaign_tags_dict = {}
+
+    for camp in campaigns:
+        campaign_tags_dict[str(camp.id)] = list(
+            camp.tags.values_list('name', flat=True)
+        )
+
+    campaign_tags_json = json.dumps(campaign_tags_dict)
+
+    # =============================
+    # USER JOINED STATUS (SAFE)
+    # =============================
+    user_joined_status = {}
+
+    if request.user.is_authenticated and user_profile:
+        joined_campaign_ids = SoundTribe.objects.filter(
+            user=user_profile
+        ).values_list('campaign_id', flat=True)
+
+        joined_set = set(joined_campaign_ids)
+
+        for camp in campaigns:
+            user_joined_status[camp.id] = camp.id in joined_set
+    else:
+        # Anonymous users → default False
+        for camp in campaigns:
+            user_joined_status[camp.id] = False
 
     context = {
         'ads': ads,
@@ -4527,6 +4558,8 @@ def private_campaign(request):
         'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
+                'user_joined_status': user_joined_status,  # Pass to template
+               'campaign_tags_json': campaign_tags_json,  # FIXED
     }
     
     return render(request, 'main/private_campaign.html', context)
