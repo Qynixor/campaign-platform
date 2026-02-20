@@ -1644,16 +1644,29 @@ class Activity(models.Model):
     def day_number(self):
         """
         Calculate which day of the campaign this activity belongs to
-        based on when it was posted relative to the campaign start.
+        using EXACT same logic as Campaign.get_current_day()
         """
-        if not self.campaign or not self.campaign.timestamp:
+        if not self.campaign:
             return 1
-            
-        # Calculate days difference between campaign start and activity post
-        delta = self.timestamp.date() - self.campaign.timestamp.date()
-        day_num = delta.days + 1  # +1 because day 1 is the first day
-        
-        # Ensure we don't go below 1
+
+        start_date = self.campaign.journey_start_date or self.campaign.timestamp
+
+        if not start_date:
+            return 1
+
+        time_since_start = self.timestamp - start_date
+
+        if self.campaign.duration_unit == 'minutes':
+            minutes_since = int(time_since_start.total_seconds() / 60)
+            day_num = minutes_since + 1
+        else:
+            days_since = time_since_start.days
+            day_num = days_since + 1
+
+        # Cap at campaign duration
+        if self.campaign.duration and day_num > self.campaign.duration:
+            return self.campaign.duration
+
         return max(1, day_num)
 
 
