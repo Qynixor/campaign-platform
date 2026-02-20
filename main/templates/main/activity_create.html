@@ -279,54 +279,59 @@
         white-space: nowrap;
     }
     
-    /* ===== LOCKED FORM SECTION ===== */
-    .form-section.locked {
-        opacity: 0.7;
-        background: #f3f4f6;
-        border-left: 4px solid #ef4444;
-        pointer-events: none;
-    }
-    
-    .locked-badge-small {
-        background: #ef4444;
+    /* ===== DURATION LIMIT STYLES ===== */
+    .duration-limit-message {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 12px;
+        padding: 24px;
+        margin: 20px 0;
         color: white;
-        padding: 2px 8px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+    
+    .duration-limit-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+    
+    .duration-limit-title {
+        font-size: 24px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+    
+    .duration-limit-text {
+        font-size: 16px;
+        opacity: 0.95;
+        margin-bottom: 20px;
+    }
+    
+    .campaign-complete-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 24px;
         border-radius: 100px;
-        font-size: 11px;
+        font-size: 14px;
         font-weight: 600;
-        display: inline-flex;
+    }
+    
+    .edit-only-note {
+        background: #f0f9ff;
+        border: 2px solid #bae6fd;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 20px 0;
+        color: #0369a1;
+        font-size: 14px;
+        display: flex;
         align-items: center;
-        gap: 4px;
-        margin-left: 8px;
+        gap: 12px;
     }
     
-    .locked-badge-countdown {
-        background: #fee2e2;
-        color: #ef4444;
-        border: 1px solid #ef4444;
-    }
-    
-    .locked-form-type {
-        background: #fee2e2;
-        color: #ef4444;
-        border: 1px solid #ef4444;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    
-    .locked-input {
-        background: #f3f4f6 !important;
-        cursor: not-allowed !important;
-        color: #9ca3af !important;
-    }
-    
-    .locked-helper {
-        color: #ef4444 !important;
+    .edit-only-note i {
+        font-size: 20px;
+        color: #0ea5e9;
     }
     
     /* ===== FORM SECTIONS ===== */
@@ -928,35 +933,14 @@
         color: #a0aec0;
     }
 
-    .dark-mode .form-section.locked {
-        background: #1f2937;
-        border-left-color: #ef4444;
+    .dark-mode .duration-limit-message {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
-    .dark-mode .form-section.locked textarea {
-        background: #374151 !important;
-        color: #9ca3af !important;
-        border-color: #4b5563 !important;
-    }
-
-    .dark-mode .form-section.locked .file-upload-area {
-        background: #374151 !important;
-        border-color: #4b5563 !important;
-    }
-
-    .dark-mode .form-section.locked .file-upload-text,
-    .dark-mode .form-section.locked .file-upload-icon {
-        color: #9ca3af !important;
-    }
-
-    .dark-mode .locked-badge-countdown {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
-    }
-
-    .dark-mode .locked-form-type {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
+    .dark-mode .edit-only-note {
+        background: rgba(29, 161, 242, 0.1);
+        border: 2px solid #63b3ed;
+        color: #bee3f8;
     }
 
     .dark-mode .form-section {
@@ -1166,14 +1150,22 @@
             <h1>
                 <i class="fas fa-tasks"></i>
                 {% if existing_activities_count > 0 %}
-                    Continue Your Journey
+                    {% if campaign.duration and existing_activities_count >= campaign.duration %}
+                        Journey Complete! 🎉
+                    {% else %}
+                        Continue Your Journey
+                    {% endif %}
                 {% else %}
                     Start Your Journey
                 {% endif %}
             </h1>
             <p class="activity-subtitle">
                 {% if existing_activities_count > 0 %}
-                    Day {{ existing_activities_count }} of {{ campaign.title }}
+                    {% if campaign.duration and existing_activities_count >= campaign.duration %}
+                        You've completed all {{ campaign.duration }} days of "{{ campaign.title }}"
+                    {% else %}
+                        Day {{ existing_activities_count }} of {{ campaign.title }}
+                    {% endif %}
                 {% else %}
                     Begin sharing your story for "{{ campaign.title }}"
                 {% endif %}
@@ -1258,320 +1250,350 @@
             </div>
         </div>
         
-        <!-- LOCKED DAY WARNING - Show if next day is locked -->
-        {% if is_next_day_locked %}
-        <div class="locked-day-warning">
-            <div class="locked-icon-circle">
-                <i class="fas fa-lock"></i>
-            </div>
-            <div class="locked-content">
-                <strong class="locked-title">Day {{ next_available_day }} is locked</strong>
-                <p class="locked-description">
-                    This day will be available in <strong>{{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}</strong>. 
-                    You can only post updates for days that have actually arrived in real-time.
-                </p>
-            </div>
-            <div class="locked-badge">
-                <i class="far fa-clock"></i> {{ days_until_unlock }}d left
-            </div>
-        </div>
-        {% endif %}
-        
-   
-        
-        <!-- MAX LIMIT WARNING -->
-        {% if is_at_max %}
-        <div class="max-limit-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>
-                <strong>Maximum days reached ({{ max_forms }})</strong><br>
-                You've completed your {{ max_forms }}-day journey. Congratulations! 🎉
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- FLEXIBILITY NOTE -->
-        <div class="flexibility-note">
-            <i class="fas fa-check-circle"></i>
-            <div>
-                <strong>Real-time journey:</strong> You can only post for days that have actually arrived. 
-                Future days are locked until their time comes.
-            </div>
-        </div>
-        
-        <!-- GUIDANCE -->
-        <div class="emotional-guidance">
-            <div class="guidance-header">
-                <i class="fas fa-lightbulb"></i>
-                <strong>How Your Journey Works</strong>
-            </div>
-            <div class="guidance-content">
-                {% if existing_activities_count == 0 %}
-                    <strong>Today:</strong> Create Day 1 of your journey<br>
-                    <strong>Tomorrow:</strong> Day 2 becomes available<br>
-                    <strong>Each day:</strong> A new day unlocks in real-time
-                {% elif is_next_day_locked %}
-                    <strong>Current day:</strong> Day {{ existing_activities_count }} completed<br>
-                    <strong>Next unlock:</strong> Day {{ next_available_day }} in {{ days_until_unlock }} days<br>
-                    <strong>Come back then:</strong> to continue your journey
-                {% else %}
-                    <strong>Today's opportunity:</strong> Day {{ next_available_day }} is now available!<br>
-                    <strong>Share your update:</strong> before the next day arrives<br>
-                    <strong>Stay consistent:</strong> Each day builds your story
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- FORM START -->
-        {% if formset %}
-        <form method="post" enctype="multipart/form-data" id="activityForm">
-            {% csrf_token %}
-            
-            {{ formset.management_form }}
-            
-            {% if formset.errors %}
-                <div class="error-container">
-                    <strong>Please fix these errors:</strong>
-                    <ul>
-                        {% for form in formset %}
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>
-                                        {% if form.instance.pk %}
-                                            Day {{ forloop.parentloop.parentloop.counter }}
-                                        {% else %}
-                                            New Day
-                                        {% endif %}
-                                        - {{ field.label }}: {{ error }}
-                                    </li>
-                                {% endfor %}
-                            {% endfor %}
-                        {% endfor %}
-                    </ul>
+        <!-- DURATION LIMIT CHECK - IF USER HAS REACHED MAXIMUM CAMPAIGN DURATION -->
+        {% if campaign.duration and existing_activities_count >= campaign.duration %}
+            <!-- CAMPAIGN COMPLETE - CLEAR MESSAGE AND EDIT-ONLY MODE -->
+            <div class="duration-limit-message">
+                <div class="duration-limit-icon">
+                    <i class="fas fa-trophy"></i>
                 </div>
-            {% endif %}
+                <div class="duration-limit-title">Journey Complete! 🎉</div>
+                <div class="duration-limit-text">
+                    You've successfully completed all {{ campaign.duration }} days of "{{ campaign.title }}".
+                    Thank you for sharing your journey with us!
+                </div>
+                <span class="campaign-complete-badge">
+                    <i class="fas fa-check-circle"></i> 100% Complete
+                </span>
+            </div>
             
-            <!-- FORMSET LOOP -->
-            {% for form in formset %}
-                {% with form_index=forloop.counter0 is_existing=form.instance.pk %}
-                
-                {% if is_existing %}
-                    <!-- EXISTING ACTIVITY (always unlocked) -->
-                    <div class="form-section existing-activity" 
-                         id="activity-form-{{ form_index }}" 
-                         data-form-index="{{ form_index }}">
-                        
-                        <!-- FORM HEADER -->
-                        <div class="form-header">
-                            <h3 class="form-title">
-                                <span class="activity-number">{{ forloop.counter }}</span>
-                                <span class="day-label">
-                                    Day {{ forloop.counter }}
-                                    {% if campaign.duration %}
-                                        <span class="target-info">
-                                            of {{ campaign.duration }}
+            <div class="edit-only-note">
+                <i class="fas fa-pencil-alt"></i>
+                <div>
+                    <strong>Edit Mode Only:</strong> You've reached the maximum campaign duration. 
+                    No new days can be added, but you can still edit your existing entries below.
+                </div>
+            </div>
+            
+            <!-- Display only existing forms for editing - NO NEW FORM -->
+            {% if formset %}
+                <form method="post" enctype="multipart/form-data" id="activityForm">
+                    {% csrf_token %}
+                    
+                    {{ formset.management_form }}
+                    
+                    {% if formset.errors %}
+                        <div class="error-container">
+                            <strong>Please fix these errors:</strong>
+                            <ul>
+                                {% for form in formset %}
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li>
+                                                {% if form.instance.pk %}
+                                                    Day {{ forloop.parentloop.parentloop.counter }}
+                                                {% else %}
+                                                    New Day
+                                                {% endif %}
+                                                - {{ field.label }}: {{ error }}
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Loop through forms but only display existing ones -->
+                    {% for form in formset %}
+                        {% if form.instance.pk %}
+                            <div class="form-section existing-activity" 
+                                 id="activity-form-{{ forloop.counter0 }}" 
+                                 data-form-index="{{ forloop.counter0 }}">
+                                
+                                <!-- FORM HEADER -->
+                                <div class="form-header">
+                                    <h3 class="form-title">
+                                        <span class="activity-number">{{ forloop.counter }}</span>
+                                        <span class="day-label">
+                                            Day {{ forloop.counter }}
+                                            {% if campaign.duration %}
+                                                <span class="target-info">
+                                                    of {{ campaign.duration }}
+                                                </span>
+                                            {% endif %}
                                         </span>
-                                    {% endif %}
-                                </span>
-                                <span class="form-type-badge badge-existing">
-                                    <i class="fas fa-check-circle"></i> Completed
-                                </span>
-                            </h3>
-                            
-                            <div class="timestamp">
-                                <i class="far fa-clock"></i>
-                                {{ form.instance.timestamp|date:"M d, Y" }}
-                            </div>
-                        </div>
-                        
-                        <!-- HIDDEN FIELDS -->
-                        {% for hidden in form.hidden_fields %}
-                            {{ hidden }}
-                        {% endfor %}
-                        
-                        <!-- DELETE CHECKBOX -->
-                        {% if form.DELETE %}
-                        <div class="delete-checkbox">
-                            <label>
-                                {{ form.DELETE }}
-                                <i class="fas fa-trash-alt"></i>
-                                Delete Day {{ forloop.counter }}
-                            </label>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- CONTENT FIELD -->
-                        <div style="margin-bottom: 20px;">
-                            <label class="form-label">
-                                Update your Day {{ forloop.counter }} message (optional):
-                            </label>
-                            {{ form.content }}
-                            <span class="form-helper">
-                                Edit your message or leave as is
-                            </span>
-                            
-                            <!-- EMOJI SECTION -->
-                            <div class="emoji-section">
-                                <div class="emoji-section-label">
-                                    <i class="fas fa-smile"></i>
-                                    Update feeling for Day {{ forloop.counter }} (optional)
+                                        <span class="form-type-badge badge-existing">
+                                            <i class="fas fa-check-circle"></i> Completed
+                                        </span>
+                                    </h3>
+                                    
+                                    <div class="timestamp">
+                                        <i class="far fa-clock"></i>
+                                        {{ form.instance.timestamp|date:"M d, Y" }}
+                                    </div>
                                 </div>
                                 
-                                <div class="emoji-container" id="emojiContainer-{{ form_index }}">
-                                    {% for emoji in initial_emojis %}
-                                        <button type="button" 
-                                                class="emoji-button" 
-                                                onclick="addEmojiToField('{{ emoji }}', {{ form_index }})">
-                                            {{ emoji }}
-                                        </button>
-                                    {% endfor %}
+                                <!-- HIDDEN FIELDS -->
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                
+                                <!-- DELETE CHECKBOX -->
+                                {% if form.DELETE %}
+                                <div class="delete-checkbox">
+                                    <label>
+                                        {{ form.DELETE }}
+                                        <i class="fas fa-trash-alt"></i>
+                                        Delete Day {{ forloop.counter }}
+                                    </label>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <!-- MEDIA FIELD -->
-                        <div>
-                            <label class="form-label">
-                                Update media for Day {{ forloop.counter }} (optional):
-                            </label>
-                            
-                            <!-- FILE UPLOAD AREA -->
-                            <div class="file-upload-area" id="drop-area-{{ form_index }}">
-                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                <div class="file-upload-text">
+                                {% endif %}
+                                
+                                <!-- CONTENT FIELD -->
+                                <div style="margin-bottom: 20px;">
+                                    <label class="form-label">
+                                        Update your Day {{ forloop.counter }} message (optional):
+                                    </label>
+                                    {{ form.content }}
+                                    <span class="form-helper">
+                                        Edit your message or leave as is
+                                    </span>
+                                    
+                                    <!-- EMOJI SECTION -->
+                                    <div class="emoji-section">
+                                        <div class="emoji-section-label">
+                                            <i class="fas fa-smile"></i>
+                                            Update feeling for Day {{ forloop.counter }} (optional)
+                                        </div>
+                                        
+                                        <div class="emoji-container" id="emojiContainer-{{ forloop.counter0 }}">
+                                            {% for emoji in initial_emojis %}
+                                                <button type="button" 
+                                                        class="emoji-button" 
+                                                        onclick="addEmojiToField('{{ emoji }}', {{ forloop.parentloop.counter0 }})">
+                                                    {{ emoji }}
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- MEDIA FIELD -->
+                                <div>
+                                    <label class="form-label">
+                                        Update media for Day {{ forloop.counter }} (optional):
+                                    </label>
+                                    
+                                    <!-- FILE UPLOAD AREA -->
+                                    <div class="file-upload-area" id="drop-area-{{ forloop.counter0 }}">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                        <div class="file-upload-text">
+                                            {% if form.instance.file %}
+                                                Replace current file
+                                            {% else %}
+                                                Upload image, video, or audio
+                                            {% endif %}
+                                        </div>
+                                        <span class="form-helper">Click or drag & drop (max 10MB)</span>
+                                        <input type="file" 
+                                               class="file-input-hidden" 
+                                               id="file-input-{{ forloop.counter0 }}"
+                                               accept="image/*,video/*,audio/*"
+                                               onchange="handleFileSelect({{ forloop.counter0 }})">
+                                    </div>
+                                    
+                                    <!-- HIDDEN DJANGO FILE FIELD -->
+                                    {{ form.file }}
+                                    
+                                    <!-- FILE PREVIEW AREA -->
+                                    <div id="file-preview-{{ forloop.counter0 }}" class="file-preview-container"></div>
+                                    
+                                    <!-- EXISTING FILE -->
                                     {% if form.instance.file %}
-                                        Replace current file
-                                    {% else %}
-                                        Upload image, video, or audio
+                                    <div id="existing-file-{{ forloop.counter0 }}" class="file-preview-container" style="margin-top: 10px;">
+                                        <div style="width: 100%;">
+                                            <div class="file-preview-item">
+                                                {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
+                                                    <img src="{{ form.instance.file.url }}" alt="Day {{ forloop.counter }} image">
+                                                {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
+                                                    <video controls style="width:100%;height:100%;">
+                                                        <source src="{{ form.instance.file.url }}">
+                                                    </video>
+                                                {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
+                                                    <div class="audio-preview">
+                                                        <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
+                                                        <audio controls style="width: 100%; margin-top: 8px;">
+                                                            <source src="{{ form.instance.file.url }}">
+                                                        </audio>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="audio-preview">
+                                                        <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
+                                                        <div style="font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }} file</div>
+                                                    </div>
+                                                {% endif %}
+                                                <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ forloop.counter0 }})">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="file-name">
+                                                {% if form.instance.file.name|length > 20 %}
+                                                    {{ form.instance.file.name|slice:":17" }}...
+                                                {% else %}
+                                                    {{ form.instance.file.name }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
                                     {% endif %}
                                 </div>
-                                <span class="form-helper">Click or drag & drop (max 10MB)</span>
-                                <input type="file" 
-                                       class="file-input-hidden" 
-                                       id="file-input-{{ form_index }}"
-                                       accept="image/*,video/*,audio/*"
-                                       onchange="handleFileSelect({{ form_index }})">
                             </div>
                             
-                            <!-- HIDDEN DJANGO FILE FIELD -->
-                            {{ form.file }}
-                            
-                            <!-- FILE PREVIEW AREA -->
-                            <div id="file-preview-{{ form_index }}" class="file-preview-container"></div>
-                            
-                            <!-- EXISTING FILE -->
-                            {% if form.instance.file %}
-                            <div id="existing-file-{{ form_index }}" class="file-preview-container" style="margin-top: 10px;">
-                                <div style="width: 100%;">
-                                    <div class="file-preview-item">
-                                        {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
-                                            <img src="{{ form.instance.file.url }}" alt="Day {{ forloop.counter }} image">
-                                        {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
-                                            <video controls style="width:100%;height:100%;">
-                                                <source src="{{ form.instance.file.url }}">
-                                            </video>
-                                        {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
-                                            <div class="audio-preview">
-                                                <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
-                                                <audio controls style="width: 100%; margin-top: 8px;">
-                                                    <source src="{{ form.instance.file.url }}">
-                                                </audio>
-                                            </div>
-                                        {% else %}
-                                            <div class="audio-preview">
-                                                <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
-                                                <div style="font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }} file</div>
-                                            </div>
-                                        {% endif %}
-                                        <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ form_index }})">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="file-name">
-                                        {% if form.instance.file.name|length > 20 %}
-                                            {{ form.instance.file.name|slice:":17" }}...
-                                        {% else %}
-                                            {{ form.instance.file.name }}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+                            {% if not forloop.last %}
+                            <hr style="border: none; border-top: 2px dashed #e1e8ed; margin: 32px 0;">
                             {% endif %}
-                        </div>
-                    </div>
+                        {% endif %}
+                    {% endfor %}
                     
-                {% else %}
-                    <!-- NEW ACTIVITY - Check if locked -->
-                    {% if is_next_day_locked %}
-                        <!-- LOCKED NEW ACTIVITY -->
-                        <div class="form-section locked" id="activity-form-{{ form_index }}">
-                            <div class="form-header">
-                                <h3 class="form-title">
-                                    <span class="activity-number">{{ forloop.counter }}</span>
-                                    <span class="day-label">
-                                        Day {{ next_available_day }}
-                                        <span class="locked-badge-small">
-                                            <i class="fas fa-lock"></i> Locked
-                                        </span>
-                                    </span>
-                                    <span class="locked-form-type">
-                                        <i class="fas fa-hourglass-half"></i> Available in {{ days_until_unlock }}d
-                                    </span>
-                                </h3>
-                            </div>
-                            
-                            <!-- Disabled form fields -->
-                            <div style="margin-bottom: 20px;">
-                                <label class="form-label" style="color: #9ca3af;">
-                                    <i class="fas fa-lock"></i> Day {{ next_available_day }} is locked
-                                </label>
-                                <textarea disabled class="form-textarea locked-input" 
-                                          placeholder="This day will be available in {{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}..."></textarea>
-                                <span class="form-helper locked-helper">
-    <i class="fas fa-info-circle"></i> 
-    {% with unlock_date=campaign.start_date|date:"U"|add:next_available_day|add:"-1"|add:"86400" %}
-        {% with unlock_timestamp=unlock_date|floatformat:0 %}
-            Unlocks on {{ unlock_timestamp|date:"M d, Y" }} ({{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %} from now)
-        {% endwith %}
-    {% endwith %}
-</span>
-                            </div>
-                            
-                            <!-- Disabled file upload -->
-                            <div>
-                                <label class="form-label" style="color: #9ca3af;">Add media (locked)</label>
-                                <div class="file-upload-area" style="background: #f3f4f6; border-color: #d1d5db; cursor: not-allowed;">
-                                    <i class="fas fa-cloud-upload-alt file-upload-icon" style="color: #9ca3af;"></i>
-                                    <div class="file-upload-text" style="color: #9ca3af;">Upload unavailable while locked</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Hidden fields to prevent submission -->
-                            {% for hidden in form.hidden_fields %}
-                                {{ hidden }}
-                            {% endfor %}
-                        </div>
+                    <!-- SUBMIT BUTTON - EDIT ONLY -->
+                    <button type="submit" class="submit-button" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        Save Changes to Completed Journey
+                    </button>
+                    
+                    <div style="text-align: center; margin-top: 24px; color: #10b981; font-size: 14px; line-height: 1.5;">
+                        <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                        <strong>Journey complete!</strong> You can still edit your previous entries.
+                    </div>
+                </form>
+            {% endif %}
+            
+        {% else %}
+            <!-- NORMAL BEHAVIOR - CAMPAIGN STILL IN PROGRESS -->
+            
+            <!-- LOCKED DAY WARNING - Show if next day is locked -->
+            {% if is_next_day_locked %}
+            <div class="locked-day-warning">
+                <div class="locked-icon-circle">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="locked-content">
+                    <strong class="locked-title">Day {{ next_available_day }} is locked</strong>
+                    <p class="locked-description">
+                        This day will be available in <strong>{{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}</strong>. 
+                        You can only post updates for days that have actually arrived in real-time.
+                    </p>
+                </div>
+                <div class="locked-badge">
+                    <i class="far fa-clock"></i> {{ days_until_unlock }}d left
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- MAX LIMIT WARNING - If we're approaching the limit -->
+            {% if is_at_max %}
+            <div class="max-limit-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Maximum days reached ({{ max_forms }})</strong><br>
+                    You've completed your {{ max_forms }}-day journey. Congratulations! 🎉
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- FLEXIBILITY NOTE -->
+            <div class="flexibility-note">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <strong>Real-time journey:</strong> You can only post for days that have actually arrived. 
+                    Future days are locked until their time comes.
+                </div>
+            </div>
+            
+            <!-- GUIDANCE -->
+            <div class="emotional-guidance">
+                <div class="guidance-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>How Your Journey Works</strong>
+                </div>
+                <div class="guidance-content">
+                    {% if existing_activities_count == 0 %}
+                        <strong>Today:</strong> Create Day 1 of your journey<br>
+                        <strong>Tomorrow:</strong> Day 2 becomes available<br>
+                        <strong>Each day:</strong> A new day unlocks in real-time
+                    {% elif is_next_day_locked %}
+                        <strong>Current day:</strong> Day {{ existing_activities_count }} completed<br>
+                        <strong>Next unlock:</strong> Day {{ next_available_day }} in {{ days_until_unlock }} days<br>
+                        <strong>Come back then:</strong> to continue your journey
                     {% else %}
-                        <!-- UNLOCKED NEW ACTIVITY -->
-                        <div class="form-section new-activity" 
+                        <strong>Today's opportunity:</strong> Day {{ next_available_day }} is now available!<br>
+                        <strong>Share your update:</strong> before the next day arrives<br>
+                        <strong>Stay consistent:</strong> Each day builds your story
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- FORM START - Regular form with both existing and new forms -->
+            {% if formset %}
+            <form method="post" enctype="multipart/form-data" id="activityForm">
+                {% csrf_token %}
+                
+                {{ formset.management_form }}
+                
+                {% if formset.errors %}
+                    <div class="error-container">
+                        <strong>Please fix these errors:</strong>
+                        <ul>
+                            {% for form in formset %}
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>
+                                            {% if form.instance.pk %}
+                                                Day {{ forloop.parentloop.parentloop.counter }}
+                                            {% else %}
+                                                New Day
+                                            {% endif %}
+                                            - {{ field.label }}: {{ error }}
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <!-- FORMSET LOOP - Existing code for regular behavior -->
+                {% for form in formset %}
+                    {% with form_index=forloop.counter0 is_existing=form.instance.pk %}
+                    
+                    {% if is_existing %}
+                        <!-- EXISTING ACTIVITY (always unlocked) -->
+                        <div class="form-section existing-activity" 
                              id="activity-form-{{ form_index }}" 
                              data-form-index="{{ form_index }}">
                             
+                            <!-- FORM HEADER -->
                             <div class="form-header">
                                 <h3 class="form-title">
                                     <span class="activity-number">{{ forloop.counter }}</span>
                                     <span class="day-label">
-                                        Day {{ next_available_day }}
+                                        Day {{ forloop.counter }}
                                         {% if campaign.duration %}
                                             <span class="target-info">
                                                 of {{ campaign.duration }}
                                             </span>
                                         {% endif %}
                                     </span>
-                                    <span class="form-type-badge badge-new">
-                                        <i class="fas fa-plus"></i> Available Now
+                                    <span class="form-type-badge badge-existing">
+                                        <i class="fas fa-check-circle"></i> Completed
                                     </span>
                                 </h3>
+                                
+                                <div class="timestamp">
+                                    <i class="far fa-clock"></i>
+                                    {{ form.instance.timestamp|date:"M d, Y" }}
+                                </div>
                             </div>
                             
                             <!-- HIDDEN FIELDS -->
@@ -1579,21 +1601,32 @@
                                 {{ hidden }}
                             {% endfor %}
                             
+                            <!-- DELETE CHECKBOX -->
+                            {% if form.DELETE %}
+                            <div class="delete-checkbox">
+                                <label>
+                                    {{ form.DELETE }}
+                                    <i class="fas fa-trash-alt"></i>
+                                    Delete Day {{ forloop.counter }}
+                                </label>
+                            </div>
+                            {% endif %}
+                            
                             <!-- CONTENT FIELD -->
                             <div style="margin-bottom: 20px;">
                                 <label class="form-label">
-                                    What would you like to share for Day {{ next_available_day }}? (optional)
+                                    Update your Day {{ forloop.counter }} message (optional):
                                 </label>
                                 {{ form.content }}
                                 <span class="form-helper">
-                                    Share your progress, thoughts, or updates
+                                    Edit your message or leave as is
                                 </span>
                                 
                                 <!-- EMOJI SECTION -->
                                 <div class="emoji-section">
                                     <div class="emoji-section-label">
                                         <i class="fas fa-smile"></i>
-                                        Add feeling for Day {{ next_available_day }} (optional)
+                                        Update feeling for Day {{ forloop.counter }} (optional)
                                     </div>
                                     
                                     <div class="emoji-container" id="emojiContainer-{{ form_index }}">
@@ -1611,13 +1644,18 @@
                             <!-- MEDIA FIELD -->
                             <div>
                                 <label class="form-label">
-                                    Add media for Day {{ next_available_day }} (optional):
+                                    Update media for Day {{ forloop.counter }} (optional):
                                 </label>
                                 
+                                <!-- FILE UPLOAD AREA -->
                                 <div class="file-upload-area" id="drop-area-{{ form_index }}">
                                     <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
                                     <div class="file-upload-text">
-                                        Upload image, video, or audio
+                                        {% if form.instance.file %}
+                                            Replace current file
+                                        {% else %}
+                                            Upload image, video, or audio
+                                        {% endif %}
                                     </div>
                                     <span class="form-helper">Click or drag & drop (max 10MB)</span>
                                     <input type="file" 
@@ -1632,51 +1670,226 @@
                                 
                                 <!-- FILE PREVIEW AREA -->
                                 <div id="file-preview-{{ form_index }}" class="file-preview-container"></div>
+                                
+                                <!-- EXISTING FILE -->
+                                {% if form.instance.file %}
+                                <div id="existing-file-{{ form_index }}" class="file-preview-container" style="margin-top: 10px;">
+                                    <div style="width: 100%;">
+                                        <div class="file-preview-item">
+                                            {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
+                                                <img src="{{ form.instance.file.url }}" alt="Day {{ forloop.counter }} image">
+                                            {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
+                                                <video controls style="width:100%;height:100%;">
+                                                    <source src="{{ form.instance.file.url }}">
+                                                </video>
+                                            {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
+                                                <div class="audio-preview">
+                                                    <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
+                                                    <audio controls style="width: 100%; margin-top: 8px;">
+                                                        <source src="{{ form.instance.file.url }}">
+                                                    </audio>
+                                                </div>
+                                            {% else %}
+                                                <div class="audio-preview">
+                                                    <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
+                                                    <div style="font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }} file</div>
+                                                </div>
+                                            {% endif %}
+                                            <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ form_index }})">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div class="file-name">
+                                            {% if form.instance.file.name|length > 20 %}
+                                                {{ form.instance.file.name|slice:":17" }}...
+                                            {% else %}
+                                                {{ form.instance.file.name }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                    {% endif %}
-                {% endif %}
-                
-                {% endwith %}
-                
-                <!-- SEPARATOR (except last form) -->
-                {% if not forloop.last %}
-                <hr style="border: none; border-top: 2px dashed #e1e8ed; margin: 32px 0;">
-                {% endif %}
-            {% endfor %}
-            
-            <!-- SUBMIT BUTTON -->
-            <button type="submit" class="submit-button" id="submitBtn" 
-                    {% if is_next_day_locked and not existing_activities_count > 0 %}disabled{% endif %}>
-                <i class="fas fa-save"></i>
-                {% if is_next_day_locked %}
-                    {% if existing_activities_count > 0 %}
-                        Save Changes to Previous Days
+                        
                     {% else %}
-                        Waiting for Day 1 to Unlock...
+                        <!-- NEW ACTIVITY - Check if locked -->
+                        {% if is_next_day_locked %}
+                            <!-- LOCKED NEW ACTIVITY -->
+                            <div class="form-section locked" id="activity-form-{{ form_index }}">
+                                <div class="form-header">
+                                    <h3 class="form-title">
+                                        <span class="activity-number">{{ forloop.counter }}</span>
+                                        <span class="day-label">
+                                            Day {{ next_available_day }}
+                                            <span class="locked-badge-small">
+                                                <i class="fas fa-lock"></i> Locked
+                                            </span>
+                                        </span>
+                                        <span class="locked-form-type">
+                                            <i class="fas fa-hourglass-half"></i> Available in {{ days_until_unlock }}d
+                                        </span>
+                                    </h3>
+                                </div>
+                                
+                                <!-- Disabled form fields -->
+                                <div style="margin-bottom: 20px;">
+                                    <label class="form-label" style="color: #9ca3af;">
+                                        <i class="fas fa-lock"></i> Day {{ next_available_day }} is locked
+                                    </label>
+                                    <textarea disabled class="form-textarea locked-input" 
+                                              placeholder="This day will be available in {{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}..."></textarea>
+                                    <span class="form-helper locked-helper">
+                        <i class="fas fa-info-circle"></i> 
+                        {% with unlock_date=campaign.start_date|date:"U"|add:next_available_day|add:"-1"|add:"86400" %}
+                            {% with unlock_timestamp=unlock_date|floatformat:0 %}
+                                Unlocks on {{ unlock_timestamp|date:"M d, Y" }} ({{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %} from now)
+                            {% endwith %}
+                        {% endwith %}
+                    </span>
+                                </div>
+                                
+                                <!-- Disabled file upload -->
+                                <div>
+                                    <label class="form-label" style="color: #9ca3af;">Add media (locked)</label>
+                                    <div class="file-upload-area" style="background: #f3f4f6; border-color: #d1d5db; cursor: not-allowed;">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon" style="color: #9ca3af;"></i>
+                                        <div class="file-upload-text" style="color: #9ca3af;">Upload unavailable while locked</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden fields to prevent submission -->
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <!-- UNLOCKED NEW ACTIVITY -->
+                            <div class="form-section new-activity" 
+                                 id="activity-form-{{ form_index }}" 
+                                 data-form-index="{{ form_index }}">
+                                
+                                <div class="form-header">
+                                    <h3 class="form-title">
+                                        <span class="activity-number">{{ forloop.counter }}</span>
+                                        <span class="day-label">
+                                            Day {{ next_available_day }}
+                                            {% if campaign.duration %}
+                                                <span class="target-info">
+                                                    of {{ campaign.duration }}
+                                                </span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="form-type-badge badge-new">
+                                            <i class="fas fa-plus"></i> Available Now
+                                        </span>
+                                    </h3>
+                                </div>
+                                
+                                <!-- HIDDEN FIELDS -->
+                                {% for hidden in form.hidden_fields %}
+                                    {{ hidden }}
+                                {% endfor %}
+                                
+                                <!-- CONTENT FIELD -->
+                                <div style="margin-bottom: 20px;">
+                                    <label class="form-label">
+                                        What would you like to share for Day {{ next_available_day }}? (optional)
+                                    </label>
+                                    {{ form.content }}
+                                    <span class="form-helper">
+                                        Share your progress, thoughts, or updates
+                                    </span>
+                                    
+                                    <!-- EMOJI SECTION -->
+                                    <div class="emoji-section">
+                                        <div class="emoji-section-label">
+                                            <i class="fas fa-smile"></i>
+                                            Add feeling for Day {{ next_available_day }} (optional)
+                                        </div>
+                                        
+                                        <div class="emoji-container" id="emojiContainer-{{ form_index }}">
+                                            {% for emoji in initial_emojis %}
+                                                <button type="button" 
+                                                        class="emoji-button" 
+                                                        onclick="addEmojiToField('{{ emoji }}', {{ form_index }})">
+                                                    {{ emoji }}
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- MEDIA FIELD -->
+                                <div>
+                                    <label class="form-label">
+                                        Add media for Day {{ next_available_day }} (optional):
+                                    </label>
+                                    
+                                    <div class="file-upload-area" id="drop-area-{{ form_index }}">
+                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                        <div class="file-upload-text">
+                                            Upload image, video, or audio
+                                        </div>
+                                        <span class="form-helper">Click or drag & drop (max 10MB)</span>
+                                        <input type="file" 
+                                               class="file-input-hidden" 
+                                               id="file-input-{{ form_index }}"
+                                               accept="image/*,video/*,audio/*"
+                                               onchange="handleFileSelect({{ form_index }})">
+                                    </div>
+                                    
+                                    <!-- HIDDEN DJANGO FILE FIELD -->
+                                    {{ form.file }}
+                                    
+                                    <!-- FILE PREVIEW AREA -->
+                                    <div id="file-preview-{{ form_index }}" class="file-preview-container"></div>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endif %}
-                {% else %}
-                    {% if existing_activities_count > 0 %}
-                        Save Changes & Post Day {{ next_available_day }}
+                    
+                    {% endwith %}
+                    
+                    <!-- SEPARATOR (except last form) -->
+                    {% if not forloop.last %}
+                    <hr style="border: none; border-top: 2px dashed #e1e8ed; margin: 32px 0;">
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- SUBMIT BUTTON -->
+                <button type="submit" class="submit-button" id="submitBtn" 
+                        {% if is_next_day_locked and not existing_activities_count > 0 %}disabled{% endif %}>
+                    <i class="fas fa-save"></i>
+                    {% if is_next_day_locked %}
+                        {% if existing_activities_count > 0 %}
+                            Save Changes to Previous Days
+                        {% else %}
+                            Waiting for Day 1 to Unlock...
+                        {% endif %}
                     {% else %}
-                        Begin Day 1 of Your Journey
+                        {% if existing_activities_count > 0 %}
+                            Save Changes & Post Day {{ next_available_day }}
+                        {% else %}
+                            Begin Day 1 of Your Journey
+                        {% endif %}
                     {% endif %}
-                {% endif %}
-            </button>
-            
-            <!-- JOURNEY PROGRESS NOTE -->
-            <div style="text-align: center; margin-top: 24px; color: #657786; font-size: 14px; line-height: 1.5;">
-                <i class="fas fa-sync-alt" style="margin-right: 8px;"></i>
-                <strong>Real-time journey:</strong> 
-                {% if existing_activities_count == 0 %}
-                    Start today, Day 2 unlocks tomorrow
-                {% elif is_next_day_locked %}
-                    Day {{ next_available_day }} unlocks in {{ days_until_unlock }} days
-                {% else %}
-                    Day {{ next_available_day }} is ready for your update
-                {% endif %}
-            </div>
-        </form>
+                </button>
+                
+                <!-- JOURNEY PROGRESS NOTE -->
+                <div style="text-align: center; margin-top: 24px; color: #657786; font-size: 14px; line-height: 1.5;">
+                    <i class="fas fa-sync-alt" style="margin-right: 8px;"></i>
+                    <strong>Real-time journey:</strong> 
+                    {% if existing_activities_count == 0 %}
+                        Start today, Day 2 unlocks tomorrow
+                    {% elif is_next_day_locked %}
+                        Day {{ next_available_day }} unlocks in {{ days_until_unlock }} days
+                    {% else %}
+                        Day {{ next_available_day }} is ready for your update
+                    {% endif %}
+                </div>
+            </form>
+            {% endif %}
         {% endif %}
     </div>
 </div>
@@ -1691,6 +1904,8 @@
     // ===== EMOJI HANDLING =====
     function addEmojiToField(emoji, formIndex) {
         const form = document.getElementById(`activity-form-${formIndex}`);
+        if (!form) return;
+        
         const textarea = form.querySelector('textarea[name$="-content"]');
         if (!textarea) return;
         
@@ -1880,8 +2095,8 @@
             }, 100);
         });
         
-        // Scroll to new activity forms if unlocked
-        {% if not is_next_day_locked %}
+        // Scroll to new activity forms if unlocked and not at max
+        {% if not is_next_day_locked and not campaign.duration or existing_activities_count < campaign.duration %}
         document.querySelectorAll('.new-activity').forEach(form => {
             form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
