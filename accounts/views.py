@@ -78,7 +78,8 @@ def index(request):
     campaigns = campaigns.select_related('user') \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')
+        .order_by('-love_count_annotated')\
+        .select_related('user').prefetch_related('tags') 
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
     trending_campaigns = Campaign.objects.filter(visibility='public') \
@@ -150,6 +151,22 @@ def index(request):
 
     form = SubscriptionForm()
     ads = NativeAd.objects.all()
+
+
+    # =============================
+    # BUILD TAGS DICTIONARY (SAFE)
+    # =============================
+    # =============================
+    # BUILD TAGS DICTIONARY (SAFE)
+    # =============================
+    campaign_tags_dict = {}
+
+    for camp in campaigns:
+        campaign_tags_dict[str(camp.id)] = list(
+            camp.tags.values_list('name', flat=True)
+        )
+
+    campaign_tags_json = json.dumps(campaign_tags_dict)
     # Create a dictionary to store join status for each campaign
     user_joined_status = {}
     
@@ -164,6 +181,7 @@ def index(request):
     for campaign in campaigns:
         user_joined_status[campaign.id] = campaign.id in joined_set
     context = {
+        'campaign_tags_json': campaign_tags_json,  # FIXED
         'campaigns': campaigns,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,

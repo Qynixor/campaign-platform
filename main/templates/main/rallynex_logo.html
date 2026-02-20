@@ -3,11 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Viewport setting ensures proper scaling on all devices, especially mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <title>RallyNex</title>
+  <title>RallyNex – mobile fixed</title>
 
   <style>
+    /* reset & base — fixed positioning on all devices */
     * {
       margin: 0;
       padding: 0;
@@ -16,21 +18,40 @@
 
     body {
       background-color: #121212;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
       font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
       color: #e4e6eb;
+
+      /* ---- fixed position on any screen: splash always centered, no scroll ---- */
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      /* tiny safety: no overflow, no scrolling */
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+
+      /* ensure any content uses full viewport */
+      width: 100vw;
+      height: 100vh;
     }
 
+    /* main fixed container: perfectly centered, respects safe areas, no shifting */
     .splash-container {
+      position: relative;   /* inner context, but fixed via body */
       text-align: center;
-      padding: 20px;
       max-width: 320px;
-      width: 100%;
+      width: calc(100% - 40px);  /* comfortable side margins on small phones */
+      padding: 16px 12px;
+
+      /* gentle assurance that container stays put */
+      margin: 0 auto;
+      background-color: transparent;
     }
 
+    /* ---- logo block with animation (fade in) ---- */
     .logo {
       margin-bottom: 20px;
       animation: fadeIn 0.8s ease-out;
@@ -42,6 +63,8 @@
       border-radius: 20px;
       object-fit: contain;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      display: block;
+      margin: 0 auto;           /* center image inside logo div */
     }
 
     .app-name {
@@ -50,6 +73,7 @@
       margin-top: 12px;
       color: #e4e6eb;
       letter-spacing: 0.5px;
+      line-height: 1.2;
     }
 
     .tagline {
@@ -59,6 +83,7 @@
       font-weight: 400;
     }
 
+    /* loading bar – fixed ratio, no overflow */
     .loading-bar {
       height: 4px;
       width: 100%;
@@ -73,15 +98,28 @@
       width: 30%;
       background-color: #2374e1;
       border-radius: 2px;
-      animation: loading 1.5s infinite;
+      animation: loading 1.5s infinite ease-in-out;
     }
 
     .footer {
       font-size: 13px;
       color: #b0b3b8;
       margin-top: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
+    /* tiny circle icon + text alignment */
+    .footer i {
+      font-size: 4px;
+      vertical-align: middle;
+      color: #b0b3b8;
+      opacity: 0.8;
+    }
+
+    /* keyframes exactly as before */
     @keyframes loading {
       0% { transform: translateX(-100%); }
       100% { transform: translateX(350%); }
@@ -91,10 +129,37 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* --- optional tiny safeguard for very short screens (landscape mobile) --- */
+    @media (max-height: 480px) and (orientation: landscape) {
+      .logo img {
+        width: 60px;
+        height: 60px;
+      }
+      .app-name {
+        font-size: 20px;
+        margin-top: 6px;
+      }
+      .tagline {
+        font-size: 12px;
+      }
+      .loading-bar {
+        margin: 16px 0 10px;
+      }
+      .footer {
+        margin-top: 12px;
+      }
+    }
+
+    /* ensure nothing overflows or creates scroll in any scenario */
+    body, .splash-container {
+      overscroll-behavior: none;
+    }
   </style>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // Use Django's url template tag properly
       setTimeout(function () {
         window.location.href = "{% url 'home' %}";
       }, 2500);
@@ -114,8 +179,7 @@
     </div>
 
     <div class="footer">
-      <i class="fas fa-circle" style="font-size: 4px; vertical-align: middle;"></i>
-      Loading...
+      <i class="fas fa-circle"></i> Loading...
     </div>
   </div>
 </body>
