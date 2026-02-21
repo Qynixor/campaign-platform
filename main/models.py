@@ -2241,3 +2241,13 @@ class Hadith(models.Model):
     def __str__(self):
         return f"Hadith {self.id}: {self.reference}"
 
+
+
+# In your models.py, add these indexes:
+
+class Meta:
+    indexes = [
+        models.Index(fields=['-timestamp']),
+        models.Index(fields=['campaign', '-timestamp']),
+        models.Index(fields=['user', '-timestamp']),
+    ]

@@ -318,3 +318,5 @@ TINYMCE_DEFAULT_CONFIG = {
     'statusbar': True,
     'images_upload_url': '/upload_image/',  # Add this endpoint
 }
+
+
