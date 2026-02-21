@@ -96,7 +96,7 @@ body.dark-mode {
     right: 0;
 }
 
-/* Simple Plus Icon - NEW */
+/* Simple Plus Icon */
 .simple-plus-icon {
     position: absolute;
     top: 20px;
@@ -135,13 +135,13 @@ body.dark-mode {
     width: 100%;
 }
 
-/* Campaign Info Header - NEW */
+/* Campaign Info Header */
 .journey-stories .campaign-info-header {
     padding: 16px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-light);
     width: 100%;
-    position: relative; /* For positioning context */
+    position: relative;
 }
 
 .journey-stories .campaign-title {
@@ -149,6 +149,7 @@ body.dark-mode {
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 8px;
+    padding-right: 60px; /* Space for plus icon */
 }
 
 .journey-stories .campaign-meta {
@@ -366,12 +367,14 @@ body.dark-mode {
     border: 1px solid var(--success-color);
 }
 
-/* Progress Stats */
+/* Progress Stats - Modified to accommodate menu icon */
 .journey-stories .progress-stats {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
     margin-top: 8px;
+    width: 100%;
 }
 
 .journey-stories .stat-item {
@@ -380,6 +383,56 @@ body.dark-mode {
     gap: 6px;
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+/* Main Menu Icon - Bottom Right of Progress Stats */
+.journey-main-menu-icon {
+    color: var(--text-primary) !important;
+    font-size: 24px !important;
+    padding: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    transition: all 0.2s ease !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+.journey-main-menu-icon:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+.journey-main-menu-icon i {
+    color: var(--text-primary) !important;
+    font-size: 20px !important;
+}
+
+/* Mobile Styles for Menu Icon */
+@media only screen and (max-width: 768px) {
+    .journey-main-menu-icon {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+    
+    .journey-main-menu-icon i {
+        font-size: 18px !important;
+    }
+}
+
+/* Dark mode support for Menu Icon */
+body.dark-mode .journey-main-menu-icon {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .journey-main-menu-icon:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* ============================================= */
@@ -483,7 +536,6 @@ body.dark-mode {
         box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
     }
     
-    
     /* Mobile menu */
     .journey-stories .mobile-popup-menu {
         position: fixed !important;
@@ -519,6 +571,17 @@ body.dark-mode {
     .journey-stories .progress-stats {
         flex-wrap: wrap !important;
         gap: 12px !important;
+    }
+    
+    /* Menu icon mobile adjustment */
+    .journey-main-menu-icon {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+    
+    .journey-main-menu-icon i {
+        font-size: 18px !important;
     }
     
     /* Safe area support */
@@ -567,11 +630,8 @@ body.dark-mode {
             padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
             padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
         }
-        
-      
     }
 }
-
 
 /* Add to your existing CSS */
 .journey-stories .video-paused::after {
@@ -604,8 +664,7 @@ body.dark-mode {
     cursor: pointer;
 }
 
-
-/* Simple Plus Icon */
+/* Simple Plus Icon - Enhanced */
 .simple-plus-icon {
     position: absolute !important;
     top: 20px !important;
@@ -626,13 +685,6 @@ body.dark-mode {
     box-shadow: none !important;
     pointer-events: auto !important;
     backdrop-filter: blur(4px) !important;
-    /* Add left margin to prevent title collision */
-    margin-left: 20px !important;
-}
-
-/* Alternative: If you want to add padding to the campaign title instead */
-.campaign-info-header .campaign-title {
-    padding-right: 60px !important; /* Creates space for the icon */
 }
 
 .simple-plus-icon i {
@@ -641,21 +693,19 @@ body.dark-mode {
     display: inline-block !important;
 }
 
-/* Mobile Styles */
+/* Mobile Styles for Plus Icon */
 @media only screen and (max-width: 768px) {
     .simple-plus-icon {
         top: max(16px, env(safe-area-inset-top, 16px)) !important;
         right: max(16px, env(safe-area-inset-right, 16px)) !important;
         width: 36px !important;
         height: 36px !important;
-        margin-left: 16px !important;
     }
     
     .simple-plus-icon i {
         font-size: 18px !important;
     }
     
-    /* Adjust title padding for mobile */
     .campaign-info-header .campaign-title {
         padding-right: 50px !important;
     }
@@ -729,29 +779,36 @@ body.dark-mode .simple-plus-icon {
             </div>
         </div>
         
-        <!-- Progress Stats -->
+        <!-- Progress Stats with Main Menu Icon at Bottom Right -->
         <div class="progress-stats">
-            {% if campaign.duration %}
-                <!-- Time Elapsed -->
-                <div class="stat-item">
-                    <i class="fas fa-hourglass-start"></i>
-                    <span>Started: {{ campaign.timestamp|date:"M d, Y" }}</span>
-                </div>
-                
-                <!-- Time Remaining Percentage -->
-                <div class="stat-item">
-                    <i class="fas fa-percent"></i>
-                    <span>{{ campaign.remaining_percentage|floatformat:1 }}% remaining</span>
-                </div>
-                
-                <!-- End Date -->
-                {% if campaign.end_date %}
-                <div class="stat-item">
-                    <i class="fas fa-flag-checkered"></i>
-                    <span>Ends: {{ campaign.end_date|date:"M d, Y" }}</span>
-                </div>
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                {% if campaign.duration %}
+                    <!-- Time Elapsed -->
+                    <div class="stat-item">
+                        <i class="fas fa-hourglass-start"></i>
+                        <span>Started: {{ campaign.timestamp|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <!-- Time Remaining Percentage -->
+                    <div class="stat-item">
+                        <i class="fas fa-percent"></i>
+                        <span>{{ campaign.remaining_percentage|floatformat:1 }}% remaining</span>
+                    </div>
+                    
+                    <!-- End Date -->
+                    {% if campaign.end_date %}
+                    <div class="stat-item">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>Ends: {{ campaign.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
                 {% endif %}
-            {% endif %}
+            </div>
+            
+            <!-- Main Menu Icon - Bottom Right -->
+            <span onclick="openJourneyMainMenu('{{ campaign.id }}')" class="journey-main-menu-icon" title="Journey Menu">
+                <i class="fas fa-ellipsis-h"></i>
+            </span>
         </div>
     </div>
     
@@ -846,7 +903,6 @@ body.dark-mode .simple-plus-icon {
 {% endif %}
                         
                         <!-- === DAY BADGE === -->
-                       <!-- === DAY BADGE === -->
 <span class="day-badge">
     <i class="fas fa-calendar-alt"></i> Day {{ activity.day_number }}
     
@@ -855,8 +911,6 @@ body.dark-mode .simple-plus-icon {
         / {{ campaign.duration }}
     {% endif %}
 </span>
-                        
-                  
                         
                         <!-- === CREATOR OVERLAY === -->
                         <div class="media-meta">
@@ -993,7 +1047,7 @@ body.dark-mode .simple-plus-icon {
     <!-- === MOBILE MENU === -->
     <div id="mobile-popup-menu" class="mobile-popup-menu">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--drawer-border);">
-            <span style="font-size: 16px; font-weight: 600; color: var(--drawer-text);">Activity options</span>
+            <span style="font-size: 16px; font-weight: 600; color: var(--drawer-text);">Journey Menu</span>
             <span onclick="closeMobileMenu()" style="font-size: 20px; color: var(--drawer-secondary); cursor: pointer; padding: 8px;">
                 <i class="fas fa-times"></i>
             </span>
@@ -1111,6 +1165,34 @@ function openActivityMenu(id) {
             <i class="fas fa-link" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Copy link
         </a>`;
     document.getElementById('mobile-popup-menu').classList.add('show');
+}
+
+// Main Journey Menu Function
+function openJourneyMainMenu(campaignId) {
+    document.getElementById('popup-menu-content').innerHTML = `
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-chart-line" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Statistics
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-cog" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Settings
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-share-alt" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Share Journey
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-download" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Export Journey
+        </a>
+        <div style="height:1px; background:var(--drawer-border); margin:8px 0;"></div>
+        <a href="#" onclick="reportJourney('${campaignId}'); return false;" style="display:flex; align-items:center; padding:16px; color:#e74c3c; text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-flag" style="width:24px; margin-right:16px; color:#e74c3c;"></i> Report Journey
+        </a>
+    `;
+    document.getElementById('mobile-popup-menu').classList.add('show');
+}
+
+function reportJourney(campaignId) {
+    alert('Report journey feature coming soon');
+    closeMobileMenu();
 }
 
 function toggleMobileMenu() {
