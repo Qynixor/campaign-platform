@@ -96,6 +96,31 @@ body.dark-mode {
     right: 0;
 }
 
+/* Simple Plus Icon - NEW */
+.simple-plus-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white !important;
+    font-size: 24px;
+    z-index: 100;
+    text-decoration: none;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.simple-plus-icon:hover {
+    opacity: 1;
+}
+
+/* For mobile, adjust position to account for safe area */
+@media only screen and (max-width: 768px) {
+    .simple-plus-icon {
+        top: max(20px, env(safe-area-inset-top, 20px));
+        right: max(20px, env(safe-area-inset-right, 20px));
+    }
+}
+
 .journey-stories .stories-header {
     padding: 0;
     background: var(--bg-overlay);
@@ -116,6 +141,7 @@ body.dark-mode {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-light);
     width: 100%;
+    position: relative; /* For positioning context */
 }
 
 .journey-stories .campaign-title {
@@ -250,24 +276,6 @@ body.dark-mode {
     max-height: 60vh;
     overflow-y: auto;
     color: var(--drawer-text);
-}
-
-.journey-stories .create-story-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
-    background: var(--accent-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-primary);
-    font-size: 22px;
-    text-decoration: none;
-    box-shadow: 0 4px 12px rgba(29, 161, 242, 0.4);
-    z-index: 100;
 }
 
 .journey-stories .empty-story {
@@ -475,17 +483,6 @@ body.dark-mode {
         box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
     }
     
-    /* Create button */
-    .journey-stories .create-story-btn {
-        position: fixed !important;
-        bottom: 20px !important;
-        right: 20px !important;
-        width: 56px !important;
-        height: 56px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        z-index: 100 !important;
-    }
     
     /* Mobile menu */
     .journey-stories .mobile-popup-menu {
@@ -571,10 +568,7 @@ body.dark-mode {
             padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
         }
         
-        .journey-stories .create-story-btn {
-            bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
-            right: max(20px, env(safe-area-inset-right, 20px)) !important;
-        }
+      
     }
 }
 
@@ -609,6 +603,81 @@ body.dark-mode {
     overflow: hidden;
     cursor: pointer;
 }
+
+
+/* Simple Plus Icon */
+.simple-plus-icon {
+    position: absolute !important;
+    top: 20px !important;
+    right: 20px !important;
+    color: white !important;
+    font-size: 24px !important;
+    z-index: 9999 !important;
+    text-decoration: none !important;
+    opacity: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    border: 2px solid white !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+    backdrop-filter: blur(4px) !important;
+    /* Add left margin to prevent title collision */
+    margin-left: 20px !important;
+}
+
+/* Alternative: If you want to add padding to the campaign title instead */
+.campaign-info-header .campaign-title {
+    padding-right: 60px !important; /* Creates space for the icon */
+}
+
+.simple-plus-icon i {
+    color: white !important;
+    font-size: 20px !important;
+    display: inline-block !important;
+}
+
+/* Mobile Styles */
+@media only screen and (max-width: 768px) {
+    .simple-plus-icon {
+        top: max(16px, env(safe-area-inset-top, 16px)) !important;
+        right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        width: 36px !important;
+        height: 36px !important;
+        margin-left: 16px !important;
+    }
+    
+    .simple-plus-icon i {
+        font-size: 18px !important;
+    }
+    
+    /* Adjust title padding for mobile */
+    .campaign-info-header .campaign-title {
+        padding-right: 50px !important;
+    }
+}
+
+/* Dark mode support */
+body.dark-mode .simple-plus-icon {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: white !important;
+}
+
+/* Hover effect */
+.simple-plus-icon:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    transform: scale(1.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Ensure parent has position relative */
+.journey-stories {
+    position: relative !important;
+}
 </style>
 
 <!-- ============================================= -->
@@ -616,6 +685,13 @@ body.dark-mode {
 <!-- ============================================= -->
 
 <div class="journey-stories">
+    
+    <!-- Simple Plus Icon - Inside journey-stories, top right -->
+    {% if user == campaign.user.user %}
+    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="simple-plus-icon" title="Add new day">
+        <i class="fas fa-plus"></i>
+    </a>
+    {% endif %}
     
     <!-- === CAMPAIGN INFO HEADER - NEW WITH REAL-TIME DURATION === -->
     <div class="campaign-info-header">
@@ -912,13 +988,6 @@ body.dark-mode {
                 </div>
             {% endif %}
         </div>
-    {% endif %}
-    
-    <!-- === CREATE STORY BUTTON (if user is campaign owner) === -->
-    {% if user == campaign.user.user %}
-        <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="create-story-btn">
-            <i class="fas fa-plus"></i>
-        </a>
     {% endif %}
     
     <!-- === MOBILE MENU === -->
