@@ -1,14 +1,2016 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
-</head>
-<body>
-<h2>Payment Error</h2>
-<p>{{ message }}</p>
+{% extends 'main/face.html' %}
 
+{% load custom_filters %}
+{% load static %}  
 
-</body>
-</html>
+{% block content %}
+<!-- Include FontAwesome CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ============================================= */
+/* CSS VARIABLES - LIGHT MODE (DEFAULT)         */
+/* ============================================= */
+
+:root {
+  /* Light mode colors - exactly as they were originally */
+  --bg-primary: #0A1929;
+  --bg-secondary: #1A2A3A;
+  --bg-overlay: rgba(10, 25, 41, 0.95);
+  --bg-progress: rgba(0, 0, 0, 0.4);
+  --bg-dots: rgba(0,0,0,0.3);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-tertiary: rgba(255,255,255,0.7);
+  --text-muted: rgba(255,255,255,0.8);
+  --accent-color: #1DA1F2;
+  --accent-gradient: linear-gradient(90deg, #1DA1F2, #64B5F6);
+  --border-light: rgba(255,255,255,0.1);
+  --border-medium: rgba(255,255,255,0.15);
+  --overlay-gradient: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  --overlay-gradient-bottom: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+  --empty-bg: linear-gradient(145deg, #0A1929, #1A2A3A);
+  --heart-color: #E0245E;
+  --drawer-bg: #ffffff;
+  --drawer-text: #0A1929;
+  --drawer-secondary: #657786;
+  --drawer-border: rgba(0,0,0,0.05);
+  --drawer-input-bg: #F5F8FA;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-color-strong: rgba(0, 0, 0, 0.15);
+  --button-bg: rgba(255,255,255,0.1);
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --success-color: #2ecc71;
+}
+
+/* ============================================= */
+/* DARK MODE OVERRIDES - Using your formula      */
+/* ============================================= */
+
+body.dark-mode {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-overlay: rgba(30, 30, 30, 0.95);
+  --bg-progress: rgba(0, 0, 0, 0.6);
+  --bg-dots: rgba(0, 0, 0, 0.5);
+  --text-primary: #ffffff;
+  --text-secondary: #bbbbbb;
+  --text-tertiary: #bbbbbb;
+  --text-muted: #888888;
+  --accent-color: #1DA1F2;
+  --accent-gradient: linear-gradient(90deg, #1DA1F2, #64B5F6);
+  --border-light: #444444;
+  --border-medium: #444444;
+  --overlay-gradient: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
+  --overlay-gradient-bottom: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+  --empty-bg: linear-gradient(145deg, #121212, #1e1e1e);
+  --heart-color: #E0245E;
+  --drawer-bg: #1e1e1e;
+  --drawer-text: #ffffff;
+  --drawer-secondary: #bbbbbb;
+  --drawer-border: #444444;
+  --drawer-input-bg: #2d2d2d;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-color-strong: rgba(0, 0, 0, 0.4);
+  --button-bg: rgba(255,255,255,0.1);
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --success-color: #2ecc71;
+}
+
+/* ============================================= */
+/* DEFAULT STYLES - USING CSS VARIABLES          */
+/* ============================================= */
+
+.journey-stories {
+    width: 100%;
+    max-width: 100%;
+    background: var(--bg-primary);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    left: 0;
+    right: 0;
+}
+
+/* Simple Plus Icon */
+.simple-plus-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white !important;
+    font-size: 24px;
+    z-index: 100;
+    text-decoration: none;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+}
+
+.simple-plus-icon:hover {
+    opacity: 1;
+}
+
+/* For mobile, adjust position to account for safe area */
+@media only screen and (max-width: 768px) {
+    .simple-plus-icon {
+        top: max(20px, env(safe-area-inset-top, 20px));
+        right: max(20px, env(safe-area-inset-right, 20px));
+    }
+}
+
+.journey-stories .stories-header {
+    padding: 0;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-light);
+    width: 100%;
+}
+
+/* Campaign Info Header */
+.journey-stories .campaign-info-header {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+    width: 100%;
+    position: relative;
+}
+
+.journey-stories .campaign-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    padding-right: 60px; /* Space for plus icon */
+}
+
+.journey-stories .campaign-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.journey-stories .time-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    background: var(--bg-progress);
+    border-radius: 100px;
+    font-size: 13px;
+}
+
+.journey-stories .time-indicator.warning {
+    color: var(--warning-color);
+}
+
+.journey-stories .time-indicator.danger {
+    color: var(--danger-color);
+}
+
+.journey-stories .day-progress-container {
+    padding: 8px 16px;
+    background: var(--bg-progress);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 64px;
+    z-index: 45;
+    width: 100%;
+}
+
+.journey-stories .progress-dots {
+    padding: 8px 16px;
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    background: var(--bg-dots);
+    width: 100%;
+}
+
+.journey-stories .story-media-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+}
+
+.journey-stories .story-media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.journey-stories .media-meta {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    background: var(--overlay-gradient);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    width: 100%;
+}
+
+.journey-stories .day-badge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    border-radius: 100px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border-medium);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.journey-stories .story-content-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 16px;
+    background: var(--overlay-gradient-bottom);
+    color: var(--text-primary);
+    width: 100%;
+}
+
+.journey-stories .story-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    width: 100%;
+}
+
+.journey-stories .action-group {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.journey-stories .comments-drawer {
+    padding: 20px;
+    background: var(--drawer-bg);
+    width: 100%;
+    max-height: 60vh;
+    overflow-y: auto;
+    color: var(--drawer-text);
+}
+
+.journey-stories .empty-story {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--empty-bg);
+    color: var(--text-primary);
+    text-align: center;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.journey-stories .mobile-popup-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: var(--drawer-bg);
+    border-radius: 20px 20px 0 0;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    width: 100%;
+}
+
+.journey-stories .mobile-popup-menu.show {
+    transform: translateY(0);
+}
+
+.journey-stories .stories-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+}
+
+.journey-stories .story-card {
+    width: 100%;
+    background: #000;
+}
+
+.journey-stories .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+}
+
+.journey-stories .dot.active {
+    width: 18px;
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
+.journey-stories .loved i {
+    color: var(--heart-color) !important;
+}
+
+/* Time Remaining Badge */
+.journey-stories .time-remaining-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.journey-stories .time-remaining-badge.warning {
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+}
+
+.journey-stories .time-remaining-badge.danger {
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.journey-stories .time-remaining-badge.success {
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+/* Progress Stats - Modified to accommodate menu icon */
+.journey-stories .progress-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 8px;
+    width: 100%;
+}
+
+.journey-stories .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Main Menu Icon - Bottom Right of Progress Stats */
+.journey-main-menu-icon {
+    color: var(--text-primary) !important;
+    font-size: 24px !important;
+    padding: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    transition: all 0.2s ease !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+.journey-main-menu-icon:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
+}
+
+.journey-main-menu-icon i {
+    color: var(--text-primary) !important;
+    font-size: 20px !important;
+}
+
+/* Mobile Styles for Menu Icon */
+@media only screen and (max-width: 768px) {
+    .journey-main-menu-icon {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+    
+    .journey-main-menu-icon i {
+        font-size: 18px !important;
+    }
+}
+
+/* Dark mode support for Menu Icon */
+body.dark-mode .journey-main-menu-icon {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .journey-main-menu-icon:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ============================================= */
+/* MOBILE ONLY - EDGE TO EDGE                    */
+/* ============================================= */
+
+@media only screen and (max-width: 768px) {
+    
+    /* Make journey-stories edge to edge */
+    .journey-stories {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-left: calc(-50vw + 50%) !important;
+        margin-right: calc(-50vw + 50%) !important;
+        left: 0 !important;
+        right: 0 !important;
+        position: relative !important;
+    }
+    
+    /* All journey-stories children should be edge-to-edge */
+    .journey-stories > * {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Header - proper padding */
+    .journey-stories .stories-header {
+        padding: 12px 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Campaign info header */
+    .journey-stories .campaign-info-header {
+        padding: 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Progress container */
+    .journey-stories .day-progress-container {
+        padding: 8px 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Progress dots */
+    .journey-stories .progress-dots {
+        padding: 12px 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+        display: flex !important;
+        gap: 4px !important;
+        justify-content: center !important;
+    }
+    
+    /* Story card */
+    .journey-stories .story-card {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Media container */
+    .journey-stories .story-media-container {
+        width: 100% !important;
+        height: 100vh !important;
+        height: calc(var(--vh, 1vh) * 100) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Media meta overlay */
+    .journey-stories .media-meta {
+        padding: 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Content overlay */
+    .journey-stories .story-content-overlay {
+        padding: 20px 16px !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    /* Comments drawer */
+    .journey-stories .comments-drawer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px 16px !important;
+        background: var(--drawer-bg) !important;
+        border-radius: 20px 20px 0 0 !important;
+        z-index: 1000 !important;
+        max-height: 70vh !important;
+        overflow-y: auto !important;
+        box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
+    }
+    
+    /* Mobile menu */
+    .journey-stories .mobile-popup-menu {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px 16px !important;
+        background: var(--drawer-bg) !important;
+        border-radius: 20px 20px 0 0 !important;
+        z-index: 2000 !important;
+        box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
+    }
+    
+    /* Empty state */
+    .journey-stories .empty-story {
+        min-height: 100vh !important;
+        min-height: calc(var(--vh, 1vh) * 100) !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 20px 16px !important;
+    }
+    
+    /* Stories feed */
+    .journey-stories .stories-feed {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Progress stats */
+    .journey-stories .progress-stats {
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+    }
+    
+    /* Menu icon mobile adjustment */
+    .journey-main-menu-icon {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+    
+    .journey-main-menu-icon i {
+        font-size: 18px !important;
+    }
+    
+    /* Safe area support */
+    @supports (padding: max(0px)) {
+        .journey-stories .stories-header {
+            padding-top: max(12px, env(safe-area-inset-top, 12px)) !important;
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .campaign-info-header {
+            padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .day-progress-container {
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .progress-dots {
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .story-content-overlay {
+            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .media-meta {
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+            padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
+        }
+        
+        .journey-stories .day-badge {
+            top: max(16px, env(safe-area-inset-top, 16px)) !important;
+            right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        }
+        
+        .journey-stories .comments-drawer {
+            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
+            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
+            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
+        }
+    }
+}
+
+/* Add to your existing CSS */
+.journey-stories .video-paused::after {
+    content: '⏸';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 60px;
+    color: white;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 10;
+    animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 0.8; }
+    70% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+.journey-stories .story-media-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* Simple Plus Icon - Enhanced */
+.simple-plus-icon {
+    position: absolute !important;
+    top: 20px !important;
+    right: 20px !important;
+    color: white !important;
+    font-size: 24px !important;
+    z-index: 9999 !important;
+    text-decoration: none !important;
+    opacity: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+    border: 2px solid white !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+.simple-plus-icon i {
+    color: white !important;
+    font-size: 20px !important;
+    display: inline-block !important;
+}
+
+/* Mobile Styles for Plus Icon */
+@media only screen and (max-width: 768px) {
+    .simple-plus-icon {
+        top: max(16px, env(safe-area-inset-top, 16px)) !important;
+        right: max(16px, env(safe-area-inset-right, 16px)) !important;
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .simple-plus-icon i {
+        font-size: 18px !important;
+    }
+    
+    .campaign-info-header .campaign-title {
+        padding-right: 50px !important;
+    }
+}
+
+/* Dark mode support */
+body.dark-mode .simple-plus-icon {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: white !important;
+}
+
+/* Hover effect */
+.simple-plus-icon:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    transform: scale(1.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Ensure parent has position relative */
+.journey-stories {
+    position: relative !important;
+}
+/* ============================================= */
+/* VIRTUAL SCROLL - INVISIBLE ADDITION */
+/* ============================================= */
+
+.virtual-scroll-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.virtual-scroll-spacer {
+    position: relative;
+    width: 100%;
+    pointer-events: none;
+}
+
+.stories-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.story-card {
+    position: absolute !important;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    will-change: transform;
+}
+</style>
+
+<!-- ============================================= -->
+<!-- JOURNEY STORIES - HTML                        -->
+<!-- ============================================= -->
+
+<div class="journey-stories">
+    
+    <!-- Simple Plus Icon - Inside journey-stories, top right -->
+    {% if user == campaign.user.user %}
+    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="simple-plus-icon" title="Add new day">
+        <i class="fas fa-plus"></i>
+    </a>
+    {% endif %}
+    
+    <!-- === CAMPAIGN INFO HEADER === -->
+    <div class="campaign-info-header">
+        <div class="campaign-title">
+            {{ campaign.title }}
+            {% if not campaign.duration %}
+                <span class="time-remaining-badge success" style="margin-left: 8px;">
+                    <i class="fas fa-infinity"></i> Ongoing
+                </span>
+            {% endif %}
+        </div>
+        
+        <div class="campaign-meta">
+            <!-- Time Remaining -->
+            {% if campaign.duration %}
+                {% if campaign.days_left is not None %}
+                    {% if campaign.duration_unit == 'minutes' %}
+                        <div class="time-indicator {% if campaign.days_left < 60 %}warning{% elif campaign.days_left < 30 %}danger{% endif %}">
+                            <i class="far fa-clock"></i>
+                            {{ campaign.days_left }} minutes left
+                        </div>
+                    {% else %}
+                        <div class="time-indicator {% if campaign.days_left < 7 %}warning{% elif campaign.days_left < 3 %}danger{% endif %}">
+                            <i class="far fa-calendar-alt"></i>
+                            {{ campaign.days_left }} days left
+                        </div>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            
+            <!-- Creator -->
+            <div class="time-indicator">
+                <i class="fas fa-user"></i>
+                {{ campaign.user.user.username }}
+            </div>
+        </div>
+        
+        <!-- Progress Stats -->
+        <div class="progress-stats">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                {% if campaign.duration %}
+                    <div class="stat-item">
+                        <i class="fas fa-hourglass-start"></i>
+                        <span>Started: {{ campaign.timestamp|date:"M d, Y" }}</span>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <i class="fas fa-percent"></i>
+                        <span>{{ campaign.remaining_percentage|floatformat:1 }}% remaining</span>
+                    </div>
+                    
+                    {% if campaign.end_date %}
+                    <div class="stat-item">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>Ends: {{ campaign.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <!-- Main Menu Icon -->
+            <span onclick="openJourneyMainMenu('{{ campaign.id }}')" class="journey-main-menu-icon" title="Journey Menu">
+                <i class="fas fa-ellipsis-h"></i>
+            </span>
+        </div>
+    </div>
+    
+    <!-- === DAY PROGRESS === -->
+    <div class="day-progress-container">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span style="color: var(--text-primary); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-flag" style="color: var(--accent-color);"></i>
+                {% if activity_count > 0 %}
+                    Day {{ activity_count }}
+                {% else %}
+                    Day 1
+                {% endif %}
+                
+                {% if campaign.duration %}
+                    <span style="color: var(--text-secondary); font-size: 12px; margin-left: 8px;">
+                        (Target: {{ campaign.duration }} {{ campaign.duration_unit }})
+                    </span>
+                {% endif %}
+            </span>
+            <span style="color: var(--text-tertiary); font-size: 12px;">
+                {{ activity_count }} / 
+                {% if campaign.duration %}
+                    {% if campaign.duration_unit == 'minutes' %}
+                        {{ campaign.duration }}
+                    {% else %}
+                        {{ campaign.duration }}
+                    {% endif %}
+                {% else %}
+                    ∞
+                {% endif %}
+            </span>
+        </div>
+        <div style="width: 100%; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; margin-top: 6px;">
+            <div style="height: 100%; background: var(--accent-gradient); border-radius: 2px; width: {{ progress_percentage|default:"0" }}%;"></div>
+        </div>
+    </div>
+    
+    <!-- === PROGRESS DOTS === -->
+    {% if activities %}
+    <div class="progress-dots">
+        {% for activity in activities %}
+            <span class="dot {% if forloop.last %}active{% endif %}"></span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- === STORIES FEED === -->
+    {% if activities %}
+        <div class="stories-feed">
+            {% for activity in activities %}
+                <div class="story-card" id="story-{{ activity.id }}">
+                    
+                    <!-- === MEDIA CONTAINER === -->
+                    <div class="story-media-container">
+                        
+<!-- === MEDIA === -->
+{% if activity.file %}
+    {% if activity.file.resource_type == 'video' %}
+        <video 
+            src="{{ activity.file.url }}" 
+            class="story-media"
+            autoplay
+            loop
+            playsinline
+            disableRemotePlayback
+            webkit-playsinline
+            onclick="toggleVideoPlayPause(this, event)">
+        </video>
+    {% elif activity.file.resource_type == 'image' %}
+        <img 
+            src="{{ activity.file.url }}" 
+            class="story-media"
+            loading="lazy"
+            onerror="this.src='{% static 'images/default-image.png' %}'">
+    {% else %}
+        <div style="width: 100%; height: 100%; background: var(--empty-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary); text-align: center;">
+            <i class="fas fa-file-alt" style="font-size: 56px; color: var(--accent-color); margin-bottom: 16px;"></i>
+            <span style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Document attached</span>
+            <small style="font-size: 14px; color: var(--text-secondary);">{{ activity.file.name|slice:"20:" }}</small>
+            <a href="{{ activity.file.url }}" target="_blank" style="color: var(--accent-color); margin-top: 16px; text-decoration: none;">
+                <i class="fas fa-download"></i> Download
+            </a>
+        </div>
+    {% endif %}
+{% else %}
+    <div style="width: 100%; height: 100%; background: var(--empty-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary); text-align: center;">
+        <i class="fas fa-pencil-alt" style="font-size: 56px; color: var(--accent-color); margin-bottom: 16px;"></i>
+        <span style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Text Update</span>
+        <small style="font-size: 14px; color: var(--text-secondary);">Day {{ forloop.counter }} of the journey</small>
+    </div>
+{% endif %}
+                        
+                        <!-- === DAY BADGE === -->
+<span class="day-badge">
+    <i class="fas fa-calendar-alt"></i> Day {{ activity.day_number }}
+    
+    <!-- Show if campaign has target days -->
+    {% if campaign.duration %}
+        / {{ campaign.duration }}
+    {% endif %}
+</span>
+                        
+                        <!-- === CREATOR OVERLAY === -->
+                        <div class="media-meta">
+                            <a href="{% url 'profile_view' username=campaign.user.user.username %}">
+                                <img 
+                                    src="{{ campaign.user.image.url }}" 
+                                    style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--text-primary); object-fit: cover;"
+                                    onerror="this.src='{% static 'images/default-profile.png' %}'">
+                            </a>
+                            <div>
+                                <a href="{% url 'profile_view' username=campaign.user.user.username %}" style="color: var(--text-primary); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                                    {{ campaign.user.user.username }}
+                                    {% if campaign.user.profile_verified %}
+                                        <i class="fas fa-check-circle" style="color: var(--accent-color);"></i>
+                                    {% endif %}
+                                </a>
+                                <span style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+                                    <i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- === CONTENT OVERLAY === -->
+                        <div class="story-content-overlay">
+                            
+                            <!-- Story text -->
+                            <div style="font-size: 16px; line-height: 1.5; margin-bottom: 16px;">
+                                {% if activity.content|length > 100 %}
+                                    <div id="story-short-{{ activity.id }}" style="display: block;">
+                                        {{ activity.content|truncatechars:100|safe }}
+                                        <span onclick="showStoryFull('{{ activity.id }}', event)" style="color: var(--accent-color); font-weight: 600; cursor: pointer; margin-left: 4px; display: inline-block;">
+                                            See More
+                                        </span>
+                                    </div>
+                                    <div id="story-full-{{ activity.id }}" style="display: none;">
+                                        {{ activity.content|safe }}
+                                        <span onclick="showStoryShort('{{ activity.id }}', event)" style="color: var(--accent-color); font-weight: 600; cursor: pointer; margin-left: 4px; display: inline-block;">
+                                            See Less
+                                        </span>
+                                    </div>
+                                {% else %}
+                                    {{ activity.content|safe }}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Action buttons -->
+                            <div class="story-actions">
+                                <div class="action-group">
+                                    <!-- Love -->
+                                    <span class="love-icon-story {% if user in activity.loves.all %}loved{% endif %}" 
+                                          data-activity-id="{{ activity.id }}" 
+                                          onclick="loveActivityStory('{{ activity.id }}', event)"
+                                          style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 16px; font-weight: 600; cursor: pointer;">
+                                        <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart" style="font-size: 24px;"></i>
+                                        <span id="story-love-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
+                                    </span>
+                                    
+                                    <!-- Comment -->
+                                    <span onclick="openComments('{{ activity.id }}')" style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 16px; font-weight: 600; cursor: pointer;">
+                                        <i class="far fa-comment" style="font-size: 24px;"></i>
+                                        <span>{{ activity.comments.count|format_count }}</span>
+                                    </span>
+                                </div>
+                                
+                                <!-- Menu -->
+                                <span onclick="openActivityMenu('{{ activity.id }}')" style="color: var(--text-primary); font-size: 24px; padding: 8px; cursor: pointer;">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- === COMMENTS DRAWER === -->
+                    <div id="comments-drawer-{{ activity.id }}" class="comments-drawer" style="display: none;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--drawer-border);">
+                            <h4 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--drawer-text);">
+                                <i class="far fa-comments" style="color: var(--drawer-secondary);"></i> Supporters
+                            </h4>
+                            <span onclick="closeComments('{{ activity.id }}')" style="font-size: 20px; color: var(--drawer-secondary); cursor: pointer; padding: 8px;">
+                                <i class="fas fa-times"></i>
+                            </span>
+                        </div>
+                        <div id="comments-container-{{ activity.id }}">
+                            <div style="text-align: center; padding: 32px 0; color: var(--drawer-secondary);">
+                                <i class="far fa-spinner fa-spin"></i> Loading...
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; background: var(--drawer-input-bg); border-radius: 24px; padding: 12px; display: flex;">
+                            <textarea id="comment-input-{{ activity.id }}" placeholder="Add your support..." rows="1" style="flex: 1; border: none; background: transparent; padding: 8px; resize: none; outline: none; color: var(--drawer-text);"></textarea>
+                            <span onclick="postMobileComment('{{ activity.id }}')" style="color: var(--accent-color); font-weight: 600; padding: 8px 16px; cursor: pointer;">Post</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- === EMPTY STATE === -->
+        <div class="empty-story">
+            <i class="fas fa-compass" style="font-size: 64px; color: var(--accent-color); margin-bottom: 24px; opacity: 0.8;"></i>
+            <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">Every journey starts with Day 1</h3>
+            <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; max-width: 280px;">
+                Most people quit before they start. You're already different.
+            </p>
+            
+            {% if campaign.duration %}
+                <div style="background: var(--button-bg); padding: 16px; border-radius: 16px; margin-bottom: 24px; max-width: 300px;">
+                    <p style="color: var(--text-secondary); margin-bottom: 8px;">
+                        <i class="fas fa-hourglass-half"></i> 
+                        This {{ campaign.duration_unit }} journey lasts 
+                        <strong>{{ campaign.duration }} {{ campaign.duration_unit }}</strong>
+                    </p>
+                    {% if campaign.end_date %}
+                        <p style="font-size: 13px; color: var(--text-muted);">
+                            Ends: {{ campaign.end_date|date:"M d, Y" }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endif %}
+            
+            {% if user == campaign.user.user %}
+                <a href="{% url 'create_activity' campaign_id=campaign.id %}" style="background: var(--accent-color); color: var(--text-primary); padding: 16px 32px; border-radius: 100px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-plus-circle"></i>
+                    Post Day 1 update
+                </a>
+            {% else %}
+                <div style="background: var(--button-bg); padding: 20px; border-radius: 16px; width: 100%; max-width: 300px;">
+                    <p style="color: var(--text-muted); margin-bottom: 8px;">This journey hasn't started yet.</p>
+                    <p style="font-size: 14px; color: var(--text-secondary);">Check back soon — the best stories take time to unfold.</p>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- === MOBILE MENU === -->
+    <div id="mobile-popup-menu" class="mobile-popup-menu">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--drawer-border);">
+            <span style="font-size: 16px; font-weight: 600; color: var(--drawer-text);">Journey Menu</span>
+            <span onclick="closeMobileMenu()" style="font-size: 20px; color: var(--drawer-secondary); cursor: pointer; padding: 8px;">
+                <i class="fas fa-times"></i>
+            </span>
+        </div>
+        <div id="popup-menu-content"></div>
+    </div>
+</div>
+
+<script>
+// ===== FUNCTIONS =====
+function showStoryFull(id, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('story-short-'+id).style.display = 'none';
+    document.getElementById('story-full-'+id).style.display = 'block';
+}
+
+function showStoryShort(id, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('story-short-'+id).style.display = 'block';
+    document.getElementById('story-full-'+id).style.display = 'none';
+}
+
+function loveActivityStory(id, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const btn = document.querySelector(`.love-icon-story[data-activity-id="${id}"]`);
+    const icon = btn.querySelector('i');
+    const count = document.getElementById('story-love-'+id);
+    const isLoved = btn.classList.contains('loved');
+    
+    if (isLoved) {
+        btn.classList.remove('loved');
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        count.textContent = Math.max(0, parseInt(count.textContent.replace(/,/g, '')) - 1).toLocaleString();
+    } else {
+        btn.classList.add('loved');
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        count.textContent = (parseInt(count.textContent.replace(/,/g, '')) + 1).toLocaleString();
+        btn.style.transform = 'scale(1.3)';
+        setTimeout(() => btn.style.transform = 'scale(1)', 200);
+    }
+    
+    fetch(`/love_activity/${id}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(d => { if (d.love_count) count.textContent = d.love_count.toLocaleString(); })
+    .catch(() => {});
+}
+
+function openComments(id) {
+    document.querySelectorAll('.comments-drawer').forEach(d => d.style.display = 'none');
+    const drawer = document.getElementById('comments-drawer-'+id);
+    drawer.style.display = 'block';
+    drawer.scrollIntoView({behavior: 'smooth'});
+    
+    fetch(`/get_activity_comments/${id}/?limit=5`)
+        .then(r => r.json())
+        .then(data => {
+            let html = '';
+            if (!data.comments || data.comments.length === 0) {
+                html = '<div style="text-align:center; padding:32px; color:var(--drawer-secondary);">Be the first to support this milestone</div>';
+            } else {
+                data.comments.forEach(c => {
+                    html += `<div style="display:flex; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--drawer-border);">
+                        <img src="${c.user_image || '/static/images/default-profile.png'}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <a href="/user-profile/@${c.username}/" style="font-weight:700; color:var(--drawer-text); text-decoration:none;">${c.username}</a>
+                                <span style="font-size:12px; color:var(--drawer-secondary);">${c.timestamp}</span>
+                            </div>
+                            <p style="font-size:14px; color:var(--drawer-text);">${escapeHtml(c.content)}</p>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('comments-container-'+id).innerHTML = html;
+        });
+}
+
+function closeComments(id) {
+    document.getElementById('comments-drawer-'+id).style.display = 'none';
+}
+
+function postMobileComment(id) {
+    const input = document.getElementById('comment-input-'+id);
+    if (!input.value.trim()) return;
+    
+    fetch('/post_activity_comment/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+        body: JSON.stringify({activity_id: id, content: input.value.trim()})
+    })
+    .then(r => r.json())
+    .then(() => {
+        input.value = '';
+        openComments(id);
+        const countSpan = document.querySelector(`[onclick="openComments('${id}')"] span:last-child`);
+        if (countSpan) countSpan.textContent = (parseInt(countSpan.textContent) + 1).toLocaleString();
+    });
+}
+
+function openActivityMenu(id) {
+    document.getElementById('popup-menu-content').innerHTML = `
+        <a href="/activity/${id}/" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-info-circle" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> View details
+        </a>
+        <a href="#" onclick="copyLink('${id}'); return false;" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-link" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Copy link
+        </a>`;
+    document.getElementById('mobile-popup-menu').classList.add('show');
+}
+
+// Main Journey Menu Function
+function openJourneyMainMenu(campaignId) {
+    document.getElementById('popup-menu-content').innerHTML = `
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-chart-line" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Statistics
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-cog" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Settings
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-share-alt" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Share Journey
+        </a>
+        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-download" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Export Journey
+        </a>
+        <div style="height:1px; background:var(--drawer-border); margin:8px 0;"></div>
+        <a href="#" onclick="reportJourney('${campaignId}'); return false;" style="display:flex; align-items:center; padding:16px; color:#e74c3c; text-decoration:none; border-radius:12px; font-size:16px;">
+            <i class="fas fa-flag" style="width:24px; margin-right:16px; color:#e74c3c;"></i> Report Journey
+        </a>
+    `;
+    document.getElementById('mobile-popup-menu').classList.add('show');
+}
+
+function reportJourney(campaignId) {
+    alert('Report journey feature coming soon');
+    closeMobileMenu();
+}
+
+function toggleMobileMenu() {
+    document.getElementById('mobile-popup-menu').classList.toggle('show');
+}
+
+function closeMobileMenu() {
+    document.getElementById('mobile-popup-menu').classList.remove('show');
+}
+
+function copyLink(id) {
+    navigator.clipboard.writeText(window.location.origin + '/activity/' + id + '/');
+    alert('Link copied!');
+    closeMobileMenu();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Add this new function for toggling video play/pause
+function toggleVideoPlayPause(video, event) {
+    event.stopPropagation(); // Prevent event bubbling
+    
+    if (video.paused) {
+        video.play();
+    } else {
+        video.pause();
+        
+        // Show pause indicator
+        const container = video.closest('.story-media-container');
+        const indicator = document.createElement('div');
+        indicator.className = 'video-paused';
+        indicator.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            z-index: 10;
+            pointer-events: none;
+            animation: fadeOut 0.5s ease forwards;
+        `;
+        indicator.innerHTML = '⏸';
+        
+        // Add keyframes if not already present
+        if (!document.querySelector('#pause-animation')) {
+            const style = document.createElement('style');
+            style.id = 'pause-animation';
+            style.textContent = `
+                @keyframes fadeOut {
+                    0% { opacity: 0.8; }
+                    70% { opacity: 0.8; }
+                    100% { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        container.appendChild(indicator);
+        
+        // Remove indicator after animation
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+        }, 500);
+    }
+}
+
+// Update your existing video autoplay function
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                // Only autoplay if the video is not manually paused
+                if (!video.hasAttribute('data-manually-paused')) {
+                    video.muted = false;
+                    video.play().catch(e => {
+                        video.muted = true;
+                        video.play().catch(() => {});
+                    });
+                }
+            } else {
+                video.pause();
+            }
+        });
+    }, {threshold: 0.7});
+    
+    document.querySelectorAll('.journey-stories video').forEach(v => {
+        observer.observe(v);
+        v.removeAttribute('controls');
+        v.loop = true;
+        v.playsInline = true;
+        v.setAttribute('webkit-playsinline', '');
+        v.setAttribute('disableRemotePlayback', '');
+        
+        // Add event listener for pause to track manual pauses
+        v.addEventListener('pause', () => {
+            v.setAttribute('data-manually-paused', 'true');
+        });
+        
+        v.addEventListener('play', () => {
+            v.removeAttribute('data-manually-paused');
+        });
+    });
+});
+
+// Also update any other click handlers to not interfere with video clicks
+document.addEventListener('click', function(e) {
+    // If clicking on video or its container, don't trigger other actions
+    if (e.target.closest('.story-media-container video') || 
+        e.target.closest('.story-media-container')) {
+        return;
+    }
+});
+
+// Fix viewport height for mobile browsers
+(function() {
+    function setVH() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    
+    // Ensure body has no margin/padding
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    
+    // Force check on load
+    window.addEventListener('load', function() {
+        setVH();
+        // Fix any overflow issues
+        document.querySelectorAll('.journey-stories *').forEach(el => {
+            if (el.scrollWidth > window.innerWidth) {
+                el.style.maxWidth = '100%';
+            }
+        });
+    });
+})();
+
+// =============================================
+// MINIMAL AUTO-ENHANCEMENT FOR MEDIA
+// =============================================
+
+(function() {
+    // Ultra minimal - only enhances quality without any visual overlays
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Ultra minimal enhancement - just slight quality boost */
+        .story-media.auto-enhanced {
+            filter: 
+                contrast(1.05) 
+                saturate(1.03) 
+                !important;
+            transition: none;
+        }
+        
+        /* No overlays, no gradients, no effects */
+        .story-media-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* No background overlays at all */
+        .media-meta, .story-content-overlay {
+            background: transparent;
+            backdrop-filter: none;
+        }
+        
+        /* Simple fade in */
+        .story-media {
+            animation: simpleFade 0.3s ease forwards;
+            opacity: 0;
+        }
+        
+        @keyframes simpleFade {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        /* Clean progress bar */
+        .day-progress-container div:last-child div {
+            background: #1DA1F2;
+        }
+        
+        /* Simple dots */
+        .dot.active {
+            background: #1DA1F2;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Simple enhancer - only adjusts contrast and saturation slightly
+    class SimpleEnhancer {
+        constructor() {
+            this.enhanced = new Set();
+            this.init();
+        }
+        
+        init() {
+            // Enhance existing media
+            document.querySelectorAll('.story-media').forEach(media => {
+                this.enhance(media);
+            });
+            
+            // Watch for new media
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1) {
+                            if (node.matches && node.matches('.story-media')) {
+                                this.enhance(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.story-media').forEach(media => {
+                                    this.enhance(media);
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        enhance(media) {
+            if (this.enhanced.has(media)) return;
+            
+            // Just add minimal enhancement class
+            media.classList.add('auto-enhanced');
+            this.enhanced.add(media);
+            
+            // For videos, ensure smooth playback
+            if (media.tagName === 'VIDEO') {
+                media.setAttribute('playsinline', '');
+                media.setAttribute('webkit-playsinline', '');
+                media.setAttribute('preload', 'auto');
+            }
+        }
+    }
+    
+    // Initialize when ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            window.simpleEnhancer = new SimpleEnhancer();
+        });
+    } else {
+        window.simpleEnhancer = new SimpleEnhancer();
+    }
+})();
+
+</script>
+<script type="text/javascript">
+    // =============================================
+// HIGH RESOLUTION MEDIA OPTIMIZER - PRODUCTION READY
+// =============================================
+
+(function() {
+    'use strict';
+
+    // Production configuration with safe defaults
+    const CONFIG = {
+        image: {
+            preferredWidth: 1920,
+            preferredHeight: 1080,
+            quality: 85, // Slightly lower for better performance
+            lazyLoad: true,
+            retryAttempts: 2,
+            timeout: 10000 // 10 second timeout
+        },
+        video: {
+            preferredWidth: 1920,
+            preferredHeight: 1080,
+            preload: 'metadata', // Better for performance
+            retryAttempts: 2,
+            timeout: 30000 // 30 second timeout for videos
+        },
+        performance: {
+            batchSize: 5, // Process images in batches
+            enableLogging: false, // Disable in production
+            intersectionThreshold: 0.1
+        }
+    };
+
+    // =============================================
+    // UTILITY FUNCTIONS
+    // =============================================
+    const Utils = {
+        // Safe logging
+        log: function() {
+            if (CONFIG.performance.enableLogging) {
+                console.log('[HD Media]', ...arguments);
+            }
+        },
+
+        // Error logging without breaking
+        error: function() {
+            if (CONFIG.performance.enableLogging) {
+                console.error('[HD Media Error]', ...arguments);
+            }
+        },
+
+        // Check if element is in viewport
+        isInViewport: function(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        },
+
+        // Debounce for performance
+        debounce: function(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+
+        // Get file extension safely
+        getFileExtension: function(url) {
+            try {
+                return url.split('.').pop()?.toLowerCase().split('?')[0] || '';
+            } catch {
+                return '';
+            }
+        },
+
+        // Check if URL is valid
+        isValidUrl: function(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    };
+
+    // =============================================
+    // IMAGE OPTIMIZER
+    // =============================================
+    const ImageOptimizer = {
+        processedImages: new WeakSet(),
+        pendingImages: new Set(),
+        observer: null,
+        retryMap: new WeakMap(),
+
+        init: function() {
+            // Check for IntersectionObserver support
+            if (CONFIG.image.lazyLoad && 'IntersectionObserver' in window) {
+                this.observer = new IntersectionObserver(
+                    this.handleIntersection.bind(this),
+                    {
+                        rootMargin: '50px',
+                        threshold: CONFIG.performance.intersectionThreshold
+                    }
+                );
+            }
+
+            // Process existing images
+            this.processImages();
+            
+            // Watch for new images
+            this.observeMutations();
+            
+            // Process images on scroll (fallback)
+            if (!this.observer) {
+                window.addEventListener('scroll', Utils.debounce(this.processImages.bind(this), 200));
+                window.addEventListener('resize', Utils.debounce(this.processImages.bind(this), 200));
+            }
+
+            Utils.log('Image optimizer initialized');
+        },
+
+        processImages: function() {
+            const images = document.querySelectorAll('img.story-media');
+            
+            // Process in batches for performance
+            for (let i = 0; i < images.length; i += CONFIG.performance.batchSize) {
+                const batch = Array.from(images).slice(i, i + CONFIG.performance.batchSize);
+                setTimeout(() => {
+                    batch.forEach(img => this.optimizeImage(img));
+                }, 0);
+            }
+        },
+
+        optimizeImage: function(img) {
+            // Skip if already processed or no src
+            if (this.processedImages.has(img) || !img.src) {
+                return;
+            }
+
+            const originalSrc = img.src || img.dataset.src;
+            
+            // Validate URL
+            if (!originalSrc || originalSrc === '#' || !Utils.isValidUrl(originalSrc)) {
+                return;
+            }
+
+            // Mark as processing
+            this.processedImages.add(img);
+            
+            // Store original
+            img.dataset.originalSrc = originalSrc;
+            
+            // Generate high-res URL
+            const highResUrl = this.getHighResUrl(originalSrc);
+            
+            // Setup timeout
+            const timeoutId = setTimeout(() => {
+                this.handleImageError(img);
+            }, CONFIG.image.timeout);
+
+            // Load high-res version
+            if (this.observer && CONFIG.image.lazyLoad) {
+                // Lazy load
+                img.dataset.highResSrc = highResUrl;
+                this.observer.observe(img);
+                clearTimeout(timeoutId);
+            } else {
+                // Load immediately
+                this.loadHighResImage(img, highResUrl, timeoutId);
+            }
+        },
+
+        handleIntersection: function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (img.dataset.highResSrc) {
+                        const timeoutId = setTimeout(() => {
+                            this.handleImageError(img);
+                        }, CONFIG.image.timeout);
+                        
+                        this.loadHighResImage(img, img.dataset.highResSrc, timeoutId);
+                        this.observer.unobserve(img);
+                    }
+                }
+            });
+        },
+
+        loadHighResImage: function(img, highResUrl, timeoutId) {
+            const testImage = new Image();
+            
+            testImage.onload = () => {
+                clearTimeout(timeoutId);
+                img.src = highResUrl;
+                img.classList.add('hd-loaded');
+                Utils.log('High-res image loaded:', highResUrl);
+            };
+            
+            testImage.onerror = () => {
+                clearTimeout(timeoutId);
+                this.handleImageError(img);
+            };
+            
+            testImage.src = highResUrl;
+        },
+
+        handleImageError: function(img) {
+            const retryCount = this.retryMap.get(img) || 0;
+            
+            if (retryCount < CONFIG.image.retryAttempts) {
+                // Retry with original
+                this.retryMap.set(img, retryCount + 1);
+                img.src = img.dataset.originalSrc;
+                Utils.log('Retrying image with original:', img.dataset.originalSrc);
+            } else {
+                // Max retries reached
+                Utils.error('Failed to load image after retries:', img.dataset.originalSrc);
+            }
+        },
+
+        getHighResUrl: function(url) {
+            if (!url) return url;
+
+            try {
+                // Remove existing cache busters
+                url = url.split('?')[0];
+
+                // Cloudinary
+                if (url.includes('cloudinary.com')) {
+                    return url.replace('/upload/', `/upload/q_auto:${CONFIG.image.quality},f_auto,w_${CONFIG.image.preferredWidth},c_limit/`);
+                }
+                
+                // AWS S3 / CloudFront
+                if (url.includes('amazonaws.com') || url.includes('cloudfront.net')) {
+                    return `${url}?w=${CONFIG.image.preferredWidth}&h=${CONFIG.image.preferredHeight}&q=${CONFIG.image.quality}&fit=max`;
+                }
+                
+                // Imgix
+                if (url.includes('imgix.net')) {
+                    return `${url}?w=${CONFIG.image.preferredWidth}&h=${CONFIG.image.preferredHeight}&fit=max&q=${CONFIG.image.quality}&auto=format`;
+                }
+                
+                // Local/other - just add cache buster
+                return `${url}?v=${Date.now()}`;
+            } catch (error) {
+                Utils.error('Error generating high-res URL:', error);
+                return url;
+            }
+        },
+
+        observeMutations: function() {
+            const observer = new MutationObserver((mutations) => {
+                let hasNewImages = false;
+                
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.tagName === 'IMG' && node.classList.contains('story-media')) {
+                                hasNewImages = true;
+                            } else if (node.querySelectorAll) {
+                                const imgs = node.querySelectorAll('img.story-media');
+                                if (imgs.length > 0) hasNewImages = true;
+                            }
+                        }
+                    });
+                });
+
+                if (hasNewImages) {
+                    this.processImages();
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    };
+
+    // =============================================
+    // VIDEO OPTIMIZER
+    // =============================================
+    const VideoOptimizer = {
+        processedVideos: new WeakSet(),
+        retryMap: new WeakMap(),
+
+        init: function() {
+            this.processVideos();
+            this.observeMutations();
+            Utils.log('Video optimizer initialized');
+        },
+
+        processVideos: function() {
+            document.querySelectorAll('video.story-media').forEach(video => {
+                if (!this.processedVideos.has(video)) {
+                    this.optimizeVideo(video);
+                    this.processedVideos.add(video);
+                }
+            });
+        },
+
+        optimizeVideo: function(video) {
+            // Get source
+            let originalSrc = video.src;
+            
+            if (!originalSrc) {
+                const source = video.querySelector('source');
+                originalSrc = source?.src;
+            }
+
+            if (!originalSrc || !Utils.isValidUrl(originalSrc)) {
+                return;
+            }
+
+            // Store original
+            video.dataset.originalSrc = originalSrc;
+
+            // Generate high-res source
+            const highResSrc = this.getHighResUrl(originalSrc);
+            
+            // Create new source elements
+            this.setVideoSources(video, highResSrc, originalSrc);
+            
+            // Add error handling
+            video.addEventListener('error', this.handleVideoError.bind(this, video), { once: true });
+            
+            // Reload if needed
+            if (video.readyState > 0) {
+                video.load();
+            }
+        },
+
+        setVideoSources: function(video, highResSrc, originalSrc) {
+            // Clear existing sources safely
+            while (video.firstChild) {
+                video.removeChild(video.firstChild);
+            }
+
+            // Create high-res source
+            const highResSource = document.createElement('source');
+            highResSource.src = highResSrc;
+            highResSource.type = this.getVideoType(highResSrc);
+            
+            // Create fallback source
+            const fallbackSource = document.createElement('source');
+            fallbackSource.src = originalSrc;
+            fallbackSource.type = this.getVideoType(originalSrc);
+            
+            video.appendChild(highResSource);
+            video.appendChild(fallbackSource);
+        },
+
+        handleVideoError: function(video, event) {
+            const retryCount = this.retryMap.get(video) || 0;
+            
+            if (retryCount < CONFIG.video.retryAttempts) {
+                this.retryMap.set(video, retryCount + 1);
+                
+                // Fall back to original
+                video.src = video.dataset.originalSrc;
+                video.load();
+                
+                Utils.log('Video error, falling back to original:', video.dataset.originalSrc);
+            } else {
+                Utils.error('Video failed after retries:', video.dataset.originalSrc);
+            }
+        },
+
+        getHighResUrl: function(url) {
+            if (!url) return url;
+
+            try {
+                url = url.split('?')[0];
+
+                // Cloudinary
+                if (url.includes('cloudinary.com')) {
+                    return url.replace('/upload/', `/upload/q_auto:good,f_auto,w_${CONFIG.video.preferredWidth},h_${CONFIG.video.preferredHeight},c_limit/`);
+                }
+                
+                // AWS/CloudFront
+                if (url.includes('amazonaws.com') || url.includes('cloudfront.net')) {
+                    return `${url}?width=${CONFIG.video.preferredWidth}&height=${CONFIG.video.preferredHeight}&bitrate=8000000`;
+                }
+                
+                return url;
+            } catch (error) {
+                Utils.error('Error generating video URL:', error);
+                return url;
+            }
+        },
+
+        getVideoType: function(url) {
+            const ext = Utils.getFileExtension(url);
+            const types = {
+                'mp4': 'video/mp4',
+                'webm': 'video/webm',
+                'ogg': 'video/ogg',
+                'mov': 'video/quicktime',
+                'm3u8': 'application/x-mpegURL'
+            };
+            return types[ext] || 'video/mp4';
+        },
+
+        observeMutations: function() {
+            const observer = new MutationObserver((mutations) => {
+                let hasNewVideos = false;
+                
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            if (node.tagName === 'VIDEO' && node.classList.contains('story-media')) {
+                                hasNewVideos = true;
+                            } else if (node.querySelectorAll) {
+                                const videos = node.querySelectorAll('video.story-media');
+                                if (videos.length > 0) hasNewVideos = true;
+                            }
+                        }
+                    });
+                });
+
+                if (hasNewVideos) {
+                    setTimeout(() => this.processVideos(), 100);
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    };
+
+    // =============================================
+    // PRESERVE EXISTING FUNCTIONS
+    // =============================================
+    
+    // Wrap existing toggleVideoPlayPause if it exists
+    if (typeof window.toggleVideoPlayPause === 'function') {
+        const originalToggle = window.toggleVideoPlayPause;
+        window.toggleVideoPlayPause = function(video, event) {
+            try {
+                originalToggle(video, event);
+            } catch (error) {
+                Utils.error('Error in toggleVideoPlayPause:', error);
+            }
+        };
+    }
+
+    // Add helper functions (non-intrusive)
+    window.checkMediaResolution = function() {
+        const report = {
+            images: [],
+            videos: []
+        };
+        
+        document.querySelectorAll('img.story-media').forEach(img => {
+            report.images.push({
+                src: img.src?.split('?')[0] || '',
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                loaded: img.complete
+            });
+        });
+        
+        document.querySelectorAll('video.story-media').forEach(video => {
+            report.videos.push({
+                src: video.src?.split('?')[0] || '',
+                width: video.videoWidth,
+                height: video.videoHeight
+            });
+        });
+        
+        return report;
+    };
+
+    // =============================================
+    // INITIALIZATION
+    // =============================================
+    function init() {
+        try {
+            // Check if we should initialize (avoid double init)
+            if (window.__hdMediaInitialized) {
+                return;
+            }
+
+            // Initialize optimizers
+            ImageOptimizer.init();
+            VideoOptimizer.init();
+            
+            // Mark as initialized
+            window.__hdMediaInitialized = true;
+            
+            Utils.log('High Resolution Media Optimizer initialized successfully');
+        } catch (error) {
+            Utils.error('Failed to initialize:', error);
+            // Fail silently - site should still work
+        }
+    }
+
+    // Start when DOM is safe
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        // Use setTimeout to ensure DOM is fully ready
+        setTimeout(init, 0);
+    }
+
+    // Handle SPA navigation
+    window.addEventListener('popstate', () => {
+        setTimeout(() => {
+            ImageOptimizer.processImages();
+            VideoOptimizer.processVideos();
+        }, 100);
+    });
+
+})();
+</script>
+{% endblock %}

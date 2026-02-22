@@ -1611,8 +1611,6 @@ class CommentLike(models.Model):
         return f"{'Like' if self.is_like else 'Dislike'} by {self.user.user.username} on comment {self.comment.id}"
 
 
-
-
 class Activity(models.Model):
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
     content = models.TextField(default='content')
@@ -1626,19 +1624,76 @@ class Activity(models.Model):
         blank=True,
         resource_type='auto'  # This allows both images and videos
     )
-
+    
+    # NEW FIELDS FOR VIDEO PROCESSING
+    is_video = models.BooleanField(default=False, help_text="Whether this activity contains a video")
+    video_processed = models.BooleanField(default=False, help_text="Whether video screenshots have been processed")
+    screenshot_count = models.IntegerField(default=5, help_text="Number of screenshots to extract from video")
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._original_file = self.file
+    
     def save(self, *args, **kwargs):
-        if self.pk is None:  # If this is a new activity
-            # Create the notification message for the campaign owner
-            message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
-            # Create the notification for the campaign owner
-            Notification.objects.create(user=self.campaign.user.user, message=message_owner)
-            followers = self.campaign.user.followers.all()
-            for follower in followers:
-                message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
-                Notification.objects.create(user=follower, message=message_follower)
-
+        # Check if this is a new activity for notifications
+        is_new = self.pk is None
+        
+        # Check if file changed and is video
+        if self.pk and self.file and hasattr(self, '_original_file') and self._original_file != self.file:
+            # Check if it's a video file
+            if self.file and hasattr(self.file, 'resource_type') and self.file.resource_type == 'video':
+                self.is_video = True
+                self.video_processed = False  # Mark for processing
+            elif self.file and hasattr(self.file, 'url') and any(ext in self.file.url.lower() for ext in ['.mp4', '.mov', '.avi', '.webm']):
+                self.is_video = True
+                self.video_processed = False
+            else:
+                self.is_video = False
+                self.video_processed = True
+        
         super().save(*args, **kwargs)
+        
+        # Create notifications for new activities
+        if is_new:
+            self.create_notifications()
+        
+   
+    def create_notifications(self):
+        """Create notifications for new activities"""
+        from django.urls import reverse
+        from .models import Notification
+        
+        # Notify campaign owner
+        message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
+        Notification.objects.create(user=self.campaign.user.user, message=message_owner)
+        
+        # Notify followers
+        followers = self.campaign.user.followers.all()
+        for follower in followers:
+            message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
+            Notification.objects.create(user=follower, message=message_follower)
+    
+    @property
+    def screenshots(self):
+        """Get all screenshots for this activity"""
+        return self.video_screenshots.all().order_by('order')
+    
+    @property
+    def has_screenshots(self):
+        """Check if activity has screenshots"""
+        return self.video_screenshots.exists()
+    
+    @property
+    def display_media(self):
+        """
+        Return appropriate media for display:
+        - For videos with screenshots: return screenshots
+        - For videos without screenshots: return video
+        - For images: return image
+        """
+        if self.is_video and self.has_screenshots:
+            return self.screenshots
+        return None
     
     @property
     def day_number(self):
@@ -1669,6 +1724,26 @@ class Activity(models.Model):
 
         return max(1, day_num)
 
+
+class VideoScreenshot(models.Model):
+    """Model to store screenshots extracted from videos"""
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='video_screenshots')
+    image = CloudinaryField(
+        'screenshot',
+        folder='activity_screenshots',
+        null=True,
+        blank=True
+    )
+    timestamp = models.FloatField(help_text="Timestamp in seconds where screenshot was taken")
+    order = models.IntegerField(default=0, help_text="Order in the story sequence")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ['activity', 'order']
+    
+    def __str__(self):
+        return f"Screenshot {self.order} for Activity {self.activity.id} at {self.timestamp}s"
 
 class ActivityLove(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='loves')

@@ -1143,6 +1143,137 @@
     }
 </style>
 
+
+<!-- Enhanced CSS for video features -->
+<style>
+/* Video info banner */
+.video-info-banner {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.video-info-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.video-info-content {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.95;
+}
+
+/* Screenshot count selector */
+.screenshot-count-container {
+    margin-bottom: 16px;
+    padding: 16px;
+    background: #f0f9ff;
+    border-radius: 12px;
+    border: 1px solid #bae6fd;
+}
+
+.screenshot-label {
+    color: #0369a1 !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+}
+
+.screenshot-count-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #7dd3fc;
+    border-radius: 10px;
+    background: white;
+    font-size: 15px;
+    color: #0c4a6e;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.screenshot-count-select:hover {
+    border-color: #0284c7;
+    background: #f8fafc;
+}
+
+/* Video status indicator */
+.video-status-indicator {
+    margin: 12px 0;
+    padding: 12px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.video-status-indicator.processing {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+}
+
+.video-status-indicator.processed {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.video-status-indicator i {
+    font-size: 20px;
+}
+
+/* Video upload tip */
+.video-upload-tip {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #92400e;
+}
+
+.video-upload-tip i {
+    font-size: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .video-info-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .screenshot-count-container {
+        padding: 12px;
+    }
+    
+    .video-upload-tip {
+        font-size: 13px;
+    }
+}
+</style>
+
+
+
 <!-- MAIN CONTAINER -->
 <div class="activity-form-container">
     <div class="activity-header">
@@ -1250,6 +1381,16 @@
             </div>
         </div>
         
+        <!-- VIDEO PROCESSING INFO BANNER (NEW) -->
+        <div class="video-info-banner">
+            <div class="video-info-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <div class="video-info-content">
+                <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically extract HD screenshots to create a story carousel. Viewers can watch the full video by clicking the play button.
+            </div>
+        </div>
+        
         <!-- DURATION LIMIT CHECK - IF USER HAS REACHED MAXIMUM CAMPAIGN DURATION -->
         {% if campaign.duration and existing_activities_count >= campaign.duration %}
             <!-- CAMPAIGN COMPLETE - CLEAR MESSAGE AND EDIT-ONLY MODE -->
@@ -1333,6 +1474,20 @@
                                         {{ form.instance.timestamp|date:"M d, Y" }}
                                     </div>
                                 </div>
+                                
+                                <!-- VIDEO PROCESSING STATUS (NEW) - for existing videos -->
+                                {% if form.instance.is_video %}
+                                <div class="video-status-indicator {% if form.instance.video_processed %}processed{% else %}processing{% endif %}">
+                                    <i class="fas {% if form.instance.video_processed %}fa-check-circle{% else %}fa-spinner fa-spin{% endif %}"></i>
+                                    <span>
+                                        {% if form.instance.video_processed %}
+                                            Video processed - {{ form.instance.screenshots.count }} screenshots created
+                                        {% else %}
+                                            Video processing in background - screenshots will appear soon
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
                                 
                                 <!-- HIDDEN FIELDS -->
                                 {% for hidden in form.hidden_fields %}
@@ -1596,6 +1751,20 @@
                                 </div>
                             </div>
                             
+                            <!-- VIDEO PROCESSING STATUS (NEW) -->
+                            {% if form.instance.is_video %}
+                            <div class="video-status-indicator {% if form.instance.video_processed %}processed{% else %}processing{% endif %}">
+                                <i class="fas {% if form.instance.video_processed %}fa-check-circle{% else %}fa-spinner fa-spin{% endif %}"></i>
+                                <span>
+                                    {% if form.instance.video_processed %}
+                                        Video processed - {{ form.instance.screenshots.count }} screenshots created
+                                    {% else %}
+                                        Video processing in background - screenshots will appear soon
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                            
                             <!-- HIDDEN FIELDS -->
                             {% for hidden in form.hidden_fields %}
                                 {{ hidden }}
@@ -1646,6 +1815,15 @@
                                 <label class="form-label">
                                     Update media for Day {{ forloop.counter }} (optional):
                                 </label>
+                                
+                                <!-- SCREENSHOT COUNT SELECTOR (NEW) - hidden by default, shown for videos -->
+                                <div class="screenshot-count-container" id="screenshot-container-{{ form_index }}" style="display: none;">
+                                    <label class="form-label screenshot-label">
+                                        <i class="fas fa-images"></i> Number of screenshots to extract:
+                                    </label>
+                                    {{ form.screenshot_count }}
+                                    <span class="form-helper">More screenshots = richer story carousel</span>
+                                </div>
                                 
                                 <!-- FILE UPLOAD AREA -->
                                 <div class="file-upload-area" id="drop-area-{{ form_index }}">
@@ -1740,13 +1918,13 @@
                                     <textarea disabled class="form-textarea locked-input" 
                                               placeholder="This day will be available in {{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}..."></textarea>
                                     <span class="form-helper locked-helper">
-                        <i class="fas fa-info-circle"></i> 
-                        {% with unlock_date=campaign.start_date|date:"U"|add:next_available_day|add:"-1"|add:"86400" %}
-                            {% with unlock_timestamp=unlock_date|floatformat:0 %}
-                                Unlocks on {{ unlock_timestamp|date:"M d, Y" }} ({{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %} from now)
-                            {% endwith %}
-                        {% endwith %}
-                    </span>
+                                        <i class="fas fa-info-circle"></i> 
+                                        {% with unlock_date=campaign.start_date|date:"U"|add:next_available_day|add:"-1"|add:"86400" %}
+                                            {% with unlock_timestamp=unlock_date|floatformat:0 %}
+                                                Unlocks on {{ unlock_timestamp|date:"M d, Y" }} ({{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %} from now)
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </span>
                                 </div>
                                 
                                 <!-- Disabled file upload -->
@@ -1786,10 +1964,27 @@
                                     </h3>
                                 </div>
                                 
+                                <!-- VIDEO UPLOAD TIP (NEW) -->
+                                <div class="video-upload-tip">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <span><strong>Pro tip:</strong> Upload a video and we'll create a photo carousel from it!</span>
+                                </div>
+                                
                                 <!-- HIDDEN FIELDS -->
                                 {% for hidden in form.hidden_fields %}
                                     {{ hidden }}
                                 {% endfor %}
+                                
+                                <!-- SCREENSHOT COUNT SELECTOR (NEW) - hidden by default -->
+                                <div class="screenshot-count-container" id="screenshot-container-{{ form_index }}" style="display: none;">
+                                    <label class="form-label screenshot-label">
+                                        <i class="fas fa-images"></i> How many photos should we extract from your video?
+                                    </label>
+                                    {{ form.screenshot_count }}
+                                    <span class="form-helper">
+                                        These will be displayed as a swipeable story. You can change this anytime.
+                                    </span>
+                                </div>
                                 
                                 <!-- CONTENT FIELD -->
                                 <div style="margin-bottom: 20px;">
@@ -1899,7 +2094,6 @@
     <i class="fas fa-arrow-left"></i>
     Back to "{{ campaign.title }}"
 </a>
-
 <script>
     // ===== EMOJI HANDLING =====
     function addEmojiToField(emoji, formIndex) {
@@ -1927,91 +2121,194 @@
         const fileInput = document.getElementById(`file-input-${formIndex}`);
         const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
         const previewArea = document.getElementById(`file-preview-${formIndex}`);
+        const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
         
         if (!fileInput || !fileInput.files.length || !djangoFileInput) return;
+        
+        const file = fileInput.files[0];
+        
+        // Determine file type
+        const isVideo = file.type.startsWith('video/') || 
+                       file.name.match(/\.(mp4|mov|avi|webm|mkv|m4v)$/i);
+        const isImage = file.type.startsWith('image/') || 
+                       file.name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
+        const isAudio = file.type.startsWith('audio/') || 
+                       file.name.match(/\.(mp3|wav|ogg|m4a)$/i);
+        
+        // Set size limits based on file type
+        let maxSize, sizeLimitMB;
+        if (isVideo) {
+            maxSize = 500 * 1024 * 1024; // 500MB for videos
+            sizeLimitMB = 500;
+        } else if (isImage) {
+            maxSize = 20 * 1024 * 1024; // 20MB for images
+            sizeLimitMB = 20;
+        } else {
+            maxSize = 50 * 1024 * 1024; // 50MB for audio/other
+            sizeLimitMB = 50;
+        }
+        
+        // Check file size
+        if (file.size > maxSize) {
+            const fileType = isVideo ? 'Video' : isImage ? 'Image' : 'File';
+            showNotification(
+                `${fileType} size must be under ${sizeLimitMB}MB. ` +
+                `Current size: ${(file.size / (1024*1024)).toFixed(1)}MB`,
+                'error'
+            );
+            fileInput.value = '';
+            return;
+        }
+        
+        // Show warning for large files
+        if (isVideo && file.size > 400 * 1024 * 1024) {
+            showNotification('Large video detected. Upload may take a while.', 'warning');
+        } else if (isImage && file.size > 15 * 1024 * 1024) {
+            showNotification('Large image detected. Consider compressing.', 'warning');
+        }
+        
+        // Show screenshot selector for videos
+        if (screenshotContainer) {
+            screenshotContainer.style.display = isVideo ? 'block' : 'none';
+        }
         
         // Clear previous preview
         previewArea.innerHTML = '';
         
         // Create DataTransfer to handle files
         const dt = new DataTransfer();
-        const files = Array.from(fileInput.files);
-        
-        // Only take the first file
-        const file = files[0];
         dt.items.add(file);
         
         // Update the Django file input
         djangoFileInput.files = dt.files;
         
+        // Show upload progress for large files
+        if (file.size > 50 * 1024 * 1024) {
+            showUploadProgress(formIndex);
+        }
+        
         // Create preview
         const reader = new FileReader();
         reader.onload = function(e) {
             const previewItem = document.createElement('div');
+            previewItem.className = 'file-preview-wrapper';
             
-            if (file.type.startsWith('image/')) {
+            if (isVideo) {
                 previewItem.innerHTML = `
-                    <div class="file-preview-item">
-                        <img src="${e.target.result}" alt="${file.name}">
-                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
-                `;
-            } else if (file.type.startsWith('video/')) {
-                previewItem.innerHTML = `
-                    <div class="file-preview-item">
+                    <div class="file-preview-item video-preview">
                         <video controls style="width:100%;height:100%;">
                             <source src="${e.target.result}" type="${file.type}">
                         </video>
+                        <div class="preview-badge">
+                            <i class="fas fa-video"></i> Video
+                            <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                        </div>
                         <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                 `;
-            } else if (file.type.startsWith('audio/')) {
+            } else if (isImage) {
                 previewItem.innerHTML = `
-                    <div class="file-preview-item">
-                        <div class="audio-preview">
-                            <i class="fas fa-music" style="font-size: 24px; color: #1da1f2;"></i>
+                    <div class="file-preview-item image-preview">
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <div class="preview-badge">
+                            <i class="fas fa-image"></i> Image
+                            <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                        </div>
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
+                `;
+            } else if (isAudio) {
+                previewItem.innerHTML = `
+                    <div class="file-preview-item audio-preview">
+                        <div class="audio-controls">
+                            <i class="fas fa-music" style="font-size: 32px; color: #1da1f2;"></i>
                             <audio controls style="width: 100%; margin-top: 8px;">
                                 <source src="${e.target.result}" type="${file.type}">
                             </audio>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})" style="position: absolute; top: 5px; right: 5px;">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="preview-badge">
+                                <i class="fas fa-headphones"></i> Audio
+                                <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                            </div>
                         </div>
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                     <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                 `;
             } else {
                 previewItem.innerHTML = `
-                    <div class="file-preview-item">
-                        <div class="audio-preview">
-                            <i class="fas fa-file" style="font-size: 24px; color: #657786;"></i>
-                            <div style="font-size: 12px; margin-top: 8px;">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})" style="position: absolute; top: 5px; right: 5px;">
-                                <i class="fas fa-times"></i>
-                            </button>
+                    <div class="file-preview-item document-preview">
+                        <div class="document-controls">
+                            <i class="fas fa-file" style="font-size: 48px; color: #657786;"></i>
+                            <div style="font-size: 14px; margin-top: 8px;">${file.name}</div>
+                            <div class="preview-badge">
+                                <i class="fas fa-file"></i> Document
+                                <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                            </div>
                         </div>
+                        <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                 `;
             }
             
             previewArea.appendChild(previewItem);
-            previewArea.style.display = 'grid';
+            previewArea.style.display = 'block';
+            
+            // Hide existing file if any
+            const existingFile = document.getElementById(`existing-file-${formIndex}`);
+            if (existingFile) {
+                existingFile.style.display = 'none';
+            }
         };
         
         reader.readAsDataURL(file);
+    }
+    
+    function showUploadProgress(formIndex) {
+        const previewArea = document.getElementById(`file-preview-${formIndex}`);
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'upload-progress';
+        progressDiv.id = `upload-progress-${formIndex}`;
+        progressDiv.innerHTML = `
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill-${formIndex}" style="width: 0%;"></div>
+            </div>
+            <div class="progress-text" id="progress-text-${formIndex}">Preparing upload...</div>
+        `;
+        
+        if (!document.getElementById(`upload-progress-${formIndex}`)) {
+            previewArea.parentNode.insertBefore(progressDiv, previewArea.nextSibling);
+        }
+        
+        // Simulate progress (actual progress would require XHR upload)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) {
+                document.getElementById(`progress-fill-${formIndex}`).style.width = progress + '%';
+                document.getElementById(`progress-text-${formIndex}`).textContent = `Uploading... ${progress}%`;
+            }
+            if (progress >= 90) {
+                clearInterval(interval);
+            }
+        }, 200);
     }
     
     function removeFile(formIndex) {
         const fileInput = document.getElementById(`file-input-${formIndex}`);
         const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
         const previewArea = document.getElementById(`file-preview-${formIndex}`);
+        const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
+        const progressDiv = document.getElementById(`upload-progress-${formIndex}`);
         
         if (fileInput) fileInput.value = '';
         if (djangoFileInput) djangoFileInput.value = '';
@@ -2019,14 +2316,31 @@
             previewArea.innerHTML = '';
             previewArea.style.display = 'none';
         }
+        if (screenshotContainer) {
+            screenshotContainer.style.display = 'none';
+        }
+        if (progressDiv) {
+            progressDiv.remove();
+        }
+        
+        const existingFile = document.getElementById(`existing-file-${formIndex}`);
+        if (existingFile) {
+            existingFile.style.display = 'block';
+        }
     }
     
     function removeExistingFile(formIndex) {
         const existingDiv = document.getElementById(`existing-file-${formIndex}`);
         const clearCheckbox = document.querySelector(`#activity-form-${formIndex} input[name$="-file-clear"]`);
+        const fileInput = document.getElementById(`file-input-${formIndex}`);
         
         if (existingDiv) existingDiv.style.display = 'none';
         if (clearCheckbox) clearCheckbox.checked = true;
+        
+        // Re-enable file input
+        if (fileInput) fileInput.disabled = false;
+        
+        showNotification('File marked for removal', 'info');
     }
     
     // ===== DRAG & DROP =====
@@ -2055,13 +2369,15 @@
                 });
                 
                 function highlight() {
-                    dropArea.style.borderColor = '#1da1f2';
-                    dropArea.style.background = '#e8f5fe';
+                    dropArea.style.borderColor = '#ff0050';
+                    dropArea.style.background = 'rgba(255,0,80,0.1)';
+                    dropArea.style.transform = 'scale(1.02)';
                 }
                 
                 function unhighlight() {
                     dropArea.style.borderColor = '#e1e8ed';
                     dropArea.style.background = '#fafbfd';
+                    dropArea.style.transform = 'scale(1)';
                 }
                 
                 dropArea.addEventListener('drop', function(e) {
@@ -2097,9 +2413,11 @@
         
         // Scroll to new activity forms if unlocked and not at max
         {% if not is_next_day_locked and not campaign.duration or existing_activities_count < campaign.duration %}
-        document.querySelectorAll('.new-activity').forEach(form => {
-            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
+        setTimeout(() => {
+            document.querySelectorAll('.new-activity').forEach(form => {
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }, 500);
         {% endif %}
         
         // Show celebration if user is ahead
@@ -2135,30 +2453,51 @@
     document.getElementById('activityForm')?.addEventListener('submit', function(e) {
         const submitBtn = document.getElementById('submitBtn');
         const originalText = submitBtn.innerHTML;
+        let hasErrors = false;
         
         // Check if trying to submit locked day
         {% if is_next_day_locked %}
         const hasLockedForms = document.querySelectorAll('.form-section.locked').length > 0;
         if (hasLockedForms) {
             e.preventDefault();
-            alert('Day {{ next_available_day }} is still locked. Please wait until it unlocks.');
+            showNotification('Day {{ next_available_day }} is still locked. Please wait until it unlocks.', 'error');
             return false;
         }
         {% endif %}
         
-        // Validate file sizes
-        let allFilesValid = true;
+        // Validate file sizes with new limits
+        const fileErrors = [];
         document.querySelectorAll('.form-section:not(.locked) input[type="file"]').forEach(input => {
             Array.from(input.files).forEach(file => {
-                const maxSize = 10 * 1024 * 1024; // 10MB
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                
+                let maxSize, type;
+                if (isVideo) {
+                    maxSize = 500 * 1024 * 1024; // 500MB
+                    type = 'Video';
+                } else if (isImage) {
+                    maxSize = 20 * 1024 * 1024; // 20MB
+                    type = 'Image';
+                } else {
+                    maxSize = 50 * 1024 * 1024; // 50MB
+                    type = 'File';
+                }
+                
                 if (file.size > maxSize) {
-                    allFilesValid = false;
-                    alert(`File "${file.name}" is too large (${(file.size/1024/1024).toFixed(1)}MB). Maximum size is 10MB.`);
+                    hasErrors = true;
+                    fileErrors.push(`${type} "${file.name}" is too large (${(file.size/1024/1024).toFixed(1)}MB). Maximum is ${maxSize/1024/1024}MB.`);
                 }
             });
         });
         
-        if (!allFilesValid) {
+        if (fileErrors.length > 0) {
+            e.preventDefault();
+            fileErrors.forEach(error => showNotification(error, 'error'));
+            return false;
+        }
+        
+        if (hasErrors) {
             e.preventDefault();
             return false;
         }
@@ -2167,11 +2506,8 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving your journey...';
         submitBtn.disabled = true;
         
-        // Re-enable after 10 seconds if submission fails
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 10000);
+        // Add success message after submission
+        showNotification('Your journey update is being saved!', 'success');
         
         return true;
     });
@@ -2186,6 +2522,146 @@
             }
         }
     });
+    
+    // ===== NOTIFICATION SYSTEM =====
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        
+        notification.innerHTML = `
+            <i class="fas ${icons[type] || icons.info}"></i>
+            <span>${message}</span>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: ${type === 'success' ? '#10b981' : 
+                        type === 'error' ? '#ef4444' : 
+                        type === 'warning' ? '#f59e0b' : '#3b82f6'};
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+    
+    // ===== FILE SIZE DISPLAY =====
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // ===== ADD STYLES FOR NOTIFICATIONS =====
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .file-preview-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .preview-badge {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .file-size {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+        
+        .upload-progress {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0050, #ff6b00);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 5px;
+            color: #4b5563;
+        }
+        
+        .video-preview, .image-preview, .audio-preview, .document-preview {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .audio-controls, .document-controls {
+            padding: 20px;
+            text-align: center;
+            background: #f9fafb;
+        }
+    `;
+    
+    document.head.appendChild(style);
 </script>
-
 {% endblock %}

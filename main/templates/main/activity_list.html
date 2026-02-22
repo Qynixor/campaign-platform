@@ -1,1686 +1,1881 @@
-{% extends 'main/face.html' %}
-
 {% load custom_filters %}
 {% load static %}  
 
-{% block content %}
-<!-- Include FontAwesome CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Font Awesome - Optimized with subset -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.0/css/all.css">
 
 <style>
-/* ============================================= */
-/* CSS VARIABLES - LIGHT MODE (DEFAULT)         */
-/* ============================================= */
-
 :root {
-  /* Light mode colors - exactly as they were originally */
-  --bg-primary: #0A1929;
-  --bg-secondary: #1A2A3A;
-  --bg-overlay: rgba(10, 25, 41, 0.95);
-  --bg-progress: rgba(0, 0, 0, 0.4);
-  --bg-dots: rgba(0,0,0,0.3);
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255,255,255,0.6);
-  --text-tertiary: rgba(255,255,255,0.7);
-  --text-muted: rgba(255,255,255,0.8);
-  --accent-color: #1DA1F2;
-  --accent-gradient: linear-gradient(90deg, #1DA1F2, #64B5F6);
-  --border-light: rgba(255,255,255,0.1);
-  --border-medium: rgba(255,255,255,0.15);
-  --overlay-gradient: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
-  --overlay-gradient-bottom: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
-  --empty-bg: linear-gradient(145deg, #0A1929, #1A2A3A);
-  --heart-color: #E0245E;
-  --drawer-bg: #ffffff;
-  --drawer-text: #0A1929;
-  --drawer-secondary: #657786;
-  --drawer-border: rgba(0,0,0,0.05);
-  --drawer-input-bg: #F5F8FA;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --shadow-color-strong: rgba(0, 0, 0, 0.15);
-  --button-bg: rgba(255,255,255,0.1);
-  --warning-color: #f39c12;
-  --danger-color: #e74c3c;
-  --success-color: #2ecc71;
-  --vh: 1vh;
-  --header-height: 180px; /* Default header height */
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.7);
+  --text-dim: rgba(255, 255, 255, 0.5);
+  --background: #000000;
+  --surface: #000000;
+  --overlay: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
+  --accent: #ff0050;
+  --accent-gradient: linear-gradient(45deg, #ff0050, #ff6b00);
+  --success: #00c851;
+  --warning: #ffbb33;
+  --info: #33b5e5;
 }
 
-/* ============================================= */
-/* DARK MODE OVERRIDES - Using your formula      */
-/* ============================================= */
-
-body.dark-mode {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --bg-overlay: rgba(30, 30, 30, 0.95);
-  --bg-progress: rgba(0, 0, 0, 0.6);
-  --bg-dots: rgba(0, 0, 0, 0.5);
-  --text-primary: #ffffff;
-  --text-secondary: #bbbbbb;
-  --text-tertiary: #bbbbbb;
-  --text-muted: #888888;
-  --accent-color: #1DA1F2;
-  --accent-gradient: linear-gradient(90deg, #1DA1F2, #64B5F6);
-  --border-light: #444444;
-  --border-medium: #444444;
-  --overlay-gradient: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%);
-  --overlay-gradient-bottom: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
-  --empty-bg: linear-gradient(145deg, #121212, #1e1e1e);
-  --heart-color: #E0245E;
-  --drawer-bg: #1e1e1e;
-  --drawer-text: #ffffff;
-  --drawer-secondary: #bbbbbb;
-  --drawer-border: #444444;
-  --drawer-input-bg: #2d2d2d;
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --shadow-color-strong: rgba(0, 0, 0, 0.4);
-  --button-bg: rgba(255,255,255,0.1);
-  --warning-color: #f39c12;
-  --danger-color: #e74c3c;
-  --success-color: #2ecc71;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* ============================================= */
-/* DEFAULT STYLES - USING CSS VARIABLES          */
-/* ============================================= */
-
-.journey-stories {
-    width: 100%;
-    max-width: 100%;
-    background: var(--bg-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    margin: 0;
-    padding: 0;
-    position: relative;
-    left: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
+body {
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  color: var(--text);
 }
 
-/* Simple Plus Icon */
-.simple-plus-icon {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: white !important;
-    font-size: 24px;
-    z-index: 100;
-    text-decoration: none;
-    opacity: 0.9;
-    transition: opacity 0.2s ease;
+.reels-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--background);
 }
 
-.simple-plus-icon:hover {
+.reels-scroll {
+  width: 100%;
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.reels-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reel-item {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  background: var(--background);
+}
+
+.reel-media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+}
+
+.reel-media video,
+.reel-media img,
+.story-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.media-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  gap: 20px;
+}
+
+.media-placeholder i {
+  font-size: 80px;
+  opacity: 0.5;
+}
+
+.play-indicator,
+.double-tap-heart {
+  display: none;
+}
+
+.reel-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.reel-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 60px 20px 20px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+
+.back-button {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+}
+
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--text-dim);
+  transition: all 0.2s ease;
+}
+
+.progress-dot.active {
+  width: 24px;
+  background: var(--text);
+}
+
+.action-buttons {
+  position: absolute;
+  right: 20px;
+  bottom: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 25px;
+  z-index: 10;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+  gap: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.action-btn i {
+  font-size: 36px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  transition: all 0.2s ease;
+}
+
+.action-btn span {
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 8px;
+  border-radius: 20px;
+  min-width: 40px;
+  text-align: center;
+  backdrop-filter: blur(5px);
+}
+
+.action-btn.loved i {
+  color: var(--accent);
+  animation: heartBeat 0.3s ease;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+.action-profile {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--text);
+  object-fit: cover;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+}
+
+.action-profile:hover {
+  transform: scale(1.1);
+  border-color: var(--accent);
+}
+
+.video-info {
+  position: absolute;
+  bottom: 140px;
+  left: 20px;
+  right: 100px;
+  z-index: 10;
+  color: var(--text);
+}
+
+.user-info {
+  margin-bottom: 10px;
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.username {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.username:hover {
+  color: var(--accent);
+}
+
+.verified {
+  display: none;
+}
+
+.follow-btn {
+  background: rgba(255,255,255,0.15);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 20px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.follow-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+
+.caption {
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text);
+}
+
+.caption.expanded {
+  -webkit-line-clamp: unset;
+}
+
+.read-more {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-left: 5px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.3);
+  transition: all 0.2s ease;
+}
+
+.read-more:hover {
+  color: var(--text);
+}
+
+.campaign-info {
+  display: none;
+}
+
+.timestamp {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== VIDEO SCREENSHOT CAROUSEL STYLES ===== */
+.screenshot-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+.carousel-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  position: relative;
+}
+
+.carousel-slide img.story-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.carousel-indicators {
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  z-index: 20;
+  padding: 0 20px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+}
+
+.indicator.active {
+  width: 24px;
+  background: white;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.carousel-nav:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-50%) scale(1.1);
+  border-color: var(--accent);
+}
+
+.carousel-nav.prev {
+  left: 20px;
+}
+
+.carousel-nav.next {
+  right: 20px;
+}
+
+.video-badge {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  z-index: 20;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.video-badge:hover {
+  background: var(--accent);
+  transform: scale(1.05);
+  border-color: var(--accent);
+}
+
+.video-badge i {
+  font-size: 28px;
+  color: white;
+}
+
+.video-badge span {
+  font-size: 14px;
+}
+
+/* Video processing overlay */
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.processing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: white;
+  z-index: 5;
+  backdrop-filter: blur(5px);
+}
+
+.processing-overlay i {
+  font-size: 60px;
+  color: var(--accent);
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.processing-overlay span {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.processing-overlay small {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 5;
+}
+
+.video-container:hover .video-overlay {
+  opacity: 1;
+}
+
+.view-video-btn {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 16px 40px;
+  border-radius: 50px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.view-video-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* Video Modal */
+.video-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.98);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.video-modal.show {
+  display: flex;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+}
+
+.modal-content video {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.close-modal {
+  position: absolute;
+  top: -60px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 36px;
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+}
+
+.close-modal:hover {
+  background: rgba(255,255,255,0.1);
+  transform: rotate(90deg);
+}
+
+.download-btn {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-gradient);
+  color: white;
+  padding: 14px 40px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 10px 20px rgba(255,0,80,0.3);
+}
+
+.download-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 15px 30px rgba(255,0,80,0.4);
+}
+
+/* Screenshot counter badge */
+.screenshot-counter {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.2);
+  z-index: 15;
+}
+
+.screenshot-counter i {
+  color: var(--accent);
+}
+
+/* Quality badge */
+.quality-badge {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.2);
+  z-index: 15;
+}
+
+.quality-badge i {
+  color: #ffd700;
+}
+
+/* Comments Drawer */
+.comments-drawer,
+.share-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111;
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  border-radius: 20px 20px 0 0;
+}
+
+.comments-drawer.show,
+.share-menu.show {
+  transform: translateY(0);
+}
+
+.drawer-header {
+  padding: 20px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.drawer-close {
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.drawer-close:hover {
+  background: #333;
+  transform: rotate(90deg);
+}
+
+.comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #111;
+}
+
+.comment-item {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
     opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Toggle Header Button */
-.toggle-header-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    color: white !important;
-    font-size: 20px;
-    z-index: 100;
-    cursor: pointer;
+.comment-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #333;
+}
+
+.comment-user {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.comment-text {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.comment-time {
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.comment-input-area {
+  padding: 15px 20px 25px;
+  border-top: 1px solid #333;
+  display: flex;
+  gap: 12px;
+  background: #111;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: 1px solid #333;
+  border-radius: 40px;
+  outline: none;
+  font-size: 16px;
+  background: #1a1a1a;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.comment-input:focus {
+  border-color: var(--accent);
+  background: #222;
+}
+
+.comment-send {
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  padding: 0 30px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comment-send:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(255,0,80,0.3);
+}
+
+/* Share Menu */
+.share-menu {
+  padding: 20px;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  margin-bottom: 20px;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-option:hover {
+  transform: scale(1.1);
+}
+
+.share-option i {
+  width: 60px;
+  height: 60px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--text);
+  border: 1px solid #333;
+  transition: all 0.2s ease;
+}
+
+.share-option:hover i {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.share-option span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 20px;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 15px;
+  cursor: pointer;
+  background: #1a1a1a;
+  margin-top: 10px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.menu-item:hover {
+  background: #222;
+  border-color: var(--accent);
+}
+
+.menu-item i {
+  width: 24px;
+  color: var(--text-muted);
+  font-size: 20px;
+}
+
+/* Empty State */
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  color: var(--text);
+  text-align: center;
+  padding: 20px;
+}
+
+.empty-icon {
+  font-size: 120px;
+  color: var(--text-dim);
+  margin-bottom: 30px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+.empty-title {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.empty-text {
+  color: var(--text-muted);
+  margin-bottom: 30px;
+  max-width: 300px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.empty-btn {
+  background: var(--accent-gradient);
+  color: white;
+  padding: 18px 40px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(255,0,80,0.3);
+}
+
+.empty-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 30px rgba(255,0,80,0.4);
+}
+
+/* Plus Button */
+.plus-button {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  width: 70px !important;
+  height: 70px !important;
+  border-radius: 50% !important;
+  background: var(--accent-gradient) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: white !important;
+  text-decoration: none !important;
+  z-index: 100 !important;
+  font-size: 30px !important;
+  border: none !important;
+  box-shadow: 0 10px 20px rgba(255,0,80,0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.plus-button:hover {
+  transform: scale(1.1) rotate(90deg) !important;
+  box-shadow: 0 15px 30px rgba(255,0,80,0.4) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .reel-header {
+    padding: 50px 15px 15px;
+  }
+  
+  .back-button {
+    width: 50px;
+    height: 50px;
+    font-size: 26px;
+  }
+  
+  .progress-dot {
+    width: 5px;
+    height: 5px;
+  }
+  
+  .progress-dot.active {
+    width: 30px;
+  }
+  
+  .action-buttons {
+    right: 15px;
+    bottom: 130px;
+    gap: 28px;
+  }
+  
+  .action-btn i {
+    font-size: 42px;
+  }
+  
+  .action-btn span {
+    font-size: 15px;
+    padding: 5px 10px;
+    min-width: 45px;
+  }
+  
+  .action-profile {
+    width: 60px;
+    height: 60px;
+    border-width: 2.5px;
+  }
+  
+  .video-info {
+    left: 15px;
+    bottom: 130px;
+    right: 90px;
+  }
+  
+  .username {
+    font-size: 18px;
+  }
+  
+  .follow-btn {
+    padding: 10px 24px;
+    font-size: 15px;
+  }
+  
+  .caption {
+    font-size: 17px;
+    -webkit-line-clamp: 3;
+  }
+  
+  .read-more {
+    font-size: 16px;
+  }
+  
+  .timestamp {
+    font-size: 15px;
+    margin-top: 12px;
+  }
+  
+  .plus-button {
+    bottom: 25px !important;
+    right: 25px !important;
+    width: 75px !important;
+    height: 75px !important;
+    font-size: 32px !important;
+  }
+  
+  .carousel-nav {
     width: 36px;
     height: 36px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid rgba(255,255,255,0.3);
-    backdrop-filter: blur(4px);
-    transition: all 0.2s ease;
-}
-
-.toggle-header-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-}
-
-/* For mobile, adjust position to account for safe area */
-@media only screen and (max-width: 768px) {
-    .simple-plus-icon {
-        top: max(20px, env(safe-area-inset-top, 20px));
-        right: max(20px, env(safe-area-inset-right, 20px));
-    }
-    
-    .toggle-header-btn {
-        top: max(20px, env(safe-area-inset-top, 20px));
-        left: max(20px, env(safe-area-inset-left, 20px));
-    }
-}
-
-.journey-stories .stories-header {
-    padding: 0;
-    background: var(--bg-overlay);
-    backdrop-filter: blur(12px);
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border-light);
-    width: 100%;
-}
-
-/* Campaign Info Header - Collapsible */
-.journey-stories .campaign-info-header {
-    padding: 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-light);
-    width: 100%;
-    position: relative;
-    transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-    transform-origin: top;
-}
-
-.journey-stories .campaign-info-header.collapsed {
-    transform: translateY(-100%);
-    opacity: 0;
-    margin-top: -100%;
-    pointer-events: none;
-    position: absolute;
-}
-
-.journey-stories .campaign-title {
+    font-size: 18px;
+  }
+  
+  .video-badge {
+    top: 70px;
+    right: 15px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .video-badge i {
     font-size: 20px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-    padding-right: 60px; /* Space for plus icon */
-}
-
-.journey-stories .campaign-meta {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.journey-stories .time-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px;
-    background: var(--bg-progress);
-    border-radius: 100px;
-    font-size: 13px;
-}
-
-.journey-stories .time-indicator.warning {
-    color: var(--warning-color);
-}
-
-.journey-stories .time-indicator.danger {
-    color: var(--danger-color);
-}
-
-.journey-stories .day-progress-container {
-    padding: 8px 16px;
-    background: var(--bg-progress);
-    backdrop-filter: blur(8px);
-    width: 100%;
-    transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-    transform-origin: top;
-}
-
-.journey-stories .day-progress-container.collapsed {
-    transform: translateY(-100%);
-    opacity: 0;
-    margin-top: -100%;
-    pointer-events: none;
-    position: absolute;
-}
-
-.journey-stories .progress-dots {
-    padding: 8px 16px;
-    display: flex;
-    gap: 4px;
-    justify-content: center;
-    background: var(--bg-dots);
-    width: 100%;
-    transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-    transform-origin: top;
-}
-
-.journey-stories .progress-dots.collapsed {
-    transform: translateY(-100%);
-    opacity: 0;
-    margin-top: -100%;
-    pointer-events: none;
-    position: absolute;
-}
-
-.journey-stories .story-media-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-}
-
-.journey-stories .story-media {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-.journey-stories .media-meta {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    background: var(--overlay-gradient);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--text-primary);
-    width: 100%;
-    z-index: 10;
-}
-
-.journey-stories .day-badge {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    padding: 6px 14px;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(4px);
-    border-radius: 100px;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid var(--border-medium);
-    font-size: 13px;
-    font-weight: 600;
-    z-index: 10;
-}
-
-.journey-stories .story-content-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px 16px;
-    background: var(--overlay-gradient-bottom);
-    color: var(--text-primary);
-    width: 100%;
-    z-index: 10;
-}
-
-.journey-stories .story-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 16px;
-    width: 100%;
-}
-
-.journey-stories .action-group {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.journey-stories .comments-drawer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    background: var(--drawer-bg);
-    border-radius: 20px 20px 0 0;
-    z-index: 2000;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    width: 100%;
-    max-height: 70vh;
-    overflow-y: auto;
-    color: var(--drawer-text);
-}
-
-.journey-stories .comments-drawer.show {
-    transform: translateY(0);
-}
-
-.journey-stories .empty-story {
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--empty-bg);
-    color: var(--text-primary);
-    text-align: center;
-    height: 100%;
-    width: 100%;
-}
-
-.journey-stories .mobile-popup-menu {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    background: var(--drawer-bg);
-    border-radius: 20px 20px 0 0;
-    z-index: 3000;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    width: 100%;
-}
-
-.journey-stories .mobile-popup-menu.show {
-    transform: translateY(0);
-}
-
-.journey-stories .story-card {
-    width: 100%;
-    background: #000;
-}
-
-.journey-stories .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--text-secondary);
-}
-
-.journey-stories .dot.active {
-    width: 18px;
-    background: var(--accent-color);
-    border-radius: 3px;
-}
-
-.journey-stories .loved i {
-    color: var(--heart-color) !important;
-}
-
-/* Time Remaining Badge */
-.journey-stories .time-remaining-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(4px);
-    border-radius: 100px;
+  }
+  
+  .video-badge span {
+    display: none;
+  }
+  
+  .screenshot-counter,
+  .quality-badge {
+    bottom: 70px;
+    padding: 6px 12px;
     font-size: 12px;
-    font-weight: 600;
+  }
+  
+  .modal-content {
+    width: 95%;
+  }
+  
+  .close-modal {
+    top: -50px;
+    font-size: 30px;
+  }
+  
+  .download-btn {
+    bottom: -50px;
+    padding: 12px 30px;
+    font-size: 14px;
+  }
+  
+  .comment-input {
+    padding: 14px 18px;
+    font-size: 15px;
+  }
+  
+  .comment-send {
+    padding: 0 25px;
+  }
+  
+  .share-option i {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
 }
 
-.journey-stories .time-remaining-badge.warning {
-    color: var(--warning-color);
-    border: 1px solid var(--warning-color);
-}
-
-.journey-stories .time-remaining-badge.danger {
-    color: var(--danger-color);
-    border: 1px solid var(--danger-color);
-}
-
-.journey-stories .time-remaining-badge.success {
-    color: var(--success-color);
-    border: 1px solid var(--success-color);
-}
-
-/* Progress Stats - Modified to accommodate menu icon */
-.journey-stories .progress-stats {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 8px;
-    width: 100%;
-}
-
-.journey-stories .stat-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-/* Main Menu Icon - Bottom Right of Progress Stats */
-.journey-main-menu-icon {
-    color: var(--text-primary) !important;
-    font-size: 24px !important;
-    padding: 8px !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 50% !important;
-    transition: all 0.2s ease !important;
-    width: 40px !important;
-    height: 40px !important;
-    background: rgba(255, 255, 255, 0.1) !important;
-    flex-shrink: 0 !important;
-    margin-left: auto !important;
-}
-
-.journey-main-menu-icon:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    transform: scale(1.05) !important;
-}
-
-.journey-main-menu-icon i {
-    color: var(--text-primary) !important;
-    font-size: 20px !important;
-}
-
-/* Mobile Styles for Menu Icon */
-@media only screen and (max-width: 768px) {
-    .journey-main-menu-icon {
-        width: 36px !important;
-        height: 36px !important;
-        padding: 6px !important;
-    }
-    
-    .journey-main-menu-icon i {
-        font-size: 18px !important;
-    }
-}
-
-/* Dark mode support for Menu Icon */
-body.dark-mode .journey-main-menu-icon {
-    background: rgba(255, 255, 255, 0.1) !important;
-}
-
-body.dark-mode .journey-main-menu-icon:hover {
-    background: rgba(255, 255, 255, 0.15) !important;
-}
-
-/* ============================================= */
-/* MOBILE ONLY - EDGE TO EDGE                    */
-/* ============================================= */
-
-@media only screen and (max-width: 768px) {
-    
-    /* Make journey-stories edge to edge */
-    .journey-stories {
-        width: 100vw !important;
-        max-width: 100vw !important;
-        margin-left: calc(-50vw + 50%) !important;
-        margin-right: calc(-50vw + 50%) !important;
-        left: 0 !important;
-        right: 0 !important;
-        position: relative !important;
-    }
-    
-    /* All journey-stories children should be edge-to-edge */
-    .journey-stories > * {
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    
-    /* Header - proper padding */
-    .journey-stories .stories-header {
-        padding: 12px 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* Campaign info header */
-    .journey-stories .campaign-info-header {
-        padding: 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* Progress container */
-    .journey-stories .day-progress-container {
-        padding: 8px 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* Progress dots */
-    .journey-stories .progress-dots {
-        padding: 12px 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-        display: flex !important;
-        gap: 4px !important;
-        justify-content: center !important;
-    }
-    
-    /* Story card */
-    .journey-stories .story-card {
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Media meta overlay */
-    .journey-stories .media-meta {
-        padding: 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* Content overlay */
-    .journey-stories .story-content-overlay {
-        padding: 20px 16px !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* Comments drawer */
-    .journey-stories .comments-drawer {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 20px 16px !important;
-        background: var(--drawer-bg) !important;
-        border-radius: 20px 20px 0 0 !important;
-        z-index: 2000 !important;
-        max-height: 70vh !important;
-        overflow-y: auto !important;
-        box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
-    }
-    
-    /* Mobile menu */
-    .journey-stories .mobile-popup-menu {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 20px 16px !important;
-        background: var(--drawer-bg) !important;
-        border-radius: 20px 20px 0 0 !important;
-        z-index: 3000 !important;
-        box-shadow: 0 -4px 20px var(--shadow-color-strong) !important;
-    }
-    
-    /* Empty state */
-    .journey-stories .empty-story {
-        height: 100% !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 20px 16px !important;
-    }
-    
-    /* Progress stats */
-    .journey-stories .progress-stats {
-        flex-wrap: wrap !important;
-        gap: 12px !important;
-    }
-    
-    /* Menu icon mobile adjustment */
-    .journey-main-menu-icon {
-        width: 36px !important;
-        height: 36px !important;
-        padding: 6px !important;
-    }
-    
-    .journey-main-menu-icon i {
-        font-size: 18px !important;
-    }
-    
-    /* Safe area support */
-    @supports (padding: max(0px)) {
-        .journey-stories .stories-header {
-            padding-top: max(12px, env(safe-area-inset-top, 12px)) !important;
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .campaign-info-header {
-            padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .day-progress-container {
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .progress-dots {
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .story-content-overlay {
-            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .media-meta {
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-            padding-top: max(16px, env(safe-area-inset-top, 16px)) !important;
-        }
-        
-        .journey-stories .day-badge {
-            top: max(16px, env(safe-area-inset-top, 16px)) !important;
-            right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .journey-stories .comments-drawer {
-            padding-left: max(16px, env(safe-area-inset-left, 16px)) !important;
-            padding-right: max(16px, env(safe-area-inset-right, 16px)) !important;
-            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px)) !important;
-        }
-    }
-}
-
-/* Video pause indicator */
-.journey-stories .video-paused::after {
-    content: '⏸';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 60px;
-    color: white;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    opacity: 0.8;
-    pointer-events: none;
-    z-index: 10;
-    animation: fadeOut 0.5s ease forwards;
-}
-
-@keyframes fadeOut {
-    0% { opacity: 0.8; }
-    70% { opacity: 0.8; }
-    100% { opacity: 0; }
-}
-
-/* Simple Plus Icon - Enhanced */
-.simple-plus-icon {
-    position: absolute !important;
-    top: 20px !important;
-    right: 20px !important;
-    color: white !important;
-    font-size: 24px !important;
-    z-index: 100 !important;
-    text-decoration: none !important;
-    opacity: 1 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 40px !important;
-    height: 40px !important;
-    background: rgba(255, 255, 255, 0.2) !important;
-    border-radius: 50% !important;
-    border: 2px solid white !important;
-    box-shadow: none !important;
-    pointer-events: auto !important;
-    backdrop-filter: blur(4px) !important;
-}
-
-.simple-plus-icon i {
-    color: white !important;
-    font-size: 20px !important;
-    display: inline-block !important;
-}
-
-/* Mobile Styles for Plus Icon */
-@media only screen and (max-width: 768px) {
-    .simple-plus-icon {
-        top: max(16px, env(safe-area-inset-top, 16px)) !important;
-        right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        width: 36px !important;
-        height: 36px !important;
-    }
-    
-    .simple-plus-icon i {
-        font-size: 18px !important;
-    }
-    
-    .campaign-info-header .campaign-title {
-        padding-right: 50px !important;
-    }
-}
-
-/* Dark mode support */
-body.dark-mode .simple-plus-icon {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: white !important;
-}
-
-/* Hover effect */
-.simple-plus-icon:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    transform: scale(1.05) !important;
-    transition: all 0.2s ease !important;
-}
-
-/* ============================================= */
-/* VIRTUAL SCROLL ADDITIONS - FIXED */
-/* ============================================= */
-
-.virtual-scroll-container {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    position: relative;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-    transition: height 0.3s ease;
-}
-
-.virtual-scroll-spacer {
-    position: relative;
-    width: 100%;
-    pointer-events: none;
-}
-
-.stories-viewport {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    min-height: 100%;
-}
-
-/* Story cards for virtual scroll */
-.story-card {
-    position: absolute !important;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    height: calc(var(--vh, 1vh) * 100);
-    will-change: transform;
-    background: #000;
-}
-
-/* Ensure media container takes full card height */
-.story-card .story-media-container {
-    height: 100%;
-    width: 100%;
-}
-
-/* ============================================= */
-/* MOBILE ICON ORGANIZATION FIX */
-/* ============================================= */
-
-@media only screen and (max-width: 768px) {
-    /* Reposition header toggle button */
-    .toggle-header-btn {
-        top: max(16px, env(safe-area-inset-top, 16px)) !important;
-        left: max(16px, env(safe-area-inset-left, 16px)) !important;
-        width: 36px !important;
-        height: 36px !important;
-        z-index: 1001 !important; /* Higher than plus icon */
-    }
-    
-    /* Reposition plus icon */
-    .simple-plus-icon {
-        top: max(16px, env(safe-area-inset-top, 16px)) !important;
-        right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        width: 36px !important;
-        height: 36px !important;
-        z-index: 1000 !important;
-    }
-    
-    /* Ensure they don't overlap with campaign title */
-    .campaign-info-header .campaign-title {
-        padding-left: 50px !important; /* Space for toggle button */
-        padding-right: 50px !important; /* Space for plus icon */
-        text-align: center;
-        font-size: 18px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    /* Adjust progress stats for mobile */
-    .journey-stories .progress-stats {
-        padding-top: 8px;
-    }
-    
-    /* Make sure main menu icon doesn't get squished */
-    .journey-main-menu-icon {
-        margin-left: 8px !important;
-        flex-shrink: 0 !important;
-    }
-    
-    /* Header collapsed state adjustments */
-    .campaign-info-header.collapsed + .day-progress-container.collapsed + .progress-dots.collapsed {
-        display: none;
-    }
-}
-
-/* Extra small devices */
-@media only screen and (max-width: 480px) {
-    .campaign-info-header .campaign-title {
-        font-size: 16px;
-        padding-left: 45px !important;
-        padding-right: 45px !important;
-    }
-    
-    .toggle-header-btn,
-    .simple-plus-icon {
-        width: 32px !important;
-        height: 32px !important;
-    }
-    
-    .toggle-header-btn i,
-    .simple-plus-icon i {
-        font-size: 16px !important;
-    }
-}
-
-/* Fix for notched phones */
-@supports (padding: max(0px)) {
-    @media only screen and (max-width: 768px) {
-        .toggle-header-btn {
-            top: max(16px, env(safe-area-inset-top, 16px)) !important;
-            left: max(16px, env(safe-area-inset-left, 16px)) !important;
-        }
-        
-        .simple-plus-icon {
-            top: max(16px, env(safe-area-inset-top, 16px)) !important;
-            right: max(16px, env(safe-area-inset-right, 16px)) !important;
-        }
-        
-        .campaign-info-header .campaign-title {
-            padding-left: max(50px, env(safe-area-inset-left, 50px)) !important;
-            padding-right: max(50px, env(safe-area-inset-right, 50px)) !important;
-        }
-    }
+@media (min-width: 1600px) {
+  .action-btn i {
+    font-size: 48px;
+  }
+  
+  .action-btn span {
+    font-size: 18px;
+    padding: 8px 16px;
+  }
+  
+  .action-profile {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .username {
+    font-size: 22px;
+  }
+  
+  .caption {
+    font-size: 20px;
+  }
+  
+  .video-badge {
+    padding: 16px 32px;
+    font-size: 18px;
+  }
+  
+  .video-badge i {
+    font-size: 36px;
+  }
 }
 </style>
 
-<!-- ============================================= -->
-<!-- JOURNEY STORIES - HTML                        -->
-<!-- ============================================= -->
 
-<div class="journey-stories">
-    
-    <!-- Toggle Header Button - New! -->
-    <div class="toggle-header-btn" onclick="toggleHeader()" id="toggleHeaderBtn" title="Toggle header">
-        <i class="fas fa-chevron-up" id="toggleHeaderIcon"></i>
+<div class="reels-container">
+    <!-- Header with back button and progress -->
+    <div class="reel-header">
+        <a href="javascript:history.back()" class="back-button" aria-label="Go back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="progress-indicator">
+            {% for activity in activities %}
+            <div class="progress-dot {% if forloop.first %}active{% endif %}"></div>
+            {% endfor %}
+        </div>
     </div>
-    
-    <!-- Simple Plus Icon - Inside journey-stories, top right -->
+
+    <!-- Plus Button (only for campaign owner) -->
     {% if user == campaign.user.user %}
-    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="simple-plus-icon" title="Add new day">
+    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="plus-button" aria-label="Create new activity">
         <i class="fas fa-plus"></i>
     </a>
     {% endif %}
-    
-    <!-- === CAMPAIGN INFO HEADER - NOW COLLAPSIBLE === -->
-    <div class="campaign-info-header" id="campaignHeader">
-        <div class="campaign-title">
-            {{ campaign.title }}
-            {% if not campaign.duration %}
-                <span class="time-remaining-badge success" style="margin-left: 8px;">
-                    <i class="fas fa-infinity"></i> Ongoing
-                </span>
-            {% endif %}
-        </div>
-        
-        <div class="campaign-meta">
-            <!-- Time Remaining - Now using real-time calculation -->
-            {% if campaign.duration %}
-                {% if campaign.days_left is not None %}
-                    {% if campaign.duration_unit == 'minutes' %}
-                        <div class="time-indicator {% if campaign.days_left < 60 %}warning{% elif campaign.days_left < 30 %}danger{% endif %}">
-                            <i class="far fa-clock"></i>
-                            {{ campaign.days_left }} minutes left
-                        </div>
-                    {% else %}
-                        <div class="time-indicator {% if campaign.days_left < 7 %}warning{% elif campaign.days_left < 3 %}danger{% endif %}">
-                            <i class="far fa-calendar-alt"></i>
-                            {{ campaign.days_left }} days left
-                        </div>
-                    {% endif %}
-                {% endif %}
-            {% endif %}
-            
-            <!-- Creator -->
-            <div class="time-indicator">
-                <i class="fas fa-user"></i>
-                {{ campaign.user.user.username }}
-            </div>
-        </div>
-        
-        <!-- Progress Stats with Main Menu Icon at Bottom Right -->
-        <div class="progress-stats">
-            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                {% if campaign.duration %}
-                    <!-- Time Elapsed -->
-                    <div class="stat-item">
-                        <i class="fas fa-hourglass-start"></i>
-                        <span>Started: {{ campaign.timestamp|date:"M d, Y" }}</span>
-                    </div>
-                    
-                    <!-- Time Remaining Percentage -->
-                    <div class="stat-item">
-                        <i class="fas fa-percent"></i>
-                        <span>{{ campaign.remaining_percentage|floatformat:1 }}% remaining</span>
-                    </div>
-                    
-                    <!-- End Date -->
-                    {% if campaign.end_date %}
-                    <div class="stat-item">
-                        <i class="fas fa-flag-checkered"></i>
-                        <span>Ends: {{ campaign.end_date|date:"M d, Y" }}</span>
-                    </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-            
-            <!-- Main Menu Icon - Bottom Right -->
-            <span onclick="openJourneyMainMenu('{{ campaign.id }}')" class="journey-main-menu-icon" title="Journey Menu">
-                <i class="fas fa-ellipsis-h"></i>
-            </span>
-        </div>
-    </div>
-    
-    <!-- === DAY PROGRESS - NOW COLLAPSIBLE === -->
-    <div class="day-progress-container" id="dayProgressContainer">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <span style="color: var(--text-primary); font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-flag" style="color: var(--accent-color);"></i>
-                {% if activity_count > 0 %}
-                    Day <span id="currentDayDisplay">{{ activity_count }}</span>
-                {% else %}
-                    Day 1
-                {% endif %}
-                
-                {% if campaign.duration %}
-                    <span style="color: var(--text-secondary); font-size: 12px; margin-left: 8px;">
-                        (Target: {{ campaign.duration }} {{ campaign.duration_unit }})
-                    </span>
-                {% endif %}
-            </span>
-            <span style="color: var(--text-tertiary); font-size: 12px;">
-                <span id="currentDayNumber">{{ activity_count }}</span> / 
-                {% if campaign.duration %}
-                    {% if campaign.duration_unit == 'minutes' %}
-                        {{ campaign.duration }}
-                    {% else %}
-                        {{ campaign.duration }}
-                    {% endif %}
-                {% else %}
-                    ∞
-                {% endif %}
-            </span>
-        </div>
-        <div style="width: 100%; height: 4px; background: var(--border-light); border-radius: 2px; overflow: hidden; margin-top: 6px;">
-            <div id="progressBarFill" style="height: 100%; background: var(--accent-gradient); border-radius: 2px; width: {{ progress_percentage|default:"0" }}%;"></div>
-        </div>
-    </div>
-    
-    <!-- === PROGRESS DOTS - NOW COLLAPSIBLE === -->
+
     {% if activities %}
-    <div class="progress-dots" id="progressDots">
+    <!-- Scrollable Reels -->
+    <div class="reels-scroll" id="reelsScroll">
         {% for activity in activities %}
-            <span class="dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
-        {% endfor %}
-    </div>
-    {% endif %}
-    
-    <!-- === VIRTUAL SCROLL STORIES FEED === -->
-    {% if activities %}
-        <!-- Virtual Scroll Container -->
-        <div class="virtual-scroll-container" id="virtualScroller">
-            <!-- Spacer for scrollbar (creates the scrollable area) -->
-            <div class="virtual-scroll-spacer" id="scrollSpacer" style="height: {{ activities|length }}00vh;"></div>
-            
-            <!-- Stories Viewport - absolutely positioned container -->
-            <div class="stories-viewport" id="storiesViewport">
-                {% for activity in activities %}
-                <!-- YOUR ORIGINAL STORY CARD - COMPLETELY UNCHANGED, just added transform -->
-                <div class="story-card" 
-                     id="story-{{ activity.id }}"
-                     data-story-id="{{ activity.id }}"
-                     data-story-index="{{ forloop.counter0 }}"
-                     style="transform: translateY({{ forloop.counter0 }}00vh);">
-                    
-                    <!-- === YOUR COMPLETE ORIGINAL STORY CARD CONTENT - NOTHING CHANGED === -->
-                    <div class="story-media-container">
-                        
-                        <!-- === MEDIA === -->
-                        {% if activity.file %}
-                            {% if activity.file.resource_type == 'video' %}
-                                <video 
-                                    src="{{ activity.file.url }}" 
-                                    class="story-media"
-                                    autoplay
-                                    loop
-                                    playsinline
-                                    disableRemotePlayback
-                                    webkit-playsinline
-                                    onclick="toggleVideoPlayPause(this, event)">
-                                </video>
-                            {% elif activity.file.resource_type == 'image' %}
-                                <img 
-                                    src="{{ activity.file.url }}" 
-                                    class="story-media"
-                                    loading="lazy"
-                                    onerror="this.src='{% static 'images/default-image.png' %}'">
-                            {% else %}
-                                <div style="width: 100%; height: 100%; background: var(--empty-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary); text-align: center;">
-                                    <i class="fas fa-file-alt" style="font-size: 56px; color: var(--accent-color); margin-bottom: 16px;"></i>
-                                    <span style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Document attached</span>
-                                    <small style="font-size: 14px; color: var(--text-secondary);">{{ activity.file.name|slice:"20:" }}</small>
-                                    <a href="{{ activity.file.url }}" target="_blank" style="color: var(--accent-color); margin-top: 16px; text-decoration: none;">
-                                        <i class="fas fa-download"></i> Download
-                                    </a>
-                                </div>
-                            {% endif %}
-                        {% else %}
-                            <div style="width: 100%; height: 100%; background: var(--empty-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-primary); text-align: center;">
-                                <i class="fas fa-pencil-alt" style="font-size: 56px; color: var(--accent-color); margin-bottom: 16px;"></i>
-                                <span style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Text Update</span>
-                                <small style="font-size: 14px; color: var(--text-secondary);">Day {{ forloop.counter }} of the journey</small>
+        <!-- Single Reel -->
+        <div class="reel-item" data-index="{{ forloop.counter0 }}" data-id="{{ activity.id }}">
+            <!-- Media Container -->
+            <div class="reel-media" onclick="handleMediaClick(event, '{{ activity.id }}')">
+                {% if activity.is_video and activity.has_screenshots_var %}
+                    <!-- Story-style carousel for video screenshots -->
+                    <div class="screenshot-carousel" id="carousel-{{ activity.id }}">
+                        <div class="carousel-track">
+                            {% for screenshot in activity.screenshots_list %}
+                            <div class="carousel-slide {% if forloop.first %}active{% endif %}">
+                                <picture>
+                                    <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
+                                    <img 
+                                        src="{{ screenshot.image.url }}?q_auto&f_auto" 
+                                        loading="lazy"
+                                        decoding="async"
+                                        fetchpriority="{% if forloop.parentloop.first and forloop.first %}high{% else %}low{% endif %}"
+                                        alt="Activity moment {{ forloop.counter }}"
+                                        class="story-image"
+                                        onclick="openVideoModal('{{ activity.id }}')">
+                                </picture>
                             </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Carousel indicators -->
+                        {% if activity.screenshot_count_total > 1 %}
+                        <div class="carousel-indicators">
+                            {% for screenshot in activity.screenshots_list %}
+                            <button class="indicator {% if forloop.first %}active{% endif %}" 
+                                    onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"
+                                    aria-label="Go to slide {{ forloop.counter }}">
+                            </button>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Navigation buttons -->
+                        <button class="carousel-nav prev" onclick="prevSlide('{{ activity.id }}')" aria-label="Previous slide">❮</button>
+                        <button class="carousel-nav next" onclick="nextSlide('{{ activity.id }}')" aria-label="Next slide">❯</button>
                         {% endif %}
                         
-                        <!-- === DAY BADGE === -->
-                        <span class="day-badge">
-                            <i class="fas fa-calendar-alt"></i> Day {{ activity.day_number }}
-                            {% if campaign.duration %}
-                                / {{ campaign.duration }}
-                            {% endif %}
-                        </span>
-                        
-                        <!-- === CREATOR OVERLAY === -->
-                        <div class="media-meta">
-                            <a href="{% url 'profile_view' username=campaign.user.user.username %}">
-                                <img 
-                                    src="{{ campaign.user.image.url }}" 
-                                    style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--text-primary); object-fit: cover;"
-                                    onerror="this.src='{% static 'images/default-profile.png' %}'">
-                            </a>
-                            <div>
-                                <a href="{% url 'profile_view' username=campaign.user.user.username %}" style="color: var(--text-primary); font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
-                                    {{ campaign.user.user.username }}
-                                    {% if campaign.user.profile_verified %}
-                                        <i class="fas fa-check-circle" style="color: var(--accent-color);"></i>
-                                    {% endif %}
-                                </a>
-                                <span style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
-                                    <i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago
-                                </span>
-                            </div>
+                        <!-- Video indicator -->
+                        <div class="video-badge" onclick="openVideoModal('{{ activity.id }}')">
+                            <i class="fas fa-play-circle"></i>
+                            <span>Watch Full Video</span>
                         </div>
                         
-                        <!-- === CONTENT OVERLAY === -->
-                        <div class="story-content-overlay">
-                            
-                            <!-- Story text -->
-                            <div style="font-size: 16px; line-height: 1.5; margin-bottom: 16px;">
-                                {% if activity.content|length > 100 %}
-                                    <div id="story-short-{{ activity.id }}" style="display: block;">
-                                        {{ activity.content|truncatechars:100|safe }}
-                                        <span onclick="showStoryFull('{{ activity.id }}', event)" style="color: var(--accent-color); font-weight: 600; cursor: pointer; margin-left: 4px; display: inline-block;">
-                                            See More
-                                        </span>
-                                    </div>
-                                    <div id="story-full-{{ activity.id }}" style="display: none;">
-                                        {{ activity.content|safe }}
-                                        <span onclick="showStoryShort('{{ activity.id }}', event)" style="color: var(--accent-color); font-weight: 600; cursor: pointer; margin-left: 4px; display: inline-block;">
-                                            See Less
-                                        </span>
-                                    </div>
-                                {% else %}
-                                    {{ activity.content|safe }}
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Action buttons -->
-                            <div class="story-actions">
-                                <div class="action-group">
-                                    <!-- Love -->
-                                    <span class="love-icon-story {% if user in activity.loves.all %}loved{% endif %}" 
-                                          data-activity-id="{{ activity.id }}" 
-                                          onclick="loveActivityStory('{{ activity.id }}', event)"
-                                          style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 16px; font-weight: 600; cursor: pointer;">
-                                        <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart" style="font-size: 24px;"></i>
-                                        <span id="story-love-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
-                                    </span>
-                                    
-                                    <!-- Comment -->
-                                    <span onclick="openComments('{{ activity.id }}')" style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 16px; font-weight: 600; cursor: pointer;">
-                                        <i class="far fa-comment" style="font-size: 24px;"></i>
-                                        <span>{{ activity.comments.count|format_count }}</span>
-                                    </span>
-                                </div>
-                                
-                                <!-- Menu -->
-                                <span onclick="openActivityMenu('{{ activity.id }}')" style="color: var(--text-primary); font-size: 24px; padding: 8px; cursor: pointer;">
-                                    <i class="fas fa-ellipsis-h"></i>
-                                </span>
-                            </div>
+                        <!-- Screenshot counter -->
+                        <div class="screenshot-counter">
+                            <i class="fas fa-images"></i>
+                            <span>{{ activity.screenshot_count_total }} photos</span>
+                        </div>
+                        
+                        <!-- Quality badge -->
+                        <div class="quality-badge">
+                            <i class="fas fa-hd"></i>
+                            <span>HD</span>
                         </div>
                     </div>
                     
-                    <!-- === COMMENTS DRAWER === -->
-                    <div id="comments-drawer-{{ activity.id }}" class="comments-drawer" style="display: none;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--drawer-border);">
-                            <h4 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; color: var(--drawer-text);">
-                                <i class="far fa-comments" style="color: var(--drawer-secondary);"></i> Supporters
-                            </h4>
-                            <span onclick="closeComments('{{ activity.id }}')" style="font-size: 20px; color: var(--drawer-secondary); cursor: pointer; padding: 8px;">
-                                <i class="fas fa-times"></i>
-                            </span>
-                        </div>
-                        <div id="comments-container-{{ activity.id }}">
-                            <div style="text-align: center; padding: 32px 0; color: var(--drawer-secondary);">
-                                <i class="far fa-spinner fa-spin"></i> Loading...
+                {% elif activity.file %}
+                    {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' or activity.file.url|lower|slice:'-4:' == '.mov' or activity.file.url|lower|slice:'-5:' == '.webm' %}
+                        <!-- Single video without screenshots yet -->
+                        <div class="video-container">
+                            <video 
+                                src="{{ activity.file.url }}" 
+                                loop
+                                playsinline
+                                muted
+                                id="video-{{ activity.id }}"
+                                preload="metadata"
+                                poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}"
+                                loading="lazy">
+                            </video>
+                            
+                            {% if activity.video_processed %}
+                            <div class="video-overlay">
+                                <button class="view-video-btn" onclick="openVideoModal('{{ activity.id }}')">
+                                    <i class="fas fa-play"></i> Play Video
+                                </button>
                             </div>
+                            {% else %}
+                            <div class="processing-overlay">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Processing video...</span>
+                                <small>Creating HD screenshots</small>
+                            </div>
+                            {% endif %}
                         </div>
-                        <div style="margin-top: 16px; background: var(--drawer-input-bg); border-radius: 24px; padding: 12px; display: flex;">
-                            <textarea id="comment-input-{{ activity.id }}" placeholder="Add your support..." rows="1" style="flex: 1; border: none; background: transparent; padding: 8px; resize: none; outline: none; color: var(--drawer-text);"></textarea>
-                            <span onclick="postMobileComment('{{ activity.id }}')" style="color: var(--accent-color); font-weight: 600; padding: 8px 16px; cursor: pointer;">Post</span>
-                        </div>
+                        
+                    {% else %}
+                        <!-- Regular image -->
+                        <picture>
+                            <source srcset="{{ activity.file.url|slice:':-4' }}.webp" type="image/webp">
+                            <img 
+                                src="{{ activity.file.url }}" 
+                                loading="lazy"
+                                decoding="async"
+                                fetchpriority="{% if forloop.first %}high{% else %}low{% endif %}"
+                                alt="Activity image"
+                                onerror="this.src='{% static 'images/default-image.png' %}'">
+                        </picture>
+                    {% endif %}
+                {% else %}
+                    <div class="media-placeholder">
+                        <i class="fas fa-pencil-alt"></i>
+                        <div>Day {{ activity.day_number }} Update</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Video Modal (for full video) -->
+            <div class="video-modal" id="video-modal-{{ activity.id }}">
+                <div class="modal-content">
+                    <button class="close-modal" onclick="closeVideoModal('{{ activity.id }}')" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <video controls autoplay playsinline>
+                        <source src="{{ activity.file.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <a href="#" class="download-btn">
+                        <i class="fas fa-download"></i> Download Video
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gradient Overlay -->
+            <div class="reel-overlay"></div>
+
+            <!-- Side Action Buttons -->
+            <div class="action-buttons">
+                <!-- Profile -->
+                <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action-btn" aria-label="View profile">
+                    <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" decoding="async" alt="Profile" onerror="this.src='{% static 'images/default-profile.png' %}'">
+                </a>
+
+                <!-- Love Button -->
+                <button class="action-btn {% if user in activity.loves.all %}loved{% endif %}" 
+                     onclick="handleLove('{{ activity.id }}', event)"
+                     id="love-{{ activity.id }}"
+                     aria-label="Like">
+                    <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                    <span id="love-count-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
+                </button>
+
+                <!-- Comment Button -->
+                <button class="action-btn" onclick="openComments('{{ activity.id }}', event)" aria-label="Comments">
+                    <i class="far fa-comment"></i>
+                    <span>{{ activity.comment_count|format_count }}</span>
+                </button>
+
+                <!-- Share Button -->
+                <button class="action-btn" onclick="openShareMenu('{{ activity.id }}', event)" aria-label="Share">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+
+            <!-- Video Info -->
+            <div class="video-info">
+                <div class="user-info">
+                    <div class="user-details">
+                        <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">
+                            @{{ campaign.user.user.username }}
+                        </a>
+                        
+                        {% if user != campaign.user.user %}
+                        <button class="follow-btn" onclick="followUser('{{ campaign.user.user.id }}', event)">
+                            Follow
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
+
+                <!-- Caption - Truncated for performance -->
+                <div class="caption" id="caption-{{ activity.id }}">
+                    {{ activity.content|safe }}
+                </div>
+                {% if activity.content|length > 100 %}
+                <span class="read-more" onclick="toggleCaption('{{ activity.id }}', event)">more</span>
+                {% endif %}
+
+                <!-- Timestamp -->
+                <div class="timestamp">
+                    <i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago
+                    <span style="margin-left: 8px;">
+                        <i class="fas fa-calendar-day"></i> Day {{ activity.day_number }}/{{ campaign.duration|default:'∞' }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Comments Drawer - Loaded dynamically only when opened -->
+            <div class="comments-drawer" id="comments-{{ activity.id }}" data-loaded="false">
+                <div class="drawer-header">
+                    <span class="comment-count">{{ activity.comment_count }} comments</span>
+                    <button class="drawer-close" onclick="closeComments('{{ activity.id }}')" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="comments-list" id="comments-list-{{ activity.id }}"></div>
+                <div class="comment-input-area">
+                    <input type="text" class="comment-input" id="comment-{{ activity.id }}" 
+                           placeholder="Add a comment..." maxlength="200" aria-label="Comment input">
+                    <button class="comment-send" onclick="postComment('{{ activity.id }}')">Post</button>
+                </div>
+            </div>
+
+            <!-- Share Menu - Optimized with reduced DOM -->
+            <div class="share-menu" id="share-{{ activity.id }}">
+                <div class="drawer-header">
+                    <span>Share</span>
+                    <button class="drawer-close" onclick="closeShareMenu('{{ activity.id }}')" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="share-options">
+                    <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'whatsapp')" aria-label="Share on WhatsApp">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WA</span>
+                    </button>
+                    <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'twitter')" aria-label="Share on Twitter">
+                        <i class="fab fa-twitter"></i>
+                        <span>X</span>
+                    </button>
+                    <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'facebook')" aria-label="Share on Facebook">
+                        <i class="fab fa-facebook"></i>
+                        <span>FB</span>
+                    </button>
+                    <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'telegram')" aria-label="Share on Telegram">
+                        <i class="fab fa-telegram"></i>
+                        <span>TG</span>
+                    </button>
+                </div>
+                <button class="menu-item" onclick="copyLink('{{ activity.id }}')">
+                    <i class="fas fa-link"></i> Copy link
+                </button>
+                <button class="menu-item" onclick="viewDetails('{{ activity.id }}')">
+                    <i class="fas fa-info-circle"></i> Details
+                </button>
+                {% if user == campaign.user.user %}
+                <button class="menu-item" onclick="deleteActivity('{{ activity.id }}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                {% endif %}
             </div>
         </div>
-    {% else %}
-        <!-- === EMPTY STATE - YOUR ORIGINAL, UNCHANGED === -->
-        <div class="empty-story">
-            <i class="fas fa-compass" style="font-size: 64px; color: var(--accent-color); margin-bottom: 24px; opacity: 0.8;"></i>
-            <h3 style="font-size: 24px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">Every journey starts with Day 1</h3>
-            <p style="font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; max-width: 280px;">
-                Most people quit before they start. You're already different.
-            </p>
-            
-            {% if campaign.duration %}
-                <div style="background: var(--button-bg); padding: 16px; border-radius: 16px; margin-bottom: 24px; max-width: 300px;">
-                    <p style="color: var(--text-secondary); margin-bottom: 8px;">
-                        <i class="fas fa-hourglass-half"></i> 
-                        This {{ campaign.duration_unit }} journey lasts 
-                        <strong>{{ campaign.duration }} {{ campaign.duration_unit }}</strong>
-                    </p>
-                    {% if campaign.end_date %}
-                        <p style="font-size: 13px; color: var(--text-muted);">
-                            Ends: {{ campaign.end_date|date:"M d, Y" }}
-                        </p>
-                    {% endif %}
-                </div>
-            {% endif %}
-            
-            {% if user == campaign.user.user %}
-                <a href="{% url 'create_activity' campaign_id=campaign.id %}" style="background: var(--accent-color); color: var(--text-primary); padding: 16px 32px; border-radius: 100px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-plus-circle"></i>
-                    Post Day 1 update
-                </a>
-            {% else %}
-                <div style="background: var(--button-bg); padding: 20px; border-radius: 16px; width: 100%; max-width: 300px;">
-                    <p style="color: var(--text-muted); margin-bottom: 8px;">This journey hasn't started yet.</p>
-                    <p style="font-size: 14px; color: var(--text-secondary);">Check back soon — the best stories take time to unfold.</p>
-                </div>
-            {% endif %}
-        </div>
-    {% endif %}
-    
-    <!-- === MOBILE MENU - YOUR ORIGINAL, UNCHANGED === -->
-    <div id="mobile-popup-menu" class="mobile-popup-menu">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--drawer-border);">
-            <span style="font-size: 16px; font-weight: 600; color: var(--drawer-text);">Journey Menu</span>
-            <span onclick="closeMobileMenu()" style="font-size: 20px; color: var(--drawer-secondary); cursor: pointer; padding: 8px;">
-                <i class="fas fa-times"></i>
-            </span>
-        </div>
-        <div id="popup-menu-content"></div>
+        {% endfor %}
     </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-video"></i>
+        </div>
+        <div class="empty-title">No posts yet</div>
+        <div class="empty-text">Be the first to share a moment from this journey!</div>
+        
+        {% if user == campaign.user.user %}
+        <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn">
+            <i class="fas fa-plus"></i> Post first update
+        </a>
+        {% else %}
+        <button class="empty-btn" onclick="followCampaign('{{ campaign.id }}')">
+            <i class="fas fa-bell"></i> Follow
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
+<!-- Optimized JavaScript -->
 <script>
-// =============================================
-// TOGGLE HEADER FUNCTIONALITY - NEW!
-// =============================================
-let headerVisible = true;
-
-function toggleHeader() {
-    const header = document.getElementById('campaignHeader');
-    const progress = document.getElementById('dayProgressContainer');
-    const dots = document.getElementById('progressDots');
-    const icon = document.getElementById('toggleHeaderIcon');
+// Minified and optimized JavaScript
+(function() {
+    'use strict';
     
-    if (headerVisible) {
-        // Hide header
-        header.classList.add('collapsed');
-        if (progress) progress.classList.add('collapsed');
-        if (dots) dots.classList.add('collapsed');
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-    } else {
-        // Show header
-        header.classList.remove('collapsed');
-        if (progress) progress.classList.remove('collapsed');
-        if (dots) dots.classList.remove('collapsed');
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    }
+    // Cache DOM elements
+    const reelsScroll = document.getElementById('reelsScroll');
+    const videos = new Map();
+    const carousels = {};
     
-    headerVisible = !headerVisible;
-    
-    // Small delay to let header collapse complete before recalculating
-    setTimeout(() => {
-        if (window.virtualScroll) {
-            window.virtualScroll.handleResize();
-        }
-    }, 350);
-}
-
-// =============================================
-// VIRTUAL SCROLL - MINIMAL IMPLEMENTATION
-// =============================================
-
-class VirtualScroll {
-    constructor() {
-        this.container = document.getElementById('virtualScroller');
-        if (!this.container) return;
-        
-        this.viewport = document.getElementById('storiesViewport');
-        this.spacer = document.getElementById('scrollSpacer');
-        this.stories = Array.from(document.querySelectorAll('.story-card'));
-        this.totalStories = this.stories.length;
-        this.storyHeight = window.innerHeight;
-        this.visibleRange = { start: -1, end: -1 };
-        this.bufferSize = 1;
-        
-        if (this.totalStories === 0) return;
-        
-        this.init();
-    }
-    
-    init() {
-        // Set spacer height
-        this.spacer.style.height = (this.totalStories * this.storyHeight) + 'px';
-        
-        // Position stories
-        this.stories.forEach((story, index) => {
-            story.style.position = 'absolute';
-            story.style.top = '0';
-            story.style.left = '0';
-            story.style.transform = `translateY(${index * this.storyHeight}px)`;
-        });
-        
-        // Add scroll listener
-        this.container.addEventListener('scroll', () => this.handleScroll(), { passive: true });
-        window.addEventListener('resize', () => this.handleResize());
-        
-        // Initial update
-        this.handleScroll();
-    }
-    
-    handleScroll() {
-        const scrollTop = this.container.scrollTop;
-        const currentIndex = Math.floor(scrollTop / this.storyHeight);
-        
-        // Update progress indicators
-        this.updateProgress(currentIndex);
-        
-        // Calculate visible range
-        const startIndex = Math.max(0, currentIndex - this.bufferSize);
-        const endIndex = Math.min(this.totalStories - 1, currentIndex + 1 + this.bufferSize);
-        
-        // Update visibility if needed
-        if (startIndex !== this.visibleRange.start || endIndex !== this.visibleRange.end) {
-            this.visibleRange = { start: startIndex, end: endIndex };
-            this.updateVisibility();
-        }
-        
-        // Handle video autoplay
-        this.handleVideoAutoplay(currentIndex);
-    }
-    
-    handleResize() {
-        this.storyHeight = window.innerHeight;
-        this.spacer.style.height = (this.totalStories * this.storyHeight) + 'px';
-        
-        this.stories.forEach((story, index) => {
-            story.style.transform = `translateY(${index * this.storyHeight}px)`;
-        });
-        
-        this.handleScroll();
-    }
-    
-    updateVisibility() {
-        this.stories.forEach((story, index) => {
-            const isVisible = index >= this.visibleRange.start && index <= this.visibleRange.end;
-            story.style.display = isVisible ? 'block' : 'none';
-            
-            // Pause videos when hidden
-            if (!isVisible) {
-                const video = story.querySelector('video');
-                if (video) video.pause();
-            }
-        });
-    }
-    
-    updateProgress(index) {
-        // Update day display
-        const dayDisplay = document.getElementById('currentDayDisplay');
-        const dayNumber = document.getElementById('currentDayNumber');
-        const progressBar = document.getElementById('progressBarFill');
-        
-        if (dayDisplay) dayDisplay.textContent = index + 1;
-        if (dayNumber) dayNumber.textContent = index + 1;
-        if (progressBar) {
-            const progress = ((index + 1) / this.totalStories) * 100;
-            progressBar.style.width = progress + '%';
-        }
-        
-        // Update dots
-        document.querySelectorAll('.progress-dots .dot').forEach((dot, i) => {
-            if (i === index) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
-        });
-    }
-    
-    handleVideoAutoplay(currentIndex) {
-        // Pause all videos
-        this.stories.forEach(story => {
-            const video = story.querySelector('video');
-            if (video) video.pause();
-        });
-        
-        // Play current video
-        const currentStory = this.stories[currentIndex];
-        if (currentStory) {
-            const video = currentStory.querySelector('video');
-            if (video) {
-                video.muted = false;
-                video.play().catch(e => {
-                    video.muted = true;
-                    video.play();
-                });
-            }
-        }
-    }
-}
-
-// =============================================
-// YOUR EXISTING FUNCTIONS (PRESERVED)
-// =============================================
-function showStoryFull(id, e) {
-    e.preventDefault();
-    e.stopPropagation();
-    document.getElementById('story-short-'+id).style.display = 'none';
-    document.getElementById('story-full-'+id).style.display = 'block';
-}
-
-function showStoryShort(id, e) {
-    e.preventDefault();
-    e.stopPropagation();
-    document.getElementById('story-short-'+id).style.display = 'block';
-    document.getElementById('story-full-'+id).style.display = 'none';
-}
-
-function loveActivityStory(id, e) {
-    e.preventDefault();
-    e.stopPropagation();
-    const btn = document.querySelector(`.love-icon-story[data-activity-id="${id}"]`);
-    const icon = btn.querySelector('i');
-    const count = document.getElementById('story-love-'+id);
-    const isLoved = btn.classList.contains('loved');
-    
-    if (isLoved) {
-        btn.classList.remove('loved');
-        icon.classList.remove('fas');
-        icon.classList.add('far');
-        count.textContent = Math.max(0, parseInt(count.textContent.replace(/,/g, '')) - 1).toLocaleString();
-    } else {
-        btn.classList.add('loved');
-        icon.classList.remove('far');
-        icon.classList.add('fas');
-        count.textContent = (parseInt(count.textContent.replace(/,/g, '')) + 1).toLocaleString();
-        btn.style.transform = 'scale(1.3)';
-        setTimeout(() => btn.style.transform = 'scale(1)', 200);
-    }
-    
-    fetch(`/love_activity/${id}/`, {
-        method: 'POST',
-        headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
-        body: JSON.stringify({})
-    })
-    .then(r => r.json())
-    .then(d => { if (d.love_count) count.textContent = d.love_count.toLocaleString(); })
-    .catch(() => {});
-}
-
-function openComments(id) {
-    document.querySelectorAll('.comments-drawer').forEach(d => d.style.display = 'none');
-    const drawer = document.getElementById('comments-drawer-'+id);
-    drawer.style.display = 'block';
-    drawer.scrollIntoView({behavior: 'smooth'});
-    
-    fetch(`/get_activity_comments/${id}/?limit=5`)
-        .then(r => r.json())
-        .then(data => {
-            let html = '';
-            if (!data.comments || data.comments.length === 0) {
-                html = '<div style="text-align:center; padding:32px; color:var(--drawer-secondary);">Be the first to support this milestone</div>';
-            } else {
-                data.comments.forEach(c => {
-                    html += `<div style="display:flex; gap:12px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--drawer-border);">
-                        <img src="${c.user_image || '/static/images/default-profile.png'}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
-                        <div style="flex:1;">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                                <a href="/user-profile/@${c.username}/" style="font-weight:700; color:var(--drawer-text); text-decoration:none;">${c.username}</a>
-                                <span style="font-size:12px; color:var(--drawer-secondary);">${c.timestamp}</span>
-                            </div>
-                            <p style="font-size:14px; color:var(--drawer-text);">${escapeHtml(c.content)}</p>
-                        </div>
-                    </div>`;
-                });
-            }
-            document.getElementById('comments-container-'+id).innerHTML = html;
-        });
-}
-
-function closeComments(id) {
-    document.getElementById('comments-drawer-'+id).style.display = 'none';
-}
-
-function postMobileComment(id) {
-    const input = document.getElementById('comment-input-'+id);
-    if (!input.value.trim()) return;
-    
-    fetch('/post_activity_comment/', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
-        body: JSON.stringify({activity_id: id, content: input.value.trim()})
-    })
-    .then(r => r.json())
-    .then(() => {
-        input.value = '';
-        openComments(id);
-        const countSpan = document.querySelector(`[onclick="openComments('${id}')"] span:last-child`);
-        if (countSpan) countSpan.textContent = (parseInt(countSpan.textContent) + 1).toLocaleString();
-    });
-}
-
-function openActivityMenu(id) {
-    document.getElementById('popup-menu-content').innerHTML = `
-        <a href="/activity/${id}/" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-info-circle" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> View details
-        </a>
-        <a href="#" onclick="copyLink('${id}'); return false;" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-link" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Copy link
-        </a>`;
-    document.getElementById('mobile-popup-menu').classList.add('show');
-}
-
-function openJourneyMainMenu(campaignId) {
-    document.getElementById('popup-menu-content').innerHTML = `
-        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-chart-line" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Statistics
-        </a>
-        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-cog" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Journey Settings
-        </a>
-        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-share-alt" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Share Journey
-        </a>
-        <a href="#" style="display:flex; align-items:center; padding:16px; color:var(--drawer-text); text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-download" style="width:24px; margin-right:16px; color:var(--drawer-secondary);"></i> Export Journey
-        </a>
-        <div style="height:1px; background:var(--drawer-border); margin:8px 0;"></div>
-        <a href="#" onclick="reportJourney('${campaignId}'); return false;" style="display:flex; align-items:center; padding:16px; color:#e74c3c; text-decoration:none; border-radius:12px; font-size:16px;">
-            <i class="fas fa-flag" style="width:24px; margin-right:16px; color:#e74c3c;"></i> Report Journey
-        </a>
-    `;
-    document.getElementById('mobile-popup-menu').classList.add('show');
-}
-
-function reportJourney(campaignId) {
-    alert('Report journey feature coming soon');
-    closeMobileMenu();
-}
-
-function toggleMobileMenu() {
-    document.getElementById('mobile-popup-menu').classList.toggle('show');
-}
-
-function closeMobileMenu() {
-    document.getElementById('mobile-popup-menu').classList.remove('show');
-}
-
-function copyLink(id) {
-    navigator.clipboard.writeText(window.location.origin + '/activity/' + id + '/');
-    alert('Link copied!');
-    closeMobileMenu();
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function toggleVideoPlayPause(video, event) {
-    event.stopPropagation();
-    
-    if (video.paused) {
-        video.play();
-    } else {
-        video.pause();
-        
-        const container = video.closest('.story-media-container');
-        const indicator = document.createElement('div');
-        indicator.className = 'video-paused';
-        indicator.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 60px;
-            color: white;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            z-index: 10;
-            pointer-events: none;
-            animation: fadeOut 0.5s ease forwards;
-        `;
-        indicator.innerHTML = '⏸';
-        
-        if (!document.querySelector('#pause-animation')) {
-            const style = document.createElement('style');
-            style.id = 'pause-animation';
-            style.textContent = `
-                @keyframes fadeOut {
-                    0% { opacity: 0.8; }
-                    70% { opacity: 0.8; }
-                    100% { opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        container.appendChild(indicator);
-        
-        setTimeout(() => {
-            if (indicator.parentNode) {
-                indicator.remove();
-            }
-        }, 500);
-    }
-}
-
-// Initialize everything
-document.addEventListener('DOMContentLoaded', function() {
-    // Set viewport height
-    function setVH() {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
-    
-    setVH();
-    window.addEventListener('resize', setVH);
-    
-    // Initialize virtual scroll
-    if (document.querySelectorAll('.story-card').length > 0) {
-        window.virtualScroll = new VirtualScroll();
-    }
-    
-    // Body styles
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-    document.body.style.overflow = 'hidden';
-});
-
-// Keep your existing video autoplay observer
-document.addEventListener('DOMContentLoaded', function() {
-    const observer = new IntersectionObserver((entries) => {
+    // Intersection Observer for lazy loading videos
+    const videoObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target;
             if (entry.isIntersecting) {
-                if (!video.hasAttribute('data-manually-paused')) {
-                    video.muted = false;
-                    video.play().catch(e => {
-                        video.muted = true;
-                        video.play().catch(() => {});
+                video.load();
+                video.play().catch(() => {
+                    video.muted = true;
+                    video.play();
+                });
+            } else {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    // Initialize videos
+    document.querySelectorAll('video').forEach(video => {
+        videoObserver.observe(video);
+    });
+    
+    // Scroll handler with throttling
+    let ticking = false;
+    if (reelsScroll) {
+        reelsScroll.addEventListener('scroll', () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    updateProgress();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+    }
+    
+    function updateProgress() {
+        if (!reelsScroll) return;
+        const scrollTop = reelsScroll.scrollTop;
+        const height = window.innerHeight;
+        const currentIndex = Math.round(scrollTop / height);
+        
+        document.querySelectorAll('.progress-dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
+    }
+    
+    // Optimized love handler with debounce
+    const loveCache = new Map();
+    function handleLove(id, event) {
+        event.stopPropagation();
+        event.preventDefault();
+        
+        const btn = document.getElementById(`love-${id}`);
+        if (!btn) return;
+        
+        const icon = btn.querySelector('i');
+        const countSpan = document.getElementById(`love-count-${id}`);
+        const isLoved = btn.classList.contains('loved');
+        
+        // Optimistic update
+        btn.classList.toggle('loved');
+        icon.className = isLoved ? 'far fa-heart' : 'fas fa-heart';
+        let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+        countSpan.textContent = isLoved ? Math.max(0, count - 1).toLocaleString() : (count + 1).toLocaleString();
+        
+        // Debounced API call
+        if (!loveCache.has(id)) {
+            loveCache.set(id, setTimeout(() => {
+                fetch(`/love_activity/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                }).finally(() => loveCache.delete(id));
+            }, 500));
+        }
+    }
+    
+    // Optimized comments loading with caching
+    const commentsCache = new Map();
+    function openComments(id, event) {
+        event.stopPropagation();
+        
+        const drawer = document.getElementById(`comments-${id}`);
+        if (!drawer) return;
+        
+        drawer.classList.add('show');
+        
+        if (commentsCache.has(id)) {
+            document.getElementById(`comments-list-${id}`).innerHTML = commentsCache.get(id);
+        } else {
+            loadComments(id);
+        }
+    }
+    
+    function loadComments(id) {
+        const container = document.getElementById(`comments-list-${id}`);
+        container.innerHTML = '<div style="text-align:center;padding:32px;color:#666;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        
+        fetch(`/get_activity_comments/${id}/?limit=10`)
+            .then(r => r.json())
+            .then(data => {
+                let html = '';
+                if (!data.comments?.length) {
+                    html = '<div style="text-align:center;padding:32px;color:#666;">No comments yet</div>';
+                } else {
+                    data.comments.forEach(c => {
+                        html += `<div class="comment-item"><img src="${c.user_image || '/static/images/default-profile.png'}" class="comment-avatar" loading="lazy"><div><div class="comment-user">${escapeHtml(c.username)}</div><div class="comment-text">${escapeHtml(c.content)}</div><div class="comment-time">${c.timestamp}</div></div></div>`;
                     });
                 }
+                container.innerHTML = html;
+                commentsCache.set(id, html);
+            });
+    }
+    
+    function postComment(id) {
+        const input = document.getElementById(`comment-${id}`);
+        if (!input?.value.trim()) return;
+        
+        const content = input.value.trim();
+        input.value = '';
+        
+        fetch('/post_activity_comment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({activity_id: id, content})
+        })
+        .then(r => r.json())
+        .then(() => {
+            commentsCache.delete(id);
+            loadComments(id);
+            
+            const countSpan = document.querySelector(`[onclick="openComments('${id}', event)"] span`);
+            if (countSpan) {
+                let current = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+                countSpan.textContent = (current + 1).toLocaleString();
+            }
+        });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function closeComments(id) {
+        document.getElementById(`comments-${id}`)?.classList.remove('show');
+    }
+    
+    function openShareMenu(id, event) {
+        event.stopPropagation();
+        document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('show'));
+        document.getElementById(`share-${id}`)?.classList.add('show');
+    }
+    
+    function closeShareMenu(id) {
+        document.getElementById(`share-${id}`)?.classList.remove('show');
+    }
+    
+    function shareActivity(id, platform) {
+        const url = window.location.origin + '/activity/' + id + '/';
+        const shareUrls = {
+            whatsapp: `https://wa.me/?text=${encodeURIComponent(url)}`,
+            twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`,
+            facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+            telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}`
+        };
+        
+        if (shareUrls[platform]) {
+            window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+        } else if (navigator.share) {
+            navigator.share({url});
+        }
+        closeShareMenu(id);
+    }
+    
+    function copyLink(id) {
+        navigator.clipboard?.writeText(window.location.origin + '/activity/' + id + '/');
+        alert('Link copied!');
+        closeShareMenu(id);
+    }
+    
+    function viewDetails(id) {
+        window.location.href = `/activity/${id}/`;
+    }
+    
+    // Carousel functions
+    function initCarousel(activityId) {
+        if (!carousels[activityId]) {
+            const slides = document.querySelectorAll(`#carousel-${activityId} .carousel-slide`);
+            carousels[activityId] = {
+                currentSlide: 0,
+                totalSlides: slides.length
+            };
+            
+            // Auto-advance if more than 1 slide
+            if (slides.length > 1) {
+                startAutoAdvance(activityId);
+            }
+        }
+    }
+    
+    function startAutoAdvance(activityId) {
+        if (carousels[activityId].interval) {
+            clearInterval(carousels[activityId].interval);
+        }
+        
+        carousels[activityId].interval = setInterval(() => {
+            if (document.getElementById(`carousel-${activityId}`) && 
+                document.getElementById(`carousel-${activityId}`).offsetParent !== null) {
+                nextSlide(activityId);
+            }
+        }, 5000);
+    }
+    
+    function goToSlide(activityId, index) {
+        initCarousel(activityId);
+        const track = document.querySelector(`#carousel-${activityId} .carousel-track`);
+        const slides = document.querySelectorAll(`#carousel-${activityId} .carousel-slide`);
+        const indicators = document.querySelectorAll(`#carousel-${activityId} .indicator`);
+        
+        if (index >= 0 && index < slides.length) {
+            carousels[activityId].currentSlide = index;
+            track.style.transform = `translateX(-${index * 100}%)`;
+            
+            indicators.forEach((ind, i) => {
+                ind.classList.toggle('active', i === index);
+            });
+        }
+    }
+    
+    function nextSlide(activityId) {
+        initCarousel(activityId);
+        const total = carousels[activityId].totalSlides;
+        const current = carousels[activityId].currentSlide;
+        goToSlide(activityId, (current + 1) % total);
+    }
+    
+    function prevSlide(activityId) {
+        initCarousel(activityId);
+        const total = carousels[activityId].totalSlides;
+        const current = carousels[activityId].currentSlide;
+        goToSlide(activityId, (current - 1 + total) % total);
+    }
+    
+    function openVideoModal(activityId) {
+        const modal = document.getElementById(`video-modal-${activityId}`);
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Pause auto-advance for carousel
+            if (carousels[activityId] && carousels[activityId].interval) {
+                clearInterval(carousels[activityId].interval);
+            }
+        }
+    }
+    
+    function closeVideoModal(activityId) {
+        const modal = document.getElementById(`video-modal-${activityId}`);
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            
+            // Resume auto-advance
+            if (carousels[activityId] && carousels[activityId].totalSlides > 1) {
+                startAutoAdvance(activityId);
+            }
+        }
+    }
+    
+    function toggleCaption(id, event) {
+        event.stopPropagation();
+        const caption = document.getElementById(`caption-${id}`);
+        const moreLink = event.target;
+        
+        if (caption.classList.contains('expanded')) {
+            caption.classList.remove('expanded');
+            moreLink.textContent = 'more';
+        } else {
+            caption.classList.add('expanded');
+            moreLink.textContent = 'less';
+        }
+    }
+    
+    // Global click handler for closing modals
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.comments-drawer') && !e.target.closest('[onclick^="openComments"]')) {
+            document.querySelectorAll('.comments-drawer').forEach(d => d.classList.remove('show'));
+        }
+        if (!e.target.closest('.share-menu') && !e.target.closest('[onclick^="openShareMenu"]')) {
+            document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('show'));
+        }
+    });
+    
+    // Handle keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.video-modal.show').forEach(modal => {
+                const id = modal.id.replace('video-modal-', '');
+                closeVideoModal(id);
+            });
+            document.querySelectorAll('.comments-drawer.show').forEach(d => d.classList.remove('show'));
+            document.querySelectorAll('.share-menu.show').forEach(m => m.classList.remove('show'));
+        }
+    });
+    
+    // Expose functions globally
+    window.handleLove = handleLove;
+    window.openComments = openComments;
+    window.closeComments = closeComments;
+    window.postComment = postComment;
+    window.openShareMenu = openShareMenu;
+    window.closeShareMenu = closeShareMenu;
+    window.shareActivity = shareActivity;
+    window.copyLink = copyLink;
+    window.viewDetails = viewDetails;
+    window.toggleCaption = toggleCaption;
+    window.goToSlide = goToSlide;
+    window.nextSlide = nextSlide;
+    window.prevSlide = prevSlide;
+    window.openVideoModal = openVideoModal;
+    window.closeVideoModal = closeVideoModal;
+})();
+
+// Follow user function
+function followUser(userId, event) {
+    event.stopPropagation();
+    const btn = event.target;
+    const originalText = btn.textContent;
+    
+    btn.textContent = 'Following...';
+    btn.disabled = true;
+    
+    fetch('/toggle-follow/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({user_id: userId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.following) {
+            btn.textContent = 'Following';
+            btn.style.background = 'var(--accent)';
+        } else {
+            btn.textContent = 'Follow';
+            btn.style.background = 'rgba(255,255,255,0.15)';
+        }
+    })
+    .catch(() => {
+        btn.textContent = originalText;
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
+}
+
+// Follow campaign function
+function followCampaign(campaignId) {
+    window.location.href = `/campaign/${campaignId}/join_leave/`;
+}
+
+// Delete activity function
+function deleteActivity(activityId) {
+    if (confirm('Are you sure you want to delete this activity?')) {
+        fetch(`/activity/${activityId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(() => {
+            window.location.reload();
+        });
+    }
+}
+
+// Handle media click
+function handleMediaClick(event, activityId) {
+    // Only handle if not clicking on a button
+    if (!event.target.closest('button') && !event.target.closest('.video-badge')) {
+        // Toggle play/pause for videos
+        const video = document.getElementById(`video-${activityId}`);
+        if (video) {
+            if (video.paused) {
+                video.play();
             } else {
                 video.pause();
             }
-        });
-    }, {threshold: 0.7});
-    
-    document.querySelectorAll('.journey-stories video').forEach(v => {
-        observer.observe(v);
-        v.removeAttribute('controls');
-        v.loop = true;
-        v.playsInline = true;
-        v.setAttribute('webkit-playsinline', '');
-        v.setAttribute('disableRemotePlayback', '');
-        
-        v.addEventListener('pause', () => {
-            v.setAttribute('data-manually-paused', 'true');
-        });
-        
-        v.addEventListener('play', () => {
-            v.removeAttribute('data-manually-paused');
-        });
-    });
-});
+        }
+    }
+}
 </script>
-{% endblock %}

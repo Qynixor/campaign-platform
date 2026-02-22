@@ -78,6 +78,7 @@ class ActivityCommentForm(forms.ModelForm):
 
 
 
+
 # main/forms.py
 from django import forms
 from .models import Activity
@@ -87,7 +88,7 @@ class ActivityForm(forms.ModelForm):
     file = forms.FileField(
         required=False,
         label="Add Media (optional)",
-        help_text="Upload image, video or audio file (max 10MB)",
+        help_text="Upload image, video or audio file (max 100MB for videos, 10MB for images)",
         widget=forms.ClearableFileInput(attrs={
             'accept': 'image/*,video/*,audio/*',
             'class': 'file-input',
@@ -95,9 +96,19 @@ class ActivityForm(forms.ModelForm):
         })
     )
     
+    screenshot_count = forms.ChoiceField(
+        choices=[(3, '3 photos'), (5, '5 photos'), (7, '7 photos'), (10, '10 photos')],
+        initial=5,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'screenshot-count-select',
+            'style': 'display: none;'  # Hidden by default, shown only for videos
+        })
+    )
+    
     class Meta:
         model = Activity
-        fields = ['content', 'file']
+        fields = ['content', 'file', 'screenshot_count']
         widgets = {
             'content': forms.Textarea(attrs={
                 'rows': 3,
@@ -132,16 +143,48 @@ class ActivityForm(forms.ModelForm):
     def clean_file(self):
         file = self.cleaned_data.get('file')
         if file:
-            max_size = 10 * 1024 * 1024
-            if file.size > max_size:
-                raise forms.ValidationError(f'File size must be under {max_size/1024/1024}MB')
+            content_type = file.content_type if hasattr(file, 'content_type') else ''
+            file_name = file.name.lower()
             
+            # Determine if it's a video
+            is_video = content_type.startswith('video/') or any(
+                file_name.endswith(ext) for ext in ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v']
+            )
+            
+            # Determine if it's an image
+            is_image = content_type.startswith('image/') or any(
+                file_name.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
+            )
+            
+            # Set different size limits based on file type
+            if is_video:
+                max_size = 500 * 1024 * 1024  # 500MB for videos (adjust as needed)
+                size_limit_mb = 500
+            elif is_image:
+                max_size = 20 * 1024 * 1024  # 20MB for images
+                size_limit_mb = 20
+            else:
+                max_size = 50 * 1024 * 1024  # 50MB for audio/other files
+                size_limit_mb = 50
+            
+            # Check file size
+            if file.size > max_size:
+                file_type = "Video" if is_video else "Image" if is_image else "File"
+                raise forms.ValidationError(
+                    f'{file_type} size must be under {size_limit_mb}MB. '
+                    f'Current size: {file.size / (1024*1024):.1f}MB'
+                )
+            
+            # Validate file type
             allowed_types = ['image', 'video', 'audio']
-            if not any(file.content_type.startswith(t) for t in allowed_types):
+            if not any(content_type.startswith(t) for t in allowed_types) and not (is_video or is_image):
                 raise forms.ValidationError('Only image, video, and audio files are allowed')
+            
+            # Add file type info to cleaned data for use in view
+            self.cleaned_data['_is_video'] = is_video
+            self.cleaned_data['_is_image'] = is_image
+        
         return file
-
-
 
 
 

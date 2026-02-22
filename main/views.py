@@ -3544,6 +3544,8 @@ def thank_you(request):
     
     return render(request, 'main/thank_you.html')
 
+
+@login_required
 def activity_list(request, campaign_id):
     # Get data from request
     following_users = [follow.followed for follow in request.user.following.all()]
@@ -3551,12 +3553,18 @@ def activity_list(request, campaign_id):
     user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    # Get all activities associated with the campaign
-    activities = Activity.objects.filter(campaign=campaign).order_by('-timestamp')
+    # Get all activities associated with the campaign with prefetch for screenshots
+    activities = Activity.objects.filter(campaign=campaign).prefetch_related(
+        'video_screenshots'
+    ).order_by('-timestamp')
     
-    # Add comment count for each activity
+    # Add comment count for each activity and screenshot info
     for activity in activities:
         activity.comment_count = ActivityComment.objects.filter(activity=activity).count()
+        # FIX: Don't try to set properties - use regular attributes instead
+        activity.has_screenshots_var = activity.video_screenshots.exists()
+        activity.screenshots_list = activity.video_screenshots.all().order_by('order')
+        activity.screenshot_count_total = activity.screenshots_list.count()
     
     # List of image extensions
     image_extensions = ['.jpg', '.jpeg', '.png', '.gif']
@@ -3621,7 +3629,7 @@ def activity_list(request, campaign_id):
     # 🔥 Trending campaigns (Only those with at least 1 love)
     trending_campaigns = Campaign.objects.filter(visibility='public') \
         .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
+        .filter(love_count_annotated__gte=1)
      
 
     # Apply category filter if provided
@@ -3631,7 +3639,9 @@ def activity_list(request, campaign_id):
     trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
 
     # Top Contributors logic
- 
+    from itertools import chain
+    from collections import defaultdict
+    
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
     comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
     view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
@@ -3665,6 +3675,7 @@ def activity_list(request, campaign_id):
 
     categories = Campaign.objects.values_list('category', flat=True).distinct()
 
+    # Add video-specific context
     context = {
         'ads': ads,
         'campaign': campaign, 
@@ -3680,6 +3691,9 @@ def activity_list(request, campaign_id):
         'top_contributors': top_contributors,
         'categories': categories,
         'selected_category': category_filter,
+        # Video processing context
+        'video_processing_enabled': True,
+        'supported_video_formats': ['mp4', 'mov', 'avi', 'webm', 'mkv'],
     }
     
     return render(request, 'main/activity_list.html', context)
@@ -3941,90 +3955,18 @@ from django import forms
 from django.urls import reverse
 from cloudinary.models import CloudinaryResource
 
-# Models
-from .models import (
-    Campaign, Activity, Profile, Notification, 
-    NativeAd, Follow, Love, Comment, 
-    CampaignView, ActivityLove, ActivityComment,
-    UserSubscription
-)
 
-# Utilities
-from .utils import calculate_similarity, validate_no_long_words
-
-# ActivityForm Definition
-class ActivityForm(forms.ModelForm):
-    file = forms.FileField(
-        required=False,
-        label="Add Media (optional)",
-        help_text="Upload image, video or audio file (max 10MB)",
-        widget=forms.ClearableFileInput(attrs={
-            'accept': 'image/*,video/*,audio/*',
-            'class': 'file-input',
-            'multiple': False
-        })
-    )
-    
-    class Meta:
-        model = Activity
-        fields = ['content', 'file']
-        widgets = {
-            'content': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Share an update, ask for help, celebrate progress...',
-                'class': 'activity-content'
-            }),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Make both fields completely optional
-        self.fields['content'].required = False
-        self.fields['file'].required = False
-            
-    def clean(self):
-        cleaned_data = super().clean()
-        # Both fields are optional - user can leave entire form empty
-        # Empty forms will be skipped in the view
-        return cleaned_data
-
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        if content:
-            validate_no_long_words(content)
-        return content
-
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        
-        # Skip validation if it's an existing CloudinaryResource
-        if file and isinstance(file, CloudinaryResource):
-            return file
-            
-        # Only validate for new file uploads
-        if file and hasattr(file, 'size'):
-            # Validate file size (10MB max)
-            max_size = 10 * 1024 * 1024  # 10MB
-            if file.size > max_size:
-                raise forms.ValidationError(f'File size must be under {max_size/1024/1024}MB')
-            
-            # Validate file types
-            allowed_types = ['image', 'video', 'audio']
-            if not any(file.content_type.startswith(t) for t in allowed_types):
-                raise forms.ValidationError('Only image, video, and audio files are allowed')
-        
-        return file
 
 @login_required
 def create_activity(request, campaign_id):
     """
-    PROGRESSIVE ACTIVITY CREATION VIEW WITH DAY LOCKING
-    ---------------------------------------------------
+    PROGRESSIVE ACTIVITY CREATION VIEW WITH DAY LOCKING AND VIDEO PROCESSING
+    ------------------------------------------------------------------------
     Users can only post activities for days that have actually arrived.
-    Future days are locked until their real-time date.
+    Videos are automatically processed to extract screenshots for story display.
     """
     
-    # 🔒 CHECK USER CAMPAIGN LIMIT (keep your existing code)
+    # 🔒 CHECK USER CAMPAIGN LIMIT
     subscription = UserSubscription.get_for_user(request.user)
     user_campaign_count = Campaign.objects.filter(user=request.user.profile).count()
     
@@ -4051,18 +3993,11 @@ def create_activity(request, campaign_id):
     existing_activities = Activity.objects.filter(campaign=campaign).order_by('timestamp')
     existing_count = existing_activities.count()
     
-    # ===== FIXED: REAL-TIME DAY CALCULATION =====
-    # Use the campaign's get_current_day() method to determine which day we're on
+    # ===== REAL-TIME DAY CALCULATION =====
     current_real_day = campaign.get_current_day()
-    
-    # Calculate next available day (the day users can actually post)
     next_available_day = existing_count + 1
-    
-    # Determine if the next day is locked
-    # A day is locked if the next day number is greater than the current real day
     is_next_day_locked = next_available_day > current_real_day
     
-    # Calculate days until unlock
     if is_next_day_locked:
         days_until_unlock = next_available_day - current_real_day
     else:
@@ -4075,7 +4010,6 @@ def create_activity(request, campaign_id):
         forms_to_show = MAX_FORMS
         empty_forms = 0
     else:
-        # Show existing + 1 empty form (the next day)
         forms_to_show = existing_count + 1
         empty_forms = 1
     
@@ -4087,7 +4021,7 @@ def create_activity(request, campaign_id):
         extra=empty_forms,
         can_delete=True,
         max_num=MAX_FORMS,
-        fields=['content', 'file']
+        fields=['content', 'file', 'screenshot_count']
     )
 
     if request.method == 'POST':
@@ -4106,6 +4040,7 @@ def create_activity(request, campaign_id):
                     saved_count = 0
                     new_count = 0
                     updated_count = 0
+                    video_activities = []  # Track activities that need video processing
                     
                     # Track if user tried to post a locked day
                     locked_day_attempt = False
@@ -4116,9 +4051,7 @@ def create_activity(request, campaign_id):
                             # This is a new activity - check if its day is locked
                             activity_day = existing_count + 1
                             
-                            # Use campaign.is_day_locked() method for consistency
                             if campaign.is_day_locked(activity_day):
-                                # User is trying to post a future day - reject it
                                 locked_day_attempt = True
                                 continue
                         
@@ -4135,21 +4068,72 @@ def create_activity(request, campaign_id):
                         # If there's a file but no content, add default content
                         if instance.file and not instance.content:
                             instance.content = f"Shared a file for Day {activity_day if not instance.pk else 'update'}"
+                        
+                        # Check if file is a video
+                        if instance.file and hasattr(instance.file, 'file'):
+                            file = instance.file.file
+                            content_type = getattr(file, 'content_type', '')
+                            file_name = str(instance.file).lower()
                             
+                            if content_type.startswith('video/') or any(ext in file_name for ext in ['.mp4', '.mov', '.avi', '.webm', '.mkv']):
+                                instance.is_video = True
+                                instance.video_processed = False
+                                
+                                # Get screenshot count from form data
+                                screenshot_count_key = f'form-{idx}-screenshot_count'
+                                if screenshot_count_key in request.POST:
+                                    try:
+                                        instance.screenshot_count = int(request.POST[screenshot_count_key])
+                                    except (ValueError, TypeError):
+                                        instance.screenshot_count = 5  # Default
+                        
                         instance.save()
                         saved_count += 1
                         
                         if not instance.pk:
                             new_count += 1
+                            if instance.is_video:
+                                video_activities.append(instance.id)
                         else:
                             updated_count += 1
+                            if instance.is_video and not instance.video_processed:
+                                video_activities.append(instance.id)
                     
                     # Handle deleted forms
                     deleted_count = 0
                     for form in formset.deleted_forms:
                         if form.instance.pk:
+                            if hasattr(form.instance, 'video_screenshots'):
+                                form.instance.video_screenshots.all().delete()
                             form.instance.delete()
                             deleted_count += 1
+                    
+                    # ===== SIMPLE VIDEO PROCESSING - NO CELERY =====
+                    if video_activities:
+                        try:
+                            from .tasks import process_video_screenshots
+                            
+                            processed_count = 0
+                            for activity_id in video_activities:
+                                try:
+                                    # Process immediately (user waits a few seconds)
+                                    result = process_video_screenshots(activity_id)
+                                    print(f"Video processed: {result}")
+                                    processed_count += 1
+                                except Exception as e:
+                                    print(f"Error processing video {activity_id}: {e}")
+                            
+                            if processed_count == 1:
+                                messages.success(request, "✅ Your video has been processed and screenshots are ready!")
+                            elif processed_count > 1:
+                                messages.success(request, f"✅ {processed_count} videos have been processed and screenshots are ready!")
+                            else:
+                                messages.info(request, "Video uploaded. Screenshots will appear shortly.")
+                                
+                        except ImportError:
+                            messages.info(request, "Video uploaded successfully. Screenshot processing will be available soon.")
+                        except Exception as e:
+                            messages.warning(request, "Video uploaded but processing encountered an issue. Screenshots will appear shortly.")
                     
                     # Create appropriate messages
                     if locked_day_attempt:
@@ -4184,7 +4168,7 @@ def create_activity(request, campaign_id):
             queryset=existing_activities
         )
 
-    # Calculate campaign progress information using the campaign's methods
+    # Calculate campaign progress information
     if campaign.duration and campaign.days_left is not None:
         if campaign.duration_unit == 'days':
             total_duration = campaign.duration
@@ -4214,14 +4198,9 @@ def create_activity(request, campaign_id):
         schedule_status = "ongoing"
         schedule_diff = 0
 
-    # Get detailed day status for the next day (optional, for template)
     next_day_status = campaign.get_day_status(next_available_day) if hasattr(campaign, 'get_day_status') else None
 
-    # Rest of your context data collection...
-    # (keep all your existing context gathering code - unread_notifications, 
-    # new_campaigns_from_follows, ads, suggested_users, trending_campaigns, 
-    # top_contributors, categories, emojis, etc.)
-
+    # Rest of your context data collection
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users,
@@ -4332,7 +4311,9 @@ def create_activity(request, campaign_id):
         'progress_percentage': progress_percentage,
         'schedule_status': schedule_status,
         'schedule_diff': schedule_diff,
-        'next_day_status': next_day_status,  # Optional, for more detailed display
+        'next_day_status': next_day_status,
+        'screenshot_count_options': [3, 5, 7, 10],
+        'supported_video_formats': ['mp4', 'mov', 'avi', 'webm', 'mkv'],
     }
 
     return render(request, 'main/activity_create.html', context)

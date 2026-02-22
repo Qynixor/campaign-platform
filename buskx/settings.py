@@ -252,7 +252,7 @@ FLUTTERWAVE_SECRET_HASH = os.environ.get('FLUTTERWAVE_SECRET_HASH')
 # =====================================================
 # MISC
 # =====================================================
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+
 PRIVACY_POLICY_LINK = env('PRIVACY_POLICY_LINK', default='/privacy-policy/')
 TERMS_OF_SERVICE_LINK = env('TERMS_OF_SERVICE_LINK', default='/terms-of-service/')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
