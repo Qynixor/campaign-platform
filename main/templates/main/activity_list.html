@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Journey Reels · Minimal</title>
+    <title>Journey Reels · Clean</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Simple, clean font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -16,37 +15,50 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: #000;
             color: #fff;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Clean, minimal container */
-        .reels {
+        /* Main container */
+        .reels-container {
             height: 100vh;
             height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+
+        /* Scrollable track */
+        .reels-track {
+            height: 100%;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            background: #000;
         }
-        .reels::-webkit-scrollbar { display: none; }
+        .reels-track::-webkit-scrollbar {
+            display: none;
+        }
 
-        /* Simple reel item */
+        /* Reel item */
         .reel {
             position: relative;
-            height: 100vh;
-            height: 100dvh;
+            height: 100%;
             scroll-snap-align: start;
+            scroll-snap-stop: always;
             background: #000;
         }
 
-        /* Media - full bleed, no distractions */
+        /* Media container - FULL SCREEN, no padding */
         .reel-media {
             position: absolute;
             inset: 0;
+            background: #000;
         }
+
         .reel-media img,
         .reel-media video {
             width: 100%;
@@ -54,37 +66,37 @@
             object-fit: cover;
         }
 
-        /* Minimal gradient overlay - barely there */
+        /* Subtle gradient overlay */
         .reel::after {
             content: '';
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 30%;
-            background: linear-gradient(0deg, rgba(0,0,0,0.4) 0%, transparent 100%);
+            height: 40%;
+            background: linear-gradient(0deg, rgba(0,0,0,0.5) 0%, transparent 100%);
             pointer-events: none;
             z-index: 1;
         }
 
-        /* Simple header - just back button and progress */
+        /* ===== HEADER ===== */
         .header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 10;
-            padding: max(env(safe-area-inset-top, 16px), 16px) 16px 0;
+            z-index: 20;
+            padding: max(env(safe-area-inset-top, 12px), 12px) 16px 0;
             display: flex;
             align-items: center;
             gap: 12px;
             pointer-events: none;
         }
 
-        .back {
+        .back-btn {
             width: 40px;
             height: 40px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border-radius: 40px;
@@ -96,6 +108,7 @@
             font-size: 18px;
             pointer-events: auto;
             border: 1px solid rgba(255,255,255,0.1);
+            flex-shrink: 0;
         }
 
         .progress {
@@ -103,172 +116,253 @@
             display: flex;
             gap: 4px;
             height: 2px;
+            pointer-events: auto;
         }
+
         .progress-bar {
             flex: 1;
             height: 2px;
             background: rgba(255,255,255,0.3);
             border-radius: 2px;
+            transition: all 0.2s ease;
         }
+
         .progress-bar.active {
             background: #fff;
         }
 
-        /* Clean info - minimal text */
-        .info {
+        /* ===== INFO PANEL - completely transparent ===== */
+        .info-panel {
             position: absolute;
-            bottom: 100px;
             left: 16px;
-            right: 80px;
+            bottom: 50%;
+            transform: translateY(50%);
+            right: 90px;
             color: #fff;
-            z-index: 2;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+            pointer-events: none;
         }
 
         .username {
             font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 4px;
+            font-size: 16px;
+            margin-bottom: 6px;
             display: inline-block;
             text-decoration: none;
             color: #fff;
+            pointer-events: auto;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .caption {
-            font-size: 14px;
+            font-size: 15px;
             line-height: 1.4;
-            opacity: 0.9;
+            opacity: 0.95;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            margin: 4px 0;
+            margin: 8px 0 4px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            pointer-events: auto;
+        }
+
+        .caption.expanded {
+            -webkit-line-clamp: unset;
+        }
+
+        .more-link {
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.9;
+            cursor: pointer;
+            display: inline-block;
+            pointer-events: auto;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            margin-bottom: 8px;
         }
 
         .meta {
             font-size: 12px;
-            opacity: 0.7;
+            opacity: 0.8;
             display: flex;
             gap: 12px;
-            margin-top: 6px;
+            flex-wrap: wrap;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            pointer-events: auto;
+            width: fit-content;
         }
 
-        /* Actions - simple, right side */
+        /* ===== ACTION BUTTONS - completely transparent ===== */
         .actions {
             position: absolute;
             right: 12px;
-            bottom: 120px;
+            bottom: 50%;
+            transform: translateY(50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
-            z-index: 2;
+            gap: 20px;
+            z-index: 10;
+            pointer-events: none;
         }
 
         .action {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
+            gap: 4px;
             color: #fff;
             text-decoration: none;
             background: none;
             border: none;
             cursor: pointer;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+            pointer-events: auto;
+            background: transparent;
+            min-width: 60px;
         }
 
         .action i {
-            font-size: 26px;
+            font-size: 28px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
 
         .action span {
-            font-size: 11px;
-            font-weight: 500;
-            background: rgba(0,0,0,0.2);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            padding: 2px 8px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            background: transparent;
         }
 
         .action-profile {
             width: 44px;
             height: 44px;
             border-radius: 44px;
-            border: 1.5px solid #fff;
+            border: 2px solid #fff;
             object-fit: cover;
+            margin-bottom: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* Simple play button */
-        .play-btn {
-            position: absolute;
-            bottom: 100px;
-            left: 16px;
-            width: 48px;
-            height: 48px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 48px;
+        .action.loved i {
+            color: #ff3b30;
+        }
+
+        /* ===== VIDEO ICON - aligned with FAB on bottom right ===== */
+        .video-icon {
+            position: fixed;
+            bottom: 24px;
+            right: 96px; /* Positioned left of FAB (56px FAB + 16px gap) */
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #000;
-            font-size: 20px;
-            z-index: 3;
+            font-size: 24px;
+            z-index: 100;
             cursor: pointer;
             border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
         }
 
-        /* Simple counter */
-        .counter {
+        /* ===== FAB BUTTON - bottom right ===== */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #fff;
+            border-radius: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 24px;
+            text-decoration: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* ===== MEDIA COUNTER - top right ===== */
+        .media-counter {
             position: absolute;
             top: max(env(safe-area-inset-top, 60px), 60px);
             right: 16px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 30px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             border: 1px solid rgba(255,255,255,0.1);
-            z-index: 3;
+            z-index: 15;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        /* Clean carousel dots */
+        /* ===== CAROUSEL DOTS - top center ===== */
         .carousel-dots {
             position: absolute;
             top: max(env(safe-area-inset-top, 60px), 60px);
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 4px;
-            z-index: 3;
-            background: rgba(0,0,0,0.2);
+            gap: 6px;
+            z-index: 15;
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 30px;
             border: 1px solid rgba(255,255,255,0.1);
         }
+
         .dot {
             width: 24px;
-            height: 2px;
+            height: 3px;
             background: rgba(255,255,255,0.4);
             border: none;
-            border-radius: 2px;
+            border-radius: 3px;
+            padding: 0;
             cursor: pointer;
-        }
-        .dot.active {
-            background: #fff;
+            transition: all 0.2s ease;
         }
 
-        /* Simple modal */
+        .dot.active {
+            background: #fff;
+            width: 32px;
+        }
+
+        /* ===== CAROUSEL TRACK ===== */
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.3s ease;
+            will-change: transform;
+        }
+
+        .carousel-slide {
+            flex: 0 0 100%;
+            height: 100%;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ===== MODAL - FULL SCREEN VIDEO, NO PADDING ===== */
         .modal {
             position: fixed;
             inset: 0;
@@ -276,9 +370,11 @@
             z-index: 1000;
             display: none;
         }
+
         .modal.show {
             display: block;
         }
+
         .modal-header {
             position: absolute;
             top: 0;
@@ -288,12 +384,16 @@
             display: flex;
             justify-content: space-between;
             z-index: 1001;
+            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+            pointer-events: none;
         }
+
         .modal-btn {
             width: 44px;
             height: 44px;
-            background: rgba(30,30,30,0.8);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border-radius: 44px;
             display: flex;
             align-items: center;
@@ -302,14 +402,18 @@
             font-size: 20px;
             border: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
+            text-decoration: none;
+            pointer-events: auto;
         }
+
         .modal-video {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: contain; /* This ensures full video without cropping */
+            background: #000;
         }
 
-        /* Simple bottom sheet */
+        /* ===== BOTTOM SHEETS ===== */
         .sheet {
             position: fixed;
             bottom: 0;
@@ -325,9 +429,11 @@
             display: flex;
             flex-direction: column;
         }
+
         .sheet.show {
             transform: translateY(0);
         }
+
         .sheet-header {
             padding: 16px 20px;
             border-bottom: 1px solid #222;
@@ -336,25 +442,29 @@
             align-items: center;
             font-weight: 600;
         }
+
         .sheet-close {
             background: none;
             border: none;
             color: #888;
             font-size: 20px;
             cursor: pointer;
-            padding: 4px 8px;
         }
+
         .sheet-content {
             padding: 16px;
             overflow-y: auto;
+            flex: 1;
         }
-        .comment-input {
+
+        .comment-input-area {
             display: flex;
             gap: 8px;
             padding: 12px 16px;
             border-top: 1px solid #222;
         }
-        .comment-input input {
+
+        .comment-input {
             flex: 1;
             background: #222;
             border: none;
@@ -364,7 +474,8 @@
             font-size: 14px;
             outline: none;
         }
-        .comment-input button {
+
+        .comment-send {
             background: #0a84ff;
             border: none;
             border-radius: 24px;
@@ -382,12 +493,14 @@
             padding: 16px;
             text-align: center;
         }
+
         .share-option {
             background: none;
             border: none;
             color: #fff;
             cursor: pointer;
         }
+
         .share-option i {
             font-size: 28px;
             width: 56px;
@@ -399,34 +512,61 @@
             border-radius: 56px;
             margin: 0 auto 8px;
         }
+
         .share-option span {
             font-size: 11px;
             opacity: 0.8;
         }
 
-        /* Empty state - simple */
-        .empty {
+        .menu-item {
+            width: 100%;
+            padding: 16px;
+            background: none;
+            border: none;
+            border-top: 1px solid #222;
+            color: #fff;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-item i {
+            width: 20px;
+            color: #888;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             max-width: 280px;
+            color: #fff;
+            z-index: 10;
         }
+
         .empty-icon {
             font-size: 48px;
             opacity: 0.3;
             margin-bottom: 16px;
         }
-        .empty h3 {
+
+        .empty-state h3 {
             font-weight: 600;
             font-size: 20px;
             margin-bottom: 8px;
         }
-        .empty p {
+
+        .empty-state p {
             opacity: 0.6;
             font-size: 14px;
         }
+
         .empty-btn {
             background: #fff;
             color: #000;
@@ -440,46 +580,31 @@
             text-decoration: none;
         }
 
-        /* FAB - minimal */
-        .fab {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: #fff;
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            text-decoration: none;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        /* Desktop sidebar - clean */
+        /* ===== DESKTOP STYLES ===== */
         @media (min-width: 768px) {
             body {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                padding: 40px;
+                min-height: 100vh;
                 background: #111;
+                padding: 40px;
             }
-            .desktop {
+
+            .desktop-layout {
                 display: grid;
                 grid-template-columns: 400px 320px;
                 gap: 24px;
                 max-width: 1200px;
                 width: 100%;
             }
-            .reels {
+
+            .reels-container {
                 height: 700px;
                 border-radius: 24px;
                 border: 1px solid #222;
             }
+
             .sidebar {
                 background: #111;
                 border-radius: 24px;
@@ -488,28 +613,33 @@
                 height: 700px;
                 overflow-y: auto;
             }
-            .stats {
+
+            .stats-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
                 margin-bottom: 24px;
             }
-            .stat {
+
+            .stat-card {
                 background: #1a1a1a;
                 border-radius: 16px;
                 padding: 16px;
             }
+
             .stat-number {
                 font-size: 24px;
                 font-weight: 700;
                 color: #0a84ff;
             }
+
             .stat-label {
                 font-size: 12px;
                 opacity: 0.6;
                 margin-top: 4px;
             }
-            .preview {
+
+            .preview-item {
                 display: flex;
                 gap: 12px;
                 padding: 12px;
@@ -517,48 +647,71 @@
                 background: #1a1a1a;
                 margin-bottom: 8px;
                 cursor: pointer;
+                transition: background 0.2s;
             }
-            .preview-img {
+
+            .preview-item:hover {
+                background: #222;
+            }
+
+            .preview-image {
                 width: 48px;
                 height: 48px;
                 border-radius: 12px;
                 background-size: cover;
+                background-position: center;
                 background-color: #222;
+                flex-shrink: 0;
             }
+
             .carousel-nav {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 position: absolute;
                 top: 50%;
                 transform: translateY(-50%);
                 width: 36px;
                 height: 36px;
-                background: rgba(0,0,0,0.3);
+                background: rgba(0,0,0,0.5);
                 backdrop-filter: blur(8px);
                 border-radius: 36px;
                 color: #fff;
                 border: 1px solid rgba(255,255,255,0.1);
                 cursor: pointer;
-                z-index: 5;
+                z-index: 20;
+                font-size: 18px;
             }
-            .carousel-nav.prev { left: 8px; }
-            .carousel-nav.next { right: 8px; }
+
+            .carousel-nav.prev { left: 12px; }
+            .carousel-nav.next { right: 12px; }
+
+            .fab, .video-icon {
+                display: none;
+            }
         }
 
-        /* Hide desktop elements on mobile */
-        .sidebar {
-            display: none;
-        }
-        .carousel-nav {
-            display: none;
-        }
-        @media (min-width: 768px) {
+        /* Mobile adjustments */
+        @media (max-width: 767px) {
             .sidebar {
-                display: block;
+                display: none;
             }
+            
             .carousel-nav {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: none;
+            }
+            
+            /* Ensure proper spacing */
+            .info-panel {
+                right: 80px;
+            }
+            
+            .actions {
+                gap: 16px;
+            }
+            
+            .action {
+                min-width: 52px;
             }
         }
     </style>
@@ -567,170 +720,219 @@
 {% load custom_filters %}
 {% load static %}
 
-<div class="desktop">
-    <!-- Left: Reels -->
-    <div class="reels" id="reelsScroll">
-        <!-- Fixed header -->
-        <div class="header">
-            <a href="javascript:history.back()" class="back"><i class="fas fa-arrow-left"></i></a>
-            <div class="progress">
-                {% for activity in activities %}
-                <div class="progress-bar {% if forloop.first %}active{% endif %}"></div>
-                {% endfor %}
+<div class="desktop-layout">
+    <!-- Main Reels Container -->
+    <div class="reels-container">
+        <div class="reels-track" id="reelsTrack">
+            <!-- Fixed Header -->
+            <div class="header">
+                <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+                <div class="progress">
+                    {% for activity in activities %}
+                    <div class="progress-bar {% if forloop.first %}active{% endif %}"></div>
+                    {% endfor %}
+                </div>
             </div>
+
+            {% if activities %}
+                {% for activity in activities %}
+                <!-- Reel Item -->
+                <div class="reel" data-index="{{ forloop.counter0 }}" data-id="{{ activity.id }}">
+                    <!-- Media Container - FULL SCREEN, NO PADDING -->
+                    <div class="reel-media">
+                        {% if activity.is_video and activity.has_screenshots_var %}
+                            <!-- Screenshot Carousel -->
+                            <div class="story-carousel" id="carousel-{{ activity.id }}" style="height:100%; width:100%; position:relative; overflow:hidden;">
+                                <div class="carousel-track" id="track-{{ activity.id }}">
+                                    {% for screenshot in activity.screenshots_list %}
+                                    <div class="carousel-slide">
+                                        <picture>
+                                            <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
+                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" loading="lazy" alt="">
+                                        </picture>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if activity.screenshot_count_total > 1 %}
+                                <!-- Carousel Indicators -->
+                                <div class="carousel-dots">
+                                    {% for screenshot in activity.screenshots_list %}
+                                    <button class="dot {% if forloop.first %}active{% endif %}" 
+                                            onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"></button>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Navigation Arrows -->
+                                <button class="carousel-nav prev" onclick="prevSlide('{{ activity.id }}')">❮</button>
+                                <button class="carousel-nav next" onclick="nextSlide('{{ activity.id }}')">❯</button>
+                                {% endif %}
+                                
+                                <!-- Media Counter -->
+                                <div class="media-counter">
+                                    <i class="fas fa-images"></i> {{ activity.screenshot_count_total }}
+                                </div>
+                            </div>
+                            
+                        {% elif activity.file %}
+                            {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' or activity.file.url|lower|slice:'-4:' == '.mov' %}
+                                <!-- Single Video -->
+                                <video src="{{ activity.file.url }}" loop playsinline muted 
+                                       id="video-{{ activity.id }}" preload="metadata"
+                                       poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
+                                </video>
+                                
+                                {% if not activity.video_processed %}
+                                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+                                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
+                                    <span style="font-size:13px;">Processing video...</span>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <!-- Single Image -->
+                                <picture>
+                                    <source srcset="{{ activity.file.url|slice:':-4' }}.webp" type="image/webp">
+                                    <img src="{{ activity.file.url }}" loading="lazy" alt="">
+                                </picture>
+                            {% endif %}
+                        {% else %}
+                            <!-- Text-only update -->
+                            <div style="display:flex; align-items:center; justify-content:center; height:100%; background:#1a1a1a; flex-direction:column; gap:16px; padding:20px; text-align:center;">
+                                <i class="fas fa-pencil-alt fa-3x" style="opacity:0.3;"></i>
+                                <div style="font-size:16px; font-weight:600;">Day {{ activity.day_number }} Update</div>
+                                <div style="font-size:14px; opacity:0.7; max-width:80%;">{{ activity.content|striptags|truncatechars:100 }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action Buttons - Centered Vertically, Transparent -->
+                    <div class="actions">
+                        <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
+                            <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="">
+                        </a>
+                        <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
+                                onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
+                            <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart"></i>
+                            <span id="love-count-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
+                        </button>
+                        <button class="action" onclick="openComments('{{ activity.id }}', event)">
+                            <i class="far fa-comment"></i>
+                            <span>{{ activity.comment_count|format_count }}</span>
+                        </button>
+                        <button class="action" onclick="openShareMenu('{{ activity.id }}', event)">
+                            <i class="fas fa-share-alt"></i>
+                            <span>Share</span>
+                        </button>
+                    </div>
+
+                    <!-- Info Panel - Centered Vertically, Transparent -->
+                    <div class="info-panel">
+                        <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
+                        <div class="caption" id="caption-{{ activity.id }}">{{ activity.content|safe }}</div>
+                        {% if activity.content|length > 100 %}
+                        <span class="more-link" onclick="toggleCaption('{{ activity.id }}', event)">more</span>
+                        {% endif %}
+                        <div class="meta">
+                            <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
+                            <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Video Modal - FULL SCREEN, NO PADDING -->
+                    <div class="modal" id="video-modal-{{ activity.id }}">
+                        <div class="modal-header">
+                            <button class="modal-btn" onclick="closeVideoModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
+                            <a href="{{ activity.file.url }}" download class="modal-btn"><i class="fas fa-download"></i></a>
+                        </div>
+                        <video class="modal-video" controls autoplay playsinline loop>
+                            <source src="{{ activity.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+
+                    <!-- Comments Sheet -->
+                    <div class="sheet" id="comments-{{ activity.id }}">
+                        <div class="sheet-header">
+                            <span>{{ activity.comment_count }} comments</span>
+                            <button class="sheet-close" onclick="closeComments('{{ activity.id }}')"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="sheet-content" id="comments-list-{{ activity.id }}"></div>
+                        <div class="comment-input-area">
+                            <input type="text" class="comment-input" id="comment-{{ activity.id }}" placeholder="Add a comment...">
+                            <button class="comment-send" onclick="postComment('{{ activity.id }}')">Post</button>
+                        </div>
+                    </div>
+
+                    <!-- Share Sheet -->
+                    <div class="sheet" id="share-{{ activity.id }}">
+                        <div class="sheet-header">
+                            <span>Share</span>
+                            <button class="sheet-close" onclick="closeShareMenu('{{ activity.id }}')"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="share-grid">
+                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'whatsapp')"><i class="fab fa-whatsapp"></i><span>WA</span></button>
+                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'twitter')"><i class="fab fa-x-twitter"></i><span>X</span></button>
+                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'facebook')"><i class="fab fa-facebook"></i><span>FB</span></button>
+                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'telegram')"><i class="fab fa-telegram"></i><span>TG</span></button>
+                        </div>
+                        <button class="menu-item" onclick="copyLink('{{ activity.id }}')"><i class="fas fa-link"></i> Copy link</button>
+                        {% if user == campaign.user.user %}
+                        <button class="menu-item" onclick="deleteActivity('{{ activity.id }}')"><i class="fas fa-trash"></i> Delete</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-camera"></i></div>
+                    <h3>No posts yet</h3>
+                    <p>Share the first moment of this journey</p>
+                    {% if user == campaign.user.user %}
+                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn"><i class="fas fa-plus"></i> Post update</a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
 
-        {% if activities %}
-            {% for activity in activities %}
-            <div class="reel" data-index="{{ forloop.counter0 }}">
-                <!-- Media -->
-                <div class="reel-media" onclick="handleMediaClick('{{ activity.id }}')">
-                    {% if activity.is_video and activity.has_screenshots_var %}
-                        <!-- Simple carousel -->
-                        <div class="carousel" id="carousel-{{ activity.id }}">
-                            <div class="carousel-track" id="track-{{ activity.id }}" style="display: flex; height: 100%; transition: transform 0.2s;">
-                                {% for screenshot in activity.screenshots_list %}
-                                <div style="flex: 0 0 100%; height: 100%;">
-                                    <img src="{{ screenshot.image.url }}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
-                                </div>
-                                {% endfor %}
-                            </div>
+        <!-- Video Icon - Bottom Right (aligned with FAB) -->
+        <button class="video-icon" onclick="openVideoModal('{{ activities.0.id }}')" aria-label="Play video">
+            <i class="fas fa-play"></i>
+        </button>
 
-                            {% if activity.screenshot_count_total > 1 %}
-                            <div class="carousel-dots">
-                                {% for screenshot in activity.screenshots_list %}
-                                <button class="dot {% if forloop.first %}active{% endif %}" onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"></button>
-                                {% endfor %}
-                            </div>
-                            <button class="carousel-nav prev" onclick="prevSlide('{{ activity.id }}')">❮</button>
-                            <button class="carousel-nav next" onclick="nextSlide('{{ activity.id }}')">❯</button>
-                            {% endif %}
-                        </div>
-
-                        <!-- Play button -->
-                        <button class="play-btn" onclick="openVideoModal('{{ activity.id }}')"><i class="fas fa-play"></i></button>
-                        
-                        <!-- Counter -->
-                        <div class="counter">
-                            <i class="fas fa-image"></i> {{ activity.screenshot_count_total }}
-                        </div>
-
-                    {% elif activity.file %}
-                        {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' %}
-                        <video src="{{ activity.file.url }}" loop playsinline muted id="video-{{ activity.id }}" style="width:100%; height:100%; object-fit:cover;"></video>
-                        {% if activity.video_processed %}
-                        <button class="play-btn" onclick="openVideoModal('{{ activity.id }}')"><i class="fas fa-play"></i></button>
-                        {% else %}
-                        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;">
-                            <i class="fas fa-spinner fa-spin fa-2x"></i>
-                        </div>
-                        {% endif %}
-                        {% else %}
-                        <img src="{{ activity.file.url }}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
-                        {% endif %}
-                    {% endif %}
-                </div>
-
-                <!-- Simple actions -->
-                <div class="actions">
-                    <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
-                        <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy">
-                    </a>
-                    <button class="action" onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
-                        <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart"></i>
-                        <span id="love-count-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
-                    </button>
-                    <button class="action" onclick="openComments('{{ activity.id }}', event)">
-                        <i class="far fa-comment"></i>
-                        <span>{{ activity.comment_count|format_count }}</span>
-                    </button>
-                    <button class="action" onclick="openShareMenu('{{ activity.id }}', event)">
-                        <i class="fas fa-share-alt"></i>
-                        <span>Share</span>
-                    </button>
-                </div>
-
-                <!-- Info -->
-                <div class="info">
-                    <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
-                    <div class="caption" id="caption-{{ activity.id }}">{{ activity.content|safe }}</div>
-                    {% if activity.content|length > 100 %}
-                    <span style="font-size:12px; font-weight:600; opacity:0.8; cursor:pointer;" onclick="toggleCaption('{{ activity.id }}', event)">more</span>
-                    {% endif %}
-                    <div class="meta">
-                        <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
-                        <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
-                    </div>
-                </div>
-
-                <!-- Modals -->
-                <div class="modal" id="video-modal-{{ activity.id }}">
-                    <div class="modal-header">
-                        <button class="modal-btn" onclick="closeVideoModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
-                        <a href="{{ activity.file.url }}" download class="modal-btn"><i class="fas fa-download"></i></a>
-                    </div>
-                    <video class="modal-video" controls autoplay playsinline loop>
-                        <source src="{{ activity.file.url }}" type="video/mp4">
-                    </video>
-                </div>
-
-                <!-- Comments sheet -->
-                <div class="sheet" id="comments-{{ activity.id }}">
-                    <div class="sheet-header">
-                        <span>{{ activity.comment_count }} comments</span>
-                        <button class="sheet-close" onclick="closeComments('{{ activity.id }}')"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="sheet-content" id="comments-list-{{ activity.id }}"></div>
-                    <div class="comment-input">
-                        <input type="text" id="comment-{{ activity.id }}" placeholder="Add comment...">
-                        <button onclick="postComment('{{ activity.id }}')">Post</button>
-                    </div>
-                </div>
-
-                <!-- Share sheet -->
-                <div class="sheet" id="share-{{ activity.id }}">
-                    <div class="sheet-header">
-                        <span>Share</span>
-                        <button class="sheet-close" onclick="closeShareMenu('{{ activity.id }}')"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="share-grid">
-                        <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'whatsapp')"><i class="fab fa-whatsapp"></i><span>WA</span></button>
-                        <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'twitter')"><i class="fab fa-x-twitter"></i><span>X</span></button>
-                        <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'facebook')"><i class="fab fa-facebook"></i><span>FB</span></button>
-                        <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'telegram')"><i class="fab fa-telegram"></i><span>TG</span></button>
-                    </div>
-                    <button class="menu-item" onclick="copyLink('{{ activity.id }}')" style="width:100%; padding:16px; background:none; border:none; border-top:1px solid #222; color:#fff; text-align:left;"><i class="fas fa-link"></i> Copy link</button>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <!-- Empty state -->
-            <div class="empty">
-                <div class="empty-icon"><i class="fas fa-camera"></i></div>
-                <h3>No posts yet</h3>
-                <p>Be the first to share a moment</p>
-                {% if user == campaign.user.user %}
-                <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn"><i class="fas fa-plus"></i> Post update</a>
-                {% endif %}
-            </div>
+        <!-- FAB Button -->
+        {% if user == campaign.user.user %}
+        <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
         {% endif %}
     </div>
 
-    <!-- Right: Simple sidebar (desktop only) -->
+    <!-- Desktop Sidebar -->
     <div class="sidebar">
         <h2 style="font-size:24px; font-weight:700; margin-bottom:24px;">{{ campaign.title }}</h2>
         
-        <div class="stats">
-            <div class="stat"><div class="stat-number">{{ activities|length }}</div><div class="stat-label">Posts</div></div>
-            <div class="stat"><div class="stat-number">{{ campaign.duration|default:'∞' }}</div><div class="stat-label">Days</div></div>
-            <div class="stat"><div class="stat-number">{{ campaign.followers_count|default:0 }}</div><div class="stat-label">Followers</div></div>
-            <div class="stat"><div class="stat-number">{{ total_loves|default:0 }}</div><div class="stat-label">Loves</div></div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ activities|length }}</div>
+                <div class="stat-label">Posts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ campaign.duration|default:'∞' }}</div>
+                <div class="stat-label">Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ campaign.followers_count|default:0 }}</div>
+                <div class="stat-label">Followers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_loves|default:0 }}</div>
+                <div class="stat-label">Loves</div>
+            </div>
         </div>
 
-        <div style="font-weight:600; margin-bottom:12px;">Recent</div>
-        {% for activity in activities|slice:":4" %}
-        <div class="preview" onclick="document.getElementById('reelsScroll').scrollTo({top: {{ forloop.counter0 }} * window.innerHeight, behavior:'smooth'})">
-            <div class="preview-img" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% elif activity.file %}{{ activity.file.url }}{% endif %}')"></div>
+        <div style="font-weight:600; margin-bottom:12px;">Recent Updates</div>
+        {% for activity in activities|slice:":5" %}
+        <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
+            <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% elif activity.file %}{{ activity.file.url }}{% endif %}')"></div>
             <div>
                 <div style="font-weight:600;">Day {{ activity.day_number }}</div>
                 <div style="font-size:12px; opacity:0.6;">{{ activity.content|striptags|truncatechars:30 }}</div>
@@ -739,7 +941,8 @@
         {% endfor %}
 
         <div style="margin-top:24px; padding-top:16px; border-top:1px solid #222;">
-            <p style="opacity:0.8; font-size:14px;">{{ campaign.description|default:"No description" }}</p>
+            <h3 style="font-weight:600; margin-bottom:8px;">About</h3>
+            <p style="opacity:0.8; font-size:14px; line-height:1.6;">{{ campaign.description|default:"No description provided." }}</p>
             <div style="display:flex; gap:16px; margin-top:16px; font-size:12px; opacity:0.6;">
                 <span><i class="far fa-calendar"></i> {{ campaign.start_date|date:"M d, Y" }}</span>
                 <span><i class="fas fa-user"></i> {{ campaign.user.user.username }}</span>
@@ -748,46 +951,192 @@
     </div>
 </div>
 
-<!-- FAB for mobile -->
-{% if user == campaign.user.user %}
-<a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
-{% endif %}
-
 <script>
-    // Simple, clean JavaScript
-    const reels = document.getElementById('reelsScroll');
-    if (reels) {
-        reels.addEventListener('scroll', () => {
-            const index = Math.round(reels.scrollTop / window.innerHeight);
-            document.querySelectorAll('.progress-bar').forEach((bar, i) => {
-                bar.classList.toggle('active', i === index);
-            });
-        });
-    }
+    (function() {
+        'use strict';
 
-    // Basic functions
-    window.handleLove = (id, e) => { e.stopPropagation(); alert('❤️ (demo)'); };
-    window.openComments = (id, e) => { e.stopPropagation(); document.getElementById('comments-'+id).classList.add('show'); };
-    window.closeComments = (id) => { document.getElementById('comments-'+id).classList.remove('show'); };
-    window.openShareMenu = (id, e) => { e.stopPropagation(); document.getElementById('share-'+id).classList.add('show'); };
-    window.closeShareMenu = (id) => { document.getElementById('share-'+id).classList.remove('show'); };
-    window.openVideoModal = (id) => { document.getElementById('video-modal-'+id).classList.add('show'); };
-    window.closeVideoModal = (id) => { document.getElementById('video-modal-'+id).classList.remove('show'); };
-    window.toggleCaption = (id, e) => {
-        const cap = document.getElementById('caption-'+id);
-        cap.classList.toggle('expanded');
-        e.target.textContent = cap.classList.contains('expanded') ? 'less' : 'more';
-    };
-    window.goToSlide = (id, index) => {
-        const track = document.getElementById('track-'+id);
-        if (track) track.style.transform = `translateX(-${index * 100}%)`;
-    };
-    window.nextSlide = (id) => { /* implement if needed */ };
-    window.prevSlide = (id) => { /* implement if needed */ };
-    window.postComment = (id) => { alert('Comment posted'); };
-    window.shareActivity = (id, platform) => { alert('Share to ' + platform); };
-    window.copyLink = (id) => { navigator.clipboard?.writeText(window.location.href); alert('Link copied'); };
-    window.handleMediaClick = (id) => { /* optional */ };
+        // Get elements
+        const reelsTrack = document.getElementById('reelsTrack');
+        const reelsContainer = document.querySelector('.reels-container');
+
+        // Update progress on scroll
+        if (reelsTrack && reelsContainer) {
+            reelsTrack.addEventListener('scroll', () => {
+                const containerHeight = reelsContainer.offsetHeight;
+                const scrollTop = reelsTrack.scrollTop;
+                const index = Math.round(scrollTop / containerHeight);
+                
+                document.querySelectorAll('.progress-bar').forEach((bar, i) => {
+                    bar.classList.toggle('active', i === index);
+                });
+            });
+        }
+
+        // Go to specific reel
+        window.goToReel = (index) => {
+            if (reelsTrack && reelsContainer) {
+                const containerHeight = reelsContainer.offsetHeight;
+                reelsTrack.scrollTo({
+                    top: index * containerHeight,
+                    behavior: 'smooth'
+                });
+            }
+        };
+
+        // Carousel functions
+        window.goToSlide = (id, index) => {
+            const track = document.getElementById('track-' + id);
+            if (!track) return;
+            
+            track.style.transform = `translateX(-${index * 100}%)`;
+            
+            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        };
+
+        window.nextSlide = (id) => {
+            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
+            const activeDot = document.querySelector(`#carousel-${id} .dot.active`);
+            const currentIndex = Array.from(dots).indexOf(activeDot);
+            const nextIndex = (currentIndex + 1) % dots.length;
+            window.goToSlide(id, nextIndex);
+        };
+
+        window.prevSlide = (id) => {
+            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
+            const activeDot = document.querySelector(`#carousel-${id} .dot.active`);
+            const currentIndex = Array.from(dots).indexOf(activeDot);
+            const prevIndex = (currentIndex - 1 + dots.length) % dots.length;
+            window.goToSlide(id, prevIndex);
+        };
+
+        // Modal functions
+        window.openVideoModal = (id) => {
+            const modal = document.getElementById('video-modal-' + id);
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                
+                const video = modal.querySelector('video');
+                if (video) {
+                    video.play().catch(() => {});
+                }
+            }
+        };
+
+        window.closeVideoModal = (id) => {
+            const modal = document.getElementById('video-modal-' + id);
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = '';
+                
+                const video = modal.querySelector('video');
+                if (video) {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            }
+        };
+
+        // Comments sheet
+        window.openComments = (id, event) => {
+            event.stopPropagation();
+            document.getElementById('comments-' + id)?.classList.add('show');
+        };
+
+        window.closeComments = (id) => {
+            document.getElementById('comments-' + id)?.classList.remove('show');
+        };
+
+        // Share sheet
+        window.openShareMenu = (id, event) => {
+            event.stopPropagation();
+            document.getElementById('share-' + id)?.classList.add('show');
+        };
+
+        window.closeShareMenu = (id) => {
+            document.getElementById('share-' + id)?.classList.remove('show');
+        };
+
+        // Caption toggle
+        window.toggleCaption = (id, event) => {
+            event.stopPropagation();
+            const caption = document.getElementById('caption-' + id);
+            caption.classList.toggle('expanded');
+            event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
+        };
+
+        // Love handler
+        window.handleLove = (id, event) => {
+            event.stopPropagation();
+            const btn = document.getElementById('love-' + id);
+            const icon = btn.querySelector('i');
+            const countSpan = document.getElementById('love-count-' + id);
+            
+            if (btn.classList.contains('loved')) {
+                btn.classList.remove('loved');
+                icon.className = 'far fa-heart';
+                let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+                countSpan.textContent = Math.max(0, count - 1).toLocaleString();
+            } else {
+                btn.classList.add('loved');
+                icon.className = 'fas fa-heart';
+                let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+                countSpan.textContent = (count + 1).toLocaleString();
+            }
+        };
+
+        // Comment functions
+        window.postComment = (id) => {
+            const input = document.getElementById('comment-' + id);
+            if (input?.value.trim()) {
+                alert('Comment posted: ' + input.value);
+                input.value = '';
+                closeComments(id);
+            }
+        };
+
+        // Share functions
+        window.shareActivity = (id, platform) => {
+            alert('Share to ' + platform);
+            closeShareMenu(id);
+        };
+
+        window.copyLink = (id) => {
+            navigator.clipboard?.writeText(window.location.href);
+            alert('Link copied!');
+            closeShareMenu(id);
+        };
+
+        window.deleteActivity = (id) => {
+            if (confirm('Delete this activity?')) {
+                alert('Deleted (demo)');
+                closeShareMenu(id);
+            }
+        };
+
+        // Close sheets on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.sheet') && !e.target.closest('[onclick^="openComments"]') && !e.target.closest('[onclick^="openShareMenu"]')) {
+                document.querySelectorAll('.sheet.show').forEach(sheet => {
+                    sheet.classList.remove('show');
+                });
+            }
+        });
+
+        // Handle escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show, .sheet.show').forEach(el => {
+                    el.classList.remove('show');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+    })();
 </script>
 </body>
 </html>
