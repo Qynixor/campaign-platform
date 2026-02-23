@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Journey Reels · Clean</title>
+    <title>Journey Reels · Final</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -52,7 +52,7 @@
             background: #000;
         }
 
-        /* Media container - FULL SCREEN, no padding */
+        /* Media container - FULL SCREEN */
         .reel-media {
             position: absolute;
             inset: 0;
@@ -64,6 +64,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            pointer-events: none; /* Prevents interference with swipe */
         }
 
         /* Subtle gradient overlay */
@@ -131,7 +132,145 @@
             background: #fff;
         }
 
-        /* ===== INFO PANEL - completely transparent ===== */
+        /* ===== CAROUSEL WITH TOUCH SUPPORT ===== */
+        .story-carousel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: pan-y pinch-zoom; /* Allows vertical scroll while capturing horizontal swipes */
+        }
+
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.3s ease;
+            will-change: transform;
+            cursor: grab;
+            touch-action: pan-y pinch-zoom;
+        }
+
+        .carousel-track:active {
+            cursor: grabbing;
+        }
+
+        .carousel-slide {
+            flex: 0 0 100%;
+            height: 100%;
+            pointer-events: none; /* Let the track handle gestures */
+        }
+
+        .carousel-slide img,
+        .carousel-slide picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        /* Carousel Indicators - HIDDEN ARROWS, ONLY DOTS */
+        .carousel-dots {
+            position: absolute;
+            top: max(env(safe-area-inset-top, 60px), 60px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 15;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dot {
+            width: 24px;
+            height: 3px;
+            background: rgba(255,255,255,0.4);
+            border: none;
+            border-radius: 3px;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dot.active {
+            background: #fff;
+            width: 32px;
+        }
+
+        /* Media counter - WITHOUT TEXT */
+        .media-counter {
+            position: absolute;
+            top: max(env(safe-area-inset-top, 60px), 60px);
+            right: 16px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .media-counter i {
+            font-size: 14px;
+        }
+
+        /* Navigation arrows - COMPLETELY HIDDEN */
+        .carousel-nav {
+            display: none !important;
+        }
+
+        /* ===== VIDEO ICON ===== */
+        .video-icon {
+            position: fixed;
+            bottom: 24px;
+            right: 96px;
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 24px;
+            z-index: 100;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* ===== FAB BUTTON - VISIBLE ON ALL DEVICES ===== */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #fff;
+            border-radius: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 24px;
+            text-decoration: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* ===== INFO PANEL ===== */
         .info-panel {
             position: absolute;
             left: 16px;
@@ -194,7 +333,7 @@
             width: fit-content;
         }
 
-        /* ===== ACTION BUTTONS - completely transparent ===== */
+        /* ===== ACTION BUTTONS ===== */
         .actions {
             position: absolute;
             right: 12px;
@@ -220,7 +359,6 @@
             cursor: pointer;
             filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
             pointer-events: auto;
-            background: transparent;
             min-width: 60px;
         }
 
@@ -233,7 +371,6 @@
             font-size: 12px;
             font-weight: 600;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            background: transparent;
         }
 
         .action-profile {
@@ -250,119 +387,7 @@
             color: #ff3b30;
         }
 
-        /* ===== VIDEO ICON - aligned with FAB on bottom right ===== */
-        .video-icon {
-            position: fixed;
-            bottom: 24px;
-            right: 96px; /* Positioned left of FAB (56px FAB + 16px gap) */
-            width: 56px;
-            height: 56px;
-            background: rgba(255,255,255,0.95);
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            z-index: 100;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        /* ===== FAB BUTTON - bottom right ===== */
-        .fab {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: #fff;
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            text-decoration: none;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        /* ===== MEDIA COUNTER - top right ===== */
-        .media-counter {
-            position: absolute;
-            top: max(env(safe-area-inset-top, 60px), 60px);
-            right: 16px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
-            z-index: 15;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* ===== CAROUSEL DOTS - top center ===== */
-        .carousel-dots {
-            position: absolute;
-            top: max(env(safe-area-inset-top, 60px), 60px);
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-            z-index: 15;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .dot {
-            width: 24px;
-            height: 3px;
-            background: rgba(255,255,255,0.4);
-            border: none;
-            border-radius: 3px;
-            padding: 0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .dot.active {
-            background: #fff;
-            width: 32px;
-        }
-
-        /* ===== CAROUSEL TRACK ===== */
-        .carousel-track {
-            display: flex;
-            height: 100%;
-            transition: transform 0.3s ease;
-            will-change: transform;
-        }
-
-        .carousel-slide {
-            flex: 0 0 100%;
-            height: 100%;
-        }
-
-        .carousel-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* ===== MODAL - FULL SCREEN VIDEO, NO PADDING ===== */
+        /* ===== MODAL ===== */
         .modal {
             position: fixed;
             inset: 0;
@@ -409,7 +434,7 @@
         .modal-video {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* This ensures full video without cropping */
+            object-fit: contain;
             background: #000;
         }
 
@@ -664,30 +689,9 @@
                 flex-shrink: 0;
             }
 
-            .carousel-nav {
+            /* Ensure FAB is visible on desktop */
+            .fab {
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 36px;
-                height: 36px;
-                background: rgba(0,0,0,0.5);
-                backdrop-filter: blur(8px);
-                border-radius: 36px;
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.1);
-                cursor: pointer;
-                z-index: 20;
-                font-size: 18px;
-            }
-
-            .carousel-nav.prev { left: 12px; }
-            .carousel-nav.next { right: 12px; }
-
-            .fab, .video-icon {
-                display: none;
             }
         }
 
@@ -697,11 +701,6 @@
                 display: none;
             }
             
-            .carousel-nav {
-                display: none;
-            }
-            
-            /* Ensure proper spacing */
             .info-panel {
                 right: 80px;
             }
@@ -712,6 +711,17 @@
             
             .action {
                 min-width: 52px;
+            }
+
+            /* Ensure carousel dots are visible on mobile */
+            .carousel-dots {
+                display: flex;
+                z-index: 30;
+            }
+
+            .dot {
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
         }
     </style>
@@ -738,39 +748,38 @@
                 {% for activity in activities %}
                 <!-- Reel Item -->
                 <div class="reel" data-index="{{ forloop.counter0 }}" data-id="{{ activity.id }}">
-                    <!-- Media Container - FULL SCREEN, NO PADDING -->
+                    <!-- Media Container -->
                     <div class="reel-media">
                         {% if activity.is_video and activity.has_screenshots_var %}
-                            <!-- Screenshot Carousel -->
-                            <div class="story-carousel" id="carousel-{{ activity.id }}" style="height:100%; width:100%; position:relative; overflow:hidden;">
+                            <!-- Carousel with touch support -->
+                            <div class="story-carousel" id="carousel-{{ activity.id }}">
                                 <div class="carousel-track" id="track-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
                                     <div class="carousel-slide">
                                         <picture>
                                             <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
-                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" loading="lazy" alt="">
+                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" loading="lazy" alt="Screenshot {{ forloop.counter }}">
                                         </picture>
                                     </div>
                                     {% endfor %}
                                 </div>
                                 
+                                <!-- Carousel Indicators - ONLY DOTS, NO ARROWS -->
                                 {% if activity.screenshot_count_total > 1 %}
-                                <!-- Carousel Indicators -->
                                 <div class="carousel-dots">
                                     {% for screenshot in activity.screenshots_list %}
                                     <button class="dot {% if forloop.first %}active{% endif %}" 
-                                            onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"></button>
+                                            onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"
+                                            aria-label="Go to slide {{ forloop.counter }}">
+                                    </button>
                                     {% endfor %}
                                 </div>
-                                
-                                <!-- Navigation Arrows -->
-                                <button class="carousel-nav prev" onclick="prevSlide('{{ activity.id }}')">❮</button>
-                                <button class="carousel-nav next" onclick="nextSlide('{{ activity.id }}')">❯</button>
                                 {% endif %}
                                 
-                                <!-- Media Counter -->
+                                <!-- Media Counter - just number -->
                                 <div class="media-counter">
-                                    <i class="fas fa-images"></i> {{ activity.screenshot_count_total }}
+                                    <i class="fas fa-images"></i>
+                                    <span>{{ activity.screenshot_count_total }}</span>
                                 </div>
                             </div>
                             
@@ -792,7 +801,7 @@
                                 <!-- Single Image -->
                                 <picture>
                                     <source srcset="{{ activity.file.url|slice:':-4' }}.webp" type="image/webp">
-                                    <img src="{{ activity.file.url }}" loading="lazy" alt="">
+                                    <img src="{{ activity.file.url }}" loading="lazy" alt="Activity image">
                                 </picture>
                             {% endif %}
                         {% else %}
@@ -805,10 +814,10 @@
                         {% endif %}
                     </div>
 
-                    <!-- Action Buttons - Centered Vertically, Transparent -->
+                    <!-- Action Buttons -->
                     <div class="actions">
                         <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
-                            <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="">
+                            <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="Profile">
                         </a>
                         <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
                                 onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
@@ -825,7 +834,7 @@
                         </button>
                     </div>
 
-                    <!-- Info Panel - Centered Vertically, Transparent -->
+                    <!-- Info Panel -->
                     <div class="info-panel">
                         <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
                         <div class="caption" id="caption-{{ activity.id }}">{{ activity.content|safe }}</div>
@@ -838,7 +847,7 @@
                         </div>
                     </div>
 
-                    <!-- Video Modal - FULL SCREEN, NO PADDING -->
+                    <!-- Video Modal -->
                     <div class="modal" id="video-modal-{{ activity.id }}">
                         <div class="modal-header">
                             <button class="modal-btn" onclick="closeVideoModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
@@ -895,12 +904,14 @@
             {% endif %}
         </div>
 
-        <!-- Video Icon - Bottom Right (aligned with FAB) -->
+        <!-- Video Icon -->
+        {% if activities %}
         <button class="video-icon" onclick="openVideoModal('{{ activities.0.id }}')" aria-label="Play video">
             <i class="fas fa-play"></i>
         </button>
+        {% endif %}
 
-        <!-- FAB Button -->
+        <!-- FAB Button - VISIBLE ON ALL DEVICES -->
         {% if user == campaign.user.user %}
         <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
         {% endif %}
@@ -983,6 +994,115 @@
             }
         };
 
+        // Carousel touch/swipe support
+        function initCarousel(carouselId) {
+            const track = document.getElementById('track-' + carouselId);
+            if (!track) return;
+
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+            let currentIndex = 0;
+            const slides = track.children.length;
+
+            // Get current index from active dot
+            const updateIndexFromDots = () => {
+                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                if (activeDot) {
+                    const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
+                    currentIndex = Array.from(dots).indexOf(activeDot);
+                }
+            };
+
+            // Touch start
+            track.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                track.style.transition = 'none';
+                updateIndexFromDots();
+            }, { passive: true });
+
+            // Touch move
+            track.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                const offset = (-currentIndex * 100) + (diff / track.offsetWidth * 100);
+                track.style.transform = `translateX(${offset}%)`;
+            }, { passive: true });
+
+            // Touch end
+            track.addEventListener('touchend', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                track.style.transition = 'transform 0.3s ease';
+
+                const diff = currentX - startX;
+                const threshold = track.offsetWidth * 0.2; // 20% threshold
+
+                if (Math.abs(diff) > threshold) {
+                    if (diff > 0 && currentIndex > 0) {
+                        // Swipe right - previous
+                        currentIndex--;
+                    } else if (diff < 0 && currentIndex < slides - 1) {
+                        // Swipe left - next
+                        currentIndex++;
+                    }
+                }
+
+                window.goToSlide(carouselId, currentIndex);
+            }, { passive: true });
+
+            // Mouse events for desktop swipe
+            track.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startX = e.clientX;
+                isDragging = true;
+                track.style.transition = 'none';
+                track.style.cursor = 'grabbing';
+                updateIndexFromDots();
+            });
+
+            track.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                currentX = e.clientX;
+                const diff = currentX - startX;
+                const offset = (-currentIndex * 100) + (diff / track.offsetWidth * 100);
+                track.style.transform = `translateX(${offset}%)`;
+            });
+
+            track.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                isDragging = false;
+                track.style.transition = 'transform 0.3s ease';
+                track.style.cursor = 'grab';
+
+                const diff = currentX - startX;
+                const threshold = track.offsetWidth * 0.2;
+
+                if (Math.abs(diff) > threshold) {
+                    if (diff > 0 && currentIndex > 0) {
+                        currentIndex--;
+                    } else if (diff < 0 && currentIndex < slides - 1) {
+                        currentIndex++;
+                    }
+                }
+
+                window.goToSlide(carouselId, currentIndex);
+            });
+
+            track.addEventListener('mouseleave', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    track.style.transition = 'transform 0.3s ease';
+                    track.style.cursor = 'grab';
+                    window.goToSlide(carouselId, currentIndex);
+                }
+            });
+        }
+
         // Carousel functions
         window.goToSlide = (id, index) => {
             const track = document.getElementById('track-' + id);
@@ -990,26 +1110,11 @@
             
             track.style.transform = `translateX(-${index * 100}%)`;
             
+            // Update dots
             const dots = document.querySelectorAll(`#carousel-${id} .dot`);
             dots.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);
             });
-        };
-
-        window.nextSlide = (id) => {
-            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
-            const activeDot = document.querySelector(`#carousel-${id} .dot.active`);
-            const currentIndex = Array.from(dots).indexOf(activeDot);
-            const nextIndex = (currentIndex + 1) % dots.length;
-            window.goToSlide(id, nextIndex);
-        };
-
-        window.prevSlide = (id) => {
-            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
-            const activeDot = document.querySelector(`#carousel-${id} .dot.active`);
-            const currentIndex = Array.from(dots).indexOf(activeDot);
-            const prevIndex = (currentIndex - 1 + dots.length) % dots.length;
-            window.goToSlide(id, prevIndex);
         };
 
         // Modal functions
@@ -1134,6 +1239,15 @@
                 });
                 document.body.style.overflow = '';
             }
+        });
+
+        // Initialize all carousels with touch support
+        document.querySelectorAll('[id^="carousel-"]').forEach(carousel => {
+            const id = carousel.id.replace('carousel-', '');
+            setTimeout(() => {
+                window.goToSlide(id, 0);
+                initCarousel(id);
+            }, 100);
         });
 
     })();
