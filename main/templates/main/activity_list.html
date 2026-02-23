@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Journey Reels</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -17,12 +17,15 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #000;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* ===== MOBILE STYLES (UP TO 768px) ===== */
         @media screen and (max-width: 768px) {
             body {
-                height: 100vh;
+                height: 100%;
                 overflow: hidden;
                 background: #000;
             }
@@ -30,19 +33,33 @@
             .reels-container {
                 position: relative;
                 width: 100%;
-                height: 100vh;
+                height: 100dvh;
+                height: 100vh; /* fallback */
                 background: #000;
                 overflow: hidden;
             }
 
-            /* Header */
+            /* Fix for older browsers */
+            @supports not (height: 100dvh) {
+                .reels-container,
+                .reels-scroll,
+                .reel-item {
+                    height: 100vh;
+                    height: calc(100vh - env(safe-area-inset-bottom, 0px));
+                }
+            }
+
+            /* Header with safe area support */
             .reel-header {
-                position: fixed;
+                position: sticky;
                 top: 0;
                 left: 0;
                 right: 0;
                 z-index: 20;
-                padding: 16px;
+                padding: max(16px, env(safe-area-inset-top, 16px)) 
+                         max(16px, env(safe-area-inset-right, 16px)) 
+                         16px 
+                         max(16px, env(safe-area-inset-left, 16px));
                 display: flex;
                 align-items: center;
                 gap: 16px;
@@ -53,9 +70,10 @@
             .back-button {
                 width: 44px;
                 height: 44px;
+                background: rgba(0, 0, 0, 0.9); /* Solid fallback */
                 background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
+                backdrop-filter: blur(8px);
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -65,6 +83,16 @@
                 font-size: 22px;
                 pointer-events: auto;
                 border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            /* Fallback for browsers without backdrop-filter */
+            @supports not ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) {
+                .back-button,
+                .carousel-indicators,
+                .screenshot-counter,
+                .quality-badge {
+                    background: rgba(0, 0, 0, 0.9);
+                }
             }
 
             .progress-indicator {
@@ -86,11 +114,11 @@
                 background: white;
             }
 
-            /* Plus Button */
+            /* Plus Button with safe area */
             .plus-button {
                 position: fixed;
-                bottom: 24px;
-                right: 24px;
+                bottom: max(24px, env(safe-area-inset-bottom, 24px));
+                right: max(24px, env(safe-area-inset-right, 24px));
                 width: 60px;
                 height: 60px;
                 background: white;
@@ -108,13 +136,16 @@
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
 
-            /* Scroll Container */
+            /* Scroll Container with improved touch handling */
             .reels-scroll {
-                height: 100vh;
+                height: 100dvh;
+                height: 100vh; /* fallback */
                 overflow-y: scroll;
                 scroll-snap-type: y mandatory;
                 -webkit-overflow-scrolling: touch;
                 scrollbar-width: none;
+                overscroll-behavior: none;
+                touch-action: pan-y;
             }
 
             .reels-scroll::-webkit-scrollbar {
@@ -124,7 +155,8 @@
             /* Reel Item */
             .reel-item {
                 position: relative;
-                height: 100vh;
+                height: 100dvh;
+                height: 100vh; /* fallback */
                 scroll-snap-align: start;
                 scroll-snap-stop: always;
                 background: black;
@@ -151,12 +183,14 @@
                 position: relative;
                 width: 100%;
                 height: 100%;
+                overflow: hidden;
             }
 
             .carousel-track {
                 display: flex;
                 height: 100%;
                 transition: transform 0.2s ease;
+                will-change: transform;
             }
 
             .carousel-slide {
@@ -164,19 +198,27 @@
                 height: 100%;
             }
 
+            .carousel-slide img,
+            .carousel-slide picture {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
             /* Carousel Indicators - Only visible on mobile */
             .carousel-indicators {
                 position: absolute;
-                top: 60px;
+                top: max(60px, env(safe-area-inset-top, 60px));
                 left: 50%;
                 transform: translateX(-50%);
                 display: flex;
                 gap: 6px;
                 z-index: 15;
                 padding: 8px 16px;
+                background: rgba(0, 0, 0, 0.9); /* Solid fallback */
                 background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(4px);
                 -webkit-backdrop-filter: blur(4px);
+                backdrop-filter: blur(4px);
                 border-radius: 30px;
             }
 
@@ -188,6 +230,7 @@
                 border-radius: 3px;
                 padding: 0;
                 cursor: pointer;
+                transition: all 0.2s ease;
             }
 
             .indicator.active {
@@ -200,14 +243,14 @@
                 display: none;
             }
 
-            /* Small White Video Icon - Extreme Bottom Left */
+            /* Small White Video Icon - Extreme Bottom Left with safe area */
             .video-trigger {
                 position: absolute;
-                bottom: 16px;
-                left: 16px;
+                bottom: max(16px, env(safe-area-inset-bottom, 16px));
+                left: max(16px, env(safe-area-inset-left, 16px));
                 width: 50px;
                 height: 50px;
-                background: rgba(255, 255, 255, 0.9);
+                background: rgba(255, 255, 255, 0.95);
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -226,14 +269,15 @@
                 background: white;
             }
 
-            /* Screenshot Counter - Clean version without HD badge */
+            /* Screenshot Counter with safe area */
             .screenshot-counter {
                 position: absolute;
-                top: 60px;
-                right: 16px;
+                top: max(60px, env(safe-area-inset-top, 60px));
+                right: max(16px, env(safe-area-inset-right, 16px));
+                background: rgba(0, 0, 0, 0.9); /* Solid fallback */
                 background: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
+                backdrop-filter: blur(8px);
                 padding: 8px 14px;
                 border-radius: 30px;
                 display: flex;
@@ -271,6 +315,7 @@
                 justify-content: center;
                 opacity: 0;
                 transition: opacity 0.2s ease;
+                pointer-events: none;
             }
 
             .reel-item:active .video-overlay {
@@ -290,6 +335,7 @@
                 gap: 12px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 cursor: pointer;
+                pointer-events: auto;
             }
 
             .view-video-btn i {
@@ -304,9 +350,9 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0, 0, 0, 0.8);
-                backdrop-filter: blur(10px);
+                background: rgba(0, 0, 0, 0.9);
                 -webkit-backdrop-filter: blur(10px);
+                backdrop-filter: blur(10px);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -314,6 +360,12 @@
                 gap: 12px;
                 color: white;
                 z-index: 25;
+            }
+
+            @supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+                .processing-overlay {
+                    background: rgba(0, 0, 0, 0.95);
+                }
             }
 
             .processing-overlay i {
@@ -372,11 +424,11 @@
                 z-index: 5;
             }
 
-            /* Action Buttons - BOLD WHITE */
+            /* Action Buttons - BOLD WHITE with safe area */
             .action-buttons {
                 position: absolute;
-                right: 12px;
-                bottom: 120px;
+                right: max(12px, env(safe-area-inset-right, 12px));
+                bottom: max(120px, env(safe-area-inset-bottom, 120px));
                 display: flex;
                 flex-direction: column;
                 gap: 24px;
@@ -395,6 +447,7 @@
                 cursor: pointer;
                 padding: 0;
                 text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+                -webkit-tap-highlight-color: transparent;
             }
 
             .action-btn i {
@@ -420,12 +473,12 @@
                 object-fit: cover;
             }
 
-            /* Video Info - BOLD WHITE */
+            /* Video Info - BOLD WHITE with safe area */
             .video-info {
                 position: absolute;
-                bottom: 120px;
-                left: 16px;
-                right: 80px;
+                bottom: max(120px, env(safe-area-inset-bottom, 120px));
+                left: max(16px, env(safe-area-inset-left, 16px));
+                right: max(80px, env(safe-area-inset-right, 80px));
                 color: white;
                 z-index: 15;
                 text-shadow: 0 2px 4px rgba(0,0,0,0.5);
@@ -452,8 +505,8 @@
 
             .follow-btn {
                 background: rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(4px);
                 -webkit-backdrop-filter: blur(4px);
+                backdrop-filter: blur(4px);
                 border: 1px solid rgba(255, 255, 255, 0.3);
                 color: white;
                 padding: 6px 16px;
@@ -461,6 +514,13 @@
                 font-size: 13px;
                 font-weight: 700;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+                .follow-btn {
+                    background: rgba(255, 255, 255, 0.3);
+                }
             }
 
             .follow-btn:active {
@@ -493,6 +553,7 @@
                 display: inline-block;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
+                -webkit-tap-highlight-color: transparent;
             }
 
             .timestamp {
@@ -535,16 +596,20 @@
                 z-index: 1010;
                 display: flex;
                 justify-content: space-between;
-                padding: 20px;
+                padding: max(20px, env(safe-area-inset-top, 20px))
+                         max(20px, env(safe-area-inset-right, 20px))
+                         20px
+                         max(20px, env(safe-area-inset-left, 20px));
                 background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
             }
 
-            .modal-back {
+            .modal-back,
+            .modal-download {
                 width: 44px;
                 height: 44px;
                 background: rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
+                backdrop-filter: blur(8px);
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -553,23 +618,14 @@
                 font-size: 22px;
                 border: 1px solid rgba(255, 255, 255, 0.2);
                 cursor: pointer;
+                text-decoration: none;
             }
 
-            .modal-download {
-                width: 44px;
-                height: 44px;
-                background: rgba(255, 255, 255, 0.2);
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 20px;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                cursor: pointer;
-                text-decoration: none;
+            @supports not ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) {
+                .modal-back,
+                .modal-download {
+                    background: rgba(0, 0, 0, 0.6);
+                }
             }
 
             /* Comments Drawer */
@@ -586,6 +642,7 @@
                 max-height: 80vh;
                 display: flex;
                 flex-direction: column;
+                padding-bottom: env(safe-area-inset-bottom, 0);
             }
 
             .comments-drawer.show {
@@ -609,6 +666,7 @@
                 padding: 8px;
                 color: #666;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
 
             .comments-list {
@@ -616,6 +674,7 @@
                 overflow-y: auto;
                 padding: 16px;
                 max-height: 60vh;
+                -webkit-overflow-scrolling: touch;
             }
 
             .comment-item {
@@ -653,6 +712,7 @@
                 border-top: 1px solid #eee;
                 display: flex;
                 gap: 8px;
+                padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
             }
 
             .comment-input {
@@ -662,6 +722,7 @@
                 border-radius: 30px;
                 outline: none;
                 font-size: 15px;
+                -webkit-appearance: none;
             }
 
             .comment-send {
@@ -672,6 +733,7 @@
                 padding: 14px 24px;
                 font-weight: 700;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
 
             /* Share Menu */
@@ -685,6 +747,7 @@
                 transform: translateY(100%);
                 transition: transform 0.3s ease;
                 z-index: 200;
+                padding-bottom: env(safe-area-inset-bottom, 0);
             }
 
             .share-menu.show {
@@ -706,6 +769,7 @@
                 background: none;
                 border: none;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
 
             .share-option i {
@@ -742,6 +806,7 @@
                 font-size: 15px;
                 font-weight: 600;
                 cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
 
             .menu-item i {
@@ -801,6 +866,7 @@
                 cursor: pointer;
                 text-decoration: none;
                 display: inline-block;
+                -webkit-tap-highlight-color: transparent;
             }
         }
 
@@ -855,6 +921,7 @@
                 width: 40px;
                 height: 40px;
                 background: rgba(0, 0, 0, 0.5);
+                -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
                 border-radius: 50%;
                 display: flex;
@@ -1025,6 +1092,7 @@
                 width: 40px;
                 height: 40px;
                 background: rgba(0, 0, 0, 0.5);
+                -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
                 border: none;
                 border-radius: 50%;
@@ -1051,6 +1119,7 @@
                 top: 60px;
                 left: 16px;
                 background: rgba(0, 0, 0, 0.6);
+                -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
                 padding: 6px 12px;
                 border-radius: 20px;
@@ -1422,10 +1491,36 @@
         </div>
     </div>
 
-    <!-- JavaScript with video looping functionality -->
+    <!-- JavaScript with video looping functionality and viewport fixes -->
     <script>
     (function() {
         'use strict';
+        
+        // Fix for mobile viewport height
+        function fixViewportHeight() {
+            // First we get the viewport height and multiply it by 1% to get a value for a vh unit
+            let vh = window.innerHeight * 0.01;
+            // Then we set the value in the --vh custom property to the root of the document
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            
+            // Also set safe area insets as CSS variables (fallback values)
+            document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-top, 0px)');
+            document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom, 0px)');
+            document.documentElement.style.setProperty('--sal', 'env(safe-area-inset-left, 0px)');
+            document.documentElement.style.setProperty('--sar', 'env(safe-area-inset-right, 0px)');
+        }
+
+        // Call on init
+        fixViewportHeight();
+
+        // Call on resize and orientation change with debounce
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(fixViewportHeight, 100);
+        });
+        
+        window.addEventListener('orientationchange', fixViewportHeight);
         
         // Cache DOM elements
         const reelsScroll = document.getElementById('reelsScroll');
@@ -1437,22 +1532,35 @@
             entries.forEach(entry => {
                 const video = entry.target;
                 if (entry.isIntersecting) {
-                    video.load();
-                    video.play().catch(() => {
-                        video.muted = true;
-                        video.play();
-                    });
+                    // Only load if not already loaded
+                    if (!video.hasAttribute('data-loaded')) {
+                        video.load();
+                        video.setAttribute('data-loaded', 'true');
+                    }
+                    
+                    // Attempt to play with mute fallback
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(() => {
+                            video.muted = true;
+                            video.play();
+                        });
+                    }
                 } else {
                     video.pause();
-                    video.removeAttribute('src');
-                    video.load();
+                    // Don't remove src to maintain performance
                 }
             });
-        }, { threshold: 0.5 });
+        }, { 
+            threshold: 0.5,
+            rootMargin: '50px 0px' // Preload slightly before entering viewport
+        });
         
-        // Initialize videos
-        document.querySelectorAll('video').forEach(video => {
-            videoObserver.observe(video);
+        // Initialize videos when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('video').forEach(video => {
+                videoObserver.observe(video);
+            });
         });
         
         // Scroll handler with throttling
@@ -1547,6 +1655,9 @@
                     }
                     container.innerHTML = html;
                     commentsCache.set(id, html);
+                })
+                .catch(() => {
+                    container.innerHTML = '<div style="text-align:center;padding:32px;color:#666;">Failed to load comments</div>';
                 });
         }
         
@@ -1575,6 +1686,9 @@
                     let current = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
                     countSpan.textContent = (current + 1).toLocaleString();
                 }
+            })
+            .catch(() => {
+                alert('Failed to post comment');
             });
         }
         
@@ -1616,8 +1730,9 @@
         }
         
         function copyLink(id) {
-            navigator.clipboard?.writeText(window.location.origin + '/activity/' + id + '/');
-            alert('Link copied!');
+            navigator.clipboard?.writeText(window.location.origin + '/activity/' + id + '/')
+                .then(() => alert('Link copied!'))
+                .catch(() => alert('Failed to copy link'));
             closeShareMenu(id);
         }
         
@@ -1629,26 +1744,29 @@
         function initCarousel(activityId) {
             if (!carousels[activityId]) {
                 const slides = document.querySelectorAll(`#carousel-${activityId} .carousel-slide`);
-                carousels[activityId] = {
-                    currentSlide: 0,
-                    totalSlides: slides.length
-                };
-                
-                // Auto-advance if more than 1 slide
-                if (slides.length > 1) {
-                    startAutoAdvance(activityId);
+                if (slides.length > 0) {
+                    carousels[activityId] = {
+                        currentSlide: 0,
+                        totalSlides: slides.length
+                    };
+                    
+                    // Auto-advance if more than 1 slide
+                    if (slides.length > 1) {
+                        startAutoAdvance(activityId);
+                    }
                 }
             }
         }
         
         function startAutoAdvance(activityId) {
-            if (carousels[activityId].interval) {
+            if (carousels[activityId]?.interval) {
                 clearInterval(carousels[activityId].interval);
             }
             
             carousels[activityId].interval = setInterval(() => {
-                if (document.getElementById(`carousel-${activityId}`) && 
-                    document.getElementById(`carousel-${activityId}`).offsetParent !== null) {
+                // Only advance if carousel is visible
+                const carousel = document.getElementById(`carousel-${activityId}`);
+                if (carousel && carousel.offsetParent !== null) {
                     nextSlide(activityId);
                 }
             }, 5000);
@@ -1656,6 +1774,8 @@
         
         function goToSlide(activityId, index) {
             initCarousel(activityId);
+            if (!carousels[activityId]) return;
+            
             const track = document.querySelector(`#carousel-${activityId} .carousel-track`);
             const slides = document.querySelectorAll(`#carousel-${activityId} .carousel-slide`);
             const indicators = document.querySelectorAll(`#carousel-${activityId} .indicator`);
@@ -1672,6 +1792,8 @@
         
         function nextSlide(activityId) {
             initCarousel(activityId);
+            if (!carousels[activityId]) return;
+            
             const total = carousels[activityId].totalSlides;
             const current = carousels[activityId].currentSlide;
             goToSlide(activityId, (current + 1) % total);
@@ -1679,6 +1801,8 @@
         
         function prevSlide(activityId) {
             initCarousel(activityId);
+            if (!carousels[activityId]) return;
+            
             const total = carousels[activityId].totalSlides;
             const current = carousels[activityId].currentSlide;
             goToSlide(activityId, (current - 1 + total) % total);
@@ -1698,14 +1822,26 @@
                 // Play video with loop enabled
                 const video = modal.querySelector('video');
                 if (video) {
-                    video.loop = true; // Ensure loop is enabled
-                    video.play().catch(e => console.log('Video play failed:', e));
+                    video.loop = true;
+                    
+                    // Handle play with error fallback
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => {
+                            console.log('Video play failed, trying muted autoplay:', e);
+                            video.muted = true;
+                            video.play();
+                        });
+                    }
                     
                     // Extra safety: add ended event listener to restart if loop fails
-                    video.addEventListener('ended', function onEnd() {
+                    const onEnd = function() {
                         this.currentTime = 0;
-                        this.play();
-                    }, { once: false });
+                        this.play().catch(() => {});
+                    };
+                    
+                    video.removeEventListener('ended', onEnd);
+                    video.addEventListener('ended', onEnd);
                 }
             }
         }
@@ -1766,6 +1902,12 @@
             }
         });
         
+        // Initialize carousels
+        document.querySelectorAll('[id^="carousel-"]').forEach(carousel => {
+            const id = carousel.id.replace('carousel-', '');
+            initCarousel(id);
+        });
+        
         // Expose functions globally
         window.handleLove = handleLove;
         window.openComments = openComments;
@@ -1811,6 +1953,7 @@
         })
         .catch(() => {
             btn.textContent = originalText;
+            alert('Failed to follow user');
         })
         .finally(() => {
             btn.disabled = false;
@@ -1832,17 +1975,22 @@
                 }
             }).then(() => {
                 window.location.reload();
+            }).catch(() => {
+                alert('Failed to delete activity');
             });
         }
     }
 
     // Handle media click
     function handleMediaClick(event, activityId) {
-        if (!event.target.closest('button') && !event.target.closest('.video-trigger')) {
+        if (!event.target.closest('button') && !event.target.closest('.video-trigger') && !event.target.closest('.view-video-btn')) {
             const video = document.getElementById(`video-${activityId}`);
             if (video) {
                 if (video.paused) {
-                    video.play();
+                    video.play().catch(() => {
+                        video.muted = true;
+                        video.play();
+                    });
                 } else {
                     video.pause();
                 }
