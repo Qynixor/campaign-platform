@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Journey Reels · Final</title>
+    <title>Journey Reels · Swipe images</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Inter', -apple-system, sans-serif;
             background: #000;
@@ -21,7 +21,7 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Main container */
+        /* main scroller (vertical reels) */
         .reels-container {
             height: 100vh;
             height: 100dvh;
@@ -31,7 +31,6 @@
             background: #000;
         }
 
-        /* Scrollable track */
         .reels-track {
             height: 100%;
             overflow-y: scroll;
@@ -39,11 +38,11 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
-        .reels-track::-webkit-scrollbar {
-            display: none;
+
+        .reels-track::-webkit-scrollbar { 
+            display: none; 
         }
 
-        /* Reel item */
         .reel {
             position: relative;
             height: 100%;
@@ -52,22 +51,298 @@
             background: #000;
         }
 
-        /* Media container - FULL SCREEN */
+        /* ===== IMPROVED CAROUSEL STYLES ===== */
+        .story-carousel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: pan-x pinch-zoom;
+            -webkit-tap-highlight-color: transparent;
+            outline: none; /* Remove focus outline but keep keyboard nav */
+        }
+
+        .story-carousel:focus-visible {
+            outline: 2px solid #0a84ff;
+            outline-offset: -2px;
+        }
+
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+            will-change: transform;
+            cursor: grab;
+            touch-action: pan-x pinch-zoom;
+            user-select: none;
+        }
+
+        .carousel-track.dragging {
+            transition: none;
+            cursor: grabbing;
+        }
+
+        .carousel-slide {
+            flex: 0 0 100%;
+            height: 100%;
+            width: 100%;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .carousel-slide img,
+        .carousel-slide picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            display: block;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* ===== NAVIGATION ARROWS ===== */
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 20;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            opacity: 0.8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .carousel-arrow:hover {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .carousel-arrow-left {
+            left: 16px;
+        }
+
+        .carousel-arrow-right {
+            right: 16px;
+        }
+
+        .carousel-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* ===== TOP DOTS ===== */
+        .carousel-dots {
+            position: absolute;
+            top: max(env(safe-area-inset-top, 60px), 60px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 15;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 24px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.4);
+            border: none;
+            border-radius: 3px;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dot:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .dot.active {
+            background: #fff;
+            width: 32px;
+        }
+
+        /* ===== MEDIA COUNTER ===== */
+        .media-counter {
+            position: absolute;
+            top: max(env(safe-area-inset-top, 60px), 60px);
+            right: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 8px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .media-counter i { 
+            font-size: 14px; 
+        }
+
+        /* ===== SLIDE COUNTER (Current/Total) ===== */
+        .slide-counter {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 15;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        /* ===== THUMBNAIL STRIP ===== */
+        .thumbnail-strip {
+            position: absolute;
+            bottom: 140px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            z-index: 15;
+            pointer-events: none;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .thumbnail-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .thumbnail-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.7;
+            pointer-events: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+        }
+
+        .thumbnail-item:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .thumbnail-item.active {
+            opacity: 1;
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+
+        .thumbnail-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ===== SWIPE INDICATOR (Shows once) ===== */
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 16px 32px;
+            border-radius: 60px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            z-index: 30;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeOut 2s ease forwards 3s;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .swipe-indicator i {
+            font-size: 18px;
+            opacity: 0.9;
+            animation: pulse 1.5s infinite;
+        }
+
+        .swipe-indicator i:first-child {
+            animation: slideLeft 1.5s infinite;
+        }
+
+        .swipe-indicator i:last-child {
+            animation: slideRight 1.5s infinite;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%); }
+            70% { opacity: 1; transform: translate(-50%, -50%); }
+            100% { opacity: 0; transform: translate(-50%, -60%); visibility: hidden; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes slideLeft {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-5px); }
+        }
+
+        @keyframes slideRight {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        /* ===== REST OF YOUR EXISTING STYLES ===== */
         .reel-media {
             position: absolute;
             inset: 0;
             background: #000;
         }
 
-        .reel-media img,
-        .reel-media video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none; /* Prevents interference with swipe */
-        }
-
-        /* Subtle gradient overlay */
         .reel::after {
             content: '';
             position: absolute;
@@ -80,7 +355,6 @@
             z-index: 1;
         }
 
-        /* ===== HEADER ===== */
         .header {
             position: fixed;
             top: 0;
@@ -99,7 +373,6 @@
             height: 40px;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             border-radius: 40px;
             display: flex;
             align-items: center;
@@ -128,149 +401,10 @@
             transition: all 0.2s ease;
         }
 
-        .progress-bar.active {
-            background: #fff;
+        .progress-bar.active { 
+            background: #fff; 
         }
 
-        /* ===== CAROUSEL WITH TOUCH SUPPORT ===== */
-        .story-carousel {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            touch-action: pan-y pinch-zoom; /* Allows vertical scroll while capturing horizontal swipes */
-        }
-
-        .carousel-track {
-            display: flex;
-            height: 100%;
-            transition: transform 0.3s ease;
-            will-change: transform;
-            cursor: grab;
-            touch-action: pan-y pinch-zoom;
-        }
-
-        .carousel-track:active {
-            cursor: grabbing;
-        }
-
-        .carousel-slide {
-            flex: 0 0 100%;
-            height: 100%;
-            pointer-events: none; /* Let the track handle gestures */
-        }
-
-        .carousel-slide img,
-        .carousel-slide picture {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
-        }
-
-        /* Carousel Indicators - HIDDEN ARROWS, ONLY DOTS */
-        .carousel-dots {
-            position: absolute;
-            top: max(env(safe-area-inset-top, 60px), 60px);
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-            z-index: 15;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .dot {
-            width: 24px;
-            height: 3px;
-            background: rgba(255,255,255,0.4);
-            border: none;
-            border-radius: 3px;
-            padding: 0;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .dot.active {
-            background: #fff;
-            width: 32px;
-        }
-
-        /* Media counter - WITHOUT TEXT */
-        .media-counter {
-            position: absolute;
-            top: max(env(safe-area-inset-top, 60px), 60px);
-            right: 16px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 8px 12px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            z-index: 15;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .media-counter i {
-            font-size: 14px;
-        }
-
-        /* Navigation arrows - COMPLETELY HIDDEN */
-        .carousel-nav {
-            display: none !important;
-        }
-
-        /* ===== VIDEO ICON ===== */
-        .video-icon {
-            position: fixed;
-            bottom: 24px;
-            right: 96px;
-            width: 56px;
-            height: 56px;
-            background: rgba(255,255,255,0.95);
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            z-index: 100;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        /* ===== FAB BUTTON - VISIBLE ON ALL DEVICES ===== */
-        .fab {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: #fff;
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            text-decoration: none;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
-        }
-
-        /* ===== INFO PANEL ===== */
         .info-panel {
             position: absolute;
             left: 16px;
@@ -291,7 +425,6 @@
             text-decoration: none;
             color: #fff;
             pointer-events: auto;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .caption {
@@ -303,12 +436,11 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             margin: 8px 0 4px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             pointer-events: auto;
         }
 
-        .caption.expanded {
-            -webkit-line-clamp: unset;
+        .caption.expanded { 
+            -webkit-line-clamp: unset; 
         }
 
         .more-link {
@@ -318,7 +450,6 @@
             cursor: pointer;
             display: inline-block;
             pointer-events: auto;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             margin-bottom: 8px;
         }
 
@@ -328,12 +459,10 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
             pointer-events: auto;
             width: fit-content;
         }
 
-        /* ===== ACTION BUTTONS ===== */
         .actions {
             position: absolute;
             right: 12px;
@@ -362,15 +491,15 @@
             min-width: 60px;
         }
 
-        .action i {
-            font-size: 28px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        .action i { 
+            font-size: 28px; 
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8); 
         }
 
-        .action span {
-            font-size: 12px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        .action span { 
+            font-size: 12px; 
+            font-weight: 600; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
         }
 
         .action-profile {
@@ -383,11 +512,49 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        .action.loved i {
-            color: #ff3b30;
+        .action.loved i { 
+            color: #ff3b30; 
         }
 
-        /* ===== MODAL ===== */
+        .video-icon {
+            position: fixed;
+            bottom: 24px;
+            right: 96px;
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 24px;
+            z-index: 100;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #fff;
+            border-radius: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 24px;
+            text-decoration: none;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
         .modal {
             position: fixed;
             inset: 0;
@@ -396,8 +563,8 @@
             display: none;
         }
 
-        .modal.show {
-            display: block;
+        .modal.show { 
+            display: block; 
         }
 
         .modal-header {
@@ -418,7 +585,6 @@
             height: 44px;
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
             border-radius: 44px;
             display: flex;
             align-items: center;
@@ -427,7 +593,6 @@
             font-size: 20px;
             border: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
-            text-decoration: none;
             pointer-events: auto;
         }
 
@@ -438,132 +603,6 @@
             background: #000;
         }
 
-        /* ===== BOTTOM SHEETS ===== */
-        .sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #111;
-            border-radius: 24px 24px 0 0;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-            z-index: 500;
-            color: #fff;
-            max-height: 70vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sheet.show {
-            transform: translateY(0);
-        }
-
-        .sheet-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #222;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-        }
-
-        .sheet-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .sheet-content {
-            padding: 16px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .comment-input-area {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-            border-top: 1px solid #222;
-        }
-
-        .comment-input {
-            flex: 1;
-            background: #222;
-            border: none;
-            border-radius: 24px;
-            padding: 12px 16px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .comment-send {
-            background: #0a84ff;
-            border: none;
-            border-radius: 24px;
-            padding: 0 20px;
-            color: #fff;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Share grid */
-        .share-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            padding: 16px;
-            text-align: center;
-        }
-
-        .share-option {
-            background: none;
-            border: none;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        .share-option i {
-            font-size: 28px;
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #222;
-            border-radius: 56px;
-            margin: 0 auto 8px;
-        }
-
-        .share-option span {
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
-        .menu-item {
-            width: 100%;
-            padding: 16px;
-            background: none;
-            border: none;
-            border-top: 1px solid #222;
-            color: #fff;
-            text-align: left;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .menu-item i {
-            width: 20px;
-            color: #888;
-        }
-
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             position: absolute;
             top: 50%;
@@ -575,21 +614,21 @@
             z-index: 10;
         }
 
-        .empty-icon {
-            font-size: 48px;
-            opacity: 0.3;
-            margin-bottom: 16px;
+        .empty-icon { 
+            font-size: 48px; 
+            opacity: 0.3; 
+            margin-bottom: 16px; 
         }
 
-        .empty-state h3 {
-            font-weight: 600;
-            font-size: 20px;
-            margin-bottom: 8px;
+        .empty-state h3 { 
+            font-weight: 600; 
+            font-size: 20px; 
+            margin-bottom: 8px; 
         }
 
-        .empty-state p {
-            opacity: 0.6;
-            font-size: 14px;
+        .empty-state p { 
+            opacity: 0.6; 
+            font-size: 14px; 
         }
 
         .empty-btn {
@@ -605,7 +644,64 @@
             text-decoration: none;
         }
 
-        /* ===== DESKTOP STYLES ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .stat-number { 
+            font-size: 24px; 
+            font-weight: 700; 
+            color: #0a84ff; 
+        }
+
+        .stat-label { 
+            font-size: 12px; 
+            opacity: 0.6; 
+            margin-top: 4px; 
+        }
+
+        .preview-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 16px;
+            background: #1a1a1a;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .preview-item:hover { 
+            background: #222; 
+        }
+
+        .preview-image {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            background-color: #222;
+            flex-shrink: 0;
+        }
+
+        .journey-progress {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #1a1a1a;
+            border-radius: 16px;
+        }
+
+        /* Desktop layout */
         @media (min-width: 768px) {
             body {
                 display: flex;
@@ -637,91 +733,44 @@
                 border: 1px solid #222;
                 height: 700px;
                 overflow-y: auto;
-            }
-
-            .stats-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin-bottom: 24px;
-            }
-
-            .stat-card {
-                background: #1a1a1a;
-                border-radius: 16px;
-                padding: 16px;
-            }
-
-            .stat-number {
-                font-size: 24px;
-                font-weight: 700;
-                color: #0a84ff;
-            }
-
-            .stat-label {
-                font-size: 12px;
-                opacity: 0.6;
-                margin-top: 4px;
-            }
-
-            .preview-item {
-                display: flex;
-                gap: 12px;
-                padding: 12px;
-                border-radius: 16px;
-                background: #1a1a1a;
-                margin-bottom: 8px;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-
-            .preview-item:hover {
-                background: #222;
-            }
-
-            .preview-image {
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                background-size: cover;
-                background-position: center;
-                background-color: #222;
-                flex-shrink: 0;
-            }
-
-            /* Ensure FAB is visible on desktop */
-            .fab {
-                display: flex;
+                display: block;
             }
         }
 
-        /* Mobile adjustments */
         @media (max-width: 767px) {
-            .sidebar {
-                display: none;
+            .sidebar { 
+                display: none; 
             }
-            
-            .info-panel {
-                right: 80px;
+            .info-panel { 
+                right: 80px; 
             }
-            
-            .actions {
-                gap: 16px;
+            .carousel-arrow {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
             }
-            
-            .action {
-                min-width: 52px;
+            .thumbnail-item {
+                width: 40px;
+                height: 40px;
             }
+            .slide-counter {
+                bottom: 80px;
+            }
+            .thumbnail-strip {
+                bottom: 120px;
+            }
+        }
 
-            /* Ensure carousel dots are visible on mobile */
-            .carousel-dots {
-                display: flex;
-                z-index: 30;
+        @media (max-width: 480px) {
+            .carousel-arrow-left {
+                left: 8px;
             }
-
-            .dot {
-                cursor: pointer;
-                -webkit-tap-highlight-color: transparent;
+            .carousel-arrow-right {
+                right: 8px;
+            }
+            .thumbnail-item {
+                width: 36px;
+                height: 36px;
             }
         }
     </style>
@@ -751,36 +800,99 @@
                     <!-- Media Container -->
                     <div class="reel-media">
                         {% if activity.is_video and activity.has_screenshots_var %}
-                            <!-- Carousel with touch support -->
-                            <div class="story-carousel" id="carousel-{{ activity.id }}">
+                            <!-- ===== FULLY WORKING CAROUSEL ===== -->
+                            <div class="story-carousel" 
+                                 id="carousel-{{ activity.id }}" 
+                                 tabindex="0" 
+                                 role="region" 
+                                 aria-label="Image carousel for day {{ activity.day_number }}"
+                                 data-initialized="false">
+                                
+                                <!-- Track with slides -->
                                 <div class="carousel-track" id="track-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
-                                    <div class="carousel-slide">
+                                    <div class="carousel-slide" role="group" aria-label="{{ forloop.counter }} of {{ activity.screenshot_count_total }}">
                                         <picture>
                                             <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
-                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" loading="lazy" alt="Screenshot {{ forloop.counter }}">
+                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" 
+                                                 loading="lazy" 
+                                                 alt="Day {{ activity.day_number }} - moment {{ forloop.counter }}"
+                                                 draggable="false">
                                         </picture>
                                     </div>
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Carousel Indicators - ONLY DOTS, NO ARROWS -->
+                                <!-- Navigation Arrows (only show if more than 1 slide) -->
+                                {% if activity.screenshot_count_total > 1 %}
+
+                              <!-- 
+<button class="carousel-arrow carousel-arrow-left" 
+        onclick="navigateCarousel('{{ activity.id }}', 'prev', event)"
+        aria-label="Previous image">
+    <i class="fas fa-chevron-left"></i>
+</button>
+<button class="carousel-arrow carousel-arrow-right" 
+        onclick="navigateCarousel('{{ activity.id }}', 'next', event)"
+        aria-label="Next image">
+    <i class="fas fa-chevron-right"></i>
+</button>
+-->
+
+                                {% endif %}
+                                
+                                <!-- Top Dots Navigation -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="carousel-dots">
                                     {% for screenshot in activity.screenshots_list %}
                                     <button class="dot {% if forloop.first %}active{% endif %}" 
-                                            onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"
+                                            data-carousel="{{ activity.id }}"
+                                            data-index="{{ forloop.counter0 }}"
                                             aria-label="Go to slide {{ forloop.counter }}">
                                     </button>
                                     {% endfor %}
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Media Counter - just number -->
+                                <!-- Media Counter (total count) -->
                                 <div class="media-counter">
                                     <i class="fas fa-images"></i>
                                     <span>{{ activity.screenshot_count_total }}</span>
                                 </div>
+                                
+                                <!-- Slide Counter (current/total) -->
+                                {% if activity.screenshot_count_total > 1 %}
+                                <div class="slide-counter" id="counter-{{ activity.id }}">
+                                    <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Thumbnail Strip Navigation -->
+                                {% if activity.screenshot_count_total > 1 %}
+                                <div class="thumbnail-strip" id="strip-{{ activity.id }}">
+                                    {% for screenshot in activity.screenshots_list %}
+                                    <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
+                                         onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"
+                                         title="Go to image {{ forloop.counter }}"
+                                         role="button"
+                                         tabindex="0"
+                                         aria-label="Thumbnail {{ forloop.counter }}">
+                                        <img src="{{ screenshot.image.url }}?w=60&h=60&fit=crop" 
+                                             loading="lazy" 
+                                             alt="Thumbnail {{ forloop.counter }}">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Swipe Indicator (shows once per session) -->
+                                {% if forloop.first and activity.screenshot_count_total > 1 %}
+                                <div class="swipe-indicator" id="swipe-indicator-{{ activity.id }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                    <span>Swipe</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                                {% endif %}
                             </div>
                             
                         {% elif activity.file %}
@@ -792,24 +904,24 @@
                                 </video>
                                 
                                 {% if not activity.video_processed %}
-                                <div style="position:absolute; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+                                <div class="video-loading">
                                     <i class="fas fa-spinner fa-pulse fa-2x"></i>
-                                    <span style="font-size:13px;">Processing video...</span>
+                                    <span>Processing video...</span>
                                 </div>
                                 {% endif %}
                             {% else %}
                                 <!-- Single Image -->
                                 <picture>
                                     <source srcset="{{ activity.file.url|slice:':-4' }}.webp" type="image/webp">
-                                    <img src="{{ activity.file.url }}" loading="lazy" alt="Activity image">
+                                    <img src="{{ activity.file.url }}" loading="lazy" alt="Day {{ activity.day_number }}">
                                 </picture>
                             {% endif %}
                         {% else %}
                             <!-- Text-only update -->
-                            <div style="display:flex; align-items:center; justify-content:center; height:100%; background:#1a1a1a; flex-direction:column; gap:16px; padding:20px; text-align:center;">
-                                <i class="fas fa-pencil-alt fa-3x" style="opacity:0.3;"></i>
-                                <div style="font-size:16px; font-weight:600;">Day {{ activity.day_number }} Update</div>
-                                <div style="font-size:14px; opacity:0.7; max-width:80%;">{{ activity.content|striptags|truncatechars:100 }}</div>
+                            <div class="text-only-update">
+                                <i class="fas fa-pencil-alt fa-3x"></i>
+                                <div>Day {{ activity.day_number }} Update</div>
+                                <div>{{ activity.content|striptags|truncatechars:100 }}</div>
                             </div>
                         {% endif %}
                     </div>
@@ -844,6 +956,9 @@
                         <div class="meta">
                             <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
                             <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
+                            {% if activity.location %}
+                            <span><i class="fas fa-map-marker-alt"></i> {{ activity.location }}</span>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -853,41 +968,10 @@
                             <button class="modal-btn" onclick="closeVideoModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
                             <a href="{{ activity.file.url }}" download class="modal-btn"><i class="fas fa-download"></i></a>
                         </div>
-                        <video class="modal-video" controls autoplay playsinline loop>
+                        <video class="modal-video" controls autoplay playsinline loop preload="metadata">
                             <source src="{{ activity.file.url }}" type="video/mp4">
-                            Your browser does not support the video tag.
+                            Your browser doesn't support video.
                         </video>
-                    </div>
-
-                    <!-- Comments Sheet -->
-                    <div class="sheet" id="comments-{{ activity.id }}">
-                        <div class="sheet-header">
-                            <span>{{ activity.comment_count }} comments</span>
-                            <button class="sheet-close" onclick="closeComments('{{ activity.id }}')"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="sheet-content" id="comments-list-{{ activity.id }}"></div>
-                        <div class="comment-input-area">
-                            <input type="text" class="comment-input" id="comment-{{ activity.id }}" placeholder="Add a comment...">
-                            <button class="comment-send" onclick="postComment('{{ activity.id }}')">Post</button>
-                        </div>
-                    </div>
-
-                    <!-- Share Sheet -->
-                    <div class="sheet" id="share-{{ activity.id }}">
-                        <div class="sheet-header">
-                            <span>Share</span>
-                            <button class="sheet-close" onclick="closeShareMenu('{{ activity.id }}')"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="share-grid">
-                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'whatsapp')"><i class="fab fa-whatsapp"></i><span>WA</span></button>
-                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'twitter')"><i class="fab fa-x-twitter"></i><span>X</span></button>
-                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'facebook')"><i class="fab fa-facebook"></i><span>FB</span></button>
-                            <button class="share-option" onclick="shareActivity('{{ activity.id }}', 'telegram')"><i class="fab fa-telegram"></i><span>TG</span></button>
-                        </div>
-                        <button class="menu-item" onclick="copyLink('{{ activity.id }}')"><i class="fas fa-link"></i> Copy link</button>
-                        {% if user == campaign.user.user %}
-                        <button class="menu-item" onclick="deleteActivity('{{ activity.id }}')"><i class="fas fa-trash"></i> Delete</button>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -911,7 +995,7 @@
         </button>
         {% endif %}
 
-        <!-- FAB Button - VISIBLE ON ALL DEVICES -->
+        <!-- FAB Button -->
         {% if user == campaign.user.user %}
         <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
         {% endif %}
@@ -921,6 +1005,19 @@
     <div class="sidebar">
         <h2 style="font-size:24px; font-weight:700; margin-bottom:24px;">{{ campaign.title }}</h2>
         
+        <!-- Journey Progress Bar -->
+        {% if campaign.duration %}
+        <div class="journey-progress">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
+                <span>Journey Progress</span>
+                <span>{{ activities|length }}/{{ campaign.duration }} days</span>
+            </div>
+            <div style="height:6px; background:#333; border-radius:6px; overflow:hidden;">
+                <div style="height:100%; background:#0a84ff; border-radius:6px; width:{% widthratio activities|length campaign.duration 100 %}%;"></div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number">{{ activities|length }}</div>
@@ -963,294 +1060,621 @@
 </div>
 
 <script>
-    (function() {
-        'use strict';
+(function() {
+    'use strict';
 
-        // Get elements
-        const reelsTrack = document.getElementById('reelsTrack');
-        const reelsContainer = document.querySelector('.reels-container');
+    // ===== HELPER FUNCTIONS =====
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
-        // Update progress on scroll
-        if (reelsTrack && reelsContainer) {
-            reelsTrack.addEventListener('scroll', () => {
-                const containerHeight = reelsContainer.offsetHeight;
-                const scrollTop = reelsTrack.scrollTop;
-                const index = Math.round(scrollTop / containerHeight);
-                
-                document.querySelectorAll('.progress-bar').forEach((bar, i) => {
-                    bar.classList.toggle('active', i === index);
-                });
-            });
+    // Store carousel instances
+    const carouselInstances = new Map();
+
+    // ===== CORE CAROUSEL FUNCTIONS =====
+
+    // Navigate to specific slide
+    window.goToSlide = function(carouselId, index) {
+        const track = document.getElementById('track-' + carouselId);
+        if (!track) return;
+        
+        const slides = track.children;
+        if (slides.length === 0) return;
+        
+        // Clamp index
+        index = Math.max(0, Math.min(index, slides.length - 1));
+        
+        // Move track
+        track.style.transform = `translateX(-${index * 100}%)`;
+        
+        // Update dots
+        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        
+        // Update thumbnails
+        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
+        thumbnails.forEach((thumb, i) => {
+            thumb.classList.toggle('active', i === index);
+        });
+        
+        // Update counter
+        const currentSpan = document.getElementById(`current-${carouselId}`);
+        if (currentSpan) {
+            currentSpan.textContent = index + 1;
+        }
+        
+        // Update aria labels for accessibility
+        const carousel = document.getElementById(`carousel-${carouselId}`);
+        if (carousel) {
+            carousel.setAttribute('aria-label', `Image carousel for day - slide ${index + 1} of ${slides.length}`);
+        }
+    };
+
+    // Navigate with arrows
+    window.navigateCarousel = function(carouselId, direction, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const track = document.getElementById('track-' + carouselId);
+        if (!track) return;
+        
+        const slides = track.children;
+        
+        // Get current index from active dot
+        let currentIndex = 0;
+        const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+        if (activeDot) {
+            currentIndex = parseInt(activeDot.dataset.index);
+        } else {
+            // Fallback: get from transform
+            const transform = track.style.transform;
+            const match = transform.match(/-?(\d+)%/);
+            if (match) {
+                currentIndex = Math.round(parseInt(match[1]) / 100);
+            }
+        }
+        
+        let newIndex;
+        if (direction === 'prev') {
+            newIndex = Math.max(0, currentIndex - 1);
+        } else {
+            newIndex = Math.min(slides.length - 1, currentIndex + 1);
+        }
+        
+        if (newIndex !== currentIndex) {
+            goToSlide(carouselId, newIndex);
+            
+            // Optional haptic feedback
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(10);
+            }
+        }
+    };
+
+    // ===== CAROUSEL INITIALIZATION WITH SWIPE =====
+    function initCarousel(carouselId) {
+        const carousel = document.getElementById('carousel-' + carouselId);
+        const track = document.getElementById('track-' + carouselId);
+        
+        if (!track || !carousel) return;
+        if (carousel.dataset.initialized === 'true') return;
+        
+        const slides = track.children;
+        if (slides.length <= 1) {
+            carousel.dataset.initialized = 'true';
+            return;
         }
 
-        // Go to specific reel
-        window.goToReel = (index) => {
-            if (reelsTrack && reelsContainer) {
-                const containerHeight = reelsContainer.offsetHeight;
-                reelsTrack.scrollTo({
-                    top: index * containerHeight,
-                    behavior: 'smooth'
-                });
+        let startX = 0;
+        let startY = 0;
+        let currentX = 0;
+        let isDragging = false;
+        let isHorizontalSwipe = false;
+        let currentIndex = 0;
+        let animationFrame = null;
+        
+        // Get initial index from active dot
+        const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+        if (activeDot) {
+            currentIndex = parseInt(activeDot.dataset.index);
+        }
+        
+        // Set initial position
+        goToSlide(carouselId, currentIndex);
+
+        // ===== TOUCH HANDLERS =====
+        function handleTouchStart(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            isHorizontalSwipe = false;
+            track.classList.add('dragging');
+            track.style.transition = 'none';
+            
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
             }
-        };
+        }
 
-        // Carousel touch/swipe support
-        function initCarousel(carouselId) {
-            const track = document.getElementById('track-' + carouselId);
-            if (!track) return;
+        function handleTouchMove(e) {
+            if (!isDragging) return;
 
-            let startX = 0;
-            let currentX = 0;
-            let isDragging = false;
-            let currentIndex = 0;
-            const slides = track.children.length;
+            currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            
+            const diffX = Math.abs(currentX - startX);
+            const diffY = Math.abs(currentY - startY);
 
-            // Get current index from active dot
-            const updateIndexFromDots = () => {
-                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                if (activeDot) {
-                    const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
-                    currentIndex = Array.from(dots).indexOf(activeDot);
-                }
-            };
-
-            // Touch start
-            track.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isDragging = true;
-                track.style.transition = 'none';
-                updateIndexFromDots();
-            }, { passive: true });
-
-            // Touch move
-            track.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                currentX = e.touches[0].clientX;
-                const diff = currentX - startX;
-                const offset = (-currentIndex * 100) + (diff / track.offsetWidth * 100);
-                track.style.transform = `translateX(${offset}%)`;
-            }, { passive: true });
-
-            // Touch end
-            track.addEventListener('touchend', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                track.style.transition = 'transform 0.3s ease';
-
-                const diff = currentX - startX;
-                const threshold = track.offsetWidth * 0.2; // 20% threshold
-
-                if (Math.abs(diff) > threshold) {
-                    if (diff > 0 && currentIndex > 0) {
-                        // Swipe right - previous
-                        currentIndex--;
-                    } else if (diff < 0 && currentIndex < slides - 1) {
-                        // Swipe left - next
-                        currentIndex++;
-                    }
-                }
-
-                window.goToSlide(carouselId, currentIndex);
-            }, { passive: true });
-
-            // Mouse events for desktop swipe
-            track.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                startX = e.clientX;
-                isDragging = true;
-                track.style.transition = 'none';
-                track.style.cursor = 'grabbing';
-                updateIndexFromDots();
-            });
-
-            track.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                currentX = e.clientX;
-                const diff = currentX - startX;
-                const offset = (-currentIndex * 100) + (diff / track.offsetWidth * 100);
-                track.style.transform = `translateX(${offset}%)`;
-            });
-
-            track.addEventListener('mouseup', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                isDragging = false;
-                track.style.transition = 'transform 0.3s ease';
-                track.style.cursor = 'grab';
-
-                const diff = currentX - startX;
-                const threshold = track.offsetWidth * 0.2;
-
-                if (Math.abs(diff) > threshold) {
-                    if (diff > 0 && currentIndex > 0) {
-                        currentIndex--;
-                    } else if (diff < 0 && currentIndex < slides - 1) {
-                        currentIndex++;
-                    }
-                }
-
-                window.goToSlide(carouselId, currentIndex);
-            });
-
-            track.addEventListener('mouseleave', () => {
-                if (isDragging) {
+            // Determine if this is a horizontal swipe
+            if (!isHorizontalSwipe) {
+                if (diffX > diffY && diffX > 10) {
+                    isHorizontalSwipe = true;
+                } else if (diffY > diffX && diffY > 10) {
                     isDragging = false;
-                    track.style.transition = 'transform 0.3s ease';
-                    track.style.cursor = 'grab';
-                    window.goToSlide(carouselId, currentIndex);
+                    track.classList.remove('dragging');
+                    return;
                 }
+            }
+
+            if (isHorizontalSwipe) {
+                e.preventDefault();
+                
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+                
+                animationFrame = requestAnimationFrame(() => {
+                    const diff = currentX - startX;
+                    const movePercent = (diff / track.offsetWidth) * 100;
+                    
+                    // Get current index from active dot
+                    const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                    const currentIdx = activeDot ? parseInt(activeDot.dataset.index) : 0;
+                    
+                    const currentOffset = -currentIdx * 100;
+                    let newOffset = currentOffset + movePercent;
+
+                    // Add resistance at edges
+                    if (newOffset > 0) {
+                        newOffset = newOffset * 0.3;
+                    }
+                    if (newOffset < -(slides.length - 1) * 100) {
+                        const overshoot = newOffset + (slides.length - 1) * 100;
+                        newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
+                    }
+
+                    track.style.transform = `translateX(${newOffset}%)`;
+                });
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDragging) return;
+            
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+
+            track.classList.remove('dragging');
+            track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+
+            if (isHorizontalSwipe) {
+                const diff = currentX - startX;
+                const threshold = track.offsetWidth * 0.15;
+                
+                // Get current index from active dot
+                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
+
+                if (Math.abs(diff) > threshold) {
+                    if (diff > 0 && currentIndex > 0) {
+                        currentIndex--;
+                    } else if (diff < 0 && currentIndex < slides.length - 1) {
+                        currentIndex++;
+                    }
+                }
+            }
+
+            goToSlide(carouselId, currentIndex);
+            isDragging = false;
+        }
+
+        // ===== MOUSE HANDLERS =====
+        function handleMouseDown(e) {
+            e.preventDefault();
+            startX = e.clientX;
+            isDragging = true;
+            isHorizontalSwipe = true;
+            track.classList.add('dragging');
+            track.style.transition = 'none';
+            track.style.cursor = 'grabbing';
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            currentX = e.clientX;
+            
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+            
+            animationFrame = requestAnimationFrame(() => {
+                const diff = currentX - startX;
+                const movePercent = (diff / track.offsetWidth) * 100;
+                
+                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                const currentIdx = activeDot ? parseInt(activeDot.dataset.index) : 0;
+                
+                const currentOffset = -currentIdx * 100;
+                let newOffset = currentOffset + movePercent;
+
+                if (newOffset > 0) {
+                    newOffset = newOffset * 0.3;
+                }
+                if (newOffset < -(slides.length - 1) * 100) {
+                    const overshoot = newOffset + (slides.length - 1) * 100;
+                    newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
+                }
+
+                track.style.transform = `translateX(${newOffset}%)`;
             });
         }
 
-        // Carousel functions
-        window.goToSlide = (id, index) => {
-            const track = document.getElementById('track-' + id);
-            if (!track) return;
-            
-            track.style.transform = `translateX(-${index * 100}%)`;
-            
-            // Update dots
-            const dots = document.querySelectorAll(`#carousel-${id} .dot`);
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
-        };
+        function handleMouseUp(e) {
+            if (!isDragging) return;
+            e.preventDefault();
 
-        // Modal functions
-        window.openVideoModal = (id) => {
-            const modal = document.getElementById('video-modal-' + id);
-            if (modal) {
-                modal.classList.add('show');
-                document.body.style.overflow = 'hidden';
-                
-                const video = modal.querySelector('video');
-                if (video) {
-                    video.play().catch(() => {});
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+
+            track.classList.remove('dragging');
+            track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+            track.style.cursor = 'grab';
+
+            const diff = currentX - startX;
+            const threshold = track.offsetWidth * 0.15;
+            
+            const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+            currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
+
+            if (Math.abs(diff) > threshold) {
+                if (diff > 0 && currentIndex > 0) {
+                    currentIndex--;
+                } else if (diff < 0 && currentIndex < slides.length - 1) {
+                    currentIndex++;
                 }
             }
-        };
 
-        window.closeVideoModal = (id) => {
-            const modal = document.getElementById('video-modal-' + id);
-            if (modal) {
-                modal.classList.remove('show');
-                document.body.style.overflow = '';
+            goToSlide(carouselId, currentIndex);
+            isDragging = false;
+        }
+
+        function handleMouseLeave(e) {
+            if (isDragging) {
+                track.classList.remove('dragging');
+                track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+                track.style.cursor = 'grab';
                 
-                const video = modal.querySelector('video');
-                if (video) {
-                    video.pause();
-                    video.currentTime = 0;
-                }
+                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
+                
+                goToSlide(carouselId, currentIndex);
+                isDragging = false;
             }
-        };
+        }
 
-        // Comments sheet
-        window.openComments = (id, event) => {
-            event.stopPropagation();
-            document.getElementById('comments-' + id)?.classList.add('show');
-        };
-
-        window.closeComments = (id) => {
-            document.getElementById('comments-' + id)?.classList.remove('show');
-        };
-
-        // Share sheet
-        window.openShareMenu = (id, event) => {
-            event.stopPropagation();
-            document.getElementById('share-' + id)?.classList.add('show');
-        };
-
-        window.closeShareMenu = (id) => {
-            document.getElementById('share-' + id)?.classList.remove('show');
-        };
-
-        // Caption toggle
-        window.toggleCaption = (id, event) => {
-            event.stopPropagation();
-            const caption = document.getElementById('caption-' + id);
-            caption.classList.toggle('expanded');
-            event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
-        };
-
-        // Love handler
-        window.handleLove = (id, event) => {
-            event.stopPropagation();
-            const btn = document.getElementById('love-' + id);
-            const icon = btn.querySelector('i');
-            const countSpan = document.getElementById('love-count-' + id);
-            
-            if (btn.classList.contains('loved')) {
-                btn.classList.remove('loved');
-                icon.className = 'far fa-heart';
-                let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-                countSpan.textContent = Math.max(0, count - 1).toLocaleString();
-            } else {
-                btn.classList.add('loved');
-                icon.className = 'fas fa-heart';
-                let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-                countSpan.textContent = (count + 1).toLocaleString();
+        // ===== KEYBOARD NAVIGATION =====
+        function handleKeyDown(e) {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                navigateCarousel(carouselId, 'prev', e);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                navigateCarousel(carouselId, 'next', e);
             }
+        }
+
+        // Store handlers for cleanup
+        const handlers = {
+            touchstart: handleTouchStart,
+            touchmove: handleTouchMove,
+            touchend: handleTouchEnd,
+            touchcancel: handleTouchEnd,
+            mousedown: handleMouseDown,
+            mousemove: handleMouseMove,
+            mouseup: handleMouseUp,
+            mouseleave: handleMouseLeave,
+            keydown: handleKeyDown
         };
 
-        // Comment functions
-        window.postComment = (id) => {
-            const input = document.getElementById('comment-' + id);
-            if (input?.value.trim()) {
-                alert('Comment posted: ' + input.value);
-                input.value = '';
-                closeComments(id);
-            }
-        };
+        // Add event listeners
+        track.addEventListener('touchstart', handlers.touchstart, { passive: true });
+        track.addEventListener('touchmove', handlers.touchmove, { passive: false });
+        track.addEventListener('touchend', handlers.touchend, { passive: true });
+        track.addEventListener('touchcancel', handlers.touchcancel, { passive: true });
+        track.addEventListener('mousedown', handlers.mousedown);
+        track.addEventListener('mousemove', handlers.mousemove);
+        track.addEventListener('mouseup', handlers.mouseup);
+        track.addEventListener('mouseleave', handlers.mouseleave);
+        carousel.addEventListener('keydown', handlers.keydown);
 
-        // Share functions
-        window.shareActivity = (id, platform) => {
-            alert('Share to ' + platform);
-            closeShareMenu(id);
-        };
+        // Store instance
+        carouselInstances.set(carouselId, { track, handlers, carousel });
+        carousel.dataset.initialized = 'true';
+    }
 
-        window.copyLink = (id) => {
-            navigator.clipboard?.writeText(window.location.href);
-            alert('Link copied!');
-            closeShareMenu(id);
-        };
-
-        window.deleteActivity = (id) => {
-            if (confirm('Delete this activity?')) {
-                alert('Deleted (demo)');
-                closeShareMenu(id);
-            }
-        };
-
-        // Close sheets on outside click
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.sheet') && !e.target.closest('[onclick^="openComments"]') && !e.target.closest('[onclick^="openShareMenu"]')) {
-                document.querySelectorAll('.sheet.show').forEach(sheet => {
-                    sheet.classList.remove('show');
-                });
-            }
+    // ===== DOT CLICK HANDLING =====
+    function setupDotHandlers() {
+        document.querySelectorAll('.dot[data-carousel]').forEach(dot => {
+            dot.removeEventListener('click', handleDotClick);
+            dot.addEventListener('click', handleDotClick);
         });
+    }
 
-        // Handle escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal.show, .sheet.show').forEach(el => {
-                    el.classList.remove('show');
-                });
-                document.body.style.overflow = '';
-            }
+    function handleDotClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const dot = e.currentTarget;
+        const carouselId = dot.dataset.carousel;
+        const index = parseInt(dot.dataset.index);
+        
+        if (carouselId && !isNaN(index)) {
+            goToSlide(carouselId, index);
+        }
+    }
+
+    // ===== THUMBNAIL CLICK HANDLING =====
+    function setupThumbnailHandlers() {
+        document.querySelectorAll('.thumbnail-item[onclick]').forEach(thumb => {
+            // Already handled by inline onclick
         });
+    }
 
-        // Initialize all carousels with touch support
-        document.querySelectorAll('[id^="carousel-"]').forEach(carousel => {
-            const id = carousel.id.replace('carousel-', '');
+    // ===== SWIPE INDICATOR =====
+    function setupSwipeIndicator() {
+        const hasSeenIndicator = sessionStorage.getItem('swipeIndicatorSeen');
+        if (hasSeenIndicator) return;
+        
+        const indicators = document.querySelectorAll('.swipe-indicator');
+        indicators.forEach(indicator => {
             setTimeout(() => {
-                window.goToSlide(id, 0);
-                initCarousel(id);
-            }, 100);
+                indicator.style.display = 'none';
+            }, 4000);
         });
+        
+        sessionStorage.setItem('swipeIndicatorSeen', 'true');
+    }
 
-    })();
+    // ===== INITIALIZE ALL CAROUSELS =====
+    function initAllCarousels() {
+        document.querySelectorAll('.story-carousel').forEach(carousel => {
+            const id = carousel.id.replace('carousel-', '');
+            if (id && carousel.dataset.initialized !== 'true') {
+                setTimeout(() => {
+                    initCarousel(id);
+                }, 100);
+            }
+        });
+        
+        setupDotHandlers();
+        setupThumbnailHandlers();
+        setupSwipeIndicator();
+    }
+
+    // ===== VERTICAL SCROLL PROGRESS =====
+    const reelsTrack = document.getElementById('reelsTrack');
+    const reelsContainer = document.querySelector('.reels-container');
+    
+    if (reelsTrack && reelsContainer) {
+        reelsTrack.addEventListener('scroll', () => {
+            const containerHeight = reelsContainer.offsetHeight;
+            const scrollTop = reelsTrack.scrollTop;
+            const index = Math.round(scrollTop / containerHeight);
+            
+            document.querySelectorAll('.progress-bar').forEach((bar, i) => {
+                bar.classList.toggle('active', i === index);
+            });
+        });
+    }
+
+    // ===== GO TO REEL =====
+    window.goToReel = (index) => {
+        if (reelsTrack && reelsContainer) {
+            const containerHeight = reelsContainer.offsetHeight;
+            reelsTrack.scrollTo({
+                top: index * containerHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // ===== MODAL FUNCTIONS =====
+    window.openVideoModal = (id) => {
+        const modal = document.getElementById('video-modal-' + id);
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            const video = modal.querySelector('video');
+            if (video) {
+                video.play().catch(e => console.log('Autoplay prevented:', e));
+            }
+        }
+    };
+
+    window.closeVideoModal = (id) => {
+        const modal = document.getElementById('video-modal-' + id);
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            
+            const video = modal.querySelector('video');
+            if (video) { 
+                video.pause(); 
+                video.currentTime = 0; 
+            }
+        }
+    };
+
+    // ===== LOVE HANDLER =====
+    window.handleLove = (id, event) => {
+        event.stopPropagation();
+        const btn = document.getElementById('love-' + id);
+        const icon = btn.querySelector('i');
+        const countSpan = document.getElementById('love-count-' + id);
+        const wasLoved = btn.classList.contains('loved');
+        
+        // Optimistic UI update
+        btn.classList.toggle('loved');
+        icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
+        
+        let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+        countSpan.textContent = wasLoved ? (count - 1).toLocaleString() : (count + 1).toLocaleString();
+        
+        // Backend call (uncomment when ready)
+        /*
+        fetch(`/api/activities/${id}/toggle-love/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        }).catch(error => {
+            // Revert on error
+            btn.classList.toggle('loved');
+            icon.className = wasLoved ? 'fas fa-heart' : 'far fa-heart';
+            countSpan.textContent = count.toLocaleString();
+            console.error('Love toggle failed:', error);
+        });
+        */
+    };
+
+    // ===== CAPTION TOGGLE =====
+    window.toggleCaption = (id, event) => {
+        event.stopPropagation();
+        const caption = document.getElementById('caption-' + id);
+        caption.classList.toggle('expanded');
+        event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
+    };
+
+    // ===== COMMENTS / SHARE STUBS =====
+    window.openComments = (id, e) => { 
+        e.stopPropagation(); 
+        alert('Comments panel - ready for backend implementation'); 
+    };
+    
+    window.openShareMenu = (id, e) => { 
+        e.stopPropagation(); 
+        if (navigator.share) {
+            navigator.share({
+                title: document.title,
+                text: 'Check out this journey moment',
+                url: window.location.href + '#activity-' + id
+            }).catch(() => {
+                alert('Share panel - ready for backend implementation');
+            });
+        } else {
+            alert('Share panel - ready for backend implementation');
+        }
+    };
+
+    // ===== INITIALIZE ON LOAD =====
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllCarousels);
+    } else {
+        initAllCarousels();
+    }
+
+    // ===== MUTATION OBSERVER FOR DYNAMIC CONTENT =====
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) {
+                    // Check for new carousels
+                    if (node.classList && node.classList.contains('story-carousel')) {
+                        const id = node.id.replace('carousel-', '');
+                        initCarousel(id);
+                    }
+                    
+                    // Check for new dots
+                    const dots = node.querySelectorAll ? node.querySelectorAll('.dot[data-carousel]') : [];
+                    dots.forEach(dot => {
+                        dot.removeEventListener('click', handleDotClick);
+                        dot.addEventListener('click', handleDotClick);
+                    });
+                }
+            });
+        });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+})();
 </script>
+
+<style>
+    /* Additional styles for text-only update */
+    .text-only-update {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        background: #1a1a1a;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .text-only-update i {
+        opacity: 0.3;
+    }
+    
+    .text-only-update div:first-of-type {
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .text-only-update div:last-child {
+        font-size: 14px;
+        opacity: 0.7;
+        max-width: 80%;
+    }
+    
+    .video-loading {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 5;
+    }
+
+    /* Hide carousel arrows completely */
+.carousel-arrow {
+    display: none !important;
+}
+</style>
 </body>
 </html>
