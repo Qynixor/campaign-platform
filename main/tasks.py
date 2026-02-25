@@ -179,3 +179,14 @@ def try_alternative_timestamps(activity, temp_video, ffmpeg_path, temp_dir):
     
     except Exception as e:
         return f"Alternative method failed: {e}"
+
+
+# main/tasks.py - Add this at the bottom
+from django_q.tasks import async_task
+
+# Your existing process_video_screenshots function stays exactly the same
+# Just add this wrapper at the bottom:
+
+def queue_video_processing(activity_id):
+    """Queue video processing as an async task"""
+    return async_task('main.tasks.process_video_screenshots', activity_id)
