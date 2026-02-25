@@ -3963,19 +3963,7 @@ def create_activity(request, campaign_id):
     Users can only post activities for days that have actually arrived.
     Videos are automatically processed to extract screenshots for story display.
     """
-    
-    # 🔒 CHECK USER CAMPAIGN LIMIT
-    subscription = UserSubscription.get_for_user(request.user)
-    user_campaign_count = Campaign.objects.filter(user=request.user.profile).count()
-    
-    # Check if user has active subscription
-    if not subscription.has_active_subscription():
-        if user_campaign_count >= subscription.campaign_limit:
-            messages.warning(
-                request,
-                "You've reached your free campaign limit. Upgrade to Rallynex Pro to create activities."
-            )
-            return redirect('subscription_required')
+
     
     following_users = [follow.followed for follow in request.user.following.all()]
     category_filter = request.GET.get('category', '')
@@ -4221,78 +4209,6 @@ def create_activity(request, campaign_id):
 
     next_day_status = campaign.get_day_status(next_available_day) if hasattr(campaign, 'get_day_status') else None
 
-    # Rest of your context data collection
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    new_campaigns_from_follows = Campaign.objects.filter(
-        user__user__in=following_users,
-        visibility='public',
-        timestamp__gt=user_profile.last_campaign_check
-    )
-    user_profile.last_campaign_check = timezone.now()
-    user_profile.save()
-
-    ads = NativeAd.objects.all()
-
-    # Suggested users logic
-    current_user_following = request.user.following.all()
-    following_user_ids = [follow.followed_id for follow in current_user_following]
-    
-    all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-    
-    suggested_users = []
-    for profile in all_profiles[:2]:
-        similarity_score = calculate_similarity(user_profile, profile)
-        if similarity_score >= 0.5:
-            followers_count = Follow.objects.filter(followed=profile.user).count()
-            suggested_users.append({
-                'user': profile.user,
-                'followers_count': followers_count
-            })
-
-    # Trending campaigns
-    from django.db.models import Count
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)
-      
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    from itertools import chain
-    from collections import defaultdict
-    
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
-
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    categories = Campaign.objects.values_list('category', flat=True).distinct()
-
     # Emojis
     emojis = [
         '📢', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥', '🌟', 
@@ -4307,21 +4223,14 @@ def create_activity(request, campaign_id):
     initial_emojis = emojis[:10]
 
     context = {
-        'ads': ads,
+     
         'formset': formset,
         'campaign': campaign,
         'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-        'new_campaigns_from_follows': new_campaigns_from_follows,
+     
         'initial_emojis': initial_emojis,
-        'suggested_users': suggested_users,
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-        'categories': categories,
-        'selected_category': category_filter,
-        'is_pro': subscription.has_active_subscription(),
-        'campaign_count': user_campaign_count,
-        'campaign_limit': subscription.campaign_limit,
+      
+    
         'existing_activities_count': existing_count,
         'max_forms': MAX_FORMS,
         'is_at_max': existing_count >= MAX_FORMS,
