@@ -1634,22 +1634,59 @@ class Activity(models.Model):
         super().__init__(*args, **kwargs)
         self._original_file = self.file
     
+    def _is_video_file(self, file):
+        """Helper method to check if a file is a video"""
+        if not file:
+            return False
+        
+        try:
+            # Check Cloudinary resource_type
+            if hasattr(file, 'resource_type'):
+                return file.resource_type == 'video'
+            
+            # Check content_type
+            if hasattr(file, 'content_type'):
+                return file.content_type.startswith('video/')
+            
+            # Check URL/file name
+            if hasattr(file, 'url'):
+                url = file.url.lower()
+                video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+                return any(ext in url for ext in video_extensions)
+            
+            if hasattr(file, 'name'):
+                name = file.name.lower()
+                video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+                return any(name.endswith(ext) for ext in video_extensions)
+            
+            if hasattr(file, 'public_id'):
+                public_id = file.public_id.lower()
+                video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+                return any(ext in public_id for ext in video_extensions)
+            
+        except (AttributeError, TypeError):
+            pass
+        
+        return False
+    
     def save(self, *args, **kwargs):
         # Check if this is a new activity for notifications
         is_new = self.pk is None
         
         # Check if file changed and is video
-        if self.pk and self.file and hasattr(self, '_original_file') and self._original_file != self.file:
-            # Check if it's a video file
-            if self.file and hasattr(self.file, 'resource_type') and self.file.resource_type == 'video':
-                self.is_video = True
-                self.video_processed = False  # Mark for processing
-            elif self.file and hasattr(self.file, 'url') and any(ext in self.file.url.lower() for ext in ['.mp4', '.mov', '.avi', '.webm']):
-                self.is_video = True
+        file_changed = False
+        if self.pk and hasattr(self, '_original_file'):
+            try:
+                file_changed = str(self._original_file) != str(self.file)
+            except:
+                file_changed = True
+        
+        if (is_new or file_changed) and self.file:
+            self.is_video = self._is_video_file(self.file)
+            if self.is_video:
                 self.video_processed = False
             else:
-                self.is_video = False
-                self.video_processed = True
+                self.video_processed = True  # Non-videos don't need processing
         
         super().save(*args, **kwargs)
         

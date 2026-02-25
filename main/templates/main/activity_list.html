@@ -19,6 +19,100 @@
             background: #000;
             color: #fff;
             -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        /* Desktop layout - adjusted for better visibility */
+        @media (min-width: 768px) {
+            body {
+                display: flex;
+                align-items: flex-start; /* Changed from center to show top content */
+                justify-content: center;
+                min-height: 100vh;
+                background: #111;
+                padding: 20px; /* Reduced padding */
+                overflow: auto;
+            }
+
+            .desktop-layout {
+                display: grid;
+                grid-template-columns: minmax(380px, 450px) 340px; /* Adjusted widths */
+                gap: 20px;
+                max-width: 1300px;
+                width: 100%;
+                margin: 0 auto;
+                align-items: flex-start; /* Align to top */
+            }
+
+            .reels-container {
+                height: 85vh !important; /* Reduced from 700px to viewport percentage */
+                max-height: 800px;
+                min-height: 600px;
+                border-radius: 24px;
+                border: 1px solid #222;
+                overflow: hidden;
+                position: sticky;
+                top: 20px; /* Stick to top on scroll */
+            }
+
+            .sidebar {
+                background: #111;
+                border-radius: 24px;
+                padding: 24px;
+                border: 1px solid #222;
+                height: 85vh;
+                max-height: 800px;
+                min-height: 600px;
+                overflow-y: auto;
+                display: block !important;
+                color: #fff;
+                position: sticky;
+                top: 20px;
+            }
+
+            /* Ensure video in modal and carousel uses contain on desktop */
+            .modal-video {
+                object-fit: contain !important;
+                background: #000;
+            }
+
+            /* Make single videos contain instead of cover on desktop */
+            .reel-media video:not(.modal-video) {
+                object-fit: contain !important;
+                background: #000;
+            }
+
+            /* Carousel images still use cover for visual appeal */
+            .carousel-slide img {
+                object-fit: cover !important;
+            }
+        }
+
+        /* Mobile styles */
+        @media (max-width: 767px) {
+            .sidebar { 
+                display: none; 
+            }
+            .info-panel { 
+                right: 80px; 
+            }
+            .thumbnail-item {
+                width: 40px;
+                height: 40px;
+            }
+            .slide-counter {
+                bottom: 80px;
+            }
+            .thumbnail-strip {
+                bottom: 120px;
+            }
+            
+            /* Mobile videos still cover by default */
+            .reel-media video {
+                object-fit: cover;
+            }
         }
 
         /* main scroller (vertical reels) */
@@ -26,17 +120,19 @@
             height: 100vh;
             height: 100dvh;
             width: 100%;
-            overflow: hidden;
             position: relative;
             background: #000;
+            overflow: hidden;
         }
 
         .reels-track {
             height: 100%;
-            overflow-y: scroll;
+            overflow-y: auto;
             scroll-snap-type: y mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            position: relative;
+            will-change: scroll-position;
         }
 
         .reels-track::-webkit-scrollbar { 
@@ -49,17 +145,19 @@
             scroll-snap-align: start;
             scroll-snap-stop: always;
             background: #000;
+            overflow: hidden;
         }
 
-        /* ===== IMPROVED CAROUSEL STYLES ===== */
+        /* ===== OPTIMIZED CAROUSEL STYLES ===== */
         .story-carousel {
             position: relative;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            touch-action: pan-x pinch-zoom;
+            touch-action: pan-y pinch-zoom;
             -webkit-tap-highlight-color: transparent;
-            outline: none; /* Remove focus outline but keep keyboard nav */
+            outline: none;
+            will-change: transform;
         }
 
         .story-carousel:focus-visible {
@@ -67,20 +165,25 @@
             outline-offset: -2px;
         }
 
+        .story-carousel.horizontal-active {
+            touch-action: pan-x pinch-zoom;
+        }
+
         .carousel-track {
             display: flex;
             height: 100%;
             width: 100%;
-            transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
             will-change: transform;
             cursor: grab;
-            touch-action: pan-x pinch-zoom;
+            touch-action: pan-y pinch-zoom;
             user-select: none;
         }
 
         .carousel-track.dragging {
             transition: none;
             cursor: grabbing;
+            touch-action: pan-x pinch-zoom;
         }
 
         .carousel-slide {
@@ -89,59 +192,24 @@
             width: 100%;
             pointer-events: none;
             position: relative;
+            overflow: hidden;
         }
 
         .carousel-slide img,
         .carousel-slide picture {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* Images still cover for full effect */
             pointer-events: none;
             display: block;
             -webkit-user-select: none;
             user-select: none;
+            will-change: transform;
         }
 
-        /* ===== NAVIGATION ARROWS ===== */
+        /* ===== NAVIGATION ARROWS - REMOVED ===== */
         .carousel-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 44px;
-            height: 44px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 18px;
-            cursor: pointer;
-            z-index: 20;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.2s ease;
-            opacity: 0.8;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-
-        .carousel-arrow:hover {
-            opacity: 1;
-            background: rgba(0, 0, 0, 0.8);
-            transform: translateY(-50%) scale(1.1);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .carousel-arrow-left {
-            left: 16px;
-        }
-
-        .carousel-arrow-right {
-            right: 16px;
-        }
-
-        .carousel-arrow:active {
-            transform: translateY(-50%) scale(0.95);
+            display: none !important;
         }
 
         /* ===== TOP DOTS ===== */
@@ -205,7 +273,7 @@
             font-size: 14px; 
         }
 
-        /* ===== SLIDE COUNTER (Current/Total) ===== */
+        /* ===== SLIDE COUNTER ===== */
         .slide-counter {
             position: absolute;
             bottom: 100px;
@@ -277,7 +345,7 @@
             display: block;
         }
 
-        /* ===== SWIPE INDICATOR (Shows once) ===== */
+        /* ===== SWIPE INDICATOR ===== */
         .swipe-indicator {
             position: absolute;
             top: 50%;
@@ -304,7 +372,6 @@
         .swipe-indicator i {
             font-size: 18px;
             opacity: 0.9;
-            animation: pulse 1.5s infinite;
         }
 
         .swipe-indicator i:first-child {
@@ -321,11 +388,6 @@
             100% { opacity: 0; transform: translate(-50%, -60%); visibility: hidden; }
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
         @keyframes slideLeft {
             0%, 100% { transform: translateX(0); }
             50% { transform: translateX(-5px); }
@@ -336,11 +398,28 @@
             50% { transform: translateX(5px); }
         }
 
-        /* ===== REST OF YOUR EXISTING STYLES ===== */
+        /* ===== REEL MEDIA ===== */
         .reel-media {
             position: absolute;
             inset: 0;
             background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Video styles - default cover for mobile */
+        .reel-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Image styles */
+        .reel-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .reel::after {
@@ -644,6 +723,7 @@
             text-decoration: none;
         }
 
+        /* Sidebar Styles */
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -701,90 +781,56 @@
             border-radius: 16px;
         }
 
-        /* Desktop layout */
-        @media (min-width: 768px) {
-            body {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                background: #111;
-                padding: 40px;
-            }
-
-            .desktop-layout {
-                display: grid;
-                grid-template-columns: 400px 320px;
-                gap: 24px;
-                max-width: 1200px;
-                width: 100%;
-            }
-
-            .reels-container {
-                height: 700px;
-                border-radius: 24px;
-                border: 1px solid #222;
-            }
-
-            .sidebar {
-                background: #111;
-                border-radius: 24px;
-                padding: 24px;
-                border: 1px solid #222;
-                height: 700px;
-                overflow-y: auto;
-                display: block;
-            }
+        .text-only-update {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: #1a1a1a;
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+            text-align: center;
         }
-
-        @media (max-width: 767px) {
-            .sidebar { 
-                display: none; 
-            }
-            .info-panel { 
-                right: 80px; 
-            }
-            .carousel-arrow {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
-            }
-            .thumbnail-item {
-                width: 40px;
-                height: 40px;
-            }
-            .slide-counter {
-                bottom: 80px;
-            }
-            .thumbnail-strip {
-                bottom: 120px;
-            }
+        
+        .text-only-update i {
+            opacity: 0.3;
         }
-
-        @media (max-width: 480px) {
-            .carousel-arrow-left {
-                left: 8px;
-            }
-            .carousel-arrow-right {
-                right: 8px;
-            }
-            .thumbnail-item {
-                width: 36px;
-                height: 36px;
-            }
+        
+        .text-only-update div:first-of-type {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .text-only-update div:last-child {
+            font-size: 14px;
+            opacity: 0.7;
+            max-width: 80%;
+        }
+        
+        .video-loading {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 5;
         }
 
         .action.video-icon-action i {
-    color: #fff;
-    background: rgba(255,255,255,0.2);
-    width: 44px;
-    height: 44px;
-    border-radius: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
+            color: #fff;
+            background: rgba(255,255,255,0.2);
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
@@ -812,7 +858,7 @@
                     <!-- Media Container -->
                     <div class="reel-media">
                         {% if activity.is_video and activity.has_screenshots_var %}
-                            <!-- ===== FULLY WORKING CAROUSEL ===== -->
+                            <!-- ===== OPTIMIZED CAROUSEL ===== -->
                             <div class="story-carousel" 
                                  id="carousel-{{ activity.id }}" 
                                  tabindex="0" 
@@ -835,24 +881,6 @@
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Navigation Arrows (only show if more than 1 slide) -->
-                                {% if activity.screenshot_count_total > 1 %}
-
-                              <!-- 
-<button class="carousel-arrow carousel-arrow-left" 
-        onclick="navigateCarousel('{{ activity.id }}', 'prev', event)"
-        aria-label="Previous image">
-    <i class="fas fa-chevron-left"></i>
-</button>
-<button class="carousel-arrow carousel-arrow-right" 
-        onclick="navigateCarousel('{{ activity.id }}', 'next', event)"
-        aria-label="Next image">
-    <i class="fas fa-chevron-right"></i>
-</button>
--->
-
-                                {% endif %}
-                                
                                 <!-- Top Dots Navigation -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="carousel-dots">
@@ -866,13 +894,13 @@
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Media Counter (total count) -->
+                                <!-- Media Counter -->
                                 <div class="media-counter">
                                     <i class="fas fa-images"></i>
                                     <span>{{ activity.screenshot_count_total }}</span>
                                 </div>
                                 
-                                <!-- Slide Counter (current/total) -->
+                                <!-- Slide Counter -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="slide-counter" id="counter-{{ activity.id }}">
                                     <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
@@ -884,7 +912,8 @@
                                 <div class="thumbnail-strip" id="strip-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
                                     <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
-                                         onclick="goToSlide('{{ activity.id }}', {{ forloop.counter0 }})"
+                                         data-carousel="{{ activity.id }}"
+                                         data-index="{{ forloop.counter0 }}"
                                          title="Go to image {{ forloop.counter }}"
                                          role="button"
                                          tabindex="0"
@@ -897,7 +926,7 @@
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Swipe Indicator (shows once per session) -->
+                                <!-- Swipe Indicator -->
                                 {% if forloop.first and activity.screenshot_count_total > 1 %}
                                 <div class="swipe-indicator" id="swipe-indicator-{{ activity.id }}">
                                     <i class="fas fa-chevron-left"></i>
@@ -944,23 +973,24 @@
                             <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="Profile">
                         </a>
 
-
-                            <!-- Video Icon moved here -->
-    {% if activities %}
-    <button class="action video-icon-action" onclick="openVideoModal('{{ activity.id }}', event)" aria-label="Play video">
-        <i class="fas fa-play"></i>
-        <span></span>
-    </button>
-    {% endif %}
+                        {% if activity.file and activity.is_video %}
+                        <button class="action video-icon-action" onclick="openVideoModal('{{ activity.id }}', event)" aria-label="Play video">
+                            <i class="fas fa-play"></i>
+                            <span></span>
+                        </button>
+                        {% endif %}
+                        
                         <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
                                 onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
                             <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart"></i>
                             <span id="love-count-{{ activity.id }}">{{ activity.loves.count|format_count }}</span>
                         </button>
+                        
                         <button class="action" onclick="openComments('{{ activity.id }}', event)">
                             <i class="far fa-comment"></i>
                             <span>{{ activity.comment_count|format_count }}</span>
                         </button>
+                        
                         <button class="action" onclick="openShareMenu('{{ activity.id }}', event)">
                             <i class="fas fa-share-alt"></i>
                             <span></span>
@@ -1009,15 +1039,13 @@
             {% endif %}
         </div>
 
-      
-
         <!-- FAB Button -->
         {% if user == campaign.user.user %}
         <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
         {% endif %}
     </div>
 
-    <!-- Desktop Sidebar -->
+    <!-- Desktop Sidebar - Fully Restored -->
     <div class="sidebar">
         <h2 style="font-size:24px; font-weight:700; margin-bottom:24px;">{{ campaign.title }}</h2>
         
@@ -1095,8 +1123,9 @@
         return cookieValue;
     }
 
-    // Store carousel instances
-    const carouselInstances = new Map();
+    // Store active carousel state
+    let activeCarouselId = null;
+    let scrollTimeout;
 
     // ===== CORE CAROUSEL FUNCTIONS =====
 
@@ -1108,81 +1137,86 @@
         const slides = track.children;
         if (slides.length === 0) return;
         
-        // Clamp index
         index = Math.max(0, Math.min(index, slides.length - 1));
         
-        // Move track
-        track.style.transform = `translateX(-${index * 100}%)`;
-        
-        // Update dots
-        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
-        dots.forEach((dot, i) => {
-            dot.classList.toggle('active', i === index);
+        requestAnimationFrame(() => {
+            track.style.transform = `translateX(-${index * 100}%)`;
+            
+            // Update dots
+            const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            // Update thumbnails
+            const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
+            thumbnails.forEach((thumb, i) => {
+                thumb.classList.toggle('active', i === index);
+            });
+            
+            // Update counter
+            const currentSpan = document.getElementById(`current-${carouselId}`);
+            if (currentSpan) {
+                currentSpan.textContent = index + 1;
+            }
+            
+            // Update aria labels
+            const carousel = document.getElementById(`carousel-${carouselId}`);
+            if (carousel) {
+                carousel.setAttribute('aria-label', `Image carousel for day - slide ${index + 1} of ${slides.length}`);
+            }
         });
-        
-        // Update thumbnails
-        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
-        thumbnails.forEach((thumb, i) => {
-            thumb.classList.toggle('active', i === index);
-        });
-        
-        // Update counter
-        const currentSpan = document.getElementById(`current-${carouselId}`);
-        if (currentSpan) {
-            currentSpan.textContent = index + 1;
-        }
-        
-        // Update aria labels for accessibility
-        const carousel = document.getElementById(`carousel-${carouselId}`);
-        if (carousel) {
-            carousel.setAttribute('aria-label', `Image carousel for day - slide ${index + 1} of ${slides.length}`);
-        }
     };
 
-    // Navigate with arrows
-    window.navigateCarousel = function(carouselId, direction, event) {
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
+    // Get visible reel index
+    function getVisibleReelIndex() {
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return 0;
+        
+        const containerHeight = reelsTrack.clientHeight;
+        const scrollTop = reelsTrack.scrollTop;
+        return Math.round(scrollTop / containerHeight);
+    }
+    
+    // Initialize only the visible carousel
+    function initVisibleCarousel() {
+        const index = getVisibleReelIndex();
+        const visibleReel = document.querySelector(`.reel[data-index="${index}"]`);
+        
+        if (!visibleReel) return;
+        
+        const carousel = visibleReel.querySelector('.story-carousel');
+        if (!carousel) return;
+        
+        const carouselId = carousel.id.replace('carousel-', '');
+        if (carouselId && carousel.dataset.initialized !== 'true') {
+            initCarousel(carouselId);
         }
+        
+        // Deactivate previous carousel
+        if (activeCarouselId && activeCarouselId !== carouselId) {
+            deactivateCarousel(activeCarouselId);
+        }
+        
+        activeCarouselId = carouselId;
+    }
+    
+    // Deactivate carousel to free resources
+    function deactivateCarousel(carouselId) {
+        const carousel = document.getElementById('carousel-' + carouselId);
+        if (!carousel) return;
         
         const track = document.getElementById('track-' + carouselId);
-        if (!track) return;
-        
-        const slides = track.children;
-        
-        // Get current index from active dot
-        let currentIndex = 0;
-        const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-        if (activeDot) {
-            currentIndex = parseInt(activeDot.dataset.index);
-        } else {
-            // Fallback: get from transform
-            const transform = track.style.transform;
-            const match = transform.match(/-?(\d+)%/);
-            if (match) {
-                currentIndex = Math.round(parseInt(match[1]) / 100);
-            }
+        if (track) {
+            // Remove event listeners but keep DOM
+            const newTrack = track.cloneNode(true);
+            track.parentNode.replaceChild(newTrack, track);
         }
         
-        let newIndex;
-        if (direction === 'prev') {
-            newIndex = Math.max(0, currentIndex - 1);
-        } else {
-            newIndex = Math.min(slides.length - 1, currentIndex + 1);
-        }
-        
-        if (newIndex !== currentIndex) {
-            goToSlide(carouselId, newIndex);
-            
-            // Optional haptic feedback
-            if (window.navigator && window.navigator.vibrate) {
-                window.navigator.vibrate(10);
-            }
-        }
-    };
-
-    // ===== CAROUSEL INITIALIZATION WITH SWIPE =====
+        carousel.dataset.initialized = 'false';
+    }
+    
+    // Initialize a carousel with touch handlers
     function initCarousel(carouselId) {
         const carousel = document.getElementById('carousel-' + carouselId);
         const track = document.getElementById('track-' + carouselId);
@@ -1198,52 +1232,44 @@
 
         let startX = 0;
         let startY = 0;
-        let currentX = 0;
         let isDragging = false;
         let isHorizontalSwipe = false;
         let currentIndex = 0;
-        let animationFrame = null;
-        
-        // Get initial index from active dot
-        const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-        if (activeDot) {
-            currentIndex = parseInt(activeDot.dataset.index);
-        }
         
         // Set initial position
-        goToSlide(carouselId, currentIndex);
+        goToSlide(carouselId, 0);
 
-        // ===== TOUCH HANDLERS =====
+        // Touch handlers
         function handleTouchStart(e) {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
             isDragging = true;
             isHorizontalSwipe = false;
             track.classList.add('dragging');
             track.style.transition = 'none';
-            
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
+            carousel.classList.remove('horizontal-active');
         }
 
         function handleTouchMove(e) {
             if (!isDragging) return;
 
-            currentX = e.touches[0].clientX;
-            const currentY = e.touches[0].clientY;
+            const touch = e.touches[0];
+            const currentX = touch.clientX;
+            const currentY = touch.clientY;
             
             const diffX = Math.abs(currentX - startX);
             const diffY = Math.abs(currentY - startY);
 
-            // Determine if this is a horizontal swipe
             if (!isHorizontalSwipe) {
                 if (diffX > diffY && diffX > 10) {
                     isHorizontalSwipe = true;
+                    carousel.classList.add('horizontal-active');
+                    e.preventDefault();
                 } else if (diffY > diffX && diffY > 10) {
                     isDragging = false;
                     track.classList.remove('dragging');
+                    track.style.transition = '';
                     return;
                 }
             }
@@ -1251,49 +1277,39 @@
             if (isHorizontalSwipe) {
                 e.preventDefault();
                 
-                if (animationFrame) cancelAnimationFrame(animationFrame);
+                const diff = currentX - startX;
+                const movePercent = (diff / track.offsetWidth) * 100;
                 
-                animationFrame = requestAnimationFrame(() => {
-                    const diff = currentX - startX;
-                    const movePercent = (diff / track.offsetWidth) * 100;
-                    
-                    // Get current index from active dot
-                    const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                    const currentIdx = activeDot ? parseInt(activeDot.dataset.index) : 0;
-                    
-                    const currentOffset = -currentIdx * 100;
-                    let newOffset = currentOffset + movePercent;
+                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
+                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
+                
+                const currentOffset = -currentIndex * 100;
+                let newOffset = currentOffset + movePercent;
 
-                    // Add resistance at edges
-                    if (newOffset > 0) {
-                        newOffset = newOffset * 0.3;
-                    }
-                    if (newOffset < -(slides.length - 1) * 100) {
-                        const overshoot = newOffset + (slides.length - 1) * 100;
-                        newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
-                    }
+                if (newOffset > 0) {
+                    newOffset = newOffset * 0.3;
+                }
+                if (newOffset < -(slides.length - 1) * 100) {
+                    const overshoot = newOffset + (slides.length - 1) * 100;
+                    newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
+                }
 
-                    track.style.transform = `translateX(${newOffset}%)`;
-                });
+                track.style.transform = `translateX(${newOffset}%)`;
             }
         }
 
         function handleTouchEnd(e) {
             if (!isDragging) return;
-            
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
 
             track.classList.remove('dragging');
-            track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
+            track.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
+            carousel.classList.remove('horizontal-active');
 
             if (isHorizontalSwipe) {
-                const diff = currentX - startX;
+                const touch = e.changedTouches[0];
+                const diff = touch.clientX - startX;
                 const threshold = track.offsetWidth * 0.15;
                 
-                // Get current index from active dot
                 const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
                 currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
 
@@ -1310,220 +1326,64 @@
             isDragging = false;
         }
 
-        // ===== MOUSE HANDLERS =====
-        function handleMouseDown(e) {
-            e.preventDefault();
-            startX = e.clientX;
-            isDragging = true;
-            isHorizontalSwipe = true;
-            track.classList.add('dragging');
-            track.style.transition = 'none';
-            track.style.cursor = 'grabbing';
-        }
-
-        function handleMouseMove(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            currentX = e.clientX;
-            
-            if (animationFrame) cancelAnimationFrame(animationFrame);
-            
-            animationFrame = requestAnimationFrame(() => {
-                const diff = currentX - startX;
-                const movePercent = (diff / track.offsetWidth) * 100;
-                
-                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                const currentIdx = activeDot ? parseInt(activeDot.dataset.index) : 0;
-                
-                const currentOffset = -currentIdx * 100;
-                let newOffset = currentOffset + movePercent;
-
-                if (newOffset > 0) {
-                    newOffset = newOffset * 0.3;
-                }
-                if (newOffset < -(slides.length - 1) * 100) {
-                    const overshoot = newOffset + (slides.length - 1) * 100;
-                    newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
-                }
-
-                track.style.transform = `translateX(${newOffset}%)`;
-            });
-        }
-
-        function handleMouseUp(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-
-            track.classList.remove('dragging');
-            track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
-            track.style.cursor = 'grab';
-
-            const diff = currentX - startX;
-            const threshold = track.offsetWidth * 0.15;
-            
-            const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-            currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
-
-            if (Math.abs(diff) > threshold) {
-                if (diff > 0 && currentIndex > 0) {
-                    currentIndex--;
-                } else if (diff < 0 && currentIndex < slides.length - 1) {
-                    currentIndex++;
-                }
-            }
-
-            goToSlide(carouselId, currentIndex);
-            isDragging = false;
-        }
-
-        function handleMouseLeave(e) {
-            if (isDragging) {
-                track.classList.remove('dragging');
-                track.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)';
-                track.style.cursor = 'grab';
-                
-                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
-                
-                goToSlide(carouselId, currentIndex);
-                isDragging = false;
-            }
-        }
-
-        // ===== KEYBOARD NAVIGATION =====
-        function handleKeyDown(e) {
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                navigateCarousel(carouselId, 'prev', e);
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                navigateCarousel(carouselId, 'next', e);
-            }
-        }
-
-        // Store handlers for cleanup
-        const handlers = {
-            touchstart: handleTouchStart,
-            touchmove: handleTouchMove,
-            touchend: handleTouchEnd,
-            touchcancel: handleTouchEnd,
-            mousedown: handleMouseDown,
-            mousemove: handleMouseMove,
-            mouseup: handleMouseUp,
-            mouseleave: handleMouseLeave,
-            keydown: handleKeyDown
-        };
-
         // Add event listeners
-        track.addEventListener('touchstart', handlers.touchstart, { passive: true });
-        track.addEventListener('touchmove', handlers.touchmove, { passive: false });
-        track.addEventListener('touchend', handlers.touchend, { passive: true });
-        track.addEventListener('touchcancel', handlers.touchcancel, { passive: true });
-        track.addEventListener('mousedown', handlers.mousedown);
-        track.addEventListener('mousemove', handlers.mousemove);
-        track.addEventListener('mouseup', handlers.mouseup);
-        track.addEventListener('mouseleave', handlers.mouseleave);
-        carousel.addEventListener('keydown', handlers.keydown);
+        track.addEventListener('touchstart', handleTouchStart, { passive: true });
+        track.addEventListener('touchmove', handleTouchMove, { passive: false });
+        track.addEventListener('touchend', handleTouchEnd, { passive: true });
+        track.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
-        // Store instance
-        carouselInstances.set(carouselId, { track, handlers, carousel });
         carousel.dataset.initialized = 'true';
     }
 
-    // ===== DOT CLICK HANDLING =====
-    function setupDotHandlers() {
-        document.querySelectorAll('.dot[data-carousel]').forEach(dot => {
-            dot.removeEventListener('click', handleDotClick);
-            dot.addEventListener('click', handleDotClick);
-        });
-    }
-
-    function handleDotClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const dot = e.currentTarget;
-        const carouselId = dot.dataset.carousel;
-        const index = parseInt(dot.dataset.index);
-        
-        if (carouselId && !isNaN(index)) {
-            goToSlide(carouselId, index);
-        }
-    }
-
-    // ===== THUMBNAIL CLICK HANDLING =====
-    function setupThumbnailHandlers() {
-        document.querySelectorAll('.thumbnail-item[onclick]').forEach(thumb => {
-            // Already handled by inline onclick
-        });
-    }
-
-    // ===== SWIPE INDICATOR =====
-    function setupSwipeIndicator() {
-        const hasSeenIndicator = sessionStorage.getItem('swipeIndicatorSeen');
-        if (hasSeenIndicator) return;
-        
-        const indicators = document.querySelectorAll('.swipe-indicator');
-        indicators.forEach(indicator => {
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 4000);
-        });
-        
-        sessionStorage.setItem('swipeIndicatorSeen', 'true');
-    }
-
-    // ===== INITIALIZE ALL CAROUSELS =====
-    function initAllCarousels() {
-        document.querySelectorAll('.story-carousel').forEach(carousel => {
-            const id = carousel.id.replace('carousel-', '');
-            if (id && carousel.dataset.initialized !== 'true') {
-                setTimeout(() => {
-                    initCarousel(id);
-                }, 100);
+    // ===== EVENT DELEGATION FOR DOTS AND THUMBNAILS =====
+    document.addEventListener('click', function(e) {
+        const dot = e.target.closest('.dot[data-carousel]');
+        if (dot) {
+            e.preventDefault();
+            const carouselId = dot.dataset.carousel;
+            const index = parseInt(dot.dataset.index);
+            if (carouselId && !isNaN(index)) {
+                goToSlide(carouselId, index);
             }
-        });
+            return;
+        }
         
-        setupDotHandlers();
-        setupThumbnailHandlers();
-        setupSwipeIndicator();
-    }
+        const thumbnail = e.target.closest('.thumbnail-item[data-carousel]');
+        if (thumbnail) {
+            e.preventDefault();
+            const carouselId = thumbnail.dataset.carousel;
+            const index = parseInt(thumbnail.dataset.index);
+            if (carouselId && !isNaN(index)) {
+                goToSlide(carouselId, index);
+            }
+        }
+    });
 
     // ===== VERTICAL SCROLL PROGRESS =====
     const reelsTrack = document.getElementById('reelsTrack');
-    const reelsContainer = document.querySelector('.reels-container');
     
-    if (reelsTrack && reelsContainer) {
+    if (reelsTrack) {
         reelsTrack.addEventListener('scroll', () => {
-            const containerHeight = reelsContainer.offsetHeight;
+            const containerHeight = reelsTrack.clientHeight;
             const scrollTop = reelsTrack.scrollTop;
             const index = Math.round(scrollTop / containerHeight);
             
+            // Update progress bars
             document.querySelectorAll('.progress-bar').forEach((bar, i) => {
                 bar.classList.toggle('active', i === index);
             });
+            
+            // Debounce carousel initialization
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                initVisibleCarousel();
+            }, 150);
         });
     }
 
-    // ===== GO TO REEL =====
-    window.goToReel = (index) => {
-        if (reelsTrack && reelsContainer) {
-            const containerHeight = reelsContainer.offsetHeight;
-            reelsTrack.scrollTo({
-                top: index * containerHeight,
-                behavior: 'smooth'
-            });
-        }
-    };
-
     // ===== MODAL FUNCTIONS =====
-    window.openVideoModal = (id) => {
+    window.openVideoModal = function(id, event) {
+        if (event) event.stopPropagation();
         const modal = document.getElementById('video-modal-' + id);
         if (modal) {
             modal.classList.add('show');
@@ -1536,7 +1396,7 @@
         }
     };
 
-    window.closeVideoModal = (id) => {
+    window.closeVideoModal = function(id) {
         const modal = document.getElementById('video-modal-' + id);
         if (modal) {
             modal.classList.remove('show');
@@ -1551,40 +1411,22 @@
     };
 
     // ===== LOVE HANDLER =====
-    window.handleLove = (id, event) => {
+    window.handleLove = function(id, event) {
         event.stopPropagation();
         const btn = document.getElementById('love-' + id);
         const icon = btn.querySelector('i');
         const countSpan = document.getElementById('love-count-' + id);
         const wasLoved = btn.classList.contains('loved');
         
-        // Optimistic UI update
         btn.classList.toggle('loved');
         icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
         
         let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
         countSpan.textContent = wasLoved ? (count - 1).toLocaleString() : (count + 1).toLocaleString();
-        
-        // Backend call (uncomment when ready)
-        /*
-        fetch(`/api/activities/${id}/toggle-love/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            }
-        }).catch(error => {
-            // Revert on error
-            btn.classList.toggle('loved');
-            icon.className = wasLoved ? 'fas fa-heart' : 'far fa-heart';
-            countSpan.textContent = count.toLocaleString();
-            console.error('Love toggle failed:', error);
-        });
-        */
     };
 
     // ===== CAPTION TOGGLE =====
-    window.toggleCaption = (id, event) => {
+    window.toggleCaption = function(id, event) {
         event.stopPropagation();
         const caption = document.getElementById('caption-' + id);
         caption.classList.toggle('expanded');
@@ -1592,12 +1434,12 @@
     };
 
     // ===== COMMENTS / SHARE STUBS =====
-    window.openComments = (id, e) => { 
+    window.openComments = function(id, e) { 
         e.stopPropagation(); 
         alert('Comments panel - ready for backend implementation'); 
     };
     
-    window.openShareMenu = (id, e) => { 
+    window.openShareMenu = function(id, e) { 
         e.stopPropagation(); 
         if (navigator.share) {
             navigator.share({
@@ -1612,85 +1454,30 @@
         }
     };
 
-    // ===== INITIALIZE ON LOAD =====
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAllCarousels);
-    } else {
-        initAllCarousels();
-    }
-
-    // ===== MUTATION OBSERVER FOR DYNAMIC CONTENT =====
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) {
-                    // Check for new carousels
-                    if (node.classList && node.classList.contains('story-carousel')) {
-                        const id = node.id.replace('carousel-', '');
-                        initCarousel(id);
-                    }
-                    
-                    // Check for new dots
-                    const dots = node.querySelectorAll ? node.querySelectorAll('.dot[data-carousel]') : [];
-                    dots.forEach(dot => {
-                        dot.removeEventListener('click', handleDotClick);
-                        dot.addEventListener('click', handleDotClick);
-                    });
-                }
+    // ===== GO TO REEL =====
+    window.goToReel = function(index) {
+        if (reelsTrack) {
+            const containerHeight = reelsTrack.clientHeight;
+            reelsTrack.scrollTo({
+                top: index * containerHeight,
+                behavior: 'smooth'
             });
-        });
-    });
+        }
+    };
 
-    observer.observe(document.body, { childList: true, subtree: true });
+    // ===== INITIALIZE =====
+    setTimeout(() => {
+        initVisibleCarousel();
+    }, 100);
+    
+    // Hide swipe indicator after 3 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.swipe-indicator').forEach(el => {
+            el.style.display = 'none';
+        });
+    }, 3000);
 
 })();
 </script>
-
-<style>
-    /* Additional styles for text-only update */
-    .text-only-update {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        background: #1a1a1a;
-        flex-direction: column;
-        gap: 16px;
-        padding: 20px;
-        text-align: center;
-    }
-    
-    .text-only-update i {
-        opacity: 0.3;
-    }
-    
-    .text-only-update div:first-of-type {
-        font-size: 16px;
-        font-weight: 600;
-    }
-    
-    .text-only-update div:last-child {
-        font-size: 14px;
-        opacity: 0.7;
-        max-width: 80%;
-    }
-    
-    .video-loading {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 12px;
-        z-index: 5;
-    }
-
-    /* Hide carousel arrows completely */
-.carousel-arrow {
-    display: none !important;
-}
-</style>
 </body>
 </html>

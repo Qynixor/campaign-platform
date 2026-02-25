@@ -79,7 +79,6 @@ class ActivityCommentForm(forms.ModelForm):
 
 
 
-# main/forms.py
 from django import forms
 from .models import Activity
 from .utils import validate_no_long_words
@@ -122,7 +121,37 @@ class ActivityForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['content'].required = False
             self.fields['content'].initial = ''
-            
+    
+    def _get_file_name(self, file):
+        """Safely get filename from any file type (regular file or Cloudinary)"""
+        try:
+            if hasattr(file, 'name'):
+                return file.name.lower()
+            elif hasattr(file, 'public_id'):
+                return file.public_id.lower()
+            elif hasattr(file, 'url'):
+                # Extract from URL
+                url_parts = str(file.url).split('/')
+                return url_parts[-1].lower() if url_parts else ""
+            else:
+                return str(file).lower()
+        except (AttributeError, TypeError):
+            return ""
+    
+    def _get_content_type(self, file):
+        """Safely get content type from any file type"""
+        try:
+            if hasattr(file, 'content_type'):
+                return file.content_type
+            elif hasattr(file, 'file') and hasattr(file.file, 'content_type'):
+                return file.file.content_type
+            elif hasattr(file, 'resource_type'):
+                # Cloudinary resource_type
+                return file.resource_type
+            return ""
+        except (AttributeError, TypeError):
+            return ""
+    
     def clean(self):
         cleaned_data = super().clean()
         content = cleaned_data.get('content')
@@ -142,49 +171,64 @@ class ActivityForm(forms.ModelForm):
 
     def clean_file(self):
         file = self.cleaned_data.get('file')
+        
         if file:
-            content_type = file.content_type if hasattr(file, 'content_type') else ''
-            file_name = file.name.lower()
+            # Safely get file info
+            file_name = self._get_file_name(file)
+            content_type = self._get_content_type(file)
             
-            # Determine if it's a video
-            is_video = content_type.startswith('video/') or any(
-                file_name.endswith(ext) for ext in ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v']
-            )
+            # Determine file type
+            is_video = False
+            is_image = False
             
-            # Determine if it's an image
-            is_image = content_type.startswith('image/') or any(
-                file_name.endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-            )
+            # Check by content type
+            if content_type:
+                is_video = content_type.startswith('video/') or content_type == 'video'
+                is_image = content_type.startswith('image/') or content_type == 'image'
+            
+            # Check by file extension if not determined
+            if not (is_video or is_image):
+                video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+                image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+                
+                is_video = any(file_name.endswith(ext) for ext in video_exts)
+                is_image = any(file_name.endswith(ext) for ext in image_exts)
             
             # Set different size limits based on file type
-            if is_video:
-                max_size = 500 * 1024 * 1024  # 500MB for videos (adjust as needed)
-                size_limit_mb = 500
-            elif is_image:
+            max_size = 500 * 1024 * 1024  # Default 500MB
+            size_limit_mb = 500
+            
+            if is_image:
                 max_size = 20 * 1024 * 1024  # 20MB for images
                 size_limit_mb = 20
-            else:
-                max_size = 50 * 1024 * 1024  # 50MB for audio/other files
-                size_limit_mb = 50
+            elif is_video:
+                max_size = 500 * 1024 * 1024  # 500MB for videos
+                size_limit_mb = 500
             
-            # Check file size
-            if file.size > max_size:
-                file_type = "Video" if is_video else "Image" if is_image else "File"
-                raise forms.ValidationError(
-                    f'{file_type} size must be under {size_limit_mb}MB. '
-                    f'Current size: {file.size / (1024*1024):.1f}MB'
-                )
+            # Check file size (only for new uploads, not existing Cloudinary files)
+            if hasattr(file, 'size') and file.size:
+                if file.size > max_size:
+                    file_type = "Video" if is_video else "Image" if is_image else "File"
+                    raise forms.ValidationError(
+                        f'{file_type} size must be under {size_limit_mb}MB. '
+                        f'Current size: {file.size / (1024*1024):.1f}MB'
+                    )
             
             # Validate file type
-            allowed_types = ['image', 'video', 'audio']
-            if not any(content_type.startswith(t) for t in allowed_types) and not (is_video or is_image):
-                raise forms.ValidationError('Only image, video, and audio files are allowed')
+            if not (is_video or is_image) and content_type and not content_type.startswith('audio/'):
+                # Check if it's audio
+                audio_exts = ['.mp3', '.wav', '.ogg', '.m4a']
+                is_audio = any(file_name.endswith(ext) for ext in audio_exts) or content_type.startswith('audio/')
+                if not is_audio:
+                    raise forms.ValidationError('Only image, video, and audio files are allowed')
             
             # Add file type info to cleaned data for use in view
             self.cleaned_data['_is_video'] = is_video
             self.cleaned_data['_is_image'] = is_image
         
         return file
+
+
 
 
 

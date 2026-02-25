@@ -3955,8 +3955,6 @@ from django import forms
 from django.urls import reverse
 from cloudinary.models import CloudinaryResource
 
-
-
 @login_required
 def create_activity(request, campaign_id):
     """
@@ -4060,7 +4058,7 @@ def create_activity(request, campaign_id):
                             if instance.pk:
                                 original = Activity.objects.get(pk=instance.pk)
                                 if (instance.content == original.content and 
-                                    instance.file == original.file):
+                                    str(instance.file) == str(original.file)):
                                     continue
                             else:
                                 continue
@@ -4069,14 +4067,37 @@ def create_activity(request, campaign_id):
                         if instance.file and not instance.content:
                             instance.content = f"Shared a file for Day {activity_day if not instance.pk else 'update'}"
                         
-                        # Check if file is a video
-                        if instance.file and hasattr(instance.file, 'file'):
-                            file = instance.file.file
-                            content_type = getattr(file, 'content_type', '')
-                            file_name = str(instance.file).lower()
+                        # ===== FIXED VIDEO DETECTION =====
+                        if instance.file:
+                            is_video = False
                             
-                            if content_type.startswith('video/') or any(ext in file_name for ext in ['.mp4', '.mov', '.avi', '.webm', '.mkv']):
-                                instance.is_video = True
+                            # Method 1: Check if it's a Cloudinary video
+                            if hasattr(instance.file, 'resource_type'):
+                                is_video = instance.file.resource_type == 'video'
+                            
+                            # Method 2: Check content type
+                            if not is_video and hasattr(instance.file, 'content_type'):
+                                content_type = instance.file.content_type
+                                is_video = content_type and content_type.startswith('video/')
+                            
+                            # Method 3: Check URL/file name
+                            if not is_video:
+                                try:
+                                    # Get string representation
+                                    file_str = str(instance.file).lower()
+                                    video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v']
+                                    is_video = any(ext in file_str for ext in video_extensions)
+                                    
+                                    # Check URL if available
+                                    if not is_video and hasattr(instance.file, 'url'):
+                                        url = instance.file.url.lower()
+                                        is_video = any(ext in url for ext in video_extensions)
+                                except (AttributeError, TypeError):
+                                    pass
+                            
+                            instance.is_video = is_video
+                            
+                            if is_video:
                                 instance.video_processed = False
                                 
                                 # Get screenshot count from form data
