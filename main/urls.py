@@ -54,8 +54,7 @@ path('project_support/', RedirectView.as_view(
     
     path('verify/', views.verify_profile, name='verify_profile'),
     path('campaign/<int:campaign_id>/join_leave/', views.join_leave_campaign, name='join_leave_campaign'),
-    path('campaign/<int:campaign_id>/joiners/', views.campaign_joiners, name='campaign_joiners'),
-
+   
  path('edit/', views.edit_gif, name='edit_gif'),
 
     path('campaign/delete/<int:pk>/', CampaignDeleteView.as_view(), name='campaign-delete'),
@@ -204,6 +203,8 @@ path('dm/<int:dm_id>/send/', views.send_dm_message, name='send_dm_message'),  # 
 path('update-activity/', views.update_activity, name='update_activity'),
 path('check-status/<int:user_id>/', views.check_status, name='check_status'),
 path('campaign/<int:campaign_id>/pledge/', views.create_pledge, name='create_pledge'),
+# urls.py
+path('campaign/<int:campaign_id>/tribe/', views.sound_tribe_members, name='sound_tribe_members'),
 # Add this to your urls.py
 # Add this line to your urlpatterns:
 path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),

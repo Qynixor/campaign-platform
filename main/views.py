@@ -556,103 +556,23 @@ def join_leave_campaign(request, campaign_id):
 
 
 
-
-
 @login_required
-def campaign_joiners(request, campaign_id):
-    # Get user and campaign data
-    user_profile = get_object_or_404(Profile, user=request.user)
-    
-    # Get following user IDs using the improved pattern
-    current_user_following = request.user.following.all()
-    following_user_ids = [follow.followed_id for follow in current_user_following]
-    
+def sound_tribe_members(request, campaign_id):
+    """Simple page to display all sound tribe members"""
     campaign = get_object_or_404(Campaign, id=campaign_id)
-    joiners = campaign.user_profiles.all()
     
-    # Update last campaign check time
-    user_profile.last_campaign_check = timezone.now()
-    user_profile.save()
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    engaged_users = set()
-  
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                     activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    # Notifications and messages
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
-
-    # Suggested users with improved logic
-    all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-    suggested_users = []
+    # Get all tribe members
+    tribe_members = SoundTribe.objects.filter(
+        campaign=campaign
+    ).select_related('user__user', 'user').order_by('-timestamp')
     
-    for profile in all_profiles:
-        similarity_score = calculate_similarity(user_profile, profile)
-        if similarity_score >= 0.5:
-            followers_count = Follow.objects.filter(followed=profile.user).count()
-            suggested_users.append({
-                'user': profile.user,
-                'followers_count': followers_count
-            })
-    suggested_users = suggested_users[:2]
-
-    # Other template data
-    form = SubscriptionForm()
-    ads = NativeAd.objects.all()
-
     context = {
         'campaign': campaign,
-        'joiners': joiners,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
-        'form': form,
-        'ads': ads,
-        'suggested_users': suggested_users,
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
+        'tribe_members': tribe_members,
+        'total_members': tribe_members.count(),
     }
     
-    return render(request, 'main/joiners.html', context)
-
-
+    return render(request, 'main/sound_tribe_members.html', context)
 
 
 class CampaignDeleteView(LoginRequiredMixin, DeleteView):

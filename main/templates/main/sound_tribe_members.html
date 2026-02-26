@@ -1,0 +1,695 @@
+{% extends 'main/face.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* ===== Light Mode Variables ===== */
+    :root {
+        --twitter-blue: #1d9bf0;
+        --twitter-blue-hover: #1a8cd8;
+        
+        /* Light mode */
+        --bg-primary: #ffffff;
+        --bg-card: #f7f9f9;
+        --bg-hover: #eff3f4;
+        --border-color: #eff3f4;
+        --text-primary: #0f1419;
+        --text-secondary: #536471;
+        --icon-bg: rgba(29, 155, 240, 0.1);
+    }
+
+    /* ===== Dark Mode Variables ===== */
+    body.dark-mode {
+        --bg-primary: #000000;
+        --bg-card: #16181c;
+        --bg-hover: #1d1f23;
+        --border-color: #2f3336;
+        --text-primary: #e7e9ea;
+        --text-secondary: #71767b;
+        --icon-bg: rgba(29, 155, 240, 0.15);
+    }
+
+    /* ===== Main Container ===== */
+    .tribe-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* ===== Back Link ===== */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--twitter-blue);
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        padding: 8px 16px;
+        border-radius: 30px;
+        transition: background 0.2s;
+    }
+
+    .back-link:hover {
+        background: var(--bg-hover);
+        text-decoration: none;
+    }
+
+    .back-link i {
+        font-size: 14px;
+    }
+
+    /* ===== Header Card ===== */
+    .tribe-header-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px 20px;
+        margin-bottom: 20px;
+        transition: all 0.2s;
+    }
+
+    .tribe-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .tribe-icon {
+        width: 52px;
+        height: 52px;
+        background: var(--twitter-blue);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        color: white;
+        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+    }
+
+    .tribe-title h2 {
+        color: var(--text-primary);
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .tribe-title p {
+        color: var(--text-secondary);
+        font-size: 15px;
+        margin: 4px 0 0 0;
+    }
+
+    /* ===== Stats Row ===== */
+    .tribe-stats {
+        display: flex;
+        gap: 32px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-number {
+        color: var(--text-primary);
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 4px;
+        font-weight: 400;
+    }
+
+    /* ===== Members Grid ===== */
+    .members-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* ===== Member Card ===== */
+    .member-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .member-card:hover {
+        background: var(--bg-hover);
+        transform: translateY(-1px);
+        border-color: var(--twitter-blue);
+    }
+
+    /* ===== Avatar ===== */
+    .member-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
+    }
+
+    .member-card:hover .member-avatar {
+        border-color: var(--twitter-blue);
+    }
+
+    .member-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .default-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--twitter-blue), #0b7bc1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 22px;
+    }
+
+    /* ===== Member Info ===== */
+    .member-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .member-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+    }
+
+    .member-username {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+
+    .member-badge {
+        background: rgba(29, 155, 240, 0.15);
+        color: var(--twitter-blue);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        white-space: nowrap;
+        border: 1px solid var(--border-color);
+    }
+
+    .member-badge.creator {
+        background: rgba(255, 212, 0, 0.15);
+        color: #ffd400;
+        border-color: rgba(255, 212, 0, 0.3);
+    }
+
+    .member-joined {
+        color: var(--text-secondary);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .member-joined i {
+        font-size: 12px;
+    }
+
+    .member-bio {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 6px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* ===== Follow Button ===== */
+    .follow-btn {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .follow-btn i {
+        font-size: 12px;
+    }
+
+    .follow-btn:hover {
+        background: rgba(29, 155, 240, 0.1);
+        border-color: var(--twitter-blue);
+        color: var(--twitter-blue);
+    }
+
+    .follow-btn.following {
+        background: var(--twitter-blue);
+        border-color: var(--twitter-blue);
+        color: white;
+    }
+
+    .follow-btn.following:hover {
+        background: #c40e0e;
+        border-color: #c40e0e;
+        color: white;
+    }
+
+    .follow-btn.following:hover i {
+        transform: rotate(0deg);
+    }
+
+    .follow-btn.following:hover i:before {
+        content: "\f00d";
+    }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--icon-bg);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: var(--twitter-blue);
+        font-size: 40px;
+        border: 1px solid var(--border-color);
+    }
+
+    .empty-state h3 {
+        color: var(--text-primary);
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 15px;
+        margin-bottom: 28px;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .join-btn {
+        background: var(--twitter-blue);
+        color: white;
+        border: none;
+        padding: 12px 32px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+    }
+
+    .join-btn:hover {
+        background: var(--twitter-blue-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(29, 155, 240, 0.4);
+    }
+
+    .join-btn i {
+        font-size: 16px;
+    }
+
+    /* ===== Pagination ===== */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 30px;
+    }
+
+    .page-link {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 8px 14px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .page-link:hover {
+        background: var(--bg-hover);
+        border-color: var(--twitter-blue);
+        color: var(--twitter-blue);
+    }
+
+    .page-link.active {
+        background: var(--twitter-blue);
+        border-color: var(--twitter-blue);
+        color: white;
+    }
+
+    .page-info {
+        color: var(--text-secondary);
+        font-size: 14px;
+        padding: 0 12px;
+    }
+
+    /* ===== Loading Skeleton ===== */
+    .skeleton-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        animation: pulse 1.5s infinite;
+    }
+
+    .skeleton-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--border-color);
+        flex-shrink: 0;
+    }
+
+    .skeleton-content {
+        flex: 1;
+    }
+
+    .skeleton-line {
+        height: 14px;
+        background: var(--border-color);
+        border-radius: 4px;
+        margin: 6px 0;
+    }
+
+    .skeleton-line:first-child {
+        width: 140px;
+    }
+
+    .skeleton-line:last-child {
+        width: 100px;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+        .tribe-container {
+            padding: 12px;
+        }
+        
+        .tribe-header-card {
+            padding: 20px 16px;
+        }
+        
+        .tribe-icon {
+            width: 44px;
+            height: 44px;
+            font-size: 22px;
+        }
+        
+        .tribe-title h2 {
+            font-size: 22px;
+        }
+        
+        .tribe-stats {
+            gap: 24px;
+        }
+        
+        .stat-number {
+            font-size: 18px;
+        }
+        
+        .member-card {
+            padding: 12px;
+            gap: 12px;
+        }
+        
+        .member-avatar {
+            width: 44px;
+            height: 44px;
+        }
+        
+        .default-avatar {
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+        }
+        
+        .member-username {
+            font-size: 15px;
+            max-width: 150px;
+        }
+        
+        .follow-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+        
+        .pagination {
+            flex-wrap: wrap;
+        }
+        
+        .page-link {
+            padding: 6px 12px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .tribe-stats {
+            gap: 16px;
+        }
+        
+        .member-card {
+            flex-wrap: wrap;
+        }
+        
+        .member-info {
+            min-width: 100%;
+            order: 3;
+            margin-top: 8px;
+        }
+        
+        .member-username {
+            max-width: 100%;
+        }
+        
+        .follow-btn {
+            margin-left: auto;
+        }
+    }
+</style>
+
+<div class="tribe-container">
+    <!-- Back Link -->
+    <a href="{% url 'view_campaign' campaign_id=campaign.id %}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Campaign
+    </a>
+
+    <!-- Header Card -->
+    <div class="tribe-header-card">
+        <div class="tribe-title">
+            <div class="tribe-icon">
+                <i class="fas fa-headphones-alt"></i>
+            </div>
+            <div>
+                <h2>Sound Tribe</h2>
+                <p>{{ campaign.title }}</p>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="tribe-stats">
+            <div class="stat-item">
+                <span class="stat-number">{{ total_members }}</span>
+                <span class="stat-label">Total members</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ new_members_today|default:"0" }}</span>
+                <span class="stat-label">Joined today</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ campaign.get_sound_tribe_members_count }}</span>
+                <span class="stat-label">Active</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members List -->
+    <div class="members-grid">
+        {% for member in tribe_members %}
+        <div class="member-card" onclick="window.location='{% url 'profile_view' username=member.user.user.username %}'">
+            <!-- Avatar -->
+            <div class="member-avatar">
+                {% if member.user.image %}
+                    <img src="{{ member.user.image.url }}" alt="{{ member.user.user.username }}">
+                {% else %}
+                    <div class="default-avatar">{{ member.user.user.username|first|upper }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Info -->
+            <div class="member-info">
+                <div class="member-name-row">
+                    <span class="member-username">@{{ member.user.user.username }}</span>
+                    {% if member.user == campaign.user %}
+                        <span class="member-badge creator">Creator</span>
+                    {% else %}
+                        <span class="member-badge">Member</span>
+                    {% endif %}
+                </div>
+                <div class="member-joined">
+                    <i class="far fa-calendar-alt"></i> Joined {{ member.timestamp|date:"M d, Y" }}
+                </div>
+                {% if member.user.bio %}
+                <div class="member-bio">
+                    {{ member.user.bio }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Follow Button -->
+            {% if request.user != member.user.user %}
+            <button class="follow-btn" onclick="event.stopPropagation(); toggleFollow('{{ member.user.user.username }}')">
+                <i class="fas fa-plus"></i> Follow
+            </button>
+            {% endif %}
+        </div>
+        {% empty %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-headphones-alt"></i>
+            </div>
+            <h3>No tribe members yet</h3>
+            <p>Be the first to join the Sound Tribe and support this journey!</p>
+            {% if request.user != campaign.user.user %}
+            <button class="join-btn" onclick="joinTribe('{{ campaign.id }}')">
+                <i class="fas fa-headphones-alt"></i> Join Sound Tribe
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if tribe_members.has_other_pages %}
+    <div class="pagination">
+        {% if tribe_members.has_previous %}
+            <a href="?page=1" class="page-link"><i class="fas fa-angle-double-left"></i></a>
+            <a href="?page={{ tribe_members.previous_page_number }}" class="page-link"><i class="fas fa-angle-left"></i></a>
+        {% endif %}
+
+        <span class="page-info">
+            {{ tribe_members.number }} / {{ tribe_members.paginator.num_pages }}
+        </span>
+
+        {% if tribe_members.has_next %}
+            <a href="?page={{ tribe_members.next_page_number }}" class="page-link"><i class="fas fa-angle-right"></i></a>
+            <a href="?page={{ tribe_members.paginator.num_pages }}" class="page-link"><i class="fas fa-angle-double-right"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function joinTribe(campaignId) {
+    fetch(`/campaign/${campaignId}/join-tribe/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function toggleFollow(username) {
+    console.log('Follow/unfollow:', username);
+    // Add your follow logic here
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}
