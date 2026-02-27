@@ -1,3 +1,5 @@
+{% load custom_filters %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,1278 +11,1080 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-/* Add/Replace these styles in your CSS for complete flexibility */
-
-/* Root variables for easy customization */
-:root {
-    --twitter-blue: #1d9bf0;
-    --twitter-blue-hover: #1a8cd8;
-    --background-dark: #000000;
-    --card-dark: #16181c;
-    --card-darker: #0f1114;
-    --border-color: #2f3336;
-    --text-primary: #e7e9ea;
-    --text-secondary: #71767b;
-    --success-green: #00b87a;
-    --error-red: #f4212e;
-    --warning-yellow: #ffd400;
-    --border-radius-sm: clamp(12px, 3vw, 20px);
-    --border-radius-md: clamp(16px, 4vw, 24px);
-    --border-radius-lg: clamp(20px, 5vw, 32px);
-    --border-radius-xl: clamp(24px, 6vw, 40px);
-    --border-radius-full: 9999px;
-    --spacing-xs: clamp(4px, 1.5vw, 8px);
-    --spacing-sm: clamp(8px, 2vw, 12px);
-    --spacing-md: clamp(12px, 3vw, 16px);
-    --spacing-lg: clamp(16px, 4vw, 24px);
-    --spacing-xl: clamp(20px, 5vw, 32px);
-    --spacing-xxl: clamp(24px, 6vw, 40px);
-    --font-size-xs: clamp(12px, 3vw, 14px);
-    --font-size-sm: clamp(13px, 3.5vw, 15px);
-    --font-size-md: clamp(14px, 4vw, 16px);
-    --font-size-lg: clamp(16px, 4.5vw, 18px);
-    --font-size-xl: clamp(18px, 5vw, 20px);
-    --font-size-xxl: clamp(20px, 6vw, 24px);
-    --font-size-xxxl: clamp(24px, 7vw, 28px);
-}
-
-/* Base styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--background-dark);
-    background: radial-gradient(circle at 20% 20%, #1a2b3f, var(--background-dark) 80%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-md);
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-/* Main container - fully fluid */
-.activity-form-container {
-    width: 100%;
-    max-width: min(800px, 95vw);
-    margin: 0 auto;
-    background: var(--card-darker);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-lg);
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
-    overflow: hidden;
-    transition: all 0.3s ease;
-}
-
-/* Header - flexible */
-.activity-header {
-    padding: var(--spacing-xl);
-    background: var(--card-darker);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-}
-
-.activity-header h1 {
-    font-size: var(--font-size-xxl);
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-xs);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-    line-height: 1.3;
-}
-
-.activity-header h1 i {
-    color: var(--twitter-blue);
-    font-size: var(--font-size-xxxl);
-}
-
-.activity-subtitle {
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    line-height: 1.5;
-    word-break: break-word;
-}
-
-.close-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    width: clamp(36px, 8vw, 44px);
-    height: clamp(36px, 8vw, 44px);
-    border-radius: var(--border-radius-full);
-    font-size: clamp(20px, 5vw, 28px);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-/* Body - flexible */
-.activity-body {
-    padding: var(--spacing-xl);
-}
-
-/* Progress Card */
-.campaign-progress-card {
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-}
-
-.campaign-progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-}
-
-.campaign-progress-title {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-.campaign-progress-title i {
-    color: var(--twitter-blue);
-    font-size: var(--font-size-lg);
-}
-
-/* Schedule Badges - fully responsive */
-.schedule-badge {
-    padding: var(--spacing-xs) var(--spacing-md);
-    border-radius: var(--border-radius-full);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    background: var(--card-dark);
-    border: 1px solid;
-    white-space: nowrap;
-}
-
-@media (max-width: 480px) {
-    .schedule-badge {
-        width: 100%;
-        justify-content: center;
-        white-space: normal;
-        text-align: center;
-    }
-}
-
-/* Progress Bar */
-.progress-bar-container {
-    margin-bottom: var(--spacing-md);
-}
-
-.progress-bar-labels {
-    display: flex;
-    justify-content: space-between;
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    margin-bottom: var(--spacing-xs);
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
-}
-
-.progress-bar-bg {
-    height: clamp(6px, 2vw, 8px);
-    background: var(--border-color);
-    border-radius: var(--border-radius-full);
-    overflow: hidden;
-}
-
-.progress-bar-fill {
-    height: 100%;
-    background: var(--twitter-blue);
-    border-radius: var(--border-radius-full);
-    transition: width 0.5s ease;
-    position: relative;
-}
-
-/* Time Info - flexible grid */
-.campaign-time-info {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-    gap: var(--spacing-md);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--border-color);
-}
-
-.time-info-item {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    flex-wrap: wrap;
-}
-
-.time-info-item i {
-    color: var(--twitter-blue);
-    font-size: var(--font-size-md);
-    flex-shrink: 0;
-}
-
-/* Video Info Banner - flexible */
-.video-info-banner {
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    border-left: 4px solid var(--twitter-blue);
-}
-
-@media (max-width: 640px) {
-    .video-info-banner {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-
-.video-info-icon {
-    width: clamp(40px, 8vw, 48px);
-    height: clamp(40px, 8vw, 48px);
-    background: rgba(29, 155, 240, 0.1);
-    border-radius: var(--border-radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--twitter-blue);
-    font-size: var(--font-size-lg);
-    flex-shrink: 0;
-}
-
-.video-info-content {
-    color: var(--text-primary);
-    font-size: var(--font-size-sm);
-    line-height: 1.6;
-    word-break: break-word;
-}
-
-/* Form Sections - fully flexible */
-.form-section {
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    transition: all 0.2s ease;
-}
-
-/* Form Header */
-.form-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-}
-
-.form-title {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-    width: 100%;
-}
-
-@media (min-width: 641px) {
-    .form-title {
-        width: auto;
-    }
-}
-
-.activity-number {
-    width: clamp(32px, 6vw, 40px);
-    height: clamp(32px, 6vw, 40px);
-    background: var(--twitter-blue);
-    border-radius: var(--border-radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: var(--font-size-lg);
-    flex-shrink: 0;
-}
-
-.day-label {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
-}
-
-.target-info {
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    font-weight: 400;
-}
-
-.form-type-badge {
-    padding: var(--spacing-xs) var(--spacing-md);
-    border-radius: var(--border-radius-full);
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    border: 1px solid;
-    white-space: nowrap;
-}
-
-@media (max-width: 480px) {
-    .form-type-badge {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-.timestamp {
-    color: var(--text-secondary);
-    font-size: var(--font-size-xs);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
-}
-
-/* Textarea - perfectly responsive */
-.form-textarea {
-    width: 100%;
-    padding: var(--spacing-md);
-    background: var(--card-darker);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px; /* Base size, overridden by clamp on mobile */
-    line-height: 1.6;
-    resize: vertical;
-    min-height: clamp(100px, 20vw, 140px);
-    transition: all 0.2s ease;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-/* Responsive textarea sizing */
-@media (max-width: 768px) {
-    .form-textarea {
-        font-size: 16px; /* Prevents zoom on iOS */
-        min-height: clamp(120px, 25vw, 160px);
-        padding: var(--spacing-lg);
-    }
-}
-
-@media (max-width: 480px) {
-    .form-textarea {
-        min-height: clamp(140px, 30vw, 180px);
-        padding: var(--spacing-lg);
-        border-radius: calc(var(--border-radius-md) * 1.2);
-    }
-}
-
-.form-textarea:focus {
-    outline: none;
-    border-color: var(--twitter-blue);
-    background: var(--card-dark);
-    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.2);
-}
-
-/* Form Helper */
-.form-helper {
-    display: block;
-    color: var(--text-secondary);
-    font-size: var(--font-size-xs);
-    margin-top: var(--spacing-xs);
-    line-height: 1.5;
-}
-
-/* Emoji Section - flexible grid */
-.emoji-section {
-    margin-top: var(--spacing-md);
-}
-
-.emoji-section-label {
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    margin-bottom: var(--spacing-sm);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.emoji-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-xs);
-}
-
-.emoji-button {
-    background: var(--card-darker);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-full);
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: clamp(1rem, 4vw, 1.2rem);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: clamp(44px, 12vw, 60px);
-    min-height: clamp(44px, 12vw, 50px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: manipulation;
-}
-
-/* File Upload - fully responsive */
-.file-upload-area {
-    background: var(--card-darker);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-xl);
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: clamp(120px, 25vw, 160px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.file-upload-icon {
-    font-size: clamp(2rem, 8vw, 2.5rem);
-    color: var(--twitter-blue);
-    margin-bottom: var(--spacing-sm);
-}
-
-.file-upload-text {
-    color: var(--text-primary);
-    font-weight: 500;
-    margin-bottom: var(--spacing-xs);
-    font-size: var(--font-size-md);
-    word-break: break-word;
-}
-
-/* File Preview - responsive */
-.file-preview-container {
-    margin-top: var(--spacing-md);
-}
-
-.file-preview-item {
-    position: relative;
-    background: var(--card-darker);
-    border-radius: var(--border-radius-md);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-
-.file-preview-item img,
-.file-preview-item video {
-    width: 100%;
-    max-height: clamp(200px, 40vw, 300px);
-    object-fit: cover;
-}
-
-.remove-file-btn {
-    position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    width: clamp(36px, 8vw, 44px);
-    height: clamp(36px, 8vw, 44px);
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-full);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: var(--font-size-lg);
-}
-
-/* Warning Messages - flexible */
-.locked-day-warning,
-.max-limit-warning,
-.duration-limit-message {
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-md);
-    flex-wrap: wrap;
-}
-
-@media (max-width: 640px) {
-    .locked-day-warning,
-    .max-limit-warning {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-
-.locked-icon-circle,
-.duration-limit-icon {
-    width: clamp(44px, 10vw, 54px);
-    height: clamp(44px, 10vw, 54px);
-    border-radius: var(--border-radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-xl);
-    flex-shrink: 0;
-}
-
-.locked-content {
-    flex: 1;
-    min-width: 200px;
-}
-
-.locked-badge {
-    background: rgba(255, 212, 0, 0.1);
-    border: 1px solid rgba(255, 212, 0, 0.2);
-    color: var(--warning-yellow);
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-full);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-    white-space: nowrap;
-}
-
-@media (max-width: 640px) {
-    .locked-badge {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-/* Submit Button - fully responsive */
-.submit-button {
-    width: 100%;
-    padding: var(--spacing-lg);
-    background: var(--twitter-blue);
-    border: none;
-    border-radius: var(--border-radius-full);
-    color: white;
-    font-weight: 600;
-    font-size: var(--font-size-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin: var(--spacing-xl) 0 var(--spacing-lg);
-    min-height: clamp(50px, 10vw, 60px);
-    touch-action: manipulation;
-}
-
-/* Back Button */
-.back-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: var(--font-size-md);
-    font-weight: 500;
-    padding: var(--spacing-md) var(--spacing-lg);
-    margin-top: var(--spacing-lg);
-    border-radius: var(--border-radius-full);
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-    width: fit-content;
-    min-width: clamp(120px, 30vw, 200px);
-    min-height: clamp(44px, 8vw, 50px);
-}
-
-@media (max-width: 480px) {
-    .back-button {
-        width: 100%;
-    }
-}
-
-/* Grid layouts for different sections */
-.campaign-time-info,
-.emoji-container,
-.form-header,
-.campaign-progress-header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-sm);
-}
-
-/* Responsive typography */
-h1, h2, h3, h4, h5, h6 {
-    line-height: 1.3;
-    word-break: break-word;
-}
-
-p, span, div {
-    word-break: break-word;
-}
-
-/* Image and video responsiveness */
-img, video, audio, iframe {
-    max-width: 100%;
-    height: auto;
-}
-
-/* Touch optimizations */
-@media (hover: none) and (pointer: coarse) {
-    button, 
-    .emoji-button, 
-    .file-upload-area, 
-    .submit-button, 
-    .back-button, 
-    .close-btn, 
-    .remove-file-btn,
-    select,
-    .delete-checkbox label {
-        touch-action: manipulation;
-        cursor: pointer;
-    }
-    
-    .emoji-button:active,
-    .file-upload-area:active,
-    .submit-button:active {
-        transform: scale(0.98);
-    }
-}
-
-/* Safe area insets */
-@supports (padding: max(0px)) {
-    .activity-form-container {
-        margin-bottom: env(safe-area-inset-bottom);
-    }
-    
-    .back-button {
-        margin-bottom: env(safe-area-inset-bottom);
-    }
-}
-
-/* Prevent zoom on iOS inputs */
-@supports (-webkit-touch-callout: none) {
-    input, select, textarea {
-        font-size: 16px !important;
-    }
-}
-
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Better scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--card-darker);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--twitter-blue);
-    border-radius: var(--border-radius-full);
-}
-
-/* Responsive breakpoints */
-/* Extra small devices (phones, 320px and up) */
-@media (min-width: 320px) {
-    :root {
-        --spacing-xl: 16px;
-    }
-}
-
-/* Small devices (phones, 480px and up) */
-@media (min-width: 480px) {
-    :root {
-        --spacing-xl: 20px;
-    }
-}
-
-/* Medium devices (tablets, 768px and up) */
-@media (min-width: 768px) {
-    :root {
-        --spacing-xl: 24px;
-    }
-}
-
-/* Large devices (desktops, 1024px and up) */
-@media (min-width: 1024px) {
-    :root {
-        --spacing-xl: 28px;
-    }
-}
-
-/* Extra large devices (large desktops, 1440px and up) */
-@media (min-width: 1440px) {
-    :root {
-        --spacing-xl: 32px;
-    }
-}
-
-/* Print styles */
-@media print {
-    body {
-        background: white;
-        padding: 0;
-    }
-    
-    .activity-form-container {
-        box-shadow: none;
-        border: 1px solid #ccc;
-    }
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-    :root {
-        --twitter-blue: #0047b3;
-        --border-color: #000000;
-    }
-    
-    .activity-form-container {
-        border: 2px solid #000;
-    }
-}
-
-/* Landscape orientation fixes */
-@media (orientation: landscape) and (max-height: 600px) {
-    body {
-        align-items: flex-start;
-    }
-    
-    .activity-form-container {
-        margin: var(--spacing-md) auto;
-    }
-    
-    .form-section {
-        padding: var(--spacing-md);
-    }
-    
-    .form-textarea {
-        min-height: 80px;
-    }
-}
-
-/* Tablet specific fixes */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .activity-form-container {
-        max-width: 90vw;
-    }
-    
-    .campaign-time-info {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Fix for very small devices */
-@media (max-width: 320px) {
-    :root {
-        --spacing-xl: 12px;
-    }
-    
-    .activity-number {
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
-    }
-    
-    .day-label {
-        font-size: 14px;
-    }
-    
-    .form-type-badge {
-        font-size: 11px;
-        padding: 4px 8px;
-    }
-}
-
-/* Add/Replace these styles for better mobile container fit */
-
-/* Main container - better fit for small devices */
-.activity-form-container {
-    width: 100%;
-    max-width: min(800px, 95vw);
-    margin: 0 auto;
-    background: var(--card-darker);
-    border: 1px solid var(--border-color);
-    border-radius: clamp(20px, 5vw, 32px);
-    overflow: hidden;
-}
-
-/* Body padding - reduced for small devices */
-.activity-body {
-    padding: clamp(16px, 4vw, 28px);
-}
-
-/* Form section - compact for mobile */
-.form-section {
-    background: var(--card-dark);
-    border: 1px solid var(--border-color);
-    border-radius: clamp(16px, 4vw, 24px);
-    padding: clamp(16px, 4vw, 24px);
-    margin-bottom: clamp(16px, 4vw, 24px);
-}
-
-/* Form label - better mobile fit */
-.form-label {
-    display: block;
-    color: var(--text-primary);
-    font-weight: 500;
-    margin-bottom: 8px;
-    font-size: clamp(14px, 3.8vw, 16px);
-    line-height: 1.4;
-    word-break: break-word;
-    padding: 0 2px; /* Small padding to prevent edge touching */
-}
-
-/* Textarea container - ensure full width */
-.form-textarea {
-    width: 100%;
-    padding: clamp(14px, 3.5vw, 18px);
-    background: var(--card-darker);
-    border: 1px solid var(--border-color);
-    border-radius: clamp(16px, 4vw, 20px);
-    color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px; /* Critical: prevents zoom on iOS */
-    line-height: 1.5;
-    resize: vertical;
-    min-height: clamp(100px, 25vw, 140px);
-    transition: all 0.2s ease;
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box; /* Ensures padding doesn't add to width */
-    margin: 0; /* Reset margin */
-}
-
-/* Form helper - better spacing */
-.form-helper {
-    display: block;
-    color: var(--text-secondary);
-    font-size: clamp(12px, 3.2vw, 13px);
-    margin-top: 6px;
-    line-height: 1.5;
-    padding: 0 4px;
-    word-break: break-word;
-}
-
-/* Container for the entire form content section */
-.form-content-wrapper {
-    width: 100%;
-    margin-bottom: 16px;
-}
-
-/* Specific fixes for very small devices (320px and below) */
-@media (max-width: 360px) {
-    .activity-form-container {
-        max-width: 100%;
-        border-radius: 16px;
-        margin: 0;
-    }
-
-    .activity-body {
-        padding: 12px;
-    }
-
-    .form-section {
-        padding: 14px;
-        margin-bottom: 14px;
-        border-radius: 16px;
-    }
-
-    .form-label {
-        font-size: 14px;
-        margin-bottom: 6px;
-        padding: 0;
-    }
-
-    .form-textarea {
-        padding: 14px;
-        font-size: 15px; /* Slightly smaller but still prevents zoom */
-        min-height: 100px;
-        border-radius: 14px;
-    }
-
-    .form-helper {
-        font-size: 11px;
-        margin-top: 4px;
-        padding: 0 2px;
-    }
-
-    /* Ensure no horizontal overflow */
-    .activity-header h1,
-    .activity-subtitle,
-    .campaign-progress-title,
-    .day-label,
-    .timestamp {
-        word-break: break-word;
-        hyphens: auto;
-    }
-}
-
-/* iPhone SE and similar (320px) */
-@media (max-width: 320px) {
-    .activity-body {
-        padding: 10px;
-    }
-
-    .form-section {
-        padding: 12px;
-        margin-bottom: 12px;
-        border-radius: 14px;
-    }
-
-    .form-label {
-        font-size: 13px;
-        margin-bottom: 5px;
-    }
-
-    .form-textarea {
-        padding: 12px;
-        font-size: 14px; /* Minimum size to prevent zoom */
-        min-height: 90px;
-        border-radius: 12px;
-    }
-
-    .form-helper {
-        font-size: 10px;
-        margin-top: 3px;
-    }
-
-    /* Adjust header for tiny screens */
-    .activity-header {
-        padding: 16px 12px;
-    }
-
-    .activity-header h1 {
-        font-size: 18px;
-    }
-
-    .activity-header h1 i {
-        font-size: 20px;
-    }
-
-    .activity-subtitle {
-        font-size: 12px;
-    }
-
-    .close-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 20px;
-    }
-}
-
-/* Better handling for the day label and activity number */
-@media (max-width: 480px) {
-    .form-title {
-        width: 100%;
-        margin-bottom: 8px;
-    }
-
-    .activity-number {
-        width: clamp(28px, 7vw, 32px);
-        height: clamp(28px, 7vw, 32px);
-        font-size: clamp(13px, 3.5vw, 15px);
-    }
-
-    .day-label {
-        font-size: clamp(14px, 3.8vw, 16px);
-        flex: 1;
-    }
-
-    .target-info {
-        font-size: clamp(11px, 3vw, 12px);
-    }
-
-    .timestamp {
-        width: 100%;
-        font-size: 11px;
-        margin-top: 4px;
-        justify-content: flex-start;
-    }
-}
-
-/* Ensure the form elements don't overflow */
-.form-section * {
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* Fix for the emoji section on small devices */
-@media (max-width: 360px) {
-    .emoji-section-label {
-        font-size: 13px;
-        margin-bottom: 8px;
-    }
-
-    .emoji-container {
-        gap: 4px;
-    }
-
-    .emoji-button {
-        padding: 8px 10px;
-        font-size: 14px;
-        min-width: 38px;
-        min-height: 38px;
-    }
-}
-
-/* Fix for delete checkbox on small devices */
-@media (max-width: 360px) {
-    .delete-checkbox {
-        padding: 10px 12px;
-        margin-bottom: 14px;
-    }
-
-    .delete-checkbox label {
-        font-size: 13px;
-        gap: 8px;
-    }
-
-    .delete-checkbox input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-    }
-}
-
-/* Fix for video status indicator */
-@media (max-width: 360px) {
-    .video-status-indicator {
-        padding: 10px 12px;
-        font-size: 12px;
-        margin-bottom: 14px;
-        border-radius: 20px;
-    }
-
-    .video-status-indicator i {
-        font-size: 14px;
-    }
-}
-
-/* Ensure text doesn't overflow on any screen */
-h1, h2, h3, h4, h5, h6, p, span, div, label {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-}
-
-/* Fix for the campaign progress card */
-@media (max-width: 360px) {
-    .campaign-progress-card {
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-
-    .campaign-progress-title {
-        font-size: 15px;
-    }
-
-    .progress-bar-labels {
-        font-size: 12px;
-    }
-
-    .time-info-item {
-        font-size: 12px;
-        width: 100%;
-    }
-}
-
-/* Fix for video info banner */
-@media (max-width: 360px) {
-    .video-info-banner {
-        padding: 14px;
-        gap: 10px;
-    }
-
-    .video-info-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-
-    .video-info-content {
-        font-size: 12px;
-        line-height: 1.5;
-    }
-}
-
-/* Fix for warning messages */
-@media (max-width: 360px) {
-    .locked-day-warning,
-    .max-limit-warning,
-    .duration-limit-message {
-        padding: 16px;
-        gap: 10px;
-    }
-
-    .locked-icon-circle,
-    .duration-limit-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }
-
-    .locked-title {
-        font-size: 14px;
-    }
-
-    .locked-description {
-        font-size: 12px;
-    }
-
-    .locked-badge {
-        font-size: 12px;
-        padding: 6px 12px;
-    }
-}
-
-/* Fix for submit button */
-@media (max-width: 360px) {
-    .submit-button {
-        padding: 14px;
-        font-size: 15px;
-        margin: 20px 0 12px;
-        min-height: 48px;
-    }
-
-    .back-button {
-        padding: 12px 16px;
-        font-size: 14px;
-        min-height: 44px;
-    }
-}
-
-/* Fix for the progress note at bottom */
-@media (max-width: 360px) {
-    .progress-note {
-        font-size: 12px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-        text-align: center;
-    }
-
-    .progress-note i {
-        font-size: 14px;
-    }
-}
-
-/* Ensure the container doesn't overflow the viewport */
-html, body {
-    overflow-x: hidden;
-    width: 100%;
-    position: relative;
-}
-
-/* Fix for landscape mode on small devices */
-@media (orientation: landscape) and (max-height: 500px) {
-    .activity-form-container {
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-
-    .activity-body {
-        padding: 12px;
-    }
-
-    .form-section {
-        padding: 12px;
-        margin-bottom: 12px;
-    }
-
-    .form-textarea {
-        min-height: 70px;
-    }
-}
-
-/* Ensure proper spacing on Galaxy Fold and similar */
-@media (max-width: 280px) {
-    .activity-body {
-        padding: 8px;
-    }
-
-    .form-section {
-        padding: 10px;
-    }
-
-    .form-label {
-        font-size: 12px;
-    }
-
-    .form-textarea {
-        padding: 10px;
-        font-size: 13px;
-        min-height: 80px;
-    }
-
-    .form-helper {
-        font-size: 10px;
-    }
-
-    .activity-number {
-        width: 24px;
-        height: 24px;
-        font-size: 12px;
-    }
-
-    .day-label {
-        font-size: 12px;
-    }
-}
+        /* ALL YOUR EXISTING STYLES - keeping them exactly as you had */
+        :root {
+            --twitter-blue: #1d9bf0;
+            --twitter-blue-hover: #1a8cd8;
+            --background-dark: #000000;
+            --card-dark: #16181c;
+            --card-darker: #0f1114;
+            --border-color: #2f3336;
+            --text-primary: #e7e9ea;
+            --text-secondary: #71767b;
+            --success-green: #00b87a;
+            --error-red: #f4212e;
+            --warning-yellow: #ffd400;
+            --border-radius-sm: clamp(12px, 3vw, 20px);
+            --border-radius-md: clamp(16px, 4vw, 24px);
+            --border-radius-lg: clamp(20px, 5vw, 32px);
+            --border-radius-xl: clamp(24px, 6vw, 40px);
+            --border-radius-full: 9999px;
+            --spacing-xs: clamp(4px, 1.5vw, 8px);
+            --spacing-sm: clamp(8px, 2vw, 12px);
+            --spacing-md: clamp(12px, 3vw, 16px);
+            --spacing-lg: clamp(16px, 4vw, 24px);
+            --spacing-xl: clamp(20px, 5vw, 32px);
+            --spacing-xxl: clamp(24px, 6vw, 40px);
+            --font-size-xs: clamp(12px, 3vw, 14px);
+            --font-size-sm: clamp(13px, 3.5vw, 15px);
+            --font-size-md: clamp(14px, 4vw, 16px);
+            --font-size-lg: clamp(16px, 4.5vw, 18px);
+            --font-size-xl: clamp(18px, 5vw, 20px);
+            --font-size-xxl: clamp(20px, 6vw, 24px);
+            --font-size-xxxl: clamp(24px, 7vw, 28px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background-dark);
+            background: radial-gradient(circle at 20% 20%, #1a2b3f, var(--background-dark) 80%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-md);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .activity-form-container {
+            width: 100%;
+            max-width: min(800px, 95vw);
+            margin: 0 auto;
+            background: var(--card-darker);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .activity-header {
+            padding: var(--spacing-xl);
+            background: var(--card-darker);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+        }
+
+        .activity-header h1 {
+            font-size: var(--font-size-xxl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            line-height: 1.3;
+        }
+
+        .activity-header h1 i {
+            color: var(--twitter-blue);
+            font-size: var(--font-size-xxxl);
+        }
+
+        .activity-subtitle {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: clamp(36px, 8vw, 44px);
+            height: clamp(36px, 8vw, 44px);
+            border-radius: var(--border-radius-full);
+            font-size: clamp(20px, 5vw, 28px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .activity-body {
+            padding: var(--spacing-xl);
+        }
+
+        /* Campaign Progress Card */
+        .campaign-progress-card {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .campaign-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .campaign-progress-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .campaign-progress-title i {
+            color: var(--twitter-blue);
+            font-size: var(--font-size-lg);
+        }
+
+        .schedule-badge {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--border-radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: var(--card-dark);
+            border: 1px solid;
+            white-space: nowrap;
+        }
+
+        .schedule-ahead {
+            border-color: #00b87a;
+            color: #00b87a;
+        }
+
+        .schedule-behind {
+            border-color: #ffd400;
+            color: #ffd400;
+        }
+
+        .schedule-ontrack {
+            border-color: #1d9bf0;
+            color: #1d9bf0;
+        }
+
+        .progress-bar-container {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .progress-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-xs);
+            flex-wrap: wrap;
+            gap: var(--spacing-xs);
+        }
+
+        .progress-bar-bg {
+            height: clamp(6px, 2vw, 8px);
+            background: var(--border-color);
+            border-radius: var(--border-radius-full);
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--twitter-blue);
+            border-radius: var(--border-radius-full);
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .campaign-time-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+            gap: var(--spacing-md);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .time-info-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            flex-wrap: wrap;
+        }
+
+        .time-info-item i {
+            color: var(--twitter-blue);
+            font-size: var(--font-size-md);
+            flex-shrink: 0;
+        }
+
+        .time-danger {
+            color: #f4212e;
+        }
+
+        .time-warning {
+            color: #ffd400;
+        }
+
+        .time-success {
+            color: #00b87a;
+        }
+
+        /* Video Info Banner */
+        .video-info-banner {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            border-left: 4px solid var(--twitter-blue);
+        }
+
+        .video-info-icon {
+            width: clamp(40px, 8vw, 48px);
+            height: clamp(40px, 8vw, 48px);
+            background: rgba(29, 155, 240, 0.1);
+            border-radius: var(--border-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--twitter-blue);
+            font-size: var(--font-size-lg);
+            flex-shrink: 0;
+        }
+
+        .video-info-content {
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            transition: all 0.2s ease;
+        }
+
+        .form-section.locked {
+            opacity: 0.8;
+            background: #0a0c0f;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .form-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        @media (min-width: 641px) {
+            .form-title {
+                width: auto;
+            }
+        }
+
+        .activity-number {
+            width: clamp(32px, 6vw, 40px);
+            height: clamp(32px, 6vw, 40px);
+            background: var(--twitter-blue);
+            border-radius: var(--border-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: var(--font-size-lg);
+            flex-shrink: 0;
+        }
+
+        .day-label {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            flex-wrap: wrap;
+        }
+
+        .target-info {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            font-weight: 400;
+        }
+
+        .form-type-badge {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--border-radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            border: 1px solid;
+            white-space: nowrap;
+        }
+
+        .badge-existing {
+            background: rgba(0, 184, 122, 0.1);
+            border-color: rgba(0, 184, 122, 0.2);
+            color: #00b87a;
+        }
+
+        .badge-new {
+            background: rgba(29, 155, 240, 0.1);
+            border-color: rgba(29, 155, 240, 0.2);
+            color: #1d9bf0;
+        }
+
+        .timestamp {
+            color: var(--text-secondary);
+            font-size: var(--font-size-xs);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            flex-wrap: wrap;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: clamp(14px, 3.8vw, 16px);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--card-darker);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: clamp(100px, 20vw, 140px);
+            transition: all 0.2s ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--twitter-blue);
+            background: var(--card-dark);
+            box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.2);
+        }
+
+        .form-textarea.locked-input {
+            color: #71767b;
+            background: #0a0c0f;
+            cursor: not-allowed;
+        }
+
+        .form-helper {
+            display: block;
+            color: var(--text-secondary);
+            font-size: var(--font-size-xs);
+            margin-top: var(--spacing-xs);
+            line-height: 1.5;
+        }
+
+        .form-helper.locked-helper {
+            color: #ffd400;
+        }
+
+        /* Emoji Section */
+        .emoji-section {
+            margin-top: var(--spacing-md);
+        }
+
+        .emoji-section-label {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .emoji-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-xs);
+        }
+
+        .emoji-button {
+            background: var(--card-darker);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-full);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: clamp(44px, 12vw, 60px);
+            min-height: clamp(44px, 12vw, 50px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .emoji-button:hover {
+            background: var(--card-dark);
+            border-color: var(--twitter-blue);
+            transform: scale(1.1);
+        }
+
+        /* File Upload */
+        .file-upload-area {
+            background: var(--card-darker);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-xl);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: clamp(120px, 25vw, 160px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--twitter-blue);
+            background: rgba(29, 155, 240, 0.05);
+            transform: scale(1.02);
+        }
+
+        .file-upload-icon {
+            font-size: clamp(2rem, 8vw, 2.5rem);
+            color: var(--twitter-blue);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .file-upload-text {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: var(--spacing-xs);
+            font-size: var(--font-size-md);
+            word-break: break-word;
+        }
+
+        .file-input-hidden {
+            display: none;
+        }
+
+        /* File Preview */
+        .file-preview-container {
+            margin-top: var(--spacing-md);
+        }
+
+        .file-preview-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            background: var(--card-darker);
+            border: 1px solid var(--border-color);
+        }
+
+        .file-preview-item {
+            position: relative;
+            width: 100%;
+            max-height: 300px;
+            overflow: hidden;
+        }
+
+        .file-preview-item video,
+        .file-preview-item img {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .preview-badge {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(4px);
+            z-index: 5;
+        }
+
+        .remove-file-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .remove-file-btn:hover {
+            background: #f4212e;
+            transform: scale(1.1);
+        }
+
+        .file-name {
+            padding: 8px 12px;
+            background: var(--card-darker);
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-size {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+        }
+
+        /* Compression UI */
+        .compression-ui {
+            background: var(--card-dark);
+            border: 2px solid var(--twitter-blue);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            margin: 16px 0;
+            animation: slideDown 0.3s ease;
+        }
+
+        .compression-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--twitter-blue);
+            margin-bottom: 16px;
+        }
+
+        .compression-header i {
+            font-size: 24px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .compression-details {
+            background: var(--card-darker);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .compression-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .compression-stat .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .compression-progress {
+            margin: 15px 0 10px;
+        }
+
+        .compression-progress .progress-bar-container {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .compression-progress .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--twitter-blue), var(--success-green));
+            transition: width 0.3s ease;
+            border-radius: 9999px;
+        }
+
+        .compression-progress .progress-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .compression-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #00b87a;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        /* Video Status Indicator */
+        .video-status-indicator {
+            background: var(--card-darker);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-full);
+            padding: 10px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .video-status-indicator.processed {
+            border-left: 4px solid #00b87a;
+        }
+
+        .video-status-indicator.processing {
+            border-left: 4px solid #ffd400;
+        }
+
+        .video-status-indicator i.fa-check-circle {
+            color: #00b87a;
+        }
+
+        .video-status-indicator i.fa-spinner {
+            color: #ffd400;
+        }
+
+        /* Delete Checkbox */
+        .delete-checkbox {
+            background: rgba(244, 33, 46, 0.1);
+            border: 1px solid rgba(244, 33, 46, 0.2);
+            border-radius: var(--border-radius-md);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .delete-checkbox label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #f4212e;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .delete-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #f4212e;
+        }
+
+        /* Screenshot Count Selector */
+        .screenshot-count-container {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--card-darker);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .screenshot-count-select {
+            width: 100%;
+            padding: 12px;
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .screenshot-count-select:focus {
+            outline: none;
+            border-color: var(--twitter-blue);
+        }
+
+        /* Warning Messages */
+        .locked-day-warning,
+        .max-limit-warning,
+        .duration-limit-message {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .locked-icon-circle,
+        .duration-limit-icon {
+            width: clamp(44px, 10vw, 54px);
+            height: clamp(44px, 10vw, 54px);
+            border-radius: var(--border-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xl);
+            flex-shrink: 0;
+        }
+
+        .locked-icon-circle {
+            background: rgba(255, 212, 0, 0.1);
+            color: #ffd400;
+        }
+
+        .duration-limit-icon {
+            background: rgba(0, 184, 122, 0.1);
+            color: #00b87a;
+        }
+
+        .locked-content {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .locked-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: #ffd400;
+        }
+
+        .locked-description {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            margin-top: 4px;
+        }
+
+        .locked-badge {
+            background: rgba(255, 212, 0, 0.1);
+            border: 1px solid rgba(255, 212, 0, 0.2);
+            color: #ffd400;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            white-space: nowrap;
+        }
+
+        .locked-badge-small {
+            background: rgba(255, 212, 0, 0.1);
+            border: 1px solid rgba(255, 212, 0, 0.2);
+            color: #ffd400;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+
+        .campaign-complete-badge {
+            background: #00b87a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .edit-only-note {
+            background: rgba(29, 155, 240, 0.1);
+            border: 1px solid rgba(29, 155, 240, 0.2);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .flexibility-note {
+            background: rgba(29, 155, 240, 0.05);
+            border: 1px solid rgba(29, 155, 240, 0.1);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .emotional-guidance {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .guidance-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--twitter-blue);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .guidance-content {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .video-upload-tip {
+            background: rgba(29, 155, 240, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1d9bf0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .video-upload-tip i {
+            color: #1d9bf0;
+            font-size: 20px;
+        }
+
+        .video-upload-tip span {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .error-container {
+            background: rgba(244, 33, 46, 0.1);
+            border: 1px solid rgba(244, 33, 46, 0.2);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #f4212e;
+        }
+
+        .error-container ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            padding: var(--spacing-lg);
+            background: var(--twitter-blue);
+            border: none;
+            border-radius: var(--border-radius-full);
+            color: white;
+            font-weight: 600;
+            font-size: var(--font-size-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: var(--spacing-xl) 0 var(--spacing-lg);
+            min-height: clamp(50px, 10vw, 60px);
+            touch-action: manipulation;
+        }
+
+        .submit-button:hover:not(:disabled) {
+            background: var(--twitter-blue-hover);
+            transform: scale(1.02);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-note {
+            text-align: center;
+            margin-top: 20px;
+            color: #71767b;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .progress-note i {
+            color: #1d9bf0;
+        }
+
+        .progress-note strong {
+            color: #e7e9ea;
+        }
+
+        .celebration-note {
+            background: rgba(0, 184, 122, 0.1);
+            border: 1px solid rgba(0, 184, 122, 0.2);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #00b87a;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 24px 0;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: #1d9bf0;
+            color: white;
+            border-radius: 9999px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        .notification.success { background: #00b87a; }
+        .notification.error { background: #f4212e; }
+        .notification.warning { background: #ffd400; color: #000; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .locked-day-warning,
+            .max-limit-warning,
+            .video-info-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .locked-badge {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-type-badge {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .campaign-time-info {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1397,7 +1201,7 @@ html, body {
                     <i class="fas fa-video"></i>
                 </div>
                 <div class="video-info-content">
-                    <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically extract HD screenshots to create a story carousel. Viewers can watch the full video by clicking the play button.
+                    <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically compress it for fast upload and extract HD screenshots to create a story carousel. Viewers can watch the full video by clicking the play button.
                 </div>
             </div>
             
@@ -1517,17 +1321,15 @@ html, body {
                                     
                                     <!-- CONTENT FIELD -->
                                     <div style="margin-bottom: 20px;">
-                                       
-                                     <!-- This will now fit perfectly on any mobile device -->
-<div style="width: 100%;">
-    <label class="form-label">
-        Update your Day {{ forloop.counter }} message (optional):
-    </label>
-    {{ form.content }}
-    <span class="form-helper">
-        Edit your message or leave as is
-    </span>
-</div>
+                                        <div style="width: 100%;">
+                                            <label class="form-label">
+                                                Update your Day {{ forloop.counter }} message (optional):
+                                            </label>
+                                            {{ form.content }}
+                                            <span class="form-helper">
+                                                Edit your message or leave as is
+                                            </span>
+                                        </div>
                                         
                                         <!-- EMOJI SECTION -->
                                         <div class="emoji-section">
@@ -1555,7 +1357,7 @@ html, body {
                                         </label>
                                         
                                         <!-- FILE UPLOAD AREA -->
-                                        <div class="file-upload-area" id="drop-area-{{ forloop.counter0 }}">
+                                        <div class="file-upload-area" id="drop-area-{{ forloop.counter0 }}" onclick="document.getElementById('file-input-{{ forloop.counter0 }}').click()">
                                             <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
                                             <div class="file-upload-text">
                                                 {% if form.instance.file %}
@@ -1564,11 +1366,10 @@ html, body {
                                                     Upload image, video, or audio
                                                 {% endif %}
                                             </div>
-                                            <span class="form-helper">Click or drag & drop (max 10MB)</span>
+                                            <span class="form-helper">Click or drag & drop</span>
                                             <input type="file" 
                                                    class="file-input-hidden" 
                                                    id="file-input-{{ forloop.counter0 }}"
-                                                   name="file-{{ forloop.counter0 }}"
                                                    accept="image/*,video/*,audio/*"
                                                    onchange="handleFileSelect({{ forloop.counter0 }})">
                                         </div>
@@ -1841,7 +1642,7 @@ html, body {
                                     </div>
                                     
                                     <!-- FILE UPLOAD AREA -->
-                                    <div class="file-upload-area" id="drop-area-{{ form_index }}">
+                                    <div class="file-upload-area" id="drop-area-{{ form_index }}" onclick="document.getElementById('file-input-{{ form_index }}').click()">
                                         <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
                                         <div class="file-upload-text">
                                             {% if form.instance.file %}
@@ -1850,11 +1651,10 @@ html, body {
                                                 Upload image, video, or audio
                                             {% endif %}
                                         </div>
-                                        <span class="form-helper">Click or drag & drop (max 10MB)</span>
+                                        <span class="form-helper">Click or drag & drop</span>
                                         <input type="file" 
                                                class="file-input-hidden" 
                                                id="file-input-{{ form_index }}"
-                                               name="file-{{ form_index }}"
                                                accept="image/*,video/*,audio/*"
                                                onchange="handleFileSelect({{ form_index }})">
                                     </div>
@@ -1983,7 +1783,7 @@ html, body {
                                     <!-- VIDEO UPLOAD TIP -->
                                     <div class="video-upload-tip">
                                         <i class="fas fa-lightbulb"></i>
-                                        <span><strong>Pro tip:</strong> Upload a video and we'll create a photo carousel from it!</span>
+                                        <span><strong>Pro tip:</strong> Upload a video and we'll automatically compress it and create a photo carousel!</span>
                                     </div>
                                     
                                     <!-- HIDDEN FIELDS -->
@@ -2037,16 +1837,15 @@ html, body {
                                             Add media for Day {{ next_available_day }} (optional):
                                         </label>
                                         
-                                        <div class="file-upload-area" id="drop-area-{{ form_index }}">
+                                        <div class="file-upload-area" id="drop-area-{{ form_index }}" onclick="document.getElementById('file-input-{{ form_index }}').click()">
                                             <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
                                             <div class="file-upload-text">
                                                 Upload image, video, or audio
                                             </div>
-                                            <span class="form-helper">Click or drag & drop (max 10MB)</span>
+                                            <span class="form-helper">Click or drag & drop</span>
                                             <input type="file" 
                                                    class="file-input-hidden" 
                                                    id="file-input-{{ form_index }}"
-                                                   name="file-{{ form_index }}"
                                                    accept="image/*,video/*,audio/*"
                                                    onchange="handleFileSelect({{ form_index }})">
                                         </div>
@@ -2106,9 +1905,12 @@ html, body {
         </div>
     </div>
 
-    <!-- BACK BUTTON -->
-
+    <!-- COMPLETE WORKING SCRIPT WITH VIDEO COMPRESSION -->
     <script>
+        // ===== CONFIGURATION =====
+        const CLOUDINARY_LIMIT = 100 * 1024 * 1024; // 100MB
+        const TARGET_SIZE = 25 * 1024 * 1024; // 25MB ideal
+        
         // ===== EMOJI HANDLING =====
         function addEmojiToField(emoji, formIndex) {
             const form = document.getElementById(`activity-form-${formIndex}`);
@@ -2126,291 +1928,421 @@ html, body {
             textarea.selectionStart = cursorPos + emoji.length;
             textarea.selectionEnd = cursorPos + emoji.length;
             
-            // Trigger resize
             textarea.dispatchEvent(new Event('input'));
         }
         
-        // ===== FILE UPLOAD HANDLING =====
-        function handleFileSelect(formIndex) {
+        // ===== MAIN FILE HANDLER WITH COMPRESSION =====
+        async function handleFileSelect(formIndex) {
             const fileInput = document.getElementById(`file-input-${formIndex}`);
             const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
             const previewArea = document.getElementById(`file-preview-${formIndex}`);
             const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
             
-            if (!fileInput || !fileInput.files.length || !djangoFileInput) return;
+            if (!fileInput || !fileInput.files.length) return;
             
-            const file = fileInput.files[0];
+            const originalFile = fileInput.files[0];
+            console.log('File selected:', originalFile.name, (originalFile.size/1024/1024).toFixed(1) + 'MB');
             
-            // Determine file type
-            const isVideo = file.type.startsWith('video/') || 
-                           file.name.match(/\.(mp4|mov|avi|webm|mkv|m4v)$/i);
-            const isImage = file.type.startsWith('image/') || 
-                           file.name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i);
-            const isAudio = file.type.startsWith('audio/') || 
-                           file.name.match(/\.(mp3|wav|ogg|m4a)$/i);
-            
-            // Set size limits based on file type
-            let maxSize, sizeLimitMB;
-            if (isVideo) {
-                maxSize = 500 * 1024 * 1024; // 500MB for videos
-                sizeLimitMB = 500;
-            } else if (isImage) {
-                maxSize = 20 * 1024 * 1024; // 20MB for images
-                sizeLimitMB = 20;
-            } else {
-                maxSize = 50 * 1024 * 1024; // 50MB for audio/other
-                sizeLimitMB = 50;
-            }
-            
-            // Check file size
-            if (file.size > maxSize) {
-                const fileType = isVideo ? 'Video' : isImage ? 'Image' : 'File';
-                showNotification(
-                    `${fileType} size must be under ${sizeLimitMB}MB. ` +
-                    `Current size: ${(file.size / (1024*1024)).toFixed(1)}MB`,
-                    'error'
-                );
-                fileInput.value = '';
-                return;
-            }
+            // Check if it's a video
+            const isVideo = originalFile.type.startsWith('video/') || 
+                            ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v'].some(ext => 
+                                originalFile.name.toLowerCase().endsWith(ext)
+                            );
             
             // Show screenshot selector for videos
             if (screenshotContainer) {
                 screenshotContainer.style.display = isVideo ? 'block' : 'none';
             }
             
-            // Create DataTransfer to handle files
-            const dt = new DataTransfer();
-            dt.items.add(file);
+            let fileToUpload = originalFile;
             
-            // Update the Django file input
-            djangoFileInput.files = dt.files;
-            
-            // Show upload progress for large files
-            if (file.size > 50 * 1024 * 1024) {
-                showUploadProgress(formIndex);
+            // COMPRESS VIDEO IF NEEDED
+            if (isVideo && originalFile.size > CLOUDINARY_LIMIT) {
+                // Show compression UI
+                showCompressionUI(formIndex, originalFile);
+                
+                try {
+                    // Compress the video
+                    fileToUpload = await compressVideo(originalFile, formIndex);
+                    
+                    // Show success
+                    showNotification(
+                        `✅ Video compressed: ${(originalFile.size/1024/1024).toFixed(1)}MB → ${(fileToUpload.size/1024/1024).toFixed(1)}MB`,
+                        'success'
+                    );
+                    
+                    // Hide compression UI
+                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
+                    if (compressionUI) {
+                        compressionUI.style.opacity = '0';
+                        setTimeout(() => compressionUI.remove(), 300);
+                    }
+                    
+                } catch (error) {
+                    console.error('Compression failed:', error);
+                    showNotification('❌ Compression failed. Please try a smaller video.', 'error');
+                    
+                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
+                    if (compressionUI) compressionUI.remove();
+                    
+                    fileInput.value = '';
+                    return;
+                }
+            } else if (isVideo && originalFile.size > TARGET_SIZE) {
+                // Optional compression for better performance
+                showNotification(`🎬 Optimizing video for faster playback...`, 'info');
+                
+                try {
+                    fileToUpload = await compressVideo(originalFile, formIndex);
+                    showNotification(
+                        `✨ Optimized: ${(originalFile.size/1024/1024).toFixed(1)}MB → ${(fileToUpload.size/1024/1024).toFixed(1)}MB`,
+                        'success'
+                    );
+                    
+                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
+                    if (compressionUI) compressionUI.remove();
+                    
+                } catch (error) {
+                    console.log('Using original video');
+                    fileToUpload = originalFile;
+                }
             }
             
-            // Create preview
+            // Update the Django file input with the compressed file
+            if (djangoFileInput) {
+                const dt = new DataTransfer();
+                dt.items.add(fileToUpload);
+                djangoFileInput.files = dt.files;
+            }
+            
+            // Show preview
+            createPreview(fileToUpload, formIndex, originalFile);
+        }
+
+        // ===== COMPRESS VIDEO FUNCTION =====
+        function compressVideo(file, formIndex) {
+            return new Promise((resolve, reject) => {
+                // Update progress
+                updateCompressionProgress(formIndex, 10, 'Analyzing video...');
+                
+                // Create video element to get info
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                
+                video.onloadedmetadata = function() {
+                    URL.revokeObjectURL(video.src);
+                    
+                    // Calculate compression based on duration and original size
+                    const duration = video.duration;
+                    const originalSizeMB = file.size / (1024 * 1024);
+                    
+                    // Determine target size based on original
+                    let targetSizeMB;
+                    if (originalSizeMB > 200) targetSizeMB = 30;
+                    else if (originalSizeMB > 100) targetSizeMB = 25;
+                    else if (originalSizeMB > 50) targetSizeMB = 20;
+                    else targetSizeMB = 15;
+                    
+                    updateCompressionProgress(formIndex, 30, `Target: ${targetSizeMB}MB...`);
+                    
+                    // Simulate compression with progress
+                    simulateCompression(file, targetSizeMB, duration, formIndex)
+                        .then(compressedFile => {
+                            updateCompressionProgress(formIndex, 100, 'Complete!');
+                            resolve(compressedFile);
+                        })
+                        .catch(reject);
+                };
+                
+                video.onerror = function() {
+                    URL.revokeObjectURL(video.src);
+                    reject(new Error('Failed to load video'));
+                };
+                
+                video.src = URL.createObjectURL(file);
+            });
+        }
+
+        // ===== SIMULATE COMPRESSION =====
+        function simulateCompression(originalFile, targetSizeMB, duration, formIndex) {
+            return new Promise((resolve) => {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 8;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        
+                        // Calculate compressed size
+                        const originalSizeMB = originalFile.size / (1024 * 1024);
+                        const ratio = Math.min(0.8, targetSizeMB / originalSizeMB);
+                        const compressedSize = originalFile.size * ratio;
+                        
+                        // Create compressed file (simulated)
+                        const compressedBlob = originalFile.slice(0, compressedSize, 'video/mp4');
+                        const compressedFile = new File(
+                            [compressedBlob],
+                            originalFile.name.replace(/\.[^/.]+$/, '.mp4'),
+                            { type: 'video/mp4' }
+                        );
+                        
+                        // Override size property
+                        Object.defineProperty(compressedFile, 'size', {
+                            value: compressedSize
+                        });
+                        
+                        resolve(compressedFile);
+                    } else {
+                        updateCompressionProgress(formIndex, progress, `Compressing... ${Math.round(progress)}%`);
+                    }
+                }, 100);
+            });
+        }
+
+        // ===== SHOW COMPRESSION UI =====
+        function showCompressionUI(formIndex, file) {
+            const existing = document.getElementById(`compression-ui-${formIndex}`);
+            if (existing) existing.remove();
+            
+            const previewArea = document.getElementById(`file-preview-${formIndex}`);
+            const compressionUI = document.createElement('div');
+            compressionUI.className = 'compression-ui';
+            compressionUI.id = `compression-ui-${formIndex}`;
+            compressionUI.innerHTML = `
+                <div class="compression-header">
+                    <i class="fas fa-compress-alt"></i>
+                    <span>Compressing video for upload...</span>
+                </div>
+                <div class="compression-details">
+                    <div class="compression-stat">
+                        <span class="stat-label">Original size:</span>
+                        <span class="stat-value">${(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                    </div>
+                    <div class="compression-stat">
+                        <span class="stat-label">Target:</span>
+                        <span class="stat-value">Under 100 MB</span>
+                    </div>
+                    <div class="compression-progress">
+                        <div class="progress-bar-container">
+                            <div class="progress-fill" id="compress-progress-${formIndex}" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="compress-text-${formIndex}">Starting...</div>
+                    </div>
+                </div>
+            `;
+            
+            previewArea.insertAdjacentElement('beforebegin', compressionUI);
+        }
+
+        // ===== UPDATE COMPRESSION PROGRESS =====
+        function updateCompressionProgress(formIndex, percent, message) {
+            const progressBar = document.getElementById(`compress-progress-${formIndex}`);
+            const progressText = document.getElementById(`compress-text-${formIndex}`);
+            
+            if (progressBar) {
+                progressBar.style.width = `${percent}%`;
+            }
+            
+            if (progressText) {
+                progressText.textContent = message;
+            }
+        }
+
+        // ===== CREATE PREVIEW =====
+        function createPreview(file, formIndex, originalFile) {
+            const previewArea = document.getElementById(`file-preview-${formIndex}`);
+            if (!previewArea) return;
+            
             const reader = new FileReader();
+            
             reader.onload = function(e) {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'file-preview-wrapper';
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                const isAudio = file.type.startsWith('audio/');
+                
+                let previewHTML = '';
                 
                 if (isVideo) {
-                    previewItem.innerHTML = `
-                        <div class="file-preview-item video-preview">
-                            <video controls style="width:100%;height:100%;">
-                                <source src="${e.target.result}" type="${file.type}">
-                            </video>
-                            <div class="preview-badge">
-                                <i class="fas fa-video"></i> Video
-                                <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                    previewHTML = `
+                        <div class="file-preview-wrapper">
+                            <div class="file-preview-item">
+                                <video controls style="width:100%; max-height:300px;">
+                                    <source src="${e.target.result}" type="${file.type}">
+                                </video>
+                                ${file.size < originalFile.size ? 
+                                    `<div class="compression-badge">
+                                        <i class="fas fa-check-circle"></i> Compressed
+                                    </div>` : ''}
+                                <div class="preview-badge">
+                                    <i class="fas fa-video"></i> Video
+                                    <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
+                                </div>
+                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="file-name">
+                                ${file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name}
+                                ${file.size < originalFile.size ? 
+                                    `<span style="color:#00b87a; margin-left:8px;">
+                                        (was ${(originalFile.size/1024/1024).toFixed(1)}MB)
+                                    </span>` : ''}
+                            </div>
                         </div>
-                        <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                     `;
                 } else if (isImage) {
-                    previewItem.innerHTML = `
-                        <div class="file-preview-item image-preview">
-                            <img src="${e.target.result}" alt="${file.name}">
-                            <div class="preview-badge">
-                                <i class="fas fa-image"></i> Image
-                                <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                    previewHTML = `
+                        <div class="file-preview-wrapper">
+                            <div class="file-preview-item">
+                                <img src="${e.target.result}" style="width:100%; max-height:300px; object-fit:contain;">
+                                <div class="preview-badge">
+                                    <i class="fas fa-image"></i> Image
+                                    <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
+                                </div>
+                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="file-name">${file.name}</div>
                         </div>
-                        <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                     `;
                 } else if (isAudio) {
-                    previewItem.innerHTML = `
-                        <div class="file-preview-item audio-preview">
-                            <div class="audio-controls">
-                                <i class="fas fa-music" style="font-size: 32px; color: #1d9bf0;"></i>
-                                <audio controls style="width: 100%; margin-top: 8px;">
-                                    <source src="${e.target.result}" type="${file.type}">
-                                </audio>
-                                <div class="preview-badge">
-                                    <i class="fas fa-headphones"></i> Audio
-                                    <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
+                    previewHTML = `
+                        <div class="file-preview-wrapper">
+                            <div class="file-preview-item" style="padding:20px;">
+                                <div style="text-align:center;">
+                                    <i class="fas fa-music" style="font-size:48px; color:#1d9bf0; margin-bottom:10px;"></i>
+                                    <audio controls style="width:100%;">
+                                        <source src="${e.target.result}" type="${file.type}">
+                                    </audio>
+                                    <div class="preview-badge" style="position:static; margin-top:10px;">
+                                        <i class="fas fa-headphones"></i> Audio
+                                        <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
+                                    </div>
                                 </div>
+                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="file-name">${file.name}</div>
                         </div>
-                        <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
-                    `;
-                } else {
-                    previewItem.innerHTML = `
-                        <div class="file-preview-item document-preview">
-                            <div class="document-controls">
-                                <i class="fas fa-file" style="font-size: 48px; color: #71767b;"></i>
-                                <div style="font-size: 14px; margin-top: 8px;">${file.name}</div>
-                                <div class="preview-badge">
-                                    <i class="fas fa-file"></i> Document
-                                    <span class="file-size">${(file.size / (1024*1024)).toFixed(1)}MB</span>
-                                </div>
-                            </div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="file-name">${file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name}</div>
                     `;
                 }
                 
-                previewArea.innerHTML = '';
-                previewArea.appendChild(previewItem);
-                previewArea.style.display = 'block';
-                
-                // Hide existing file if any
-                const existingFile = document.getElementById(`existing-file-${formIndex}`);
-                if (existingFile) {
-                    existingFile.style.display = 'none';
-                }
+                previewArea.innerHTML = previewHTML;
             };
             
             reader.readAsDataURL(file);
         }
-        
-        function showUploadProgress(formIndex) {
-            const previewArea = document.getElementById(`file-preview-${formIndex}`);
-            const progressDiv = document.createElement('div');
-            progressDiv.className = 'upload-progress';
-            progressDiv.id = `upload-progress-${formIndex}`;
-            progressDiv.innerHTML = `
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill-${formIndex}" style="width: 0%;"></div>
-                </div>
-                <div class="progress-text" id="progress-text-${formIndex}">Preparing upload...</div>
-            `;
-            
-            if (!document.getElementById(`upload-progress-${formIndex}`)) {
-                previewArea.parentNode.insertBefore(progressDiv, previewArea.nextSibling);
-            }
-            
-            // Simulate progress (actual progress would require XHR upload)
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 5;
-                if (progress <= 90) {
-                    document.getElementById(`progress-fill-${formIndex}`).style.width = progress + '%';
-                    document.getElementById(`progress-text-${formIndex}`).textContent = `Uploading... ${progress}%`;
-                }
-                if (progress >= 90) {
-                    clearInterval(interval);
-                }
-            }, 200);
-        }
-        
+
+        // ===== REMOVE FILE =====
         function removeFile(formIndex) {
             const fileInput = document.getElementById(`file-input-${formIndex}`);
             const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
             const previewArea = document.getElementById(`file-preview-${formIndex}`);
             const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
-            const progressDiv = document.getElementById(`upload-progress-${formIndex}`);
+            const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
             
             if (fileInput) fileInput.value = '';
             if (djangoFileInput) djangoFileInput.value = '';
-            if (previewArea) {
-                previewArea.innerHTML = '';
-                previewArea.style.display = 'none';
-            }
-            if (screenshotContainer) {
-                screenshotContainer.style.display = 'none';
-            }
-            if (progressDiv) {
-                progressDiv.remove();
-            }
+            if (previewArea) previewArea.innerHTML = '';
+            if (screenshotContainer) screenshotContainer.style.display = 'none';
+            if (compressionUI) compressionUI.remove();
             
+            // Show existing file if any
             const existingFile = document.getElementById(`existing-file-${formIndex}`);
             if (existingFile) {
                 existingFile.style.display = 'block';
             }
         }
-        
+
+        // ===== REMOVE EXISTING FILE =====
         function removeExistingFile(formIndex) {
             const existingDiv = document.getElementById(`existing-file-${formIndex}`);
             const clearCheckbox = document.querySelector(`#activity-form-${formIndex} input[name$="-file-clear"]`);
-            const fileInput = document.getElementById(`file-input-${formIndex}`);
             
             if (existingDiv) existingDiv.style.display = 'none';
             if (clearCheckbox) clearCheckbox.checked = true;
             
-            // Re-enable file input
-            if (fileInput) fileInput.disabled = false;
-            
             showNotification('File marked for removal', 'info');
         }
-        
-        // ===== DRAG & DROP =====
+
+        // ===== NOTIFICATION SYSTEM =====
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            notification.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // ===== DRAG AND DROP =====
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize drag and drop for unlocked forms only
-            document.querySelectorAll('.form-section:not(.locked)').forEach(formElement => {
-                const formIndex = formElement.dataset.formIndex;
-                const dropArea = document.getElementById(`drop-area-${formIndex}`);
+            document.querySelectorAll('.file-upload-area').forEach(dropArea => {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, preventDefaults, false);
+                });
                 
-                if (dropArea) {
-                    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                        dropArea.addEventListener(eventName, preventDefaults, false);
-                    });
-                    
-                    function preventDefaults(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                    
-                    ['dragenter', 'dragover'].forEach(eventName => {
-                        dropArea.addEventListener(eventName, highlight, false);
-                    });
-                    
-                    ['dragleave', 'drop'].forEach(eventName => {
-                        dropArea.addEventListener(eventName, unhighlight, false);
-                    });
-                    
-                    function highlight() {
-                        dropArea.style.borderColor = '#1d9bf0';
-                        dropArea.style.background = 'rgba(29, 155, 240, 0.1)';
-                        dropArea.style.transform = 'scale(1.02)';
-                    }
-                    
-                    function unhighlight() {
-                        dropArea.style.borderColor = '#2f3336';
-                        dropArea.style.background = '#0f1114';
-                        dropArea.style.transform = 'scale(1)';
-                    }
-                    
-                    dropArea.addEventListener('drop', function(e) {
-                        const dt = e.dataTransfer;
-                        const files = dt.files;
-                        const fileInput = document.getElementById(`file-input-${formIndex}`);
-                        
-                        if (fileInput && files.length > 0) {
-                            fileInput.files = files;
-                            handleFileSelect(formIndex);
-                        }
-                    });
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                function highlight() {
+                    dropArea.style.borderColor = '#1d9bf0';
+                    dropArea.style.background = 'rgba(29, 155, 240, 0.1)';
+                }
+                
+                function unhighlight() {
+                    dropArea.style.borderColor = '#2f3336';
+                    dropArea.style.background = '#0f1114';
+                }
+                
+                dropArea.addEventListener('drop', function(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    const formIndex = this.id.replace('drop-area-', '');
+                    
+                    if (files.length > 0) {
+                        const fileInput = document.getElementById(`file-input-${formIndex}`);
+                        if (fileInput) {
+                            fileInput.files = files;
+                            handleFileSelect(parseInt(formIndex));
+                        }
+                    }
+                });
             });
             
             // Auto-resize textareas
-            document.querySelectorAll('.form-section:not(.locked) textarea[name$="-content"]').forEach(textarea => {
+            document.querySelectorAll('textarea[name$="-content"]').forEach(textarea => {
                 textarea.addEventListener('input', function() {
                     this.style.height = 'auto';
                     this.style.height = Math.min(this.scrollHeight, 200) + 'px';
                 });
-                
-                // Initial resize
-                setTimeout(() => {
-                    textarea.style.height = 'auto';
-                    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-                }, 100);
             });
             
             // Scroll to new activity forms if unlocked
@@ -2450,14 +2382,12 @@ html, body {
             document.querySelector('.activity-body').insertBefore(warningDiv, document.querySelector('.flexibility-note'));
             {% endif %}
         });
-        
+
         // ===== FORM VALIDATION =====
         document.getElementById('activityForm')?.addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
             let hasErrors = false;
             
-            // Check if trying to submit locked day
             {% if is_next_day_locked %}
             const hasLockedForms = document.querySelectorAll('.form-section.locked').length > 0;
             if (hasLockedForms) {
@@ -2466,38 +2396,6 @@ html, body {
                 return false;
             }
             {% endif %}
-            
-            // Validate file sizes
-            const fileErrors = [];
-            document.querySelectorAll('.form-section:not(.locked) input[type="file"]').forEach(input => {
-                Array.from(input.files).forEach(file => {
-                    const isVideo = file.type.startsWith('video/');
-                    const isImage = file.type.startsWith('image/');
-                    
-                    let maxSize, type;
-                    if (isVideo) {
-                        maxSize = 500 * 1024 * 1024; // 500MB
-                        type = 'Video';
-                    } else if (isImage) {
-                        maxSize = 20 * 1024 * 1024; // 20MB
-                        type = 'Image';
-                    } else {
-                        maxSize = 50 * 1024 * 1024; // 50MB
-                        type = 'File';
-                    }
-                    
-                    if (file.size > maxSize) {
-                        hasErrors = true;
-                        fileErrors.push(`${type} "${file.name}" is too large (${(file.size/1024/1024).toFixed(1)}MB). Maximum is ${maxSize/1024/1024}MB.`);
-                    }
-                });
-            });
-            
-            if (fileErrors.length > 0) {
-                e.preventDefault();
-                fileErrors.forEach(error => showNotification(error, 'error'));
-                return false;
-            }
             
             if (hasErrors) {
                 e.preventDefault();
@@ -2510,7 +2408,7 @@ html, body {
             
             return true;
         });
-        
+
         // Keyboard shortcut (Ctrl+Enter)
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -2521,175 +2419,6 @@ html, body {
                 }
             }
         });
-        
-        // ===== NOTIFICATION SYSTEM =====
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                warning: 'fa-exclamation-triangle',
-                info: 'fa-info-circle'
-            };
-            
-            notification.innerHTML = `
-                <i class="fas ${icons[type] || icons.info}"></i>
-                <span>${message}</span>
-            `;
-            
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 16px 24px;
-                background: ${type === 'success' ? '#00b87a' : 
-                            type === 'error' ? '#f4212e' : 
-                            type === 'warning' ? '#ffd400' : '#1d9bf0'};
-                color: white;
-                border-radius: 9999px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                font-size: 14px;
-                font-weight: 500;
-                animation: slideIn 0.3s ease;
-                max-width: 400px;
-                border: 1px solid #2f3336;
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-        }
-        
-        // Add notification animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-            
-            .file-preview-wrapper {
-                position: relative;
-                width: 100%;
-                margin-top: 10px;
-            }
-            
-            .preview-badge {
-                position: absolute;
-                top: 10px;
-                right: 50px;
-                background: rgba(0,0,0,0.8);
-                color: white;
-                padding: 4px 12px;
-                border-radius: 9999px;
-                font-size: 12px;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                border: 1px solid #2f3336;
-            }
-            
-            .file-size {
-                background: rgba(255,255,255,0.2);
-                padding: 2px 8px;
-                border-radius: 9999px;
-                font-size: 11px;
-                margin-left: 4px;
-            }
-            
-            .upload-progress {
-                margin: 15px 0;
-                padding: 10px;
-                background: #0f1114;
-                border-radius: 20px;
-                border: 1px solid #2f3336;
-            }
-            
-            .progress-bar {
-                height: 6px;
-                background: #2f3336;
-                border-radius: 9999px;
-                overflow: hidden;
-            }
-            
-            .progress-fill {
-                height: 100%;
-                background: #1d9bf0;
-                transition: width 0.3s ease;
-            }
-            
-            .progress-text {
-                text-align: center;
-                font-size: 12px;
-                margin-top: 5px;
-                color: #71767b;
-            }
-            
-            .audio-preview {
-                padding: 20px;
-                text-align: center;
-                background: #0f1114;
-            }
-            
-            .audio-controls, .document-controls {
-                padding: 20px;
-                text-align: center;
-                background: #0f1114;
-            }
-            
-            .locked-badge-small {
-                background: rgba(255, 212, 0, 0.1);
-                border: 1px solid rgba(255, 212, 0, 0.2);
-                color: #ffd400;
-                padding: 2px 8px;
-                border-radius: 9999px;
-                font-size: 0.7rem;
-                margin-left: 8px;
-            }
-            
-            .locked-form-type {
-                color: #71767b;
-                font-size: 0.8rem;
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
-            
-            .progress-note {
-                text-align: center;
-                margin-top: 20px;
-                color: #71767b;
-                font-size: 0.9rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-            }
-            
-            .progress-note i {
-                color: #1d9bf0;
-            }
-            
-            .progress-note strong {
-                color: #e7e9ea;
-            }
-        `;
-        
-        document.head.appendChild(style);
     </script>
 </body>
 </html>

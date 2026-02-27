@@ -1610,6 +1610,12 @@ class CommentLike(models.Model):
     def __str__(self):
         return f"{'Like' if self.is_like else 'Dislike'} by {self.user.user.username} on comment {self.comment.id}"
 
+# models.py - Fixed version with proper transaction handling
+from django.db import models, transaction
+from django.db.utils import InternalError, OperationalError
+from django.urls import reverse
+from cloudinary.models import CloudinaryField
+import time
 
 class Activity(models.Model):
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
@@ -1670,7 +1676,7 @@ class Activity(models.Model):
         return False
     
     def save(self, *args, **kwargs):
-        # Check if this is a new activity for notifications
+        # Check if this is a new activity
         is_new = self.pk is None
         
         # Check if file changed and is video
@@ -1688,27 +1694,42 @@ class Activity(models.Model):
             else:
                 self.video_processed = True  # Non-videos don't need processing
         
+        # Save the model (this commits the transaction)
         super().save(*args, **kwargs)
         
-        # Create notifications for new activities
+        # IMPORTANT FIX: Use transaction.on_commit to create notifications
+        # AFTER the transaction is successfully committed
         if is_new:
-            self.create_notifications()
-        
-   
+            # This ensures notifications are created only after the save is committed
+            # and in a separate transaction
+            transaction.on_commit(lambda: self.create_notifications_async())
+    
+    def create_notifications_async(self):
+        """Create notifications in a separate transaction after the main save"""
+        try:
+            # Import here to avoid circular imports
+            from .models import Notification
+            
+            # Use a fresh connection and separate transaction
+            with transaction.atomic():
+                # Notify campaign owner
+                message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
+                Notification.objects.create(user=self.campaign.user.user, message=message_owner)
+                
+                # Notify followers (do this in batches to avoid long transactions)
+                followers = self.campaign.user.followers.all()
+                for follower in followers:
+                    message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
+                    Notification.objects.create(user=follower, message=message_follower)
+                    
+        except Exception as e:
+            # Log the error but don't crash - notifications are not critical
+            print(f"⚠️ Failed to create notifications for activity {self.id}: {e}")
+    
+    # Keep the original method for backward compatibility
     def create_notifications(self):
-        """Create notifications for new activities"""
-        from django.urls import reverse
-        from .models import Notification
-        
-        # Notify campaign owner
-        message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
-        Notification.objects.create(user=self.campaign.user.user, message=message_owner)
-        
-        # Notify followers
-        followers = self.campaign.user.followers.all()
-        for follower in followers:
-            message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
-            Notification.objects.create(user=follower, message=message_follower)
+        """Legacy method - use create_notifications_async instead"""
+        self.create_notifications_async()
     
     @property
     def screenshots(self):
@@ -1781,6 +1802,24 @@ class VideoScreenshot(models.Model):
     
     def __str__(self):
         return f"Screenshot {self.order} for Activity {self.activity.id} at {self.timestamp}s"
+# models.py - Add this model
+class ActiveAudioSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='audio_sessions')
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='audio_sessions')
+    started_at = models.DateTimeField(auto_now_add=True)
+    last_heartbeat = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['user']  # Only one active session per user
+        indexes = [
+            models.Index(fields=['user', '-last_heartbeat']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - Activity {self.activity.id}"
+
+
+
 
 class ActivityLove(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='loves')

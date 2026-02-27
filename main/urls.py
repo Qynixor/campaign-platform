@@ -208,6 +208,12 @@ path('campaign/<int:campaign_id>/tribe/', views.sound_tribe_members, name='sound
 # Add this to your urls.py
 # Add this line to your urlpatterns:
 path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),
+    path('api/update-active-audio/', views.update_active_audio, name='update_active_audio'),
+    path('api/audio-heartbeat/', views.audio_heartbeat, name='audio_heartbeat'),
+    path('api/stop-audio/', views.stop_audio, name='stop_audio'),
+    # In urls.py
+# In urls.py
+path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug_video'),
 ]
 
 

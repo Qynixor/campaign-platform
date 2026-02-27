@@ -232,12 +232,42 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ('user__user__username', 'campaign__title', 'text')
     list_filter = ('timestamp',)
 
+from django.contrib import admin
+from .models import Activity, VideoScreenshot
+
+class VideoScreenshotInline(admin.TabularInline):
+    model = VideoScreenshot
+    extra = 0
+    fields = ['order', 'timestamp']
+    raw_id_fields = ['activity']  # Makes the dropdown faster
+
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('campaign', 'timestamp')
-    search_fields = ('campaign__title', 'content')
-    list_filter = ('timestamp',)
+    list_display = ['id', 'campaign', 'short_content', 'timestamp']
+    list_filter = ['campaign']  # Removed complex filters
+    search_fields = ['content']
+    raw_id_fields = ['campaign']  # Faster than dropdown for many campaigns
+    inlines = [VideoScreenshotInline]
+    
+    fieldsets = (
+        (None, {
+            'fields': ('campaign', 'content', 'file')
+        }),
+        ('Video', {
+            'fields': ('is_video', 'video_processed'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def short_content(self, obj):
+        return obj.content[:30] + '...' if obj.content else ''
+    short_content.short_description = 'Content'
 
+@admin.register(VideoScreenshot)
+class VideoScreenshotAdmin(admin.ModelAdmin):
+    list_display = ['id', 'activity', 'order']
+    list_filter = []
+    raw_id_fields = ['activity']  # Much faster
 
 
 

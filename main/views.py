@@ -3864,26 +3864,26 @@ def like_comment_reply(request):
 
 
 
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.forms import inlineformset_factory
-from django.db import transaction
+from django.db import transaction, connection
+from django.db.utils import InternalError, OperationalError
 from django import forms
 from django.urls import reverse
 from cloudinary.models import CloudinaryResource
+from django.http import JsonResponse
+import time
+import traceback
 
 @login_required
 def create_activity(request, campaign_id):
     """
     PROGRESSIVE ACTIVITY CREATION VIEW WITH DAY LOCKING AND VIDEO PROCESSING
-    ------------------------------------------------------------------------
-    Users can only post activities for days that have actually arrived.
-    Videos are automatically processed to extract screenshots for story display.
+    FIXED: Added proper database connection handling and transaction management
     """
-
     
     following_users = [follow.followed for follow in request.user.following.all()]
     category_filter = request.GET.get('category', '')
@@ -3940,6 +3940,9 @@ def create_activity(request, campaign_id):
         
         if formset.is_valid():
             try:
+                # Close any stale connections before starting
+                connection.close_if_unusable_or_obsolete()
+                
                 with transaction.atomic():
                     instances = formset.save(commit=False)
                     
@@ -3975,31 +3978,35 @@ def create_activity(request, campaign_id):
                         if instance.file and not instance.content:
                             instance.content = f"Shared a file for Day {activity_day if not instance.pk else 'update'}"
                         
-                        # ===== FIXED VIDEO DETECTION =====
+                        # ===== IMPROVED VIDEO DETECTION =====
                         if instance.file:
                             is_video = False
                             
                             # Method 1: Check if it's a Cloudinary video
                             if hasattr(instance.file, 'resource_type'):
                                 is_video = instance.file.resource_type == 'video'
+                                print(f"Video detection - resource_type: {instance.file.resource_type} -> {is_video}")
                             
                             # Method 2: Check content type
                             if not is_video and hasattr(instance.file, 'content_type'):
                                 content_type = instance.file.content_type
                                 is_video = content_type and content_type.startswith('video/')
+                                print(f"Video detection - content_type: {content_type} -> {is_video}")
                             
                             # Method 3: Check URL/file name
                             if not is_video:
                                 try:
                                     # Get string representation
                                     file_str = str(instance.file).lower()
-                                    video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v']
+                                    video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
                                     is_video = any(ext in file_str for ext in video_extensions)
+                                    print(f"Video detection - filename: {file_str} -> {is_video}")
                                     
                                     # Check URL if available
                                     if not is_video and hasattr(instance.file, 'url'):
                                         url = instance.file.url.lower()
                                         is_video = any(ext in url for ext in video_extensions)
+                                        print(f"Video detection - URL: {url} -> {is_video}")
                                 except (AttributeError, TypeError):
                                     pass
                             
@@ -4015,7 +4022,9 @@ def create_activity(request, campaign_id):
                                         instance.screenshot_count = int(request.POST[screenshot_count_key])
                                     except (ValueError, TypeError):
                                         instance.screenshot_count = 5  # Default
+                                print(f"Video activity detected - screenshot count: {instance.screenshot_count}")
                         
+                        # Save the instance
                         instance.save()
                         saved_count += 1
                         
@@ -4037,57 +4046,49 @@ def create_activity(request, campaign_id):
                             form.instance.delete()
                             deleted_count += 1
                     
-                    # ===== SIMPLE VIDEO PROCESSING - NO CELERY =====
-                    if video_activities:
-                        try:
-                            from .tasks import process_video_screenshots
-                            
-                            processed_count = 0
-                            for activity_id in video_activities:
-                                try:
-                                    # Process immediately (user waits a few seconds)
-                                    result = process_video_screenshots(activity_id)
-                                    print(f"Video processed: {result}")
-                                    processed_count += 1
-                                except Exception as e:
-                                    print(f"Error processing video {activity_id}: {e}")
-                            
-                            if processed_count == 1:
-                                messages.success(request, "✅ Your video has been processed and screenshots are ready!")
-                            elif processed_count > 1:
-                                messages.success(request, f"✅ {processed_count} videos have been processed and screenshots are ready!")
-                            else:
-                                messages.info(request, "Video uploaded. Screenshots will appear shortly.")
-                                
-                        except ImportError:
-                            messages.info(request, "Video uploaded successfully. Screenshot processing will be available soon.")
-                        except Exception as e:
-                            messages.warning(request, "Video uploaded but processing encountered an issue. Screenshots will appear shortly.")
+                    # IMPORTANT: The transaction is committed here automatically
                     
-                    # Create appropriate messages
-                    if locked_day_attempt:
-                        messages.warning(
-                            request, 
-                            f"Day {next_available_day} is locked. It will be available in {days_until_unlock} day{'s' if days_until_unlock > 1 else ''}. Your other changes were saved."
-                        )
-                    elif saved_count > 0 or deleted_count > 0:
-                        action_messages = []
-                        if new_count > 0:
-                            action_messages.append(f"Created Day {next_available_day - 1}")
-                        if updated_count > 0:
-                            action_messages.append(f"Updated {updated_count} existing day{'s' if updated_count > 1 else ''}")
-                        if deleted_count > 0:
-                            action_messages.append(f"Deleted {deleted_count} day{'s' if deleted_count > 1 else ''}")
-                        
-                        messages.success(request, ' • '.join(action_messages))
-                    else:
-                        messages.info(request, 'No changes were made.')
+                # ===== VIDEO PROCESSING (AFTER TRANSACTION COMMIT) =====
+                # Use transaction.on_commit to ensure processing happens after commit
+                if video_activities:
+                    # Process videos in a separate connection/transaction
+                    transaction.on_commit(lambda: process_videos_in_background(video_activities, request))
                     
-                    return redirect('activity_list', campaign_id=campaign_id)
+                    # Provide immediate feedback to user
+                    messages.info(request, "Video uploaded successfully. Screenshots will be created in the background and appear shortly.")
                     
+                # Create appropriate messages
+                if locked_day_attempt:
+                    messages.warning(
+                        request, 
+                        f"Day {next_available_day} is locked. It will be available in {days_until_unlock} day{'s' if days_until_unlock > 1 else ''}. Your other changes were saved."
+                    )
+                elif saved_count > 0 or deleted_count > 0:
+                    action_messages = []
+                    if new_count > 0:
+                        action_messages.append(f"Created Day {next_available_day - 1}")
+                    if updated_count > 0:
+                        action_messages.append(f"Updated {updated_count} existing day{'s' if updated_count > 1 else ''}")
+                    if deleted_count > 0:
+                        action_messages.append(f"Deleted {deleted_count} day{'s' if deleted_count > 1 else ''}")
+                    
+                    messages.success(request, ' • '.join(action_messages))
+                else:
+                    messages.info(request, 'No changes were made.')
+                
+                return redirect('activity_list', campaign_id=campaign_id)
+                    
+            except (InternalError, OperationalError) as e:
+                if "idle-in-transaction" in str(e):
+                    messages.error(request, 'Database timeout occurred. Please try again.')
+                else:
+                    messages.error(request, f'Database error: {str(e)}')
+                print(f"Database error in create_activity: {e}")
+                traceback.print_exc()
             except Exception as e:
                 messages.error(request, f'Error saving activities: {str(e)}')
                 print(f"Error in create_activity: {e}")
+                traceback.print_exc()
         else:
             error_count = sum(len(form.errors) for form in formset)
             messages.error(request, f'Please correct the {error_count} error{"s" if error_count > 1 else ""} below.')
@@ -4143,14 +4144,10 @@ def create_activity(request, campaign_id):
     initial_emojis = emojis[:10]
 
     context = {
-     
         'formset': formset,
         'campaign': campaign,
         'user_profile': user_profile,
-     
         'initial_emojis': initial_emojis,
-      
-    
         'existing_activities_count': existing_count,
         'max_forms': MAX_FORMS,
         'is_at_max': existing_count >= MAX_FORMS,
@@ -4168,6 +4165,121 @@ def create_activity(request, campaign_id):
 
     return render(request, 'main/activity_create.html', context)
 
+
+def process_videos_in_background(activity_ids, request=None):
+    """
+    Helper function to process videos after transaction commit
+    Uses a fresh database connection
+    """
+    try:
+        from .tasks import process_video_screenshots
+        
+        # Close any existing connection and get a fresh one
+        connection.close()
+        
+        processed_count = 0
+        for activity_id in activity_ids:
+            try:
+                print(f"🚀 Starting video processing for activity {activity_id}")
+                # Process with retry logic
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        result = process_video_screenshots(activity_id)
+                        print(f"✅ Video processing result: {result}")
+                        
+                        # Check if screenshots were actually created
+                        from .models import Activity
+                        activity = Activity.objects.get(id=activity_id)
+                        screenshot_count = activity.screenshots.count()
+                        
+                        if screenshot_count > 0:
+                            processed_count += 1
+                            print(f"✅ Activity {activity_id} now has {screenshot_count} screenshots")
+                            break
+                        else:
+                            if attempt < max_retries - 1:
+                                print(f"⚠️ No screenshots created, retrying ({attempt + 2}/{max_retries})...")
+                                time.sleep(2)
+                                continue
+                    except Exception as e:
+                        print(f"❌ Error on attempt {attempt + 1}: {e}")
+                        if attempt < max_retries - 1:
+                            time.sleep(2)
+                            continue
+                        else:
+                            raise
+                
+            except Exception as e:
+                print(f"❌ Error processing video {activity_id}: {e}")
+                traceback.print_exc()
+        
+        print(f"✅ Background processing complete: {processed_count}/{len(activity_ids)} videos processed")
+        
+    except Exception as e:
+        print(f"❌ Error in background video processing: {e}")
+        traceback.print_exc()
+
+
+@login_required
+def debug_video_processing(request, activity_id):
+    """Debug view to manually trigger video processing with detailed output"""
+    from .models import Activity, VideoScreenshot
+    from .tasks import process_video_screenshots
+    import json
+    import io
+    import sys
+    
+    activity = get_object_or_404(Activity, id=activity_id)
+    
+    if request.user != activity.campaign.user.user:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            # Close stale connection
+            connection.close_if_unusable_or_obsolete()
+            
+            # Capture print output
+            old_stdout = sys.stdout
+            sys.stdout = io.StringIO()
+            
+            # Process with timeout handling
+            result = process_video_screenshots(activity_id)
+            
+            # Get captured output
+            output = sys.stdout.getvalue()
+            sys.stdout = old_stdout
+            
+            # Check screenshots with fresh connection
+            screenshots = VideoScreenshot.objects.filter(activity=activity)
+            
+            return JsonResponse({
+                'success': True,
+                'result': result,
+                'debug_output': output,
+                'screenshots_count': screenshots.count(),
+                'screenshots': [
+                    {
+                        'order': s.order,
+                        'url': s.image.url if s.image else None,
+                        'timestamp': s.timestamp
+                    } for s in screenshots
+                ]
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'activity_id': activity_id,
+        'is_video': activity.is_video,
+        'video_processed': activity.video_processed,
+        'screenshot_count': activity.screenshots.count(),
+        'file_url': activity.file.url if activity.file else None
+    })
 
 
 @login_required
@@ -5917,6 +6029,169 @@ def create_campaign(request):
     }
     
     return render(request, 'main/campaign_form.html', context)
+
+
+
+# views.py - Add these new view functions
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from .models import Activity, ActiveAudioSession
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_required
+@require_POST
+@csrf_exempt
+def update_active_audio(request):
+    """
+    Backend endpoint to track which activity's audio should play.
+    Only one audio session per user is allowed.
+    """
+    try:
+        data = json.loads(request.body)
+        activity_id = data.get('activity_id')
+        user = request.user
+        
+        # If no activity_id, just stop any playing audio
+        if not activity_id:
+            ActiveAudioSession.objects.filter(user=user).delete()
+            return JsonResponse({
+                'status': 'stopped',
+                'message': 'Audio stopped'
+            })
+        
+        # Verify activity exists and user has access
+        try:
+            activity = Activity.objects.select_related('campaign').get(id=activity_id)
+            
+            # Check if user has permission to view this activity
+            if activity.campaign.visibility == 'private' and activity.campaign.user.user != user:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Permission denied'
+                }, status=403)
+            
+        except Activity.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Activity not found'
+            }, status=404)
+        
+        # End any existing audio sessions for this user
+        old_sessions = ActiveAudioSession.objects.filter(user=user)
+        old_activity_ids = list(old_sessions.values_list('activity_id', flat=True))
+        old_sessions.delete()
+        
+        # Log for debugging
+        if old_activity_ids:
+            logger.info(f"User {user.username} stopped audio for activities: {old_activity_ids}")
+        
+        # Create new session for this activity
+        session = ActiveAudioSession.objects.create(
+            user=user,
+            activity=activity
+        )
+        
+        # Prepare response with audio URL if activity has a video file
+        audio_url = None
+        if activity.file and activity.file.url:
+            # Check if it's a video file (has audio)
+            if activity.file.url.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
+                audio_url = activity.file.url
+        
+        logger.info(f"User {user.username} started audio for activity {activity_id}")
+        
+        return JsonResponse({
+            'status': 'playing',
+            'activity_id': activity_id,
+            'audio_url': audio_url,
+            'session_id': session.id,
+            'started_at': session.started_at.isoformat()
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in update_active_audio: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Server error'
+        }, status=500)
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def audio_heartbeat(request):
+    """
+    Keep the audio session alive. Called periodically by frontend.
+    """
+    try:
+        data = json.loads(request.body)
+        activity_id = data.get('activity_id')
+        user = request.user
+        
+        if not activity_id:
+            return JsonResponse({'status': 'error', 'message': 'No activity_id'}, status=400)
+        
+        # Update the session's last_heartbeat
+        session = ActiveAudioSession.objects.filter(
+            user=user, 
+            activity_id=activity_id
+        ).first()
+        
+        if session:
+            session.save()  # This updates last_heartbeat due to auto_now
+            return JsonResponse({
+                'status': 'alive',
+                'session_id': session.id
+            })
+        else:
+            # Session expired or doesn't exist
+            return JsonResponse({
+                'status': 'expired',
+                'message': 'No active session found'
+            })
+            
+    except Exception as e:
+        logger.error(f"Error in audio_heartbeat: {str(e)}")
+        return JsonResponse({'status': 'error'}, status=500)
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def stop_audio(request):
+    """
+    Explicitly stop audio for the user.
+    """
+    try:
+        user = request.user
+        sessions = ActiveAudioSession.objects.filter(user=user)
+        count = sessions.count()
+        sessions.delete()
+        
+        logger.info(f"User {user.username} stopped {count} audio sessions")
+        
+        return JsonResponse({
+            'status': 'stopped',
+            'sessions_ended': count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in stop_audio: {str(e)}")
+        return JsonResponse({'status': 'error'}, status=500)
+
+
+
 
 
 

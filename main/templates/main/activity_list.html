@@ -1,3 +1,5 @@
+{% load custom_filters %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +9,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
@@ -70,20 +73,6 @@
                 position: sticky;
                 top: 20px;
             }
-
-            .modal-video {
-                object-fit: contain !important;
-                background: #000;
-            }
-
-            .reel-media video:not(.modal-video) {
-                object-fit: contain !important;
-                background: #000;
-            }
-
-            .carousel-slide img {
-                object-fit: cover !important;
-            }
         }
 
         @media (max-width: 767px) {
@@ -98,14 +87,14 @@
                 height: 40px;
             }
             .slide-counter {
-                bottom: 80px;
+                bottom: 100px;
             }
             .thumbnail-strip {
-                bottom: 120px;
+                bottom: 140px;
             }
-            
-            .reel-media video {
-                object-fit: cover;
+            .video-preview-container {
+                bottom: 220px !important;
+                left: 16px !important;
             }
         }
 
@@ -125,7 +114,6 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             position: relative;
-            will-change: scroll-position;
         }
 
         .reels-track::-webkit-scrollbar { 
@@ -147,18 +135,6 @@
             height: 100%;
             overflow: hidden;
             touch-action: pan-y pinch-zoom;
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-            will-change: transform;
-        }
-
-        .story-carousel:focus-visible {
-            outline: 2px solid #0a84ff;
-            outline-offset: -2px;
-        }
-
-        .story-carousel.horizontal-active {
-            touch-action: pan-x pinch-zoom;
         }
 
         .carousel-track {
@@ -166,41 +142,28 @@
             height: 100%;
             width: 100%;
             transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-            will-change: transform;
             cursor: grab;
-            touch-action: pan-y pinch-zoom;
-            user-select: none;
         }
 
         .carousel-track.dragging {
             transition: none;
             cursor: grabbing;
-            touch-action: pan-x pinch-zoom;
         }
 
         .carousel-slide {
             flex: 0 0 100%;
             height: 100%;
             width: 100%;
-            pointer-events: none;
             position: relative;
             overflow: hidden;
         }
 
-        .carousel-slide img,
-        .carousel-slide picture {
+        .carousel-slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             pointer-events: none;
             display: block;
-            -webkit-user-select: none;
-            user-select: none;
-            will-change: transform;
-        }
-
-        .carousel-arrow {
-            display: none !important;
         }
 
         .carousel-dots {
@@ -228,11 +191,6 @@
             padding: 0;
             cursor: pointer;
             transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .dot:hover {
-            background: rgba(255, 255, 255, 0.8);
         }
 
         .dot.active {
@@ -258,13 +216,9 @@
             pointer-events: none;
         }
 
-        .media-counter i { 
-            font-size: 14px; 
-        }
-
         .slide-counter {
             position: absolute;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.6);
@@ -276,13 +230,12 @@
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.1);
             z-index: 15;
-            letter-spacing: 1px;
             pointer-events: none;
         }
 
         .thumbnail-strip {
             position: absolute;
-            bottom: 140px;
+            bottom: 160px;
             left: 0;
             right: 0;
             display: flex;
@@ -293,7 +246,6 @@
             pointer-events: none;
             overflow-x: auto;
             scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
         }
 
         .thumbnail-strip::-webkit-scrollbar {
@@ -332,6 +284,65 @@
             display: block;
         }
 
+        /* Clean video preview - no overlay icon */
+        .video-preview-container {
+            position: absolute;
+            bottom: 240px;
+            left: 20px;
+            width: 80px;
+            height: 110px;
+            border-radius: 16px;
+            overflow: hidden;
+            z-index: 25;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        .video-preview-container:hover {
+            transform: scale(1.05);
+            border-color: #fff;
+        }
+
+        .video-preview-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* No overlay - thumbnail breathes freely */
+
+        /* Hidden audio player */
+        .background-audio {
+            display: none;
+        }
+
+        /* Audio indicator - minimal */
+        .audio-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 30px;
+            padding: 6px 10px;
+            color: #fff;
+            font-size: 11px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: 1px solid rgba(255,255,255,0.15);
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .audio-indicator i {
+            font-size: 12px;
+        }
+
         .swipe-indicator {
             position: absolute;
             top: 50%;
@@ -351,58 +362,18 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             animation: fadeOut 2s ease forwards 3s;
             pointer-events: none;
-            white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-
-        .swipe-indicator i {
-            font-size: 18px;
-            opacity: 0.9;
-        }
-
-        .swipe-indicator i:first-child {
-            animation: slideLeft 1.5s infinite;
-        }
-
-        .swipe-indicator i:last-child {
-            animation: slideRight 1.5s infinite;
         }
 
         @keyframes fadeOut {
-            0% { opacity: 1; transform: translate(-50%, -50%); }
-            70% { opacity: 1; transform: translate(-50%, -50%); }
-            100% { opacity: 0; transform: translate(-50%, -60%); visibility: hidden; }
-        }
-
-        @keyframes slideLeft {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(-5px); }
-        }
-
-        @keyframes slideRight {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(5px); }
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
         }
 
         .reel-media {
             position: absolute;
             inset: 0;
             background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .reel-media video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .reel-media img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
 
         .reel::after {
@@ -418,7 +389,7 @@
         }
 
         .header {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
@@ -444,7 +415,6 @@
             font-size: 18px;
             pointer-events: auto;
             border: 1px solid rgba(255,255,255,0.1);
-            flex-shrink: 0;
         }
 
         .progress {
@@ -470,8 +440,7 @@
         .info-panel {
             position: absolute;
             left: 16px;
-            bottom: 50%;
-            transform: translateY(50%);
+            bottom: 30px;
             right: 90px;
             color: #fff;
             z-index: 10;
@@ -499,6 +468,7 @@
             overflow: hidden;
             margin: 8px 0 4px;
             pointer-events: auto;
+            max-width: 100%;
         }
 
         .caption.expanded { 
@@ -512,7 +482,6 @@
             cursor: pointer;
             display: inline-block;
             pointer-events: auto;
-            margin-bottom: 8px;
         }
 
         .meta {
@@ -522,14 +491,12 @@
             gap: 12px;
             flex-wrap: wrap;
             pointer-events: auto;
-            width: fit-content;
         }
 
         .actions {
             position: absolute;
             right: 12px;
-            bottom: 50%;
-            transform: translateY(50%);
+            bottom: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -555,13 +522,11 @@
 
         .action i { 
             font-size: 28px; 
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8); 
         }
 
         .action span { 
             font-size: 12px; 
             font-weight: 600; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
         }
 
         .action-profile {
@@ -571,31 +536,10 @@
             border: 2px solid #fff;
             object-fit: cover;
             margin-bottom: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         .action.loved i { 
             color: #ff3b30; 
-        }
-
-        .video-icon {
-            position: fixed;
-            bottom: 24px;
-            right: 96px;
-            width: 56px;
-            height: 56px;
-            background: rgba(255,255,255,0.95);
-            border-radius: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 24px;
-            z-index: 100;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
         }
 
         .fab {
@@ -614,7 +558,6 @@
             text-decoration: none;
             z-index: 100;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.2);
         }
 
         .modal {
@@ -639,7 +582,6 @@
             justify-content: space-between;
             z-index: 1001;
             background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
-            pointer-events: none;
         }
 
         .modal-btn {
@@ -655,55 +597,13 @@
             font-size: 20px;
             border: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
-            pointer-events: auto;
         }
 
         .modal-video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             background: #000;
-        }
-
-        .empty-state {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            max-width: 280px;
-            color: #fff;
-            z-index: 10;
-        }
-
-        .empty-icon { 
-            font-size: 48px; 
-            opacity: 0.3; 
-            margin-bottom: 16px; 
-        }
-
-        .empty-state h3 { 
-            font-weight: 600; 
-            font-size: 20px; 
-            margin-bottom: 8px; 
-        }
-
-        .empty-state p { 
-            opacity: 0.6; 
-            font-size: 14px; 
-        }
-
-        .empty-btn {
-            background: #fff;
-            color: #000;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-weight: 600;
-            margin-top: 20px;
-            cursor: pointer;
-            display: inline-block;
-            text-decoration: none;
         }
 
         .stats-grid {
@@ -763,96 +663,160 @@
             border-radius: 16px;
         }
 
-        .text-only-update {
+        /* Ensure proper spacing for all elements */
+        .reel {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            background: #1a1a1a;
             flex-direction: column;
-            gap: 16px;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .text-only-update i {
-            opacity: 0.3;
-        }
-        
-        .text-only-update div:first-of-type {
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        .text-only-update div:last-child {
-            font-size: 14px;
-            opacity: 0.7;
-            max-width: 80%;
-        }
-        
-        .video-loading {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 5;
+            justify-content: flex-end;
         }
 
-        .action.video-icon-action i {
-            color: #fff;
-            background: rgba(255,255,255,0.2);
-            width: 44px;
-            height: 44px;
-            border-radius: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        /* Audio indicator for videos */
+        /* Prevent any collisions */
+        .info-panel,
+        .actions,
+        .video-preview-container,
+        .thumbnail-strip,
+        .slide-counter,
         .audio-indicator {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 30px;
-            padding: 8px 12px;
-            color: #fff;
-            font-size: 12px;
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid rgba(255,255,255,0.2);
-            pointer-events: none;
+            will-change: transform;
         }
-
-        .audio-indicator i {
-            font-size: 14px;
-        }
-
-        .audio-indicator .audio-on {
-            color: #0a84ff;
-        }
-
-        .reel-media video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none; /* Prevents accidental clicks */
+        .actions {
+    position: absolute;
+    right: 12px;
+    bottom: 30px;  /* Desktop: bottom position */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+    pointer-events: none;
+}
+@media (max-width: 767px) {
+    .sidebar { 
+        display: none; 
+    }
+    .info-panel { 
+        right: 70px;
+        bottom: 20px !important;
+        left: 12px !important;
+    }
+    .thumbnail-item {
+        width: 36px;
+        height: 36px;
+    }
+    .slide-counter {
+        bottom: 95px !important;
+    }
+    .thumbnail-strip {
+        bottom: 130px !important;
+        padding: 8px !important;
+        gap: 6px !important;
+    }
+    .video-preview-container {
+        bottom: 200px !important;
+        left: 12px !important;
+        width: 60px !important;
+        height: 85px !important;
+    }
+    
+    /* Action buttons positioned in the middle of the screen - NO BACKGROUND */
+    .actions {
+        position: absolute;
+        right: 8px !important;
+        top: 50% !important;  /* Position at 50% from top */
+        bottom: auto !important;  /* Remove bottom positioning */
+        transform: translateY(-50%) !important;  /* Center vertically */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px !important;
+        z-index: 20;
+        pointer-events: none;
+    }
+    
+    .action {
+        min-width: 48px !important;
+        pointer-events: auto;
+        /* NO BACKGROUND - removed background, backdrop-filter, border, and padding */
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    
+    .action i { 
+        font-size: 26px !important;  /* Slightly larger */
+        margin-bottom: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle shadow for visibility */
+    }
+    
+    .action span { 
+        font-size: 11px !important; 
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for text */
+    }
+    
+    .action-profile {
+        width: 44px !important;
+        height: 44px !important;
+        border-width: 2px;
+        margin-bottom: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Shadow for profile image */
+    }
+    
+    /* All actions have same styling - no special case needed */
+    
+    .fab {
+        bottom: 16px !important;
+        right: 16px !important;
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 20px !important;
+        z-index: 200 !important;
+    }
+    
+    .carousel-dots {
+        top: 50px !important;
+        padding: 6px 12px !important;
+    }
+    
+    .dot {
+        width: 16px !important;
+    }
+    
+    .dot.active {
+        width: 24px !important;
+    }
+    
+    .media-counter {
+        top: 50px !important;
+        right: 12px !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+    
+    .header {
+        padding-top: 8px !important;
+    }
+    
+    .back-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+    }
+    
+    /* Adjust info panel width to accommodate buttons */
+    .info-panel {
+        right: 80px;
+        max-width: calc(100% - 100px);
+    }
+    
+    /* Safe area for FAB */
+    .fab {
+        margin-bottom: env(safe-area-inset-bottom, 0);
+    }
 }
     </style>
 </head>
 <body>
-{% load custom_filters %}
-{% load static %}
-
 <div class="desktop-layout">
     <!-- Main Reels Container -->
     <div class="reels-container">
@@ -870,81 +834,102 @@
             {% if activities %}
                 {% for activity in activities %}
                 <!-- Reel Item -->
-                <div class="reel" data-index="{{ forloop.counter0 }}" data-id="{{ activity.id }}">
+                <div class="reel" data-index="{{ forloop.counter0 }}" data-activity-id="{{ activity.id }}">
                     <!-- Media Container -->
                     <div class="reel-media">
                         {% if activity.is_video and activity.has_screenshots_var %}
-                            <!-- ===== OPTIMIZED CAROUSEL ===== -->
+                            <!-- Carousel with screenshots -->
                             <div class="story-carousel" 
                                  id="carousel-{{ activity.id }}" 
-                                 tabindex="0" 
-                                 role="region" 
-                                 aria-label="Image carousel for day {{ activity.day_number }}"
+                                 data-activity-id="{{ activity.id }}"
                                  data-initialized="false">
                                 
-                                <!-- Track with slides -->
+                                <!-- Image track -->
                                 <div class="carousel-track" id="track-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
-                                    <div class="carousel-slide" role="group" aria-label="{{ forloop.counter }} of {{ activity.screenshot_count_total }}">
+                                    <div class="carousel-slide">
                                         <picture>
                                             <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
                                             <img src="{{ screenshot.image.url }}?q_auto&f_auto" 
                                                  loading="lazy" 
-                                                 alt="Day {{ activity.day_number }} - moment {{ forloop.counter }}"
+                                                 alt="Day {{ activity.day_number }}"
                                                  draggable="false">
                                         </picture>
                                     </div>
                                     {% endfor %}
                                 </div>
                                 
-                                <!-- Top Dots Navigation -->
+                                <!-- Hidden audio from video - plays in background only -->
+                                <audio class="background-audio" 
+                                       id="audio-{{ activity.id }}"
+                                       src="{{ activity.file.url }}" 
+                                       loop
+                                       preload="none"
+                                       data-activity-id="{{ activity.id }}">
+                                </audio>
+                                
+                                <!-- Clean video preview - no overlay icon -->
+                                <div class="video-preview-container" id="preview-{{ activity.id }}" data-activity-id="{{ activity.id }}" onclick="openVideoModal('{{ activity.id }}')">
+                                    <video class="video-preview-player" 
+                                           src="{{ activity.file.url }}" 
+                                           muted
+                                           loop
+                                           playsinline
+                                           preload="metadata"
+                                           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
+                                    </video>
+                                    <!-- No overlay - thumbnail breathes freely -->
+                                </div>
+                                
+                                <!-- Audio indicator - subtle -->
+                                <div class="audio-indicator" id="indicator-{{ activity.id }}" style="display: none;">
+                                    <i class="fas fa-music"></i>
+                                    <span>Audio</span>
+                                </div>
+                                
+                                <!-- Navigation dots -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="carousel-dots">
                                     {% for screenshot in activity.screenshots_list %}
                                     <button class="dot {% if forloop.first %}active{% endif %}" 
                                             data-carousel="{{ activity.id }}"
-                                            data-index="{{ forloop.counter0 }}"
-                                            aria-label="Go to slide {{ forloop.counter }}">
+                                            data-index="{{ forloop.counter0 }}">
                                     </button>
                                     {% endfor %}
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Media Counter -->
+                                <!-- Media counter -->
                                 <div class="media-counter">
                                     <i class="fas fa-images"></i>
                                     <span>{{ activity.screenshot_count_total }}</span>
                                 </div>
                                 
-                                <!-- Slide Counter -->
+                                <!-- Slide counter -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="slide-counter" id="counter-{{ activity.id }}">
                                     <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Thumbnail Strip Navigation -->
+                                <!-- Thumbnails -->
                                 {% if activity.screenshot_count_total > 1 %}
                                 <div class="thumbnail-strip" id="strip-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
                                     <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
                                          data-carousel="{{ activity.id }}"
-                                         data-index="{{ forloop.counter0 }}"
-                                         title="Go to image {{ forloop.counter }}"
-                                         role="button"
-                                         tabindex="0"
-                                         aria-label="Thumbnail {{ forloop.counter }}">
+                                         data-index="{{ forloop.counter0 }}">
                                         <img src="{{ screenshot.image.url }}?w=60&h=60&fit=crop" 
                                              loading="lazy" 
-                                             alt="Thumbnail {{ forloop.counter }}">
+                                             alt="thumb">
                                     </div>
                                     {% endfor %}
                                 </div>
                                 {% endif %}
                                 
-                                <!-- Swipe Indicator -->
+                                <!-- Swipe indicator -->
                                 {% if forloop.first and activity.screenshot_count_total > 1 %}
-                                <div class="swipe-indicator" id="swipe-indicator-{{ activity.id }}">
+                                <div class="swipe-indicator">
                                     <i class="fas fa-chevron-left"></i>
                                     <span>Swipe</span>
                                     <i class="fas fa-chevron-right"></i>
@@ -953,54 +938,31 @@
                             </div>
                             
                         {% elif activity.file %}
-                            {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' or activity.file.url|lower|slice:'-4:' == '.mov' %}
-                                <!-- Single Video - Start muted by default -->
-                                <video src="{{ activity.file.url }}" loop playsinline muted 
-                                       id="video-{{ activity.id }}" preload="metadata"
+                            {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' %}
+                                <!-- Single video -->
+                                <video src="{{ activity.file.url }}" loop playsinline controls
                                        poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
                                 </video>
-                                
-                                <!-- Audio indicator - hidden by default, shown when unmuted -->
-                                <div class="audio-indicator" id="audio-indicator-{{ activity.id }}" style="display: none;">
-                                    <i class="fas fa-volume-up audio-on"></i>
-                                    <span>Audio On</span>
-                                </div>
-                                
-                                {% if not activity.video_processed %}
-                                <div class="video-loading">
-                                    <i class="fas fa-spinner fa-pulse fa-2x"></i>
-                                    <span>Processing video...</span>
-                                </div>
-                                {% endif %}
                             {% else %}
-                                <!-- Single Image -->
-                                <picture>
-                                    <source srcset="{{ activity.file.url|slice:':-4' }}.webp" type="image/webp">
-                                    <img src="{{ activity.file.url }}" loading="lazy" alt="Day {{ activity.day_number }}">
-                                </picture>
+                                <!-- Single image -->
+                                <img src="{{ activity.file.url }}" loading="lazy" alt="Day {{ activity.day_number }}">
                             {% endif %}
                         {% else %}
-                            <!-- Text-only update -->
-                            <div class="text-only-update">
-                                <i class="fas fa-pencil-alt fa-3x"></i>
-                                <div>Day {{ activity.day_number }} Update</div>
-                                <div>{{ activity.content|striptags|truncatechars:100 }}</div>
+                            <!-- Text update -->
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #1a1a1a;">
+                                <div style="text-align: center;">
+                                    <i class="fas fa-pencil-alt fa-3x" style="opacity: 0.3;"></i>
+                                    <div style="margin-top: 16px;">Day {{ activity.day_number }} Update</div>
+                                </div>
                             </div>
                         {% endif %}
                     </div>
 
-                    <!-- Action Buttons -->
+                    <!-- Action buttons -->
                     <div class="actions">
                         <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
                             <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="Profile">
                         </a>
-
-                        {% if activity.file and activity.is_video %}
-                        <button class="action video-icon-action" onclick="openVideoModal('{{ activity.id }}', event)" aria-label="Play video">
-                            <i class="fas fa-play"></i>
-                            <span></span>
-                        </button>
-                        {% endif %}
                         
                         <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
                                 onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
@@ -1019,7 +981,7 @@
                         </button>
                     </div>
 
-                    <!-- Info Panel -->
+                    <!-- Info panel -->
                     <div class="info-panel">
                         <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
                         <div class="caption" id="caption-{{ activity.id }}">{{ activity.content|safe }}</div>
@@ -1029,57 +991,51 @@
                         <div class="meta">
                             <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
                             <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
-                            {% if activity.location %}
-                            <span><i class="fas fa-map-marker-alt"></i> {{ activity.location }}</span>
-                            {% endif %}
                         </div>
                     </div>
 
-                    <!-- Video Modal -->
-                    <div class="modal" id="video-modal-{{ activity.id }}">
+                    <!-- Video modal -->
+                    <div class="modal" id="modal-{{ activity.id }}">
                         <div class="modal-header">
-                            <button class="modal-btn" onclick="closeVideoModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
+                            <button class="modal-btn" onclick="closeModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
                             <a href="{{ activity.file.url }}" download class="modal-btn"><i class="fas fa-download"></i></a>
                         </div>
-                        <video class="modal-video" controls autoplay playsinline loop preload="metadata">
+                        <video class="modal-video" controls autoplay playsinline loop>
                             <source src="{{ activity.file.url }}" type="video/mp4">
-                            Your browser doesn't support video.
                         </video>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <!-- Empty State -->
+                <!-- Empty state -->
                 <div class="empty-state">
                     <div class="empty-icon"><i class="fas fa-camera"></i></div>
                     <h3>No posts yet</h3>
-                    <p>Share the first moment of this journey</p>
                     {% if user == campaign.user.user %}
-                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn"><i class="fas fa-plus"></i> Post update</a>
+                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn">Post update</a>
                     {% endif %}
                 </div>
             {% endif %}
         </div>
 
-        <!-- FAB Button -->
+        <!-- FAB -->
         {% if user == campaign.user.user %}
         <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
         {% endif %}
     </div>
 
-    <!-- Desktop Sidebar - Fully Restored -->
+    <!-- Sidebar -->
     <div class="sidebar">
         <h2 style="font-size:24px; font-weight:700; margin-bottom:24px;">{{ campaign.title }}</h2>
         
-        <!-- Journey Progress Bar -->
         {% if campaign.duration %}
         <div class="journey-progress">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;">
-                <span>Journey Progress</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span>Progress</span>
                 <span>{{ activities|length }}/{{ campaign.duration }} days</span>
             </div>
             <div style="height:6px; background:#333; border-radius:6px; overflow:hidden;">
-                <div style="height:100%; background:#0a84ff; border-radius:6px; width:{% widthratio activities|length campaign.duration 100 %}%;"></div>
+                <div style="height:100%; background:#0a84ff; width:{% widthratio activities|length campaign.duration 100 %}%;"></div>
             </div>
         </div>
         {% endif %}
@@ -1093,17 +1049,9 @@
                 <div class="stat-number">{{ campaign.duration|default:'∞' }}</div>
                 <div class="stat-label">Days</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ campaign.followers_count|default:0 }}</div>
-                <div class="stat-label">Followers</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ total_loves|default:0 }}</div>
-                <div class="stat-label">Loves</div>
-            </div>
         </div>
 
-        <div style="font-weight:600; margin-bottom:12px;">Recent Updates</div>
+        <div style="font-weight:600; margin-bottom:12px;">Recent</div>
         {% for activity in activities|slice:":5" %}
         <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
             <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% elif activity.file %}{{ activity.file.url }}{% endif %}')"></div>
@@ -1113,579 +1061,457 @@
             </div>
         </div>
         {% endfor %}
-
-        <div style="margin-top:24px; padding-top:16px; border-top:1px solid #222;">
-            <h3 style="font-weight:600; margin-bottom:8px;">About</h3>
-            <p style="opacity:0.8; font-size:14px; line-height:1.6;">{{ campaign.description|default:"No description provided." }}</p>
-            <div style="display:flex; gap:16px; margin-top:16px; font-size:12px; opacity:0.6;">
-                <span><i class="far fa-calendar"></i> {{ campaign.start_date|date:"M d, Y" }}</span>
-                <span><i class="fas fa-user"></i> {{ campaign.user.user.username }}</span>
-            </div>
-        </div>
     </div>
 </div>
+
+<!-- ===== FIXED WORKING SCRIPT ===== -->
 <script>
 (function() {
     'use strict';
 
-    // ===== HELPER FUNCTIONS =====
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    // ========== STATE MANAGEMENT ==========
+    let currentlyPlayingId = null;
+    let currentAudioElement = null;
+    let scrollTimeout = null;
+    let previewObservers = [];
+
+    // ========== HELPER FUNCTIONS ==========
+    function getVisibleReel() {
+        const track = document.getElementById('reelsTrack');
+        if (!track) return null;
+        
+        const scrollTop = track.scrollTop;
+        const reelHeight = track.clientHeight;
+        const visibleIndex = Math.round(scrollTop / reelHeight);
+        
+        return document.querySelector(`.reel[data-index="${visibleIndex}"]`);
     }
 
-    // Store active carousel state
-    let activeCarouselId = null;
-    let scrollTimeout;
-    let currentVisibleReelIndex = 0;
-    let userInteracted = false;
-    let videoPlaybackEnabled = false; // Flag to enable audio after user interaction
-
-    // ===== IMPROVED AUDIO CONTROL FUNCTIONS =====
-
-    // Completely stop a video (pause and reset)
-    function stopVideo(video) {
-        if (!video) return;
-        
-        // Force mute and pause
-        video.muted = true;
-        if (!video.paused) {
-            video.pause();
-        }
-        
-        // Hide audio indicator
-        const reel = video.closest('.reel');
-        if (reel) {
-            const activityId = reel.dataset.id;
-            const indicator = document.getElementById(`audio-indicator-${activityId}`);
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
-        }
-    }
-
-    // Unmute a specific video (only if user has interacted)
-    function unmuteVideo(video) {
-        if (!video || !videoPlaybackEnabled) return; // Don't unmute without user interaction
-        
-        if (video.muted) {
-            video.muted = false;
-            
-            // Show audio indicator
-            const reel = video.closest('.reel');
-            if (reel) {
-                const activityId = reel.dataset.id;
-                const indicator = document.getElementById(`audio-indicator-${activityId}`);
-                if (indicator) {
-                    indicator.style.display = 'flex';
-                }
-            }
-        }
-    }
-
-    // Mute a specific video
-    function muteVideo(video) {
-        if (!video) return;
-        
-        if (!video.muted) {
-            video.muted = true;
-            
-            // Hide audio indicator
-            const reel = video.closest('.reel');
-            if (reel) {
-                const activityId = reel.dataset.id;
-                const indicator = document.getElementById(`audio-indicator-${activityId}`);
-                if (indicator) {
-                    indicator.style.display = 'none';
-                }
-            }
-        }
-    }
-
-    // Safely play video with error handling
-    function safePlayVideo(video) {
-        if (!video) return;
-        
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Auto-play was prevented, this is normal
-                console.log('Play prevented:', error);
-            });
-        }
-    }
-
-    // Clean up videos far from view
-    function cleanupDistantVideos(currentIndex) {
-        document.querySelectorAll('.reel').forEach((reel, index) => {
-            if (Math.abs(index - currentIndex) > 2) { // More than 2 reels away
-                const video = reel.querySelector('video');
-                if (video) {
-                    stopVideo(video);
-                    video.currentTime = 0; // Reset to beginning
-                }
-            }
-        });
-    }
-
-    // Pause all videos except the one in the viewport, and manage mute state
-    function manageVideoPlayback(visibleReel) {
-        if (!visibleReel) return;
-        
-        const allVideos = document.querySelectorAll('.reel-media video');
-        
-        allVideos.forEach(video => {
-            // Check if this video is in the visible reel
-            const isInVisibleReel = visibleReel.contains(video);
-            
-            if (isInVisibleReel) {
-                // This is the visible video
-                if (video.paused) {
-                    safePlayVideo(video);
-                }
-                
-                // Unmute if user has interacted
-                unmuteVideo(video);
-            } else {
-                // Not visible - mute and pause it
-                muteVideo(video);
-                if (!video.paused) {
-                    video.pause();
-                }
-            }
-        });
-        
-        // Clean up distant videos
-        const currentIndex = parseInt(visibleReel.dataset.index || '0');
-        cleanupDistantVideos(currentIndex);
-    }
-
-    // Handle first user interaction to enable audio
-    function enableVideoAudio() {
-        if (!videoPlaybackEnabled) {
-            videoPlaybackEnabled = true;
-            
-            // Get current visible reel and unmute its video
-            const visibleReel = document.querySelector(`.reel[data-index="${currentVisibleReelIndex}"]`);
-            if (visibleReel) {
-                const video = visibleReel.querySelector('video');
-                if (video) {
-                    unmuteVideo(video);
-                    safePlayVideo(video);
-                }
-            }
-            
-            // Remove interaction listeners
-            document.removeEventListener('click', enableVideoAudio);
-            document.removeEventListener('touchstart', enableVideoAudio);
-            document.removeEventListener('keydown', enableVideoAudio);
-        }
-    }
-
-    // Update based on visible reel
-    function updateVisibleReelMedia() {
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        const containerHeight = reelsTrack.clientHeight;
-        const scrollTop = reelsTrack.scrollTop;
-        const index = Math.round(scrollTop / containerHeight);
-        
-        // Only update if the visible reel has changed
-        if (index !== currentVisibleReelIndex) {
-            currentVisibleReelIndex = index;
-            
-            // Get the visible reel
-            const visibleReel = document.querySelector(`.reel[data-index="${index}"]`);
-            
-            if (visibleReel) {
-                manageVideoPlayback(visibleReel);
-            }
-            
-            // Update progress bars
-            document.querySelectorAll('.progress-bar').forEach((bar, i) => {
-                bar.classList.toggle('active', i === index);
-            });
-        }
-    }
-
-    // ===== CORE CAROUSEL FUNCTIONS =====
-
-    window.goToSlide = function(carouselId, index) {
-        const track = document.getElementById('track-' + carouselId);
-        if (!track) return;
-        
-        const slides = track.children;
-        if (slides.length === 0) return;
-        
-        index = Math.max(0, Math.min(index, slides.length - 1));
-        
-        requestAnimationFrame(() => {
-            track.style.transform = `translateX(-${index * 100}%)`;
-            
-            const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
-            
-            const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
-            thumbnails.forEach((thumb, i) => {
-                thumb.classList.toggle('active', i === index);
-            });
-            
-            const currentSpan = document.getElementById(`current-${carouselId}`);
-            if (currentSpan) {
-                currentSpan.textContent = index + 1;
-            }
-            
-            const carousel = document.getElementById(`carousel-${carouselId}`);
-            if (carousel) {
-                carousel.setAttribute('aria-label', `Image carousel for day - slide ${index + 1} of ${slides.length}`);
-            }
-        });
-    };
-
-    function getVisibleReelIndex() {
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return 0;
-        
-        const containerHeight = reelsTrack.clientHeight;
-        const scrollTop = reelsTrack.scrollTop;
-        return Math.round(scrollTop / containerHeight);
-    }
-    
-    function initVisibleCarousel() {
-        const index = getVisibleReelIndex();
-        const visibleReel = document.querySelector(`.reel[data-index="${index}"]`);
-        
-        if (!visibleReel) return;
-        
-        const carousel = visibleReel.querySelector('.story-carousel');
-        if (!carousel) return;
-        
-        const carouselId = carousel.id.replace('carousel-', '');
-        if (carouselId && carousel.dataset.initialized !== 'true') {
-            initCarousel(carouselId);
-        }
-        
-        if (activeCarouselId && activeCarouselId !== carouselId) {
-            deactivateCarousel(activeCarouselId);
-        }
-        
-        activeCarouselId = carouselId;
-    }
-    
-    function deactivateCarousel(carouselId) {
-        const carousel = document.getElementById('carousel-' + carouselId);
-        if (!carousel) return;
-        
-        const track = document.getElementById('track-' + carouselId);
-        if (track) {
-            const newTrack = track.cloneNode(true);
-            track.parentNode.replaceChild(newTrack, track);
-        }
-        
-        carousel.dataset.initialized = 'false';
-    }
-    
-    function initCarousel(carouselId) {
-        const carousel = document.getElementById('carousel-' + carouselId);
-        const track = document.getElementById('track-' + carouselId);
-        
-        if (!track || !carousel) return;
-        if (carousel.dataset.initialized === 'true') return;
-        
-        const slides = track.children;
-        if (slides.length <= 1) {
-            carousel.dataset.initialized = 'true';
-            return;
-        }
-
-        let startX = 0;
-        let startY = 0;
-        let isDragging = false;
-        let isHorizontalSwipe = false;
-        let currentIndex = 0;
-        
-        goToSlide(carouselId, 0);
-
-        function handleTouchStart(e) {
-            const touch = e.touches[0];
-            startX = touch.clientX;
-            startY = touch.clientY;
-            isDragging = true;
-            isHorizontalSwipe = false;
-            track.classList.add('dragging');
-            track.style.transition = 'none';
-            carousel.classList.remove('horizontal-active');
-        }
-
-        function handleTouchMove(e) {
-            if (!isDragging) return;
-
-            const touch = e.touches[0];
-            const currentX = touch.clientX;
-            const currentY = touch.clientY;
-            
-            const diffX = Math.abs(currentX - startX);
-            const diffY = Math.abs(currentY - startY);
-
-            if (!isHorizontalSwipe) {
-                if (diffX > diffY && diffX > 10) {
-                    isHorizontalSwipe = true;
-                    carousel.classList.add('horizontal-active');
-                    e.preventDefault();
-                } else if (diffY > diffX && diffY > 10) {
-                    isDragging = false;
-                    track.classList.remove('dragging');
-                    track.style.transition = '';
-                    return;
-                }
-            }
-
-            if (isHorizontalSwipe) {
-                e.preventDefault();
-                
-                const diff = currentX - startX;
-                const movePercent = (diff / track.offsetWidth) * 100;
-                
-                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
-                
-                const currentOffset = -currentIndex * 100;
-                let newOffset = currentOffset + movePercent;
-
-                if (newOffset > 0) {
-                    newOffset = newOffset * 0.3;
-                }
-                if (newOffset < -(slides.length - 1) * 100) {
-                    const overshoot = newOffset + (slides.length - 1) * 100;
-                    newOffset = -(slides.length - 1) * 100 + overshoot * 0.3;
-                }
-
-                track.style.transform = `translateX(${newOffset}%)`;
-            }
-        }
-
-        function handleTouchEnd(e) {
-            if (!isDragging) return;
-
-            track.classList.remove('dragging');
-            track.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)';
-            carousel.classList.remove('horizontal-active');
-
-            if (isHorizontalSwipe) {
-                const touch = e.changedTouches[0];
-                const diff = touch.clientX - startX;
-                const threshold = track.offsetWidth * 0.15;
-                
-                const activeDot = document.querySelector(`#carousel-${carouselId} .dot.active`);
-                currentIndex = activeDot ? parseInt(activeDot.dataset.index) : 0;
-
-                if (Math.abs(diff) > threshold) {
-                    if (diff > 0 && currentIndex > 0) {
-                        currentIndex--;
-                    } else if (diff < 0 && currentIndex < slides.length - 1) {
-                        currentIndex++;
-                    }
-                }
-            }
-
-            goToSlide(carouselId, currentIndex);
-            isDragging = false;
-        }
-
-        track.addEventListener('touchstart', handleTouchStart, { passive: true });
-        track.addEventListener('touchmove', handleTouchMove, { passive: false });
-        track.addEventListener('touchend', handleTouchEnd, { passive: true });
-        track.addEventListener('touchcancel', handleTouchEnd, { passive: true });
-
-        carousel.dataset.initialized = 'true';
-    }
-
-    // ===== EVENT DELEGATION =====
-    document.addEventListener('click', function(e) {
-        const dot = e.target.closest('.dot[data-carousel]');
-        if (dot) {
-            e.preventDefault();
-            const carouselId = dot.dataset.carousel;
-            const index = parseInt(dot.dataset.index);
-            if (carouselId && !isNaN(index)) {
-                goToSlide(carouselId, index);
-            }
+    // ========== AUDIO CONTROL ==========
+    function playAudioForActivity(activityId) {
+        // Don't restart if already playing
+        if (currentlyPlayingId === activityId && currentAudioElement && !currentAudioElement.paused) {
             return;
         }
         
-        const thumbnail = e.target.closest('.thumbnail-item[data-carousel]');
-        if (thumbnail) {
-            e.preventDefault();
-            const carouselId = thumbnail.dataset.carousel;
-            const index = parseInt(thumbnail.dataset.index);
-            if (carouselId && !isNaN(index)) {
-                goToSlide(carouselId, index);
-            }
+        // Stop current audio
+        if (currentAudioElement) {
+            currentAudioElement.pause();
+            currentAudioElement.currentTime = 0;
+            
+            const oldIndicator = document.getElementById(`indicator-${currentlyPlayingId}`);
+            if (oldIndicator) oldIndicator.style.display = 'none';
         }
-    });
+        
+        // Get new audio
+        const audioElement = document.getElementById(`audio-${activityId}`);
+        if (!audioElement) {
+            currentlyPlayingId = null;
+            currentAudioElement = null;
+            return;
+        }
+        
+        // Play new audio
+        audioElement.volume = 0.7;
+        audioElement.play()
+            .then(() => {
+                currentlyPlayingId = activityId;
+                currentAudioElement = audioElement;
+                
+                const indicator = document.getElementById(`indicator-${activityId}`);
+                if (indicator) indicator.style.display = 'flex';
+            })
+            .catch(error => {
+                console.log('Audio play failed:', error);
+            });
+    }
 
-    // ===== SCROLL HANDLER =====
+    function stopAllAudio() {
+        if (currentAudioElement) {
+            currentAudioElement.pause();
+            currentAudioElement.currentTime = 0;
+            currentAudioElement = null;
+        }
+        
+        if (currentlyPlayingId) {
+            const indicator = document.getElementById(`indicator-${currentlyPlayingId}`);
+            if (indicator) indicator.style.display = 'none';
+            currentlyPlayingId = null;
+        }
+    }
+
+    // ========== SCROLL HANDLER ==========
     const reelsTrack = document.getElementById('reelsTrack');
-    
     if (reelsTrack) {
-        reelsTrack.addEventListener('scroll', () => {
+        reelsTrack.addEventListener('scroll', function() {
+            // Update progress bars
+            const scrollTop = reelsTrack.scrollTop;
+            const reelHeight = reelsTrack.clientHeight;
+            const visibleIndex = Math.round(scrollTop / reelHeight);
+            
+            document.querySelectorAll('.progress-bar').forEach(function(bar, i) {
+                if (i === visibleIndex) {
+                    bar.classList.add('active');
+                } else {
+                    bar.classList.remove('active');
+                }
+            });
+            
+            // Debounce audio change
             clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                updateVisibleReelMedia();
-                initVisibleCarousel();
-            }, 100);
+            scrollTimeout = setTimeout(function() {
+                const visibleReel = getVisibleReel();
+                if (visibleReel) {
+                    const activityId = visibleReel.dataset.activityId;
+                    playAudioForActivity(activityId);
+                } else {
+                    stopAllAudio();
+                }
+            }, 200);
         }, { passive: true });
     }
 
-    // ===== MODAL FUNCTIONS =====
-    window.openVideoModal = function(id, event) {
-        if (event) event.stopPropagation();
-        const modal = document.getElementById('video-modal-' + id);
+    // ========== PAGE VISIBILITY ==========
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden && currentAudioElement) {
+            currentAudioElement.pause();
+        } else if (!document.hidden && currentAudioElement && currentAudioElement.paused) {
+            currentAudioElement.play().catch(function() {});
+        }
+    });
+
+    // ========== VIDEO PREVIEWS ==========
+    function initVideoPreviews() {
+        // Clean up old observers
+        previewObservers.forEach(function(observer) {
+            observer.disconnect();
+        });
+        previewObservers = [];
+        
+        document.querySelectorAll('.video-preview-container').forEach(function(container) {
+            const video = container.querySelector('video');
+            if (!video) return;
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        video.play().catch(function() {});
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, { threshold: 0.3 });
+            
+            observer.observe(container);
+            previewObservers.push(observer);
+        });
+    }
+
+    // ========== CAROUSEL FUNCTIONS ==========
+    window.goToSlide = function(carouselId, index) {
+        const track = document.getElementById(`track-${carouselId}`);
+        if (!track) return;
+        
+        const slideCount = track.children.length;
+        if (slideCount === 0) return;
+        
+        // Ensure index is within bounds
+        index = Math.max(0, Math.min(index, slideCount - 1));
+        
+        // Move track
+        track.style.transform = `translateX(-${index * 100}%)`;
+        
+        // Update dots
+        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
+        dots.forEach(function(dot, i) {
+            if (i === index) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+        
+        // Update thumbnails
+        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
+        thumbnails.forEach(function(thumb, i) {
+            if (i === index) {
+                thumb.classList.add('active');
+            } else {
+                thumb.classList.remove('active');
+            }
+        });
+        
+        // Update counter
+        const counter = document.getElementById(`current-${carouselId}`);
+        if (counter) {
+            counter.textContent = index + 1;
+        }
+    };
+
+    // Initialize carousels
+    function initCarousels() {
+        document.querySelectorAll('.story-carousel').forEach(function(carousel) {
+            const carouselId = carousel.id.replace('carousel-', '');
+            const track = document.getElementById(`track-${carouselId}`);
+            
+            if (!track) return;
+            
+            // Set up dot clicks
+            const dots = carousel.querySelectorAll('.dot[data-carousel]');
+            dots.forEach(function(dot) {
+                dot.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const index = parseInt(this.dataset.index);
+                    window.goToSlide(carouselId, index);
+                });
+            });
+            
+            // Set up thumbnail clicks
+            const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
+            thumbnails.forEach(function(thumb) {
+                thumb.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const index = parseInt(this.dataset.index);
+                    window.goToSlide(carouselId, index);
+                });
+            });
+            
+            // Touch/swipe support
+            let startX = 0;
+            let currentIndex = 0;
+            let isDragging = false;
+            
+            // Get current index from active dot
+            const activeDot = carousel.querySelector('.dot.active');
+            if (activeDot) {
+                currentIndex = parseInt(activeDot.dataset.index) || 0;
+            }
+            
+            track.addEventListener('touchstart', function(e) {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                track.style.transition = 'none';
+            }, { passive: true });
+            
+            track.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const diffX = e.touches[0].clientX - startX;
+                const movePercent = (diffX / track.offsetWidth) * 100;
+                track.style.transform = `translateX(${(-currentIndex * 100) + movePercent}%)`;
+            }, { passive: false });
+            
+            track.addEventListener('touchend', function(e) {
+                if (!isDragging) return;
+                
+                const diffX = e.changedTouches[0].clientX - startX;
+                const threshold = track.offsetWidth * 0.15;
+                const slideCount = track.children.length;
+                
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX > 0 && currentIndex > 0) {
+                        currentIndex--;
+                    } else if (diffX < 0 && currentIndex < slideCount - 1) {
+                        currentIndex++;
+                    }
+                }
+                
+                track.style.transition = 'transform 0.3s ease-out';
+                window.goToSlide(carouselId, currentIndex);
+                isDragging = false;
+            }, { passive: true });
+        });
+    }
+
+    // ========== MODAL FUNCTIONS ==========
+    window.openVideoModal = function(activityId) {
+        // Pause background audio
+        if (currentAudioElement) {
+            currentAudioElement.pause();
+        }
+        
+        const modal = document.getElementById(`modal-${activityId}`);
         if (modal) {
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
             
             const video = modal.querySelector('video');
             if (video) {
-                video.muted = false;
-                video.play().catch(e => console.log('Modal play prevented:', e));
+                video.play().catch(function() {});
             }
         }
     };
 
-    window.closeVideoModal = function(id) {
-        const modal = document.getElementById('video-modal-' + id);
+    window.closeModal = function(activityId) {
+        const modal = document.getElementById(`modal-${activityId}`);
         if (modal) {
             modal.classList.remove('show');
             document.body.style.overflow = '';
             
             const video = modal.querySelector('video');
-            if (video) { 
-                video.pause(); 
-                video.currentTime = 0; 
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
             }
+            
+            // Resume audio if it was playing
+            setTimeout(function() {
+                if (currentlyPlayingId === activityId && currentAudioElement) {
+                    currentAudioElement.play().catch(function() {});
+                }
+            }, 300);
         }
     };
 
-    // ===== LOVE HANDLER =====
+    // ========== LOVE HANDLER ==========
     window.handleLove = function(id, event) {
         event.stopPropagation();
+        event.preventDefault();
+        
         const btn = document.getElementById('love-' + id);
         const icon = btn.querySelector('i');
         const countSpan = document.getElementById('love-count-' + id);
         const wasLoved = btn.classList.contains('loved');
         
         btn.classList.toggle('loved');
-        icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
+        
+        if (wasLoved) {
+            icon.className = 'far fa-heart';
+        } else {
+            icon.className = 'fas fa-heart';
+        }
         
         let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-        countSpan.textContent = wasLoved ? (count - 1).toLocaleString() : (count + 1).toLocaleString();
+        if (wasLoved) {
+            count = Math.max(0, count - 1);
+        } else {
+            count = count + 1;
+        }
+        countSpan.textContent = count.toLocaleString();
     };
 
-    // ===== CAPTION TOGGLE =====
+    // ========== CAPTION HANDLER ==========
     window.toggleCaption = function(id, event) {
         event.stopPropagation();
         const caption = document.getElementById('caption-' + id);
+        const moreLink = event.target;
+        
         caption.classList.toggle('expanded');
-        event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
+        if (caption.classList.contains('expanded')) {
+            moreLink.textContent = 'less';
+        } else {
+            moreLink.textContent = 'more';
+        }
     };
 
-    // ===== COMMENTS / SHARE STUBS =====
+    // ========== COMMENTS HANDLER ==========
     window.openComments = function(id, e) { 
         e.stopPropagation(); 
-        alert('Comments panel - ready for backend implementation'); 
+        e.preventDefault();
+        console.log('Comments for:', id);
     };
-    
+
+    // ========== SHARE HANDLER ==========
     window.openShareMenu = function(id, e) { 
         e.stopPropagation(); 
+        e.preventDefault();
+        
         if (navigator.share) {
             navigator.share({
                 title: document.title,
                 text: 'Check out this journey moment',
                 url: window.location.href + '#activity-' + id
-            }).catch(() => {
-                alert('Share panel - ready for backend implementation');
-            });
+            }).catch(function() {});
         } else {
-            alert('Share panel - ready for backend implementation');
+            console.log('Share menu for:', id);
         }
     };
 
-    // ===== GO TO REEL =====
+    // ========== GO TO REEL ==========
     window.goToReel = function(index) {
-        if (reelsTrack) {
-            const containerHeight = reelsTrack.clientHeight;
-            reelsTrack.scrollTo({
-                top: index * containerHeight,
-                behavior: 'smooth'
-            });
-            
-            setTimeout(() => {
-                updateVisibleReelMedia();
-            }, 300);
-        }
-    };
-
-    // ===== INITIALIZE =====
-    function initialize() {
-        // Ensure all videos start muted
-        document.querySelectorAll('.reel-media video').forEach(video => {
-            video.muted = true;
-            video.load(); // Reload to ensure muted state
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
+        
+        reelsTrack.scrollTo({
+            top: index * reelsTrack.clientHeight,
+            behavior: 'smooth'
         });
         
-        // Initialize first reel
-        updateVisibleReelMedia();
-        initVisibleCarousel();
-        
-        // Set up intersection observer as fallback
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const reel = entry.target;
-                        const index = parseInt(reel.dataset.index || '0');
-                        if (index === currentVisibleReelIndex) {
-                            manageVideoPlayback(reel);
-                        }
-                    }
+        setTimeout(function() {
+            const visibleReel = getVisibleReel();
+            if (visibleReel) {
+                playAudioForActivity(visibleReel.dataset.activityId);
+            }
+        }, 300);
+    };
+
+    // ========== KEYBOARD NAVIGATION ==========
+    document.addEventListener('keydown', function(e) {
+        if (document.querySelector('.modal.show')) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(function(modal) {
+                    const id = modal.id.replace('modal-', '');
+                    window.closeModal(id);
                 });
-            }, {
-                threshold: 0.7
-            });
-            
-            document.querySelectorAll('.reel').forEach(reel => {
-                observer.observe(reel);
-            });
+            }
+            return;
         }
         
-        // Set up interaction listeners for audio
-        document.addEventListener('click', enableVideoAudio);
-        document.addEventListener('touchstart', enableVideoAudio);
-        document.addEventListener('keydown', enableVideoAudio);
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
         
-        // Hide swipe indicator after 3 seconds
-        setTimeout(() => {
-            document.querySelectorAll('.swipe-indicator').forEach(el => {
-                el.style.display = 'none';
+        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
+        const totalReels = document.querySelectorAll('.reel').length;
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            window.goToReel(Math.max(0, currentIndex - 1));
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
+        }
+    });
+
+    // ========== INITIALIZATION ==========
+    function initialize() {
+        console.log('Initializing...');
+        
+        // Initialize carousels
+        initCarousels();
+        
+        // Initialize video previews
+        initVideoPreviews();
+        
+        // Preload audio (but don't play)
+        document.querySelectorAll('.background-audio').forEach(function(audio) {
+            audio.load();
+            audio.volume = 0.7;
+        });
+        
+        // Start with first reel
+        setTimeout(function() {
+            const visibleReel = getVisibleReel();
+            if (visibleReel) {
+                const activityId = visibleReel.dataset.activityId;
+                playAudioForActivity(activityId);
+            }
+        }, 1000);
+        
+        // Hide swipe indicators
+        setTimeout(function() {
+            document.querySelectorAll('.swipe-indicator').forEach(function(el) {
+                el.style.opacity = '0';
+                setTimeout(function() {
+                    el.style.display = 'none';
+                }, 500);
             });
         }, 3000);
+        
+        console.log('Ready!');
     }
 
-    // Run initialization after DOM is ready
+    // Start
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initialize);
     } else {
