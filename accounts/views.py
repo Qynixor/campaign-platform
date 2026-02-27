@@ -52,7 +52,26 @@ from collections import defaultdict
 
 from main.models import Campaign
 from main.models import SoundTribe
+from django.db import connection, connections
+from django.db.utils import OperationalError
+from itertools import chain
+from collections import defaultdict
+import json
+import time
+import traceback
+
 def index(request):
+    """
+    Homepage view with proper database connection handling
+    FIXED: Added connection health checks and retry logic
+    """
+    # Ensure we have a fresh connection at the start
+    try:
+        connection.close_if_unusable_or_obsolete()
+        connection.ensure_connection()
+    except:
+        pass  # Let the view handle connection errors
+    
     user_profile = None
     unread_notifications = []
     unread_messages_count = 0
@@ -62,126 +81,196 @@ def index(request):
     category_filter = request.GET.get('category', '')
 
     if request.user.is_authenticated:
-        user_profile = get_object_or_404(Profile, user=request.user)
-        user_profile.last_campaign_check = timezone.now()
-        user_profile.save()
-        unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-        user_chats = Chat.objects.filter(participants=request.user)
-        unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
-
-    # Fetch public campaigns, filter by category if selected
-    campaigns = Campaign.objects.filter(visibility='public')
-
-    if category_filter:
-        campaigns = campaigns.filter(category=category_filter)
-
-    campaigns = campaigns.select_related('user') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')\
-        .select_related('user').prefetch_related('tags') 
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)
-        
-
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    engaged_users = set()
- 
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
         try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
+            with transaction.atomic():
+                user_profile = get_object_or_404(Profile, user=request.user)
+                user_profile.last_campaign_check = timezone.now()
+                user_profile.save()
+                unread_notifications = list(Notification.objects.filter(user=request.user, viewed=False))
+                user_chats = Chat.objects.filter(participants=request.user)
+                unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+        except OperationalError as e:
+            print(f"Database error in authenticated section: {e}")
+            # Continue with limited functionality
 
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
+    # Fetch public campaigns with retry logic
+    campaigns = []
+    trending_campaigns = []
+    
+    try:
+        # Use a fresh connection for complex queries
+        connection.close_if_unusable_or_obsolete()
+        
+        # Campaigns query with retry
+        for attempt in range(3):
+            try:
+                campaigns_query = Campaign.objects.filter(visibility='public')
+
+                if category_filter:
+                    campaigns_query = campaigns_query.filter(category=category_filter)
+
+                campaigns = list(campaigns_query.select_related('user') \
+                    .annotate(love_count_annotated=Count('loves')) \
+                    .filter(love_count_annotated__gte=1) \
+                    .order_by('-love_count_annotated')\
+                    .select_related('user').prefetch_related('tags')[:50])  # Limit to prevent memory issues
+                break
+            except OperationalError as e:
+                if attempt < 2:
+                    print(f"🔄 Retrying campaigns query (attempt {attempt + 2}/3)...")
+                    connection.close()
+                    time.sleep(1)
+                else:
+                    raise
+
+        # Trending campaigns with retry
+        for attempt in range(3):
+            try:
+                trending_query = Campaign.objects.filter(visibility='public') \
+                    .annotate(love_count_annotated=Count('loves')) \
+                    .filter(love_count_annotated__gte=1)
+
+                if category_filter:
+                    trending_query = trending_query.filter(category=category_filter)
+
+                trending_campaigns = list(trending_query.order_by('-love_count_annotated')[:10])
+                break
+            except OperationalError as e:
+                if attempt < 2:
+                    print(f"🔄 Retrying trending query (attempt {attempt + 2}/3)...")
+                    connection.close()
+                    time.sleep(1)
+                else:
+                    raise
+
+    except OperationalError as e:
+        print(f"❌ Database error in campaign queries: {e}")
+        # Return a simplified page with error message
+        context = {
+            'campaigns': [],
+            'trending_campaigns': [],
+            'user_profile': user_profile,
+            'unread_notifications': unread_notifications,
+            'unread_messages_count': unread_messages_count,
+            'show_login_button': show_login_button,
+            'categories': [],
+            'selected_category': category_filter,
+            'top_contributors': [],
+            'suggested_users': [],
+            'user_joined_status': {},
+            'error_message': "Temporary connection issue. Please refresh the page."
+        }
+        return render(request, 'accounts/index.html', context)
+
+    # Top Contributors logic - with connection handling
+    top_contributors = []
+    try:
+        # Use list() to force evaluation and catch errors early
+        love_pairs = list(Love.objects.values_list('user_id', 'campaign_id'))
+        comment_pairs = list(Comment.objects.values_list('user_id', 'campaign_id'))
+        view_pairs = list(CampaignView.objects.values_list('user_id', 'campaign_id'))
+        activity_love_pairs = list(ActivityLove.objects.values_list('user_id', 'activity__campaign_id'))
+        activity_comment_pairs = list(ActivityComment.objects.values_list('user_id', 'activity__campaign_id'))
+
+        # Combine all engagement pairs
+        all_pairs = chain(love_pairs, comment_pairs, view_pairs,
+                          activity_love_pairs, activity_comment_pairs)
+
+        # Count number of unique campaigns each user engaged with
+        user_campaign_map = defaultdict(set)
+
+        for user_id, campaign_id in all_pairs:
+            if user_id and campaign_id:  # Skip null values
+                user_campaign_map[user_id].add(campaign_id)
+
+        # Build a list of contributors with their campaign engagement count
+        contributor_data = []
+        for user_id, campaign_set in list(user_campaign_map.items())[:50]:  # Limit processing
+            try:
+                profile = Profile.objects.get(user__id=user_id)
+                contributor_data.append({
+                    'user': profile.user,
+                    'image': profile.image,
+                    'campaign_count': len(campaign_set),
+                })
+            except Profile.DoesNotExist:
+                continue
+
+        # Sort contributors by campaign_count descending
+        top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
+    except OperationalError as e:
+        print(f"Database error in contributors logic: {e}")
+        top_contributors = []  # Fallback to empty list
 
     # Suggested Users (only for authenticated users)
     suggested_users = []
-    if request.user.is_authenticated:
-        current_user_following = request.user.following.all()  # Get all Follow objects
-        following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
-        all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-        suggested_users = []
-        for profile in all_profiles:
-            similarity_score = calculate_similarity(user_profile, profile)
-            if similarity_score >= 0.5:
-                followers_count = Follow.objects.filter(followed=profile.user).count()
-                suggested_users.append({
-                    'user': profile.user,
-                    'followers_count': followers_count
-                })
+    if request.user.is_authenticated and user_profile:
+        try:
+            current_user_following = request.user.following.all()
+            following_user_ids = [follow.followed_id for follow in current_user_following]
+            all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)[:20]  # Limit
 
-        # Limit to only 2 suggested users
-        suggested_users = suggested_users[:2]
+            suggested_users = []
+            for profile in all_profiles:
+                similarity_score = calculate_similarity(user_profile, profile)
+                if similarity_score >= 0.5:
+                    followers_count = Follow.objects.filter(followed=profile.user).count()
+                    suggested_users.append({
+                        'user': profile.user,
+                        'followers_count': followers_count
+                    })
+                    if len(suggested_users) >= 2:
+                        break
+
+            # Limit to only 2 suggested users
+            suggested_users = suggested_users[:2]
+        except OperationalError as e:
+            print(f"Database error in suggested users: {e}")
+            suggested_users = []
 
     # Fetch available categories
-    categories = Campaign.objects.values_list('category', flat=True).distinct()
+    try:
+        categories = list(Campaign.objects.values_list('category', flat=True).distinct()[:50])
+    except OperationalError:
+        categories = []
 
     form = SubscriptionForm()
-    ads = NativeAd.objects.all()
+    ads = list(NativeAd.objects.all()[:10])  # Limit ads
 
-
-    # =============================
-    # BUILD TAGS DICTIONARY (SAFE)
-    # =============================
     # =============================
     # BUILD TAGS DICTIONARY (SAFE)
     # =============================
     campaign_tags_dict = {}
 
     for camp in campaigns:
-        campaign_tags_dict[str(camp.id)] = list(
-            camp.tags.values_list('name', flat=True)
-        )
+        try:
+            campaign_tags_dict[str(camp.id)] = list(
+                camp.tags.values_list('name', flat=True)
+            )
+        except:
+            campaign_tags_dict[str(camp.id)] = []
 
     campaign_tags_json = json.dumps(campaign_tags_dict)
+    
     # Create a dictionary to store join status for each campaign
     user_joined_status = {}
     
-    # Use user_profile instead of request.user
-    joined_campaign_ids = SoundTribe.objects.filter(
-        user=user_profile  # Changed from request.user to user_profile
-    ).values_list('campaign_id', flat=True)
-    
-    # Convert to set for faster lookup
-    joined_set = set(joined_campaign_ids)
-    
-    for campaign in campaigns:
-        user_joined_status[campaign.id] = campaign.id in joined_set
+    if user_profile:
+        try:
+            joined_campaign_ids = list(SoundTribe.objects.filter(
+                user=user_profile
+            ).values_list('campaign_id', flat=True))
+            
+            # Convert to set for faster lookup
+            joined_set = set(joined_campaign_ids)
+            
+            for campaign in campaigns:
+                user_joined_status[campaign.id] = campaign.id in joined_set
+        except OperationalError:
+            user_joined_status = {}
+
     context = {
-        'campaign_tags_json': campaign_tags_json,  # FIXED
+        'campaign_tags_json': campaign_tags_json,
         'campaigns': campaigns,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
@@ -194,11 +283,10 @@ def index(request):
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
         'suggested_users': suggested_users,
-        'user_joined_status': user_joined_status,  # Pass to template
+        'user_joined_status': user_joined_status,
     }
 
     return render(request, 'accounts/index.html', context)
-
 
 
 

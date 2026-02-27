@@ -92,6 +92,7 @@ MIDDLEWARE = [
 
     'buskx.middlewares.LegalLinksMiddleware',
     'buskx.middlewares.WWWRedirectMiddleware',  # 🔧 MUST be 301
+  
 ]
 
 ROOT_URLCONF = 'buskx.urls'
@@ -116,46 +117,15 @@ TEMPLATES = [
     },
 ]
 
-# =====================================================
-# DATABASE - FIXED FOR NEON
-# =====================================================
 import dj_database_url
 
-# Parse database URL - remove custom options for Neon pooler
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
-        conn_max_age=600,  # Keep at 600 seconds (Neon's default)
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600,
         ssl_require=True,
     )
 }
-
-# If you need to use Neon's unpooled connection (for long-running tasks),
-# you can create a separate database config:
-import re
-
-# Parse the DATABASE_URL to create both pooled and direct connections
-db_url = os.getenv("DATABASE_URL")
-
-# Pooled connection (for normal operations)
-DATABASES['default'] = dj_database_url.parse(
-    db_url,
-    conn_max_age=600,
-    ssl_require=True,
-)
-
-# Direct/unpooled connection (for video processing tasks)
-if '-pooler' in db_url:
-    # Remove -pooler from the hostname to get direct connection
-    direct_url = re.sub(r'-pooler\.', '.', db_url)
-    DATABASES['direct'] = dj_database_url.parse(
-        direct_url,
-        conn_max_age=0,  # Don't persist direct connections
-        ssl_require=True,
-    )
-else:
-    DATABASES['direct'] = DATABASES['default'].copy()
-    DATABASES['direct']['CONN_MAX_AGE'] = 0
 
 # =====================================================
 # CSRF

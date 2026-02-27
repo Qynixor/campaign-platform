@@ -32,3 +32,29 @@ class WWWRedirectMiddleware:
             return HttpResponsePermanentRedirect(new_url)  # Fixed: removed extra ]
         
         return self.get_response(request)
+
+
+# middleware.py
+from django.db import connection
+from django.db.utils import OperationalError
+import time
+
+class DatabaseHealthMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Check and refresh database connection if needed
+        try:
+            connection.ensure_connection()
+        except OperationalError:
+            # Connection is dead, close it and try to reconnect
+            connection.close()
+            try:
+                connection.ensure_connection()
+            except OperationalError as e:
+                # Log the error but continue - views will handle it
+                print(f"Database connection error: {e}")
+        
+        response = self.get_response(request)
+        return response
