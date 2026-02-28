@@ -138,6 +138,36 @@ body {
     z-index: 1;
 }
 
+/* Optimize MAIN image rendering with brightness and contrast enhancements */
+.reel-media img,
+.carousel-slide img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: bicubic;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    
+    /* ENHANCED: Add brightness and contrast for more vibrant images */
+    filter: brightness(1.08) contrast(1.12) saturate(1.1);
+    -webkit-filter: brightness(1.08) contrast(1.12) saturate(1.1);
+}
+
+.reel-media img.loaded,
+.carousel-slide img.loaded {
+    opacity: 1;
+}
+
+/* High-DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .reel-media img,
+    .carousel-slide img {
+        image-rendering: -webkit-optimize-contrast;
+    }
+}
+
 /* Story Carousel - same layer as media */
 .story-carousel {
     position: relative;
@@ -262,80 +292,16 @@ body {
     width: 32px;
 }
 
+/* Media counter - not needed anymore since it's in info panel */
 .media-counter {
-    position: absolute;
-    top: max(env(safe-area-inset-top, 60px), 60px);
-    right: 16px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    padding: 8px 12px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 15;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    font-weight: 600;
-    pointer-events: none;
-}
-
-/* Thumbnail strip */
-.thumbnail-strip {
-    position: absolute;
-    bottom: 160px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 10px;
-    z-index: 15;
-    pointer-events: none;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.thumbnail-strip::-webkit-scrollbar {
     display: none;
 }
 
-.thumbnail-item {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    opacity: 0.7;
-    pointer-events: auto;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    flex-shrink: 0;
-}
-
-.thumbnail-item:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.thumbnail-item.active {
-    opacity: 1;
-    border-color: #fff;
-    transform: scale(1.1);
-}
-
-.thumbnail-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-/* Video preview - change from bottom left to top left */
+/* Video preview - clean without filters */
 .video-preview-container {
     position: absolute;
-    top: 100px; /* Changed from bottom: 240px */
-    left: 16px; /* Slightly reduced from 20px */
+    top: 100px;
+    left: 16px;
     width: 80px;
     height: 110px;
     border-radius: 16px;
@@ -351,7 +317,7 @@ body {
 /* Adjust for mobile */
 @media (max-width: 767px) {
     .video-preview-container {
-        top: 100px; /* Consistent positioning */
+        top: 100px;
         left: 12px;
         width: 70px;
         height: 95px;
@@ -376,7 +342,6 @@ body {
     }
 }
 
-
 .video-preview-container:hover {
     transform: scale(1.05);
     border-color: #fff;
@@ -386,24 +351,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-/* Slide counter */
-.slide-counter {
-    position: absolute;
-    bottom: 120px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 15;
-    pointer-events: none;
+    /* NO FILTERS - keep original */
 }
 
 /* Audio indicator */
@@ -426,9 +374,7 @@ body {
     opacity: 0.8;
 }
 
-
-
-/* Info panel - FIXED SPACING */
+/* Info panel */
 .info-panel {
     position: absolute;
     left: 16px;
@@ -446,17 +392,16 @@ body {
     }
 }
 
-/* Mobile info panel - FIXED SPACING */
+/* Mobile info panel */
 @media (max-width: 767px) {
     .info-panel {
-        bottom: 120px; /* Changed from 150px to 120px */
+        bottom: 120px;
         left: 16px;
         right: 70px;
         max-width: calc(100% - 90px);
         z-index: 25;
     }
 }
-
 
 .username {
     font-weight: 600;
@@ -527,7 +472,7 @@ body {
     pointer-events: auto;
 }
 
-/* Thumbnail strip - inside info panel - ADDED SPACING */
+/* Thumbnail strip - inside info panel - NO FILTERS */
 .info-panel .thumbnail-strip {
     position: relative;
     bottom: auto;
@@ -537,7 +482,7 @@ body {
     justify-content: flex-start;
     gap: 6px;
     padding: 4px 0;
-    margin: 8px 0 4px; /* Increased top margin from 6px to 8px */
+    margin: 8px 0 4px;
     z-index: 26;
     pointer-events: auto;
     overflow-x: auto;
@@ -579,9 +524,11 @@ body {
     height: 100%;
     object-fit: cover;
     display: block;
+    image-rendering: -webkit-optimize-contrast;
+    /* NO FILTERS - keep thumbnails original */
 }
 
-/* Slide counter - inside info panel - ADDED SPACING */
+/* Slide counter - inside info panel */
 .info-panel .slide-counter {
     position: relative;
     bottom: auto;
@@ -595,7 +542,7 @@ body {
     display: inline-flex;
     width: fit-content;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    margin: 8px 0 0; /* Increased from 4px to 8px */
+    margin: 8px 0 0;
     font-weight: 500;
     pointer-events: auto;
 }
@@ -811,44 +758,38 @@ body {
 
 .action i { 
     font-size: 28px; 
-    color: #ffffff; /* Plain white */
-    text-shadow: none; /* Remove text shadow */
+    color: #ffffff;
+    text-shadow: none;
 }
 
 .action span { 
     font-size: 12px; 
     font-weight: 600;
-    color: #ffffff; /* Plain white */
-    text-shadow: none; /* Remove text shadow */
+    color: #ffffff;
+    text-shadow: none;
 }
 
 .action-profile {
     width: 44px;
     height: 44px;
     border-radius: 44px;
-    border: 2px solid #ffffff; /* Plain white border */
+    border: 2px solid #ffffff;
     object-fit: cover;
     margin-bottom: 4px;
-    box-shadow: none; /* Remove shadow */
+    box-shadow: none;
 }
 
 .action.loved i { 
-    color: #ff3b30; /* Keep red for loved state */
+    color: #ff3b30;
 }
 
-
-
-/* Small mobile adjustments - FIXED SPACING */
+/* Small mobile adjustments */
 @media (max-width: 380px) {
     .info-panel {
-        bottom: 100px; /* Adjusted for smaller screens */
+        bottom: 100px;
         left: 12px;
         right: 65px;
     }
-    
-    @media (max-width: 767px) {
-      
-
     
     .info-panel .thumbnail-item {
         width: 36px;
@@ -903,16 +844,30 @@ body {
                                  data-activity-id="{{ activity.id }}"
                                  data-initialized="false">
                                 
-                                <!-- Image track -->
+                                <!-- Image track with HD optimized images -->
                                 <div class="carousel-track" id="track-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
                                     <div class="carousel-slide">
                                         <picture>
-                                            <source srcset="{{ screenshot.image.url }}?q_auto&f_webp" type="image/webp">
-                                            <img src="{{ screenshot.image.url }}?q_auto&f_auto" 
-                                                 loading="lazy" 
-                                                 alt="Day {{ activity.day_number }}"
-                                                 draggable="false">
+                                            <!-- WebP with multiple resolutions for different screen sizes -->
+                                            <source 
+                                                srcset="{{ screenshot.image.url }}?w=400&h=800&fit=crop&q=95&f=webp 400w,
+                                                        {{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=90&f=webp 800w,
+                                                        {{ screenshot.image.url }}?w=1200&h=2400&fit=crop&q=85&f=webp 1200w"
+                                                sizes="(max-width: 767px) 100vw, 450px"
+                                                type="image/webp">
+                                            <!-- Fallback JPEG with high quality -->
+                                            <img 
+                                                src="{{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=95&f=auto" 
+                                                srcset="{{ screenshot.image.url }}?w=400&h=800&fit=crop&q=95&f=auto 400w,
+                                                        {{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=90&f=auto 800w,
+                                                        {{ screenshot.image.url }}?w=1200&h=2400&fit=crop&q=85&f=auto 1200w"
+                                                sizes="(max-width: 767px) 100vw, 450px"
+                                                loading="lazy"
+                                                alt="Day {{ activity.day_number }}"
+                                                draggable="false"
+                                                class="carousel-image"
+                                                style="width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast;">
                                         </picture>
                                     </div>
                                     {% endfor %}
@@ -927,7 +882,7 @@ body {
                                        data-activity-id="{{ activity.id }}">
                                 </audio>
                                 
-                                <!-- Clean video preview - no overlay icon -->
+                                <!-- Clean video preview - no filters, just original -->
                                 <div class="video-preview-container" id="preview-{{ activity.id }}" data-activity-id="{{ activity.id }}" onclick="openVideoModal('{{ activity.id }}')">
                                     <video class="video-preview-player" 
                                            src="{{ activity.file.url }}" 
@@ -935,7 +890,7 @@ body {
                                            loop
                                            playsinline
                                            preload="metadata"
-                                           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
+                                           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=160&h=220&fit=crop&q=80{% endif %}">
                                     </video>
                                 </div>
                                 
@@ -971,11 +926,28 @@ body {
                             {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' %}
                                 <!-- Single video -->
                                 <video src="{{ activity.file.url }}" loop playsinline controls
-                                       poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
+                                       poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=800&h=1600&fit=crop&q=80{% endif %}">
                                 </video>
                             {% else %}
-                                <!-- Single image -->
-                                <img src="{{ activity.file.url }}" loading="lazy" alt="Day {{ activity.day_number }}">
+                                <!-- Single image with HD optimization and brightness -->
+                                <picture>
+                                    <source 
+                                        srcset="{{ activity.file.url }}?w=400&h=800&fit=crop&q=95&f=webp 400w,
+                                                {{ activity.file.url }}?w=800&h=1600&fit=crop&q=90&f=webp 800w,
+                                                {{ activity.file.url }}?w=1200&h=2400&fit=crop&q=85&f=webp 1200w"
+                                        sizes="(max-width: 767px) 100vw, 450px"
+                                        type="image/webp">
+                                    <img 
+                                        src="{{ activity.file.url }}?w=800&h=1600&fit=crop&q=95&f=auto" 
+                                        srcset="{{ activity.file.url }}?w=400&h=800&fit=crop&q=95&f=auto 400w,
+                                                {{ activity.file.url }}?w=800&h=1600&fit=crop&q=90&f=auto 800w,
+                                                {{ activity.file.url }}?w=1200&h=2400&fit=crop&q=85&f=auto 1200w"
+                                        sizes="(max-width: 767px) 100vw, 450px"
+                                        loading="lazy" 
+                                        alt="Day {{ activity.day_number }}"
+                                        class="carousel-image"
+                                        style="width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast;">
+                                </picture>
                             {% endif %}
                         {% else %}
                             <!-- Text update -->
@@ -1023,28 +995,32 @@ body {
                             <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
                         </div>
                         
-                        <!-- Media counter only (standalone) -->
+                        <!-- Media counter -->
                         <div class="media-counter">
                             <i class="fas fa-images"></i>
                             <span>{{ activity.screenshot_count_total }}</span>
                         </div>
                         
-                        <!-- Thumbnails - above the slide counter -->
+                        <!-- Thumbnails - ORIGINAL QUALITY, NO FILTERS -->
                         {% if activity.screenshot_count_total > 1 %}
                         <div class="thumbnail-strip" id="strip-{{ activity.id }}">
                             {% for screenshot in activity.screenshots_list %}
                             <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
                                  data-carousel="{{ activity.id }}"
                                  data-index="{{ forloop.counter0 }}">
-                                <img src="{{ screenshot.image.url }}?w=60&h=60&fit=crop" 
-                                     loading="lazy" 
-                                     alt="thumb">
+                                <img 
+                                    src="{{ screenshot.image.url }}?w=80&h=80&fit=crop&q=85&f=auto" 
+                                    srcset="{{ screenshot.image.url }}?w=80&h=80&fit=crop&q=85&f=auto 1x,
+                                            {{ screenshot.image.url }}?w=160&h=160&fit=crop&q=80&f=auto 2x"
+                                    loading="lazy" 
+                                    alt="thumb"
+                                    style="image-rendering: -webkit-optimize-contrast;">
                             </div>
                             {% endfor %}
                         </div>
                         {% endif %}
                         
-                        <!-- Slide counter - below thumbnail strip -->
+                        <!-- Slide counter -->
                         {% if activity.screenshot_count_total > 1 %}
                         <div class="slide-counter" id="counter-{{ activity.id }}">
                             <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
@@ -1112,7 +1088,7 @@ body {
         <div style="font-weight:600; margin-bottom:12px;">Recent</div>
         {% for activity in activities|slice:":5" %}
         <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
-            <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% elif activity.file %}{{ activity.file.url }}{% endif %}')"></div>
+            <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=96&h=96&fit=crop&q=80{% elif activity.file %}{{ activity.file.url }}?w=96&h=96&fit=crop&q=80{% endif %}')"></div>
             <div>
                 <div style="font-weight:600;">Day {{ activity.day_number }}</div>
                 <div style="font-size:12px; opacity:0.6;">{{ activity.content|striptags|truncatechars:30 }}</div>
@@ -1160,6 +1136,31 @@ body {
                 }
             });
         });
+    }
+
+    // ========== IMAGE OPTIMIZATION ==========
+    function optimizeImageLoading() {
+        const images = document.querySelectorAll('.carousel-slide img.carousel-image');
+        
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.classList.add('loaded');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: '50px 0px',
+                threshold: 0.01
+            });
+            
+            images.forEach(img => imageObserver.observe(img));
+        } else {
+            // Fallback for older browsers
+            images.forEach(img => img.classList.add('loaded'));
+        }
     }
 
     // ========== MODAL FUNCTIONS ==========
@@ -1229,7 +1230,7 @@ body {
     window.openComments = function(id, e) { 
         e.stopPropagation(); 
         e.preventDefault();
-        console.log('Comments for:', id);
+        // Implement your comments logic here
     };
 
     window.openShareMenu = function(id, e) { 
@@ -1243,7 +1244,8 @@ body {
                 url: window.location.href + '#activity-' + id
             }).catch(function() {});
         } else {
-            console.log('Share menu for:', id);
+            // Fallback
+            prompt('Copy this link:', window.location.href + '#activity-' + id);
         }
     };
 
@@ -1404,6 +1406,9 @@ body {
         
         // Initialize carousels
         initCarousels();
+        
+        // Optimize image loading
+        optimizeImageLoading();
         
         // Hide swipe indicators
         setTimeout(function() {
