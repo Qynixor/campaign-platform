@@ -9,9 +9,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    
     <style>
-  * {
+       * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -330,12 +331,11 @@ body {
     object-fit: cover;
     display: block;
 }
-
-/* Video preview */
+/* Video preview - change from bottom left to top left */
 .video-preview-container {
     position: absolute;
-    bottom: 240px;
-    left: 20px;
+    top: 100px; /* Changed from bottom: 240px */
+    left: 16px; /* Slightly reduced from 20px */
     width: 80px;
     height: 110px;
     border-radius: 16px;
@@ -347,6 +347,35 @@ body {
     transition: all 0.2s ease;
     pointer-events: auto;
 }
+
+/* Adjust for mobile */
+@media (max-width: 767px) {
+    .video-preview-container {
+        top: 100px; /* Consistent positioning */
+        left: 12px;
+        width: 70px;
+        height: 95px;
+    }
+}
+
+/* Adjust for small mobile */
+@media (max-width: 380px) {
+    .video-preview-container {
+        top: 90px;
+        left: 10px;
+        width: 60px;
+        height: 82px;
+    }
+}
+
+/* Adjust for desktop if needed */
+@media (min-width: 768px) {
+    .video-preview-container {
+        top: 100px;
+        left: 20px;
+    }
+}
+
 
 .video-preview-container:hover {
     transform: scale(1.05);
@@ -416,19 +445,15 @@ body {
     }
 }
 
-/* Mobile action buttons */
+/* Mobile action buttons - FIXED SPACING */
 @media (max-width: 767px) {
     .actions {
-        top: 50%;
-        transform: translateY(-50%);
-        bottom: auto;
-        gap: max(12px, min(20px, 4vh)); /* Responsive gap based on viewport height */
-    }
-    
-    .info-panel {
-        bottom: max(15px, min(25px, 3vh)); /* Responsive bottom spacing */
+        top: auto;
+        bottom: 70px; /* Changed from 80px to 70px */
+        transform: none;
     }
 }
+
 .action {
     display: flex;
     flex-direction: column;
@@ -469,7 +494,7 @@ body {
     color: #ff3b30; 
 }
 
-/* Info panel - above gradient but below actions */
+/* Info panel - FIXED SPACING */
 .info-panel {
     position: absolute;
     left: 16px;
@@ -487,14 +512,17 @@ body {
     }
 }
 
-/* Mobile info panel */
+/* Mobile info panel - FIXED SPACING */
 @media (max-width: 767px) {
     .info-panel {
-        bottom: 25px;
+        bottom: 120px; /* Changed from 150px to 120px */
+        left: 16px;
         right: 70px;
         max-width: calc(100% - 90px);
+        z-index: 25;
     }
 }
+
 
 .username {
     font-weight: 600;
@@ -542,6 +570,100 @@ body {
     flex-wrap: wrap;
     pointer-events: auto;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    margin-bottom: 8px;
+}
+
+/* Media counter - inside info panel */
+.info-panel .media-counter {
+    position: relative;
+    top: auto;
+    right: auto;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-weight: 500;
+    margin: 4px 0 6px;
+    pointer-events: auto;
+}
+
+/* Thumbnail strip - inside info panel - ADDED SPACING */
+.info-panel .thumbnail-strip {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    display: flex;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 4px 0;
+    margin: 8px 0 4px; /* Increased top margin from 6px to 8px */
+    z-index: 26;
+    pointer-events: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.info-panel .thumbnail-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.info-panel .thumbnail-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+    pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+}
+
+.info-panel .thumbnail-item:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.info-panel .thumbnail-item.active {
+    opacity: 1;
+    border-color: #fff;
+    transform: scale(1.1);
+}
+
+.info-panel .thumbnail-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Slide counter - inside info panel - ADDED SPACING */
+.info-panel .slide-counter {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: inline-flex;
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    margin: 8px 0 0; /* Increased from 4px to 8px */
+    font-weight: 500;
+    pointer-events: auto;
 }
 
 /* Swipe indicator */
@@ -710,11 +832,23 @@ body {
     display: none;
 }
 
-/* Small mobile adjustments */
+/* Small mobile adjustments - FIXED SPACING */
 @media (max-width: 380px) {
     .info-panel {
-        right: 65px;
+        bottom: 100px; /* Adjusted for smaller screens */
         left: 12px;
+        right: 65px;
+    }
+    
+    @media (max-width: 767px) {
+        .actions {
+            bottom: 60px; /* Adjusted for smaller screens */
+        }
+    }
+    
+    .info-panel .thumbnail-item {
+        width: 36px;
+        height: 36px;
     }
     
     .action i {
@@ -733,256 +867,6 @@ body {
     .thumbnail-item {
         width: 36px;
         height: 36px;
-    }
-}
-
-/* Height-based adjustments for small devices */
-@media (max-height: 700px) {
-    /* Reduce spacing between elements */
-    .thumbnail-strip {
-        bottom: 130px !important;
-        gap: 4px !important;
-    }
-    
-    .thumbnail-item {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .slide-counter {
-        bottom: 95px !important;
-        font-size: 11px;
-        padding: 4px 10px;
-    }
-    
-    .video-preview-container {
-        bottom: 180px !important;
-        width: 55px !important;
-        height: 80px !important;
-    }
-    
-    .actions {
-        gap: 12px !important;
-    }
-    
-    .action i {
-        font-size: 24px !important;
-    }
-    
-    .action span {
-        font-size: 10px !important;
-    }
-    
-    .action-profile {
-        width: 38px !important;
-        height: 38px !important;
-    }
-    
-    .info-panel {
-        bottom: 15px !important;
-    }
-    
-    .username {
-        font-size: 14px;
-        margin-bottom: 2px;
-    }
-    
-    .caption {
-        font-size: 13px;
-        -webkit-line-clamp: 1; /* Only show 1 line on short screens */
-        margin: 2px 0;
-    }
-    
-    .meta {
-        font-size: 10px;
-        gap: 8px;
-    }
-}
-
-/* Even smaller heights */
-@media (max-height: 600px) {
-    .thumbnail-strip {
-        bottom: 110px !important;
-    }
-    
-    .thumbnail-item {
-        width: 32px;
-        height: 32px;
-    }
-    
-    .slide-counter {
-        bottom: 80px !important;
-    }
-    
-    .video-preview-container {
-        bottom: 150px !important;
-        width: 48px !important;
-        height: 68px !important;
-    }
-    
-    .actions {
-        gap: 8px !important;
-    }
-    
-    .action i {
-        font-size: 22px !important;
-    }
-    
-    .action-profile {
-        width: 34px !important;
-        height: 34px !important;
-    }
-    
-    .info-panel {
-        bottom: 10px !important;
-    }
-    
-    /* Hide caption completely on very short screens to save space */
-    .caption {
-        display: none;
-    }
-    
-    .more-link {
-        display: none;
-    }
-    
-    .meta span:first-child {
-        display: none; /* Hide time ago on very short screens */
-    }
-}
-
-/* Very small devices like Samsung S7 Ultra (under 360px height) */
-@media (max-height: 550px) {
-    .thumbnail-strip {
-        bottom: 90px !important;
-        padding: 4px !important;
-    }
-    
-    .thumbnail-item {
-        width: 28px !important;
-        height: 28px !important;
-        border-width: 1px;
-    }
-    
-    .slide-counter {
-        bottom: 65px !important;
-        padding: 3px 8px;
-        font-size: 10px;
-    }
-    
-    .video-preview-container {
-        bottom: 120px !important;
-        width: 42px !important;
-        height: 60px !important;
-        border-width: 1px;
-    }
-    
-    .actions {
-        gap: 6px !important;
-        right: 8px !important;
-    }
-    
-    .action i {
-        font-size: 20px !important;
-    }
-    
-    .action span {
-        font-size: 9px !important;
-    }
-    
-    .action-profile {
-        width: 30px !important;
-        height: 30px !important;
-        border-width: 1px;
-    }
-    
-    .info-panel {
-        bottom: 8px !important;
-        left: 10px !important;
-        right: 60px !important;
-    }
-    
-    .username {
-        font-size: 12px;
-        margin-bottom: 0;
-    }
-    
-    .meta {
-        font-size: 9px;
-        gap: 6px;
-    }
-    
-    .meta span:last-child {
-        display: block; /* Keep day number */
-    }
-    
-    /* Hide carousel dots on very short screens */
-    .carousel-dots {
-        top: 40px !important;
-        padding: 4px 8px !important;
-    }
-    
-    .dot {
-        width: 16px;
-        height: 2px;
-    }
-    
-    .dot.active {
-        width: 22px;
-    }
-    
-    .media-counter {
-        top: 40px !important;
-        padding: 4px 8px !important;
-        font-size: 10px;
-    }
-}
-
-/* Width-based adjustments for very narrow phones */
-@media (max-width: 320px) {
-    .info-panel {
-        right: 60px !important;
-        left: 8px !important;
-        max-width: calc(100% - 70px) !important;
-    }
-    
-    .username {
-        font-size: 13px;
-    }
-    
-    .caption {
-        font-size: 12px;
-    }
-    
-    .meta {
-        font-size: 9px;
-        gap: 6px;
-    }
-    
-    .action {
-        min-width: 40px !important;
-    }
-    
-    .action i {
-        font-size: 22px !important;
-    }
-    
-    .action-profile {
-        width: 36px !important;
-        height: 36px !important;
-    }
-}
-
-/* Special adjustment for Samsung S7 Ultra and similar */
-@media (max-width: 360px) and (max-height: 600px) {
-    .reel::after {
-        height: 50% !important; /* Stronger gradient to ensure text readability */
-        background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 30%, transparent 80%);
-    }
-    
-    /* Ensure text is always readable */
-    .username, .caption, .meta {
-        text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
 }
     </style>
@@ -1049,7 +933,6 @@ body {
                                            preload="metadata"
                                            poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}{% endif %}">
                                     </video>
-                                    <!-- No overlay - thumbnail breathes freely -->
                                 </div>
                                 
                                 <!-- Audio indicator - subtle -->
@@ -1066,34 +949,6 @@ body {
                                             data-carousel="{{ activity.id }}"
                                             data-index="{{ forloop.counter0 }}">
                                     </button>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Media counter -->
-                                <div class="media-counter">
-                                    <i class="fas fa-images"></i>
-                                    <span>{{ activity.screenshot_count_total }}</span>
-                                </div>
-                                
-                                <!-- Slide counter -->
-                                {% if activity.screenshot_count_total > 1 %}
-                                <div class="slide-counter" id="counter-{{ activity.id }}">
-                                    <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Thumbnails -->
-                                {% if activity.screenshot_count_total > 1 %}
-                                <div class="thumbnail-strip" id="strip-{{ activity.id }}">
-                                    {% for screenshot in activity.screenshots_list %}
-                                    <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
-                                         data-carousel="{{ activity.id }}"
-                                         data-index="{{ forloop.counter0 }}">
-                                        <img src="{{ screenshot.image.url }}?w=60&h=60&fit=crop" 
-                                             loading="lazy" 
-                                             alt="thumb">
-                                    </div>
                                     {% endfor %}
                                 </div>
                                 {% endif %}
@@ -1152,7 +1007,7 @@ body {
                         </button>
                     </div>
 
-                    <!-- Info panel -->
+                    <!-- Info panel with media controls properly ordered -->
                     <div class="info-panel">
                         <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
                         <div class="caption" id="caption-{{ activity.id }}">{{ activity.content|safe }}</div>
@@ -1163,6 +1018,34 @@ body {
                             <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
                             <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
                         </div>
+                        
+                        <!-- Media counter only (standalone) -->
+                        <div class="media-counter">
+                            <i class="fas fa-images"></i>
+                            <span>{{ activity.screenshot_count_total }}</span>
+                        </div>
+                        
+                        <!-- Thumbnails - above the slide counter -->
+                        {% if activity.screenshot_count_total > 1 %}
+                        <div class="thumbnail-strip" id="strip-{{ activity.id }}">
+                            {% for screenshot in activity.screenshots_list %}
+                            <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
+                                 data-carousel="{{ activity.id }}"
+                                 data-index="{{ forloop.counter0 }}">
+                                <img src="{{ screenshot.image.url }}?w=60&h=60&fit=crop" 
+                                     loading="lazy" 
+                                     alt="thumb">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Slide counter - below thumbnail strip -->
+                        {% if activity.screenshot_count_total > 1 %}
+                        <div class="slide-counter" id="counter-{{ activity.id }}">
+                            <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- Video modal -->
@@ -1234,6 +1117,7 @@ body {
         {% endfor %}
     </div>
 </div>
+
 <script>
 (function() {
     'use strict';
@@ -1369,33 +1253,6 @@ body {
         });
     };
 
-    // ========== KEYBOARD NAVIGATION ==========
-    document.addEventListener('keydown', function(e) {
-        if (document.querySelector('.modal.show')) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal.show').forEach(function(modal) {
-                    const id = modal.id.replace('modal-', '');
-                    window.closeModal(id);
-                });
-            }
-            return;
-        }
-        
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
-        const totalReels = document.querySelectorAll('.reel').length;
-        
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            window.goToReel(Math.max(0, currentIndex - 1));
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
-        }
-    });
-
     // ========== CAROUSEL FUNCTIONS ==========
     window.goToSlide = function(carouselId, index) {
         const track = document.getElementById(`track-${carouselId}`);
@@ -1407,6 +1264,7 @@ body {
         index = Math.max(0, Math.min(index, slideCount - 1));
         track.style.transform = `translateX(-${index * 100}%)`;
         
+        // Update dots
         const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
         dots.forEach(function(dot, i) {
             if (i === index) {
@@ -1416,6 +1274,7 @@ body {
             }
         });
         
+        // Update thumbnails
         const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
         thumbnails.forEach(function(thumb, i) {
             if (i === index) {
@@ -1425,6 +1284,7 @@ body {
             }
         });
         
+        // Update counter
         const counter = document.getElementById(`current-${carouselId}`);
         if (counter) {
             counter.textContent = index + 1;
@@ -1438,19 +1298,23 @@ body {
             
             if (!track) return;
             
+            // Dot click handlers
             const dots = carousel.querySelectorAll('.dot[data-carousel]');
             dots.forEach(function(dot) {
                 dot.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const index = parseInt(this.dataset.index);
                     window.goToSlide(carouselId, index);
                 });
             });
             
+            // Thumbnail click handlers
             const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
             thumbnails.forEach(function(thumb) {
                 thumb.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     const index = parseInt(this.dataset.index);
                     window.goToSlide(carouselId, index);
                 });
@@ -1502,6 +1366,33 @@ body {
             }, { passive: true });
         });
     }
+
+    // ========== KEYBOARD NAVIGATION ==========
+    document.addEventListener('keydown', function(e) {
+        if (document.querySelector('.modal.show')) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(function(modal) {
+                    const id = modal.id.replace('modal-', '');
+                    window.closeModal(id);
+                });
+            }
+            return;
+        }
+        
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
+        
+        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
+        const totalReels = document.querySelectorAll('.reel').length;
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            window.goToReel(Math.max(0, currentIndex - 1));
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
+        }
+    });
 
     // ========== INITIALIZATION ==========
     function initialize() {
