@@ -694,64 +694,104 @@
     .sidebar { 
         display: none; 
     }
+    
+    /* Info panel - give it more space and ensure it's visible */
     .info-panel { 
         right: 70px;
-        bottom: 20px !important;
+        bottom: 25px !important;
         left: 12px !important;
+        max-width: calc(100% - 90px) !important;
+        z-index: 15 !important; /* Higher z-index to ensure visibility */
     }
+    
+    /* Ensure caption text is readable */
+    .caption {
+        font-size: 14px;
+        -webkit-line-clamp: 2;
+        background: rgba(0, 0, 0, 0.3); /* Subtle background for readability */
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin-left: -8px; /* Compensate for padding */
+    }
+    
+    .username {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px 8px;
+        border-radius: 20px;
+        margin-left: -8px;
+        font-size: 15px;
+    }
+    
+    .meta {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 4px 8px;
+        border-radius: 8px;
+        margin-left: -8px;
+        margin-top: 4px;
+    }
+    
     .thumbnail-item {
         width: 36px;
         height: 36px;
     }
+    
     .slide-counter {
         bottom: 95px !important;
+        z-index: 20 !important;
     }
+    
     .thumbnail-strip {
         bottom: 130px !important;
         padding: 8px !important;
         gap: 6px !important;
+        z-index: 20 !important;
     }
+    
     .video-preview-container {
         bottom: 200px !important;
         left: 12px !important;
         width: 60px !important;
         height: 85px !important;
+        z-index: 25 !important;
     }
     
-    /* Action buttons positioned in the middle of the screen - NO BACKGROUND */
+    /* Action buttons positioned in the middle-right of the screen */
     .actions {
         position: absolute;
         right: 8px !important;
-        top: 50% !important;  /* Position at 50% from top */
-        bottom: auto !important;  /* Remove bottom positioning */
-        transform: translateY(-50%) !important;  /* Center vertically */
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 16px !important;
-        z-index: 20;
+        z-index: 30 !important; /* Highest z-index to stay on top */
         pointer-events: none;
     }
     
     .action {
         min-width: 48px !important;
         pointer-events: auto;
-        /* NO BACKGROUND - removed background, backdrop-filter, border, and padding */
         background: transparent;
         border: none;
         padding: 0;
+        /* Add subtle drop shadow for better visibility */
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     }
     
     .action i { 
-        font-size: 26px !important;  /* Slightly larger */
+        font-size: 26px !important;
         margin-bottom: 2px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle shadow for visibility */
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
     .action span { 
         font-size: 11px !important; 
         font-weight: 600;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for text */
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        display: block;
+        text-align: center;
     }
     
     .action-profile {
@@ -759,10 +799,14 @@
         height: 44px !important;
         border-width: 2px;
         margin-bottom: 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Shadow for profile image */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
-    /* All actions have same styling - no special case needed */
+    /* Remove any conflicting positioning */
+    .reel .actions {
+        /* Ensure no other styles override */
+        position: absolute !important;
+    }
     
     .fab {
         bottom: 16px !important;
@@ -776,6 +820,7 @@
     .carousel-dots {
         top: 50px !important;
         padding: 6px 12px !important;
+        z-index: 20 !important;
     }
     
     .dot {
@@ -791,10 +836,12 @@
         right: 12px !important;
         padding: 6px 10px !important;
         font-size: 11px !important;
+        z-index: 20 !important;
     }
     
     .header {
         padding-top: 8px !important;
+        z-index: 25 !important;
     }
     
     .back-btn {
@@ -803,10 +850,10 @@
         font-size: 16px !important;
     }
     
-    /* Adjust info panel width to accommodate buttons */
-    .info-panel {
-        right: 80px;
-        max-width: calc(100% - 100px);
+    /* Ensure gradient at bottom doesn't obscure info */
+    .reel::after {
+        height: 45% !important;
+        background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
     }
     
     /* Safe area for FAB */
@@ -1063,8 +1110,6 @@
         {% endfor %}
     </div>
 </div>
-
-<!-- ===== FIXED WORKING SCRIPT ===== -->
 <script>
 (function() {
     'use strict';
@@ -1073,7 +1118,6 @@
     let currentlyPlayingId = null;
     let currentAudioElement = null;
     let scrollTimeout = null;
-    let previewObservers = [];
 
     // ========== HELPER FUNCTIONS ==========
     function getVisibleReel() {
@@ -1085,59 +1129,6 @@
         const visibleIndex = Math.round(scrollTop / reelHeight);
         
         return document.querySelector(`.reel[data-index="${visibleIndex}"]`);
-    }
-
-    // ========== AUDIO CONTROL ==========
-    function playAudioForActivity(activityId) {
-        // Don't restart if already playing
-        if (currentlyPlayingId === activityId && currentAudioElement && !currentAudioElement.paused) {
-            return;
-        }
-        
-        // Stop current audio
-        if (currentAudioElement) {
-            currentAudioElement.pause();
-            currentAudioElement.currentTime = 0;
-            
-            const oldIndicator = document.getElementById(`indicator-${currentlyPlayingId}`);
-            if (oldIndicator) oldIndicator.style.display = 'none';
-        }
-        
-        // Get new audio
-        const audioElement = document.getElementById(`audio-${activityId}`);
-        if (!audioElement) {
-            currentlyPlayingId = null;
-            currentAudioElement = null;
-            return;
-        }
-        
-        // Play new audio
-        audioElement.volume = 0.7;
-        audioElement.play()
-            .then(() => {
-                currentlyPlayingId = activityId;
-                currentAudioElement = audioElement;
-                
-                const indicator = document.getElementById(`indicator-${activityId}`);
-                if (indicator) indicator.style.display = 'flex';
-            })
-            .catch(error => {
-                console.log('Audio play failed:', error);
-            });
-    }
-
-    function stopAllAudio() {
-        if (currentAudioElement) {
-            currentAudioElement.pause();
-            currentAudioElement.currentTime = 0;
-            currentAudioElement = null;
-        }
-        
-        if (currentlyPlayingId) {
-            const indicator = document.getElementById(`indicator-${currentlyPlayingId}`);
-            if (indicator) indicator.style.display = 'none';
-            currentlyPlayingId = null;
-        }
     }
 
     // ========== SCROLL HANDLER ==========
@@ -1156,56 +1147,130 @@
                     bar.classList.remove('active');
                 }
             });
-            
-            // Debounce audio change
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(function() {
-                const visibleReel = getVisibleReel();
-                if (visibleReel) {
-                    const activityId = visibleReel.dataset.activityId;
-                    playAudioForActivity(activityId);
-                } else {
-                    stopAllAudio();
-                }
-            }, 200);
-        }, { passive: true });
+        });
     }
 
-    // ========== PAGE VISIBILITY ==========
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden && currentAudioElement) {
-            currentAudioElement.pause();
-        } else if (!document.hidden && currentAudioElement && currentAudioElement.paused) {
-            currentAudioElement.play().catch(function() {});
+    // ========== MODAL FUNCTIONS ==========
+    window.openVideoModal = function(activityId) {
+        const modal = document.getElementById(`modal-${activityId}`);
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            const video = modal.querySelector('video');
+            if (video) {
+                video.play().catch(function() {});
+            }
+        }
+    };
+
+    window.closeModal = function(activityId) {
+        const modal = document.getElementById(`modal-${activityId}`);
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            
+            const video = modal.querySelector('video');
+            if (video) {
+                video.pause();
+                video.currentTime = 0;
+            }
+        }
+    };
+
+    // ========== ACTION HANDLERS ==========
+    window.handleLove = function(id, event) {
+        event.stopPropagation();
+        event.preventDefault();
+        
+        const btn = document.getElementById('love-' + id);
+        const icon = btn.querySelector('i');
+        const countSpan = document.getElementById('love-count-' + id);
+        const wasLoved = btn.classList.contains('loved');
+        
+        btn.classList.toggle('loved');
+        
+        if (wasLoved) {
+            icon.className = 'far fa-heart';
+        } else {
+            icon.className = 'fas fa-heart';
+        }
+        
+        let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
+        if (wasLoved) {
+            count = Math.max(0, count - 1);
+        } else {
+            count = count + 1;
+        }
+        countSpan.textContent = count.toLocaleString();
+    };
+
+    window.toggleCaption = function(id, event) {
+        event.stopPropagation();
+        const caption = document.getElementById('caption-' + id);
+        const moreLink = event.target;
+        
+        caption.classList.toggle('expanded');
+        moreLink.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
+    };
+
+    window.openComments = function(id, e) { 
+        e.stopPropagation(); 
+        e.preventDefault();
+        console.log('Comments for:', id);
+    };
+
+    window.openShareMenu = function(id, e) { 
+        e.stopPropagation(); 
+        e.preventDefault();
+        
+        if (navigator.share) {
+            navigator.share({
+                title: document.title,
+                text: 'Check out this journey moment',
+                url: window.location.href + '#activity-' + id
+            }).catch(function() {});
+        } else {
+            console.log('Share menu for:', id);
+        }
+    };
+
+    window.goToReel = function(index) {
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
+        
+        reelsTrack.scrollTo({
+            top: index * reelsTrack.clientHeight,
+            behavior: 'smooth'
+        });
+    };
+
+    // ========== KEYBOARD NAVIGATION ==========
+    document.addEventListener('keydown', function(e) {
+        if (document.querySelector('.modal.show')) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(function(modal) {
+                    const id = modal.id.replace('modal-', '');
+                    window.closeModal(id);
+                });
+            }
+            return;
+        }
+        
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
+        
+        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
+        const totalReels = document.querySelectorAll('.reel').length;
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            window.goToReel(Math.max(0, currentIndex - 1));
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
         }
     });
-
-    // ========== VIDEO PREVIEWS ==========
-    function initVideoPreviews() {
-        // Clean up old observers
-        previewObservers.forEach(function(observer) {
-            observer.disconnect();
-        });
-        previewObservers = [];
-        
-        document.querySelectorAll('.video-preview-container').forEach(function(container) {
-            const video = container.querySelector('video');
-            if (!video) return;
-            
-            const observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        video.play().catch(function() {});
-                    } else {
-                        video.pause();
-                    }
-                });
-            }, { threshold: 0.3 });
-            
-            observer.observe(container);
-            previewObservers.push(observer);
-        });
-    }
 
     // ========== CAROUSEL FUNCTIONS ==========
     window.goToSlide = function(carouselId, index) {
@@ -1215,13 +1280,9 @@
         const slideCount = track.children.length;
         if (slideCount === 0) return;
         
-        // Ensure index is within bounds
         index = Math.max(0, Math.min(index, slideCount - 1));
-        
-        // Move track
         track.style.transform = `translateX(-${index * 100}%)`;
         
-        // Update dots
         const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
         dots.forEach(function(dot, i) {
             if (i === index) {
@@ -1231,7 +1292,6 @@
             }
         });
         
-        // Update thumbnails
         const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
         thumbnails.forEach(function(thumb, i) {
             if (i === index) {
@@ -1241,14 +1301,12 @@
             }
         });
         
-        // Update counter
         const counter = document.getElementById(`current-${carouselId}`);
         if (counter) {
             counter.textContent = index + 1;
         }
     };
 
-    // Initialize carousels
     function initCarousels() {
         document.querySelectorAll('.story-carousel').forEach(function(carousel) {
             const carouselId = carousel.id.replace('carousel-', '');
@@ -1256,7 +1314,6 @@
             
             if (!track) return;
             
-            // Set up dot clicks
             const dots = carousel.querySelectorAll('.dot[data-carousel]');
             dots.forEach(function(dot) {
                 dot.addEventListener('click', function(e) {
@@ -1266,7 +1323,6 @@
                 });
             });
             
-            // Set up thumbnail clicks
             const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
             thumbnails.forEach(function(thumb) {
                 thumb.addEventListener('click', function(e) {
@@ -1281,7 +1337,6 @@
             let currentIndex = 0;
             let isDragging = false;
             
-            // Get current index from active dot
             const activeDot = carousel.querySelector('.dot.active');
             if (activeDot) {
                 currentIndex = parseInt(activeDot.dataset.index) || 0;
@@ -1324,179 +1379,12 @@
         });
     }
 
-    // ========== MODAL FUNCTIONS ==========
-    window.openVideoModal = function(activityId) {
-        // Pause background audio
-        if (currentAudioElement) {
-            currentAudioElement.pause();
-        }
-        
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            
-            const video = modal.querySelector('video');
-            if (video) {
-                video.play().catch(function() {});
-            }
-        }
-    };
-
-    window.closeModal = function(activityId) {
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-            
-            const video = modal.querySelector('video');
-            if (video) {
-                video.pause();
-                video.currentTime = 0;
-            }
-            
-            // Resume audio if it was playing
-            setTimeout(function() {
-                if (currentlyPlayingId === activityId && currentAudioElement) {
-                    currentAudioElement.play().catch(function() {});
-                }
-            }, 300);
-        }
-    };
-
-    // ========== LOVE HANDLER ==========
-    window.handleLove = function(id, event) {
-        event.stopPropagation();
-        event.preventDefault();
-        
-        const btn = document.getElementById('love-' + id);
-        const icon = btn.querySelector('i');
-        const countSpan = document.getElementById('love-count-' + id);
-        const wasLoved = btn.classList.contains('loved');
-        
-        btn.classList.toggle('loved');
-        
-        if (wasLoved) {
-            icon.className = 'far fa-heart';
-        } else {
-            icon.className = 'fas fa-heart';
-        }
-        
-        let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-        if (wasLoved) {
-            count = Math.max(0, count - 1);
-        } else {
-            count = count + 1;
-        }
-        countSpan.textContent = count.toLocaleString();
-    };
-
-    // ========== CAPTION HANDLER ==========
-    window.toggleCaption = function(id, event) {
-        event.stopPropagation();
-        const caption = document.getElementById('caption-' + id);
-        const moreLink = event.target;
-        
-        caption.classList.toggle('expanded');
-        if (caption.classList.contains('expanded')) {
-            moreLink.textContent = 'less';
-        } else {
-            moreLink.textContent = 'more';
-        }
-    };
-
-    // ========== COMMENTS HANDLER ==========
-    window.openComments = function(id, e) { 
-        e.stopPropagation(); 
-        e.preventDefault();
-        console.log('Comments for:', id);
-    };
-
-    // ========== SHARE HANDLER ==========
-    window.openShareMenu = function(id, e) { 
-        e.stopPropagation(); 
-        e.preventDefault();
-        
-        if (navigator.share) {
-            navigator.share({
-                title: document.title,
-                text: 'Check out this journey moment',
-                url: window.location.href + '#activity-' + id
-            }).catch(function() {});
-        } else {
-            console.log('Share menu for:', id);
-        }
-    };
-
-    // ========== GO TO REEL ==========
-    window.goToReel = function(index) {
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        reelsTrack.scrollTo({
-            top: index * reelsTrack.clientHeight,
-            behavior: 'smooth'
-        });
-        
-        setTimeout(function() {
-            const visibleReel = getVisibleReel();
-            if (visibleReel) {
-                playAudioForActivity(visibleReel.dataset.activityId);
-            }
-        }, 300);
-    };
-
-    // ========== KEYBOARD NAVIGATION ==========
-    document.addEventListener('keydown', function(e) {
-        if (document.querySelector('.modal.show')) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal.show').forEach(function(modal) {
-                    const id = modal.id.replace('modal-', '');
-                    window.closeModal(id);
-                });
-            }
-            return;
-        }
-        
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
-        const totalReels = document.querySelectorAll('.reel').length;
-        
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            window.goToReel(Math.max(0, currentIndex - 1));
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
-        }
-    });
-
     // ========== INITIALIZATION ==========
     function initialize() {
         console.log('Initializing...');
         
         // Initialize carousels
         initCarousels();
-        
-        // Initialize video previews
-        initVideoPreviews();
-        
-        // Preload audio (but don't play)
-        document.querySelectorAll('.background-audio').forEach(function(audio) {
-            audio.load();
-            audio.volume = 0.7;
-        });
-        
-        // Start with first reel
-        setTimeout(function() {
-            const visibleReel = getVisibleReel();
-            if (visibleReel) {
-                const activityId = visibleReel.dataset.activityId;
-                playAudioForActivity(activityId);
-            }
-        }, 1000);
         
         // Hide swipe indicators
         setTimeout(function() {
