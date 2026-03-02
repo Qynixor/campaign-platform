@@ -1102,194 +1102,399 @@ body {
 (function() {
     'use strict';
 
+    // ========== CONFIGURATION ==========
+    const CONFIG = {
+        debug: true, // Set to false in production
+        videoSelector: '.video-preview-player',
+        backgroundAudioSelector: '.background-audio',
+        reelSelector: '.reel',
+        previewContainerSelector: '.video-preview-container',
+        modalSelector: '.modal',
+        modalVideoSelector: '.modal-video'
+    };
+
     // ========== STATE MANAGEMENT ==========
-    let currentlyPlayingId = null;
-    let currentAudioElement = null;
-    let scrollTimeout = null;
+    const state = {
+        hasUserInteracted: false,
+        currentVisibleReelIndex: 0,
+        currentlyPlayingVideoId: null,
+        currentlyOpenModalId: null,
+        scrollTimeout: null,
+        observers: []
+    };
 
-    // ========== HELPER FUNCTIONS ==========
-    function getVisibleReel() {
-        const track = document.getElementById('reelsTrack');
-        if (!track) return null;
-        
-        const scrollTop = track.scrollTop;
-        const reelHeight = track.clientHeight;
-        const visibleIndex = Math.round(scrollTop / reelHeight);
-        
-        return document.querySelector(`.reel[data-index="${visibleIndex}"]`);
+    // ========== UTILITY FUNCTIONS ==========
+    function log(message, data = null) {
+        if (CONFIG.debug) {
+            if (data) {
+                console.log(`[Journey Reels] ${message}`, data);
+            } else {
+                console.log(`[Journey Reels] ${message}`);
+            }
+        }
     }
 
-    // ========== VIDEO PREVIEW OBSERVER ==========
-    function initVideoPreviewsWithObserver() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const container = entry.target;
-                const video = container.querySelector('video');
-                
-                if (entry.isIntersecting) {
-                    // Video preview is visible - play it
-                    video.play().catch(e => console.log('Preview play failed:', e));
+    function isElementInViewport(el, buffer = 100) {
+        if (!el) return false;
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top < (window.innerHeight + buffer) &&
+            rect.bottom > -buffer &&
+            rect.left < window.innerWidth &&
+            rect.right > 0
+        );
+    }
+
+    function getActivityIdFromElement(el) {
+        if (!el) return null;
+        const container = el.closest(CONFIG.previewContainerSelector) || 
+                         el.closest(CONFIG.reelSelector) ||
+                         el.closest('[data-activity-id]');
+        return container?.dataset.activityId || null;
+    }
+
+    // ========== AUDIO MANAGEMENT ==========
+    function pauseAllBackgroundAudio() {
+        const audioElements = document.querySelectorAll(CONFIG.backgroundAudioSelector);
+        let pausedCount = 0;
+        
+        audioElements.forEach(audio => {
+            if (!audio.paused) {
+                audio.pause();
+                audio.currentTime = 0;
+                pausedCount++;
+            }
+        });
+        
+        if (pausedCount > 0) {
+            log(`Paused ${pausedCount} background audio tracks`);
+        }
+    }
+
+    function pauseAllVideoPreviews(exceptVideo = null) {
+        const videos = document.querySelectorAll(CONFIG.videoSelector);
+        let pausedCount = 0;
+        
+        videos.forEach(video => {
+            if (video !== exceptVideo && !video.paused) {
+                video.pause();
+                pausedCount++;
+            }
+        });
+        
+        if (pausedCount > 0) {
+            log(`Paused ${pausedCount} video previews`);
+        }
+    }
+
+    function pauseAllModalVideos() {
+        const modalVideos = document.querySelectorAll(CONFIG.modalVideoSelector);
+        let pausedCount = 0;
+        
+        modalVideos.forEach(video => {
+            if (!video.paused) {
+                video.pause();
+                video.currentTime = 0;
+                pausedCount++;
+            }
+        });
+        
+        if (pausedCount > 0) {
+            log(`Paused ${pausedCount} modal videos`);
+        }
+    }
+
+    function stopAllMedia() {
+        pauseAllBackgroundAudio();
+        pauseAllVideoPreviews();
+        pauseAllModalVideos();
+    }
+
+    // ========== VIDEO PREVIEW CONTROL ==========
+    function playVideo(videoElement) {
+        if (!videoElement) return false;
+        
+        // Don't play preview if a modal is open
+        if (state.currentlyOpenModalId) {
+            log('Modal open - not playing preview');
+            return false;
+        }
+        
+        const activityId = getActivityIdFromElement(videoElement);
+        
+        // Stop all other media first
+        pauseAllBackgroundAudio();
+        pauseAllVideoPreviews(videoElement);
+        
+        // Update state
+        state.currentlyPlayingVideoId = activityId;
+        
+        // Attempt to play
+        const playPromise = videoElement.play();
+        
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    log(`Video ${activityId} playing`);
+                    videoElement.muted = false;
+                    videoElement.volume = 1.0;
                     
-                    // Find and pause the background audio for this activity
-                    const activityId = container.dataset.activityId;
-                    if (activityId) {
-                        const backgroundAudio = document.getElementById(`audio-${activityId}`);
-                        if (backgroundAudio) {
-                            backgroundAudio.pause();
-                        }
+                    if (videoElement.dataset.playingMuted === 'true') {
+                        delete videoElement.dataset.playingMuted;
                     }
-                } else {
-                    // Video preview is not visible - pause it
-                    video.pause();
-                    video.currentTime = 0;
+                })
+                .catch(error => {
+                    log(`Video ${activityId} autoplay failed: ${error.message}`);
                     
-                    // Optionally resume background audio when preview is hidden
-                    // Uncomment if you want this behavior:
-                    /*
-                    const activityId = container.dataset.activityId;
-                    if (activityId) {
-                        const backgroundAudio = document.getElementById(`audio-${activityId}`);
-                        if (backgroundAudio && isReelVisible(activityId)) {
-                            backgroundAudio.play().catch(e => console.log('Audio play failed:', e));
-                        }
-                    }
-                    */
-                }
-            });
-        }, {
-            threshold: 0.3, // Play when 30% visible
-            rootMargin: '50px'
-        });
-        
-        // Observe all video preview containers
-        document.querySelectorAll('.video-preview-container').forEach(container => {
-            observer.observe(container);
-        });
-    }
-
-    // Helper function to check if a reel is currently visible
-    function isReelVisible(activityId) {
-        const reel = document.querySelector(`.reel[data-activity-id="${activityId}"]`);
-        if (!reel) return false;
-        
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return false;
-        
-        const reelRect = reel.getBoundingClientRect();
-        const trackRect = reelsTrack.getBoundingClientRect();
-        
-        // Check if reel is significantly visible
-        return reelRect.top < trackRect.bottom - 100 && reelRect.bottom > trackRect.top + 100;
-    }
-
-    // ========== SCROLL HANDLER ==========
-    const reelsTrack = document.getElementById('reelsTrack');
-    if (reelsTrack) {
-        reelsTrack.addEventListener('scroll', function() {
-            // Update progress bars
-            const scrollTop = reelsTrack.scrollTop;
-            const reelHeight = reelsTrack.clientHeight;
-            const visibleIndex = Math.round(scrollTop / reelHeight);
-            
-            document.querySelectorAll('.progress-bar').forEach(function(bar, i) {
-                if (i === visibleIndex) {
-                    bar.classList.add('active');
-                } else {
-                    bar.classList.remove('active');
-                }
-            });
-            
-            // Optional: Pause all background audio when scrolling
-            // This prevents multiple audio streams playing simultaneously
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                // After scrolling stops, check which previews are visible
-                document.querySelectorAll('.video-preview-container').forEach(container => {
-                    const video = container.querySelector('video');
-                    if (video) {
-                        const rect = container.getBoundingClientRect();
-                        const isVisible = rect.top < window.innerHeight - 100 && rect.bottom > 100;
-                        
-                        if (!isVisible) {
-                            video.pause();
-                        }
-                    }
+                    videoElement.muted = true;
+                    videoElement.play()
+                        .then(() => {
+                            videoElement.dataset.playingMuted = 'true';
+                            log(`Video ${activityId} playing muted`);
+                        })
+                        .catch(e => log(`Video ${activityId} even muted failed: ${e.message}`));
                 });
-            }, 150);
-        });
+            
+            return true;
+        }
+        
+        return false;
     }
 
-    // ========== IMAGE OPTIMIZATION ==========
-    function optimizeImageLoading() {
-        const images = document.querySelectorAll('.carousel-slide img.carousel-image');
+    function pauseVideo(videoElement) {
+        if (!videoElement || videoElement.paused) return;
         
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.classList.add('loaded');
-                        imageObserver.unobserve(img);
-                    }
-                });
-            }, {
-                rootMargin: '50px 0px',
-                threshold: 0.01
-            });
-            
-            images.forEach(img => imageObserver.observe(img));
-        } else {
-            // Fallback for older browsers
-            images.forEach(img => img.classList.add('loaded'));
+        const activityId = getActivityIdFromElement(videoElement);
+        videoElement.pause();
+        log(`Paused video ${activityId}`);
+        
+        if (state.currentlyPlayingVideoId === activityId) {
+            state.currentlyPlayingVideoId = null;
         }
     }
 
     // ========== MODAL FUNCTIONS ==========
     window.openVideoModal = function(activityId) {
         const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
+        if (!modal) return;
+        
+        log(`Opening modal for activity ${activityId}`);
+        
+        // Set modal as open in state
+        state.currentlyOpenModalId = activityId;
+        
+        // STOP ALL PREVIEW VIDEOS AND AUDIO
+        pauseAllVideoPreviews();
+        pauseAllBackgroundAudio();
+        
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        
+        // Get modal video - IMPORTANT: Do NOT autoplay
+        const modalVideo = modal.querySelector('video');
+        if (modalVideo) {
+            // Ensure it's not playing
+            modalVideo.pause();
+            modalVideo.currentTime = 0;
             
-            const video = modal.querySelector('video');
-            if (video) {
-                video.play().catch(function() {});
-            }
+            // Set to play ONLY when user clicks play button
+            modalVideo.muted = false;
+            modalVideo.volume = 1.0;
+            modalVideo.autoplay = false; // Explicitly disable autoplay
             
-            // Pause preview video when opening modal
-            const previewVideo = document.querySelector(`#preview-${activityId} video`);
-            if (previewVideo) {
-                previewVideo.pause();
-            }
+            // Remove any autoplay attributes
+            modalVideo.removeAttribute('autoplay');
+            
+            log(`Modal video ready for activity ${activityId} - waiting for user to play`);
         }
     };
 
     window.closeModal = function(activityId) {
         const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-            
-            const video = modal.querySelector('video');
-            if (video) {
-                video.pause();
-                video.currentTime = 0;
-            }
-            
-            // Resume preview video if still visible
-            const previewContainer = document.getElementById(`preview-${activityId}`);
-            if (previewContainer) {
-                const rect = previewContainer.getBoundingClientRect();
-                const isVisible = rect.top < window.innerHeight - 100 && rect.bottom > 100;
-                
-                if (isVisible) {
-                    const previewVideo = previewContainer.querySelector('video');
-                    if (previewVideo) {
-                        previewVideo.play().catch(e => console.log('Preview resume failed:', e));
-                    }
-                }
+        if (!modal) return;
+        
+        log(`Closing modal for activity ${activityId}`);
+        
+        // Clear modal state
+        state.currentlyOpenModalId = null;
+        
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+        
+        // Pause and reset modal video
+        const modalVideo = modal.querySelector('video');
+        if (modalVideo) {
+            modalVideo.pause();
+            modalVideo.currentTime = 0;
+        }
+        
+        // Resume preview video if visible
+        const previewContainer = document.getElementById(`preview-${activityId}`);
+        if (previewContainer && isElementInViewport(previewContainer)) {
+            const previewVideo = previewContainer.querySelector('video');
+            if (previewVideo) {
+                // Small delay to ensure modal is fully closed
+                setTimeout(() => {
+                    playVideo(previewVideo);
+                }, 100);
             }
         }
+    };
+
+    // ========== INTERSECTION OBSERVER ==========
+    function initIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                const activityId = getActivityIdFromElement(video);
+                
+                // Don't do anything if a modal is open
+                if (state.currentlyOpenModalId) {
+                    if (!video.paused) {
+                        pauseVideo(video);
+                    }
+                    return;
+                }
+                
+                if (entry.isIntersecting) {
+                    // Video is visible
+                    log(`Video ${activityId} became visible`);
+                    
+                    if (state.hasUserInteracted) {
+                        playVideo(video);
+                    } else {
+                        video.muted = true;
+                        video.play()
+                            .then(() => {
+                                video.dataset.playingMuted = 'true';
+                                log(`Video ${activityId} playing muted (pre-interaction)`);
+                            })
+                            .catch(() => {});
+                    }
+                } else {
+                    // Video is not visible
+                    if (!video.paused) {
+                        log(`Video ${activityId} became invisible - pausing`);
+                        pauseVideo(video);
+                    }
+                }
+            });
+        }, {
+            threshold: 0.2,
+            rootMargin: '50px'
+        });
+
+        document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
+            observer.observe(video);
+        });
+        
+        state.observers.push(observer);
+        log('Intersection Observer initialized');
+    }
+
+    // ========== SCROLL HANDLER ==========
+    function initScrollHandler() {
+        const reelsTrack = document.getElementById('reelsTrack');
+        if (!reelsTrack) return;
+        
+        reelsTrack.addEventListener('scroll', () => {
+            // Don't process scroll if modal is open
+            if (state.currentlyOpenModalId) return;
+            
+            if (state.scrollTimeout) {
+                clearTimeout(state.scrollTimeout);
+            }
+            
+            const scrollTop = reelsTrack.scrollTop;
+            const reelHeight = reelsTrack.clientHeight;
+            const visibleIndex = Math.round(scrollTop / reelHeight);
+            
+            if (visibleIndex !== state.currentVisibleReelIndex) {
+                state.currentVisibleReelIndex = visibleIndex;
+                log(`Scrolled to reel ${visibleIndex}`);
+                
+                document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
+                    const videoReel = video.closest(CONFIG.reelSelector);
+                    if (videoReel) {
+                        const reelIndex = parseInt(videoReel.dataset.index);
+                        if (reelIndex === visibleIndex) {
+                            if (video.paused) {
+                                playVideo(video);
+                            }
+                        } else {
+                            if (!video.paused) {
+                                pauseVideo(video);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            document.querySelectorAll('.progress-bar').forEach((bar, i) => {
+                bar.classList.toggle('active', i === visibleIndex);
+            });
+            
+            state.scrollTimeout = setTimeout(() => {
+                if (!state.currentlyOpenModalId) {
+                    document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
+                        const isVisible = isElementInViewport(video);
+                        if (isVisible && video.paused) {
+                            playVideo(video);
+                        } else if (!isVisible && !video.paused) {
+                            pauseVideo(video);
+                        }
+                    });
+                }
+            }, 150);
+        }, { passive: true });
+        
+        log('Scroll handler initialized');
+    }
+
+    // ========== USER INTERACTION HANDLER ==========
+    function initUserInteractionHandler() {
+        function handleUserInteraction() {
+            if (!state.hasUserInteracted) {
+                state.hasUserInteracted = true;
+                log('User interacted - enabling audio');
+                
+                document.querySelectorAll(`${CONFIG.videoSelector}[data-playing-muted="true"]`).forEach(video => {
+                    video.muted = false;
+                    video.volume = 1.0;
+                    delete video.dataset.playingMuted;
+                    log(`Unmuted video ${getActivityIdFromElement(video)}`);
+                });
+            }
+        }
+
+        const interactionEvents = ['click', 'touchstart', 'keydown'];
+        interactionEvents.forEach(eventType => {
+            document.addEventListener(eventType, handleUserInteraction, { once: true, passive: true });
+        });
+        
+        log('User interaction handler initialized');
+    }
+
+    // ========== CAROUSEL FUNCTIONS ==========
+    window.goToSlide = function(carouselId, index) {
+        const track = document.getElementById(`track-${carouselId}`);
+        if (!track) return;
+        
+        const slideCount = track.children.length;
+        if (slideCount === 0) return;
+        
+        index = Math.max(0, Math.min(index, slideCount - 1));
+        track.style.transform = `translateX(-${index * 100}%)`;
+        
+        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
+        
+        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
+        thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
+        
+        const counter = document.getElementById(`current-${carouselId}`);
+        if (counter) counter.textContent = index + 1;
     };
 
     // ========== ACTION HANDLERS ==========
@@ -1303,35 +1508,23 @@ body {
         const wasLoved = btn.classList.contains('loved');
         
         btn.classList.toggle('loved');
-        
-        if (wasLoved) {
-            icon.className = 'far fa-heart';
-        } else {
-            icon.className = 'fas fa-heart';
-        }
+        icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
         
         let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-        if (wasLoved) {
-            count = Math.max(0, count - 1);
-        } else {
-            count = count + 1;
-        }
+        count = wasLoved ? Math.max(0, count - 1) : count + 1;
         countSpan.textContent = count.toLocaleString();
     };
 
     window.toggleCaption = function(id, event) {
         event.stopPropagation();
         const caption = document.getElementById('caption-' + id);
-        const moreLink = event.target;
-        
         caption.classList.toggle('expanded');
-        moreLink.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
+        event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
     };
 
     window.openComments = function(id, e) { 
         e.stopPropagation(); 
         e.preventDefault();
-        // Implement your comments logic here
     };
 
     window.openShareMenu = function(id, e) { 
@@ -1343,9 +1536,8 @@ body {
                 title: document.title,
                 text: 'Check out this journey moment',
                 url: window.location.href + '#activity-' + id
-            }).catch(function() {});
+            }).catch(() => {});
         } else {
-            // Fallback
             prompt('Copy this link:', window.location.href + '#activity-' + id);
         }
     };
@@ -1360,70 +1552,27 @@ body {
         });
     };
 
-    // ========== CAROUSEL FUNCTIONS ==========
-    window.goToSlide = function(carouselId, index) {
-        const track = document.getElementById(`track-${carouselId}`);
-        if (!track) return;
-        
-        const slideCount = track.children.length;
-        if (slideCount === 0) return;
-        
-        index = Math.max(0, Math.min(index, slideCount - 1));
-        track.style.transform = `translateX(-${index * 100}%)`;
-        
-        // Update dots
-        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
-        dots.forEach(function(dot, i) {
-            if (i === index) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
-        });
-        
-        // Update thumbnails
-        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
-        thumbnails.forEach(function(thumb, i) {
-            if (i === index) {
-                thumb.classList.add('active');
-            } else {
-                thumb.classList.remove('active');
-            }
-        });
-        
-        // Update counter
-        const counter = document.getElementById(`current-${carouselId}`);
-        if (counter) {
-            counter.textContent = index + 1;
-        }
-    };
-
+    // ========== CAROUSEL INITIALIZATION ==========
     function initCarousels() {
-        document.querySelectorAll('.story-carousel').forEach(function(carousel) {
+        document.querySelectorAll('.story-carousel').forEach(carousel => {
             const carouselId = carousel.id.replace('carousel-', '');
             const track = document.getElementById(`track-${carouselId}`);
             
             if (!track) return;
             
-            // Dot click handlers
-            const dots = carousel.querySelectorAll('.dot[data-carousel]');
-            dots.forEach(function(dot) {
-                dot.addEventListener('click', function(e) {
+            carousel.querySelectorAll('.dot[data-carousel]').forEach(dot => {
+                dot.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const index = parseInt(this.dataset.index);
-                    window.goToSlide(carouselId, index);
+                    window.goToSlide(carouselId, parseInt(dot.dataset.index));
                 });
             });
             
-            // Thumbnail click handlers
-            const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
-            thumbnails.forEach(function(thumb) {
-                thumb.addEventListener('click', function(e) {
+            document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`).forEach(thumb => {
+                thumb.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const index = parseInt(this.dataset.index);
-                    window.goToSlide(carouselId, index);
+                    window.goToSlide(carouselId, parseInt(thumb.dataset.index));
                 });
             });
             
@@ -1437,13 +1586,13 @@ body {
                 currentIndex = parseInt(activeDot.dataset.index) || 0;
             }
             
-            track.addEventListener('touchstart', function(e) {
+            track.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
                 isDragging = true;
                 track.style.transition = 'none';
             }, { passive: true });
             
-            track.addEventListener('touchmove', function(e) {
+            track.addEventListener('touchmove', (e) => {
                 if (!isDragging) return;
                 e.preventDefault();
                 
@@ -1452,7 +1601,7 @@ body {
                 track.style.transform = `translateX(${(-currentIndex * 100) + movePercent}%)`;
             }, { passive: false });
             
-            track.addEventListener('touchend', function(e) {
+            track.addEventListener('touchend', (e) => {
                 if (!isDragging) return;
                 
                 const diffX = e.changedTouches[0].clientX - startX;
@@ -1472,327 +1621,152 @@ body {
                 isDragging = false;
             }, { passive: true });
         });
+        
+        log('Carousels initialized');
+    }
+
+    // ========== IMAGE OPTIMIZATION ==========
+    function initImageOptimization() {
+        const images = document.querySelectorAll('.carousel-slide img.carousel-image');
+        
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('loaded');
+                        imageObserver.unobserve(entry.target);
+                    }
+                });
+            }, {
+                rootMargin: '50px 0px',
+                threshold: 0.01
+            });
+            
+            images.forEach(img => imageObserver.observe(img));
+            state.observers.push(imageObserver);
+        } else {
+            images.forEach(img => img.classList.add('loaded'));
+        }
+        
+        log('Image optimization initialized');
     }
 
     // ========== KEYBOARD NAVIGATION ==========
-    document.addEventListener('keydown', function(e) {
-        if (document.querySelector('.modal.show')) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal.show').forEach(function(modal) {
-                    const id = modal.id.replace('modal-', '');
-                    window.closeModal(id);
-                });
+    function initKeyboardNavigation() {
+        document.addEventListener('keydown', (e) => {
+            if (document.querySelector(`${CONFIG.modalSelector}.show`)) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll(`${CONFIG.modalSelector}.show`).forEach(modal => {
+                        const id = modal.id.replace('modal-', '');
+                        window.closeModal(id);
+                    });
+                }
+                return;
             }
-            return;
-        }
+            
+            const reelsTrack = document.getElementById('reelsTrack');
+            if (!reelsTrack) return;
+            
+            const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
+            const totalReels = document.querySelectorAll(CONFIG.reelSelector).length;
+            
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                window.goToReel(Math.max(0, currentIndex - 1));
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
+            }
+        });
         
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
-        const totalReels = document.querySelectorAll('.reel').length;
-        
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            window.goToReel(Math.max(0, currentIndex - 1));
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
-        }
-    });
+        log('Keyboard navigation initialized');
+    }
 
-    // ========== INITIALIZATION ==========
-    function initialize() {
-        console.log('Initializing...');
+    // ========== ENSURE MODAL VIDEOS DON'T AUTOPLAY ==========
+    function preventModalAutoplay() {
+        // Find all modal videos and disable autoplay
+        document.querySelectorAll(CONFIG.modalVideoSelector).forEach(video => {
+            // Remove autoplay attribute
+            video.removeAttribute('autoplay');
+            video.autoplay = false;
+            
+            // Pause immediately if somehow playing
+            if (!video.paused) {
+                video.pause();
+                video.currentTime = 0;
+            }
+            
+            // Override any play attempts
+            const originalPlay = video.play;
+            video.play = function() {
+                // Only allow play if modal is open for this video
+                const modal = video.closest(CONFIG.modalSelector);
+                if (modal && modal.classList.contains('show')) {
+                    return originalPlay.apply(this, arguments);
+                }
+                log('Prevented modal video autoplay');
+                return Promise.reject('Modal video autoplay prevented');
+            };
+        });
         
-        // Initialize carousels
-        initCarousels();
-        
-        // Initialize video previews with observer
-        initVideoPreviewsWithObserver();
-        
-        // Optimize image loading
-        optimizeImageLoading();
-        
-        // Hide swipe indicators
-        setTimeout(function() {
-            document.querySelectorAll('.swipe-indicator').forEach(function(el) {
+        log('Modal autoplay prevention initialized');
+    }
+
+    // ========== HIDE SWIPE INDICATOR ==========
+    function hideSwipeIndicator() {
+        setTimeout(() => {
+            document.querySelectorAll('.swipe-indicator').forEach(el => {
                 el.style.opacity = '0';
-                setTimeout(function() {
+                setTimeout(() => {
                     el.style.display = 'none';
                 }, 500);
             });
         }, 3000);
-        
-        // Pause all background audio initially
-        document.querySelectorAll('.background-audio').forEach(audio => {
-            audio.pause();
-        });
-        
-        console.log('Ready!');
-    }
-
-    // Start
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
-    }
-
-})();
-</script>
-
-
-<script>
-(function() {
-    'use strict';
-
-    // ========== VIDEO PREVIEW WITH AUDIO ==========
-    function initVideoPreviews() {
-        const previewVideos = document.querySelectorAll('.video-preview-player');
-        
-        // Check if we've already had user interaction
-        let hasUserInteracted = false;
-        
-        // Function to play video with audio
-        function playVideoWithAudio(videoElement) {
-            if (!videoElement || !videoElement.paused) return;
-            
-            // Try to play with audio
-            const playPromise = videoElement.play();
-            
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        console.log('Video playing with audio');
-                        // Successfully playing with audio
-                        
-                        // Pause background audio for this activity
-                        const container = videoElement.closest('.video-preview-container');
-                        if (container) {
-                            const activityId = container.dataset.activityId;
-                            if (activityId) {
-                                const backgroundAudio = document.getElementById(`audio-${activityId}`);
-                                if (backgroundAudio) {
-                                    backgroundAudio.pause();
-                                }
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.log('Auto-play with audio prevented:', error);
-                        // Browser blocked autoplay with audio
-                        // We'll wait for user interaction
-                    });
-            }
-        }
-
-        // Function to pause video
-        function pauseVideo(videoElement) {
-            if (!videoElement || videoElement.paused) return;
-            videoElement.pause();
-        }
-
-        // Mark user interaction
-        function handleUserInteraction() {
-            if (!hasUserInteracted) {
-                hasUserInteracted = true;
-                console.log('User interacted - enabling audio');
-                
-                // Try to play all visible videos with audio
-                document.querySelectorAll('.video-preview-player').forEach(video => {
-                    if (isElementInViewport(video)) {
-                        playVideoWithAudio(video);
-                    }
-                });
-            }
-        }
-
-        // Check if element is in viewport
-        function isElementInViewport(el) {
-            const rect = el.getBoundingClientRect();
-            return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-            );
-        }
-
-        // Set up videos
-        previewVideos.forEach(video => {
-            // Remove muted attribute if present
-            video.muted = false;
-            video.volume = 1.0;
-            
-            // Preload
-            video.load();
-            
-            // Try to play immediately (will likely fail, but worth a try)
-            playVideoWithAudio(video);
-        });
-
-        // Listen for user interactions
-        const interactionEvents = ['click', 'touchstart', 'keydown', 'scroll'];
-        interactionEvents.forEach(eventType => {
-            document.addEventListener(eventType, handleUserInteraction, { once: true, passive: true });
-        });
-
-        // Intersection Observer for visibility
-        if ('IntersectionObserver' in window) {
-            const videoObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const video = entry.target;
-                    
-                    if (entry.isIntersecting) {
-                        // Video is visible
-                        if (hasUserInteracted) {
-                            // User has interacted - play with audio
-                            playVideoWithAudio(video);
-                        } else {
-                            // No interaction yet - try muted first, then upgrade on interaction
-                            video.muted = true;
-                            video.play()
-                                .then(() => {
-                                    console.log('Playing muted until user interaction');
-                                    // Store that this video is playing muted
-                                    video.dataset.playingMuted = 'true';
-                                })
-                                .catch(() => {});
-                        }
-                        
-                        // Pause background audio
-                        const container = video.closest('.video-preview-container');
-                        if (container) {
-                            const activityId = container.dataset.activityId;
-                            if (activityId) {
-                                const backgroundAudio = document.getElementById(`audio-${activityId}`);
-                                if (backgroundAudio) {
-                                    backgroundAudio.pause();
-                                }
-                            }
-                        }
-                    } else {
-                        // Video not visible - pause
-                        pauseVideo(video);
-                    }
-                });
-            }, {
-                threshold: 0.3,
-                rootMargin: '50px'
-            });
-
-            previewVideos.forEach(video => {
-                videoObserver.observe(video);
-            });
-        }
-
-        // Handle user interaction to unmute videos
-        function unmuteAllVideos() {
-            document.querySelectorAll('.video-preview-player[data-playing-muted="true"]').forEach(video => {
-                video.muted = false;
-                // No need to restart, it's already playing
-                console.log('Unmuted video after interaction');
-                delete video.dataset.playingMuted;
-            });
-        }
-
-        // Override handleUserInteraction to also unmute
-        const originalHandler = handleUserInteraction;
-        handleUserInteraction = function() {
-            originalHandler();
-            unmuteAllVideos();
-        };
-
-        // Re-attach listeners with the new handler
-        interactionEvents.forEach(eventType => {
-            document.removeEventListener(eventType, handleUserInteraction);
-            document.addEventListener(eventType, handleUserInteraction, { once: true, passive: true });
-        });
-
-    }
-
-    // ========== EXISTING FUNCTIONS ==========
-    
-    // Update openVideoModal to handle preview video
-    window.openVideoModal = function(activityId) {
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            
-            // Pause preview video
-            const previewVideo = document.querySelector(`#preview-${activityId} video`);
-            if (previewVideo) {
-                previewVideo.pause();
-            }
-            
-            // Play modal video with audio
-            const modalVideo = modal.querySelector('video');
-            if (modalVideo) {
-                modalVideo.muted = false;
-                modalVideo.volume = 1.0;
-                modalVideo.play().catch(function(e) {
-                    console.log('Modal video play failed:', e);
-                });
-            }
-        }
-    };
-
-    window.closeModal = function(activityId) {
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-            
-            const modalVideo = modal.querySelector('video');
-            if (modalVideo) {
-                modalVideo.pause();
-                modalVideo.currentTime = 0;
-            }
-            
-            // Resume preview video if visible
-            const previewContainer = document.getElementById(`preview-${activityId}`);
-            if (previewContainer && isElementInViewport(previewContainer)) {
-                const previewVideo = previewContainer.querySelector('video');
-                if (previewVideo) {
-                    previewVideo.play().catch(() => {});
-                }
-            }
-        }
-    };
-
-    // Helper function to check if element is in viewport
-    function isElementInViewport(el) {
-        if (!el) return false;
-        const rect = el.getBoundingClientRect();
-        return (
-            rect.top < window.innerHeight &&
-            rect.bottom > 0 &&
-            rect.left < window.innerWidth &&
-            rect.right > 0
-        );
     }
 
     // ========== INITIALIZATION ==========
     function initialize() {
-        console.log('Initializing with audio support...');
+        log('Initializing Journey Reels...');
         
-        // Initialize video previews with audio
-        initVideoPreviews();
+        // Stop all media initially
+        stopAllMedia();
         
-        // Your existing initialization code...
-        // (carousels, image optimization, etc.)
+        // Prevent modal autoplay
+        preventModalAutoplay();
         
-        console.log('Ready!');
+        // Initialize all components
+        initUserInteractionHandler();
+        initIntersectionObserver();
+        initScrollHandler();
+        initCarousels();
+        initImageOptimization();
+        initKeyboardNavigation();
+        hideSwipeIndicator();
+        
+        log('Journey Reels initialized successfully', {
+            videosFound: document.querySelectorAll(CONFIG.videoSelector).length,
+            audioFound: document.querySelectorAll(CONFIG.backgroundAudioSelector).length,
+            modalVideosFound: document.querySelectorAll(CONFIG.modalVideoSelector).length,
+            reelsFound: document.querySelectorAll(CONFIG.reelSelector).length
+        });
     }
 
-    // Start
+    // Start when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initialize);
     } else {
         initialize();
     }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        state.observers.forEach(observer => {
+            if (observer && typeof observer.disconnect === 'function') {
+                observer.disconnect();
+            }
+        });
+        stopAllMedia();
+    });
 
 })();
 </script>

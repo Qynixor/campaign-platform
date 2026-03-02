@@ -552,10 +552,10 @@
         .preview-badge {
             position: absolute;
             top: 10px;
-            right: 50px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 9999px;
             font-size: 12px;
             display: flex;
@@ -564,6 +564,18 @@
             border: 1px solid var(--border-color);
             backdrop-filter: blur(4px);
             z-index: 5;
+        }
+
+        .preview-badge i {
+            color: var(--twitter-blue);
+        }
+
+        .preview-badge.warning {
+            background: rgba(244, 33, 46, 0.9);
+        }
+
+        .preview-badge.warning i {
+            color: white;
         }
 
         .remove-file-btn {
@@ -606,6 +618,45 @@
             padding: 2px 8px;
             border-radius: 9999px;
             font-size: 11px;
+        }
+
+        .file-size.warning {
+            background: rgba(244, 33, 46, 0.2);
+            color: #f4212e;
+        }
+
+        /* Size Limit Banner */
+        .size-limit-banner {
+            background: var(--card-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .size-limit-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(29, 155, 240, 0.1);
+            border-radius: var(--border-radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--twitter-blue);
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .size-limit-content {
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .size-limit-content strong {
+            color: var(--twitter-blue);
         }
 
         /* Compression UI */
@@ -1201,7 +1252,17 @@
                     <i class="fas fa-video"></i>
                 </div>
                 <div class="video-info-content">
-                    <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically compress it for fast upload and extract HD screenshots to create a story carousel. Viewers can watch the full video by clicking the play button.
+                    <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically extract HD screenshots to create a story carousel. Videos are limited to <strong>40MB maximum size</strong>.
+                </div>
+            </div>
+
+            <!-- SIZE LIMIT BANNER -->
+            <div class="size-limit-banner">
+                <div class="size-limit-icon">
+                    <i class="fas fa-weight-hanging"></i>
+                </div>
+                <div class="size-limit-content">
+                    <strong>40MB Video Limit:</strong> Videos larger than 40MB cannot be uploaded. The file size will be shown in the preview so you can check before submitting.
                 </div>
             </div>
             
@@ -1366,7 +1427,7 @@
                                                     Upload image, video, or audio
                                                 {% endif %}
                                             </div>
-                                            <span class="form-helper">Click or drag & drop</span>
+                                            <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
                                             <input type="file" 
                                                    class="file-input-hidden" 
                                                    id="file-input-{{ forloop.counter0 }}"
@@ -1651,7 +1712,7 @@
                                                 Upload image, video, or audio
                                             {% endif %}
                                         </div>
-                                        <span class="form-helper">Click or drag & drop</span>
+                                        <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
                                         <input type="file" 
                                                class="file-input-hidden" 
                                                id="file-input-{{ form_index }}"
@@ -1783,7 +1844,7 @@
                                     <!-- VIDEO UPLOAD TIP -->
                                     <div class="video-upload-tip">
                                         <i class="fas fa-lightbulb"></i>
-                                        <span><strong>Pro tip:</strong> Upload a video and we'll automatically compress it and create a photo carousel!</span>
+                                        <span><strong>Pro tip:</strong> Upload a video and we'll automatically create a photo carousel! Videos must be under <strong>40MB</strong>.</span>
                                     </div>
                                     
                                     <!-- HIDDEN FIELDS -->
@@ -1842,7 +1903,7 @@
                                             <div class="file-upload-text">
                                                 Upload image, video, or audio
                                             </div>
-                                            <span class="form-helper">Click or drag & drop</span>
+                                            <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
                                             <input type="file" 
                                                    class="file-input-hidden" 
                                                    id="file-input-{{ form_index }}"
@@ -1905,12 +1966,11 @@
         </div>
     </div>
 
-    <!-- COMPLETE WORKING SCRIPT WITH VIDEO COMPRESSION -->
+    <!-- UPDATED SCRIPT WITH 40MB VIDEO LIMIT AND SIZE DISPLAY -->
     <script>
-        // ===== CONFIGURATION =====
-        const CLOUDINARY_LIMIT = 100 * 1024 * 1024; // 100MB
-        const TARGET_SIZE = 25 * 1024 * 1024; // 25MB ideal
-        
+        // Constants
+        const MAX_VIDEO_SIZE = 40 * 1024 * 1024; // 40MB in bytes
+
         // ===== EMOJI HANDLING =====
         function addEmojiToField(emoji, formIndex) {
             const form = document.getElementById(`activity-form-${formIndex}`);
@@ -1930,306 +1990,125 @@
             
             textarea.dispatchEvent(new Event('input'));
         }
-        
-        // ===== MAIN FILE HANDLER WITH COMPRESSION =====
-        async function handleFileSelect(formIndex) {
+
+        // ===== FORMAT FILE SIZE =====
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // ===== HANDLE FILE SELECTION =====
+        function handleFileSelect(formIndex) {
             const fileInput = document.getElementById(`file-input-${formIndex}`);
             const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
             const previewArea = document.getElementById(`file-preview-${formIndex}`);
             const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
             
-            if (!fileInput || !fileInput.files.length) return;
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
             
-            const originalFile = fileInput.files[0];
-            console.log('File selected:', originalFile.name, (originalFile.size/1024/1024).toFixed(1) + 'MB');
+            const file = fileInput.files[0];
             
-            // Check if it's a video
-            const isVideo = originalFile.type.startsWith('video/') || 
-                            ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v'].some(ext => 
-                                originalFile.name.toLowerCase().endsWith(ext)
-                            );
+            // Check file size for videos
+            const isVideo = file.type.startsWith('video/');
+            const fileSize = file.size;
+            const fileSizeFormatted = formatFileSize(fileSize);
+            
+            // Validate video size
+            if (isVideo && fileSize > MAX_VIDEO_SIZE) {
+                showNotification(`Video too large: ${fileSizeFormatted} (max 40MB)`, 'error');
+                fileInput.value = '';
+                return;
+            }
+            
+            // Update Django file input
+            if (djangoFileInput) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                djangoFileInput.files = dataTransfer.files;
+            }
+            
+            // Hide existing file if present
+            const existingFile = document.getElementById(`existing-file-${formIndex}`);
+            if (existingFile) {
+                existingFile.style.display = 'none';
+            }
             
             // Show screenshot selector for videos
             if (screenshotContainer) {
                 screenshotContainer.style.display = isVideo ? 'block' : 'none';
             }
             
-            let fileToUpload = originalFile;
-            
-            // COMPRESS VIDEO IF NEEDED
-            if (isVideo && originalFile.size > CLOUDINARY_LIMIT) {
-                // Show compression UI
-                showCompressionUI(formIndex, originalFile);
-                
-                try {
-                    // Compress the video
-                    fileToUpload = await compressVideo(originalFile, formIndex);
-                    
-                    // Show success
-                    showNotification(
-                        `✅ Video compressed: ${(originalFile.size/1024/1024).toFixed(1)}MB → ${(fileToUpload.size/1024/1024).toFixed(1)}MB`,
-                        'success'
-                    );
-                    
-                    // Hide compression UI
-                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
-                    if (compressionUI) {
-                        compressionUI.style.opacity = '0';
-                        setTimeout(() => compressionUI.remove(), 300);
-                    }
-                    
-                } catch (error) {
-                    console.error('Compression failed:', error);
-                    showNotification('❌ Compression failed. Please try a smaller video.', 'error');
-                    
-                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
-                    if (compressionUI) compressionUI.remove();
-                    
-                    fileInput.value = '';
-                    return;
-                }
-            } else if (isVideo && originalFile.size > TARGET_SIZE) {
-                // Optional compression for better performance
-                showNotification(`🎬 Optimizing video for faster playback...`, 'info');
-                
-                try {
-                    fileToUpload = await compressVideo(originalFile, formIndex);
-                    showNotification(
-                        `✨ Optimized: ${(originalFile.size/1024/1024).toFixed(1)}MB → ${(fileToUpload.size/1024/1024).toFixed(1)}MB`,
-                        'success'
-                    );
-                    
-                    const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
-                    if (compressionUI) compressionUI.remove();
-                    
-                } catch (error) {
-                    console.log('Using original video');
-                    fileToUpload = originalFile;
-                }
-            }
-            
-            // Update the Django file input with the compressed file
-            if (djangoFileInput) {
-                const dt = new DataTransfer();
-                dt.items.add(fileToUpload);
-                djangoFileInput.files = dt.files;
-            }
-            
-            // Show preview
-            createPreview(fileToUpload, formIndex, originalFile);
+            // Create preview
+            createFilePreview(file, formIndex, fileSizeFormatted, isVideo);
         }
 
-        // ===== COMPRESS VIDEO FUNCTION =====
-        function compressVideo(file, formIndex) {
-            return new Promise((resolve, reject) => {
-                // Update progress
-                updateCompressionProgress(formIndex, 10, 'Analyzing video...');
-                
-                // Create video element to get info
-                const video = document.createElement('video');
-                video.preload = 'metadata';
-                
-                video.onloadedmetadata = function() {
-                    URL.revokeObjectURL(video.src);
-                    
-                    // Calculate compression based on duration and original size
-                    const duration = video.duration;
-                    const originalSizeMB = file.size / (1024 * 1024);
-                    
-                    // Determine target size based on original
-                    let targetSizeMB;
-                    if (originalSizeMB > 200) targetSizeMB = 30;
-                    else if (originalSizeMB > 100) targetSizeMB = 25;
-                    else if (originalSizeMB > 50) targetSizeMB = 20;
-                    else targetSizeMB = 15;
-                    
-                    updateCompressionProgress(formIndex, 30, `Target: ${targetSizeMB}MB...`);
-                    
-                    // Simulate compression with progress
-                    simulateCompression(file, targetSizeMB, duration, formIndex)
-                        .then(compressedFile => {
-                            updateCompressionProgress(formIndex, 100, 'Complete!');
-                            resolve(compressedFile);
-                        })
-                        .catch(reject);
-                };
-                
-                video.onerror = function() {
-                    URL.revokeObjectURL(video.src);
-                    reject(new Error('Failed to load video'));
-                };
-                
-                video.src = URL.createObjectURL(file);
-            });
-        }
-
-        // ===== SIMULATE COMPRESSION =====
-        function simulateCompression(originalFile, targetSizeMB, duration, formIndex) {
-            return new Promise((resolve) => {
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 8;
-                    
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        
-                        // Calculate compressed size
-                        const originalSizeMB = originalFile.size / (1024 * 1024);
-                        const ratio = Math.min(0.8, targetSizeMB / originalSizeMB);
-                        const compressedSize = originalFile.size * ratio;
-                        
-                        // Create compressed file (simulated)
-                        const compressedBlob = originalFile.slice(0, compressedSize, 'video/mp4');
-                        const compressedFile = new File(
-                            [compressedBlob],
-                            originalFile.name.replace(/\.[^/.]+$/, '.mp4'),
-                            { type: 'video/mp4' }
-                        );
-                        
-                        // Override size property
-                        Object.defineProperty(compressedFile, 'size', {
-                            value: compressedSize
-                        });
-                        
-                        resolve(compressedFile);
-                    } else {
-                        updateCompressionProgress(formIndex, progress, `Compressing... ${Math.round(progress)}%`);
-                    }
-                }, 100);
-            });
-        }
-
-        // ===== SHOW COMPRESSION UI =====
-        function showCompressionUI(formIndex, file) {
-            const existing = document.getElementById(`compression-ui-${formIndex}`);
-            if (existing) existing.remove();
-            
-            const previewArea = document.getElementById(`file-preview-${formIndex}`);
-            const compressionUI = document.createElement('div');
-            compressionUI.className = 'compression-ui';
-            compressionUI.id = `compression-ui-${formIndex}`;
-            compressionUI.innerHTML = `
-                <div class="compression-header">
-                    <i class="fas fa-compress-alt"></i>
-                    <span>Compressing video for upload...</span>
-                </div>
-                <div class="compression-details">
-                    <div class="compression-stat">
-                        <span class="stat-label">Original size:</span>
-                        <span class="stat-value">${(file.size / (1024 * 1024)).toFixed(1)} MB</span>
-                    </div>
-                    <div class="compression-stat">
-                        <span class="stat-label">Target:</span>
-                        <span class="stat-value">Under 100 MB</span>
-                    </div>
-                    <div class="compression-progress">
-                        <div class="progress-bar-container">
-                            <div class="progress-fill" id="compress-progress-${formIndex}" style="width: 0%"></div>
-                        </div>
-                        <div class="progress-text" id="compress-text-${formIndex}">Starting...</div>
-                    </div>
-                </div>
-            `;
-            
-            previewArea.insertAdjacentElement('beforebegin', compressionUI);
-        }
-
-        // ===== UPDATE COMPRESSION PROGRESS =====
-        function updateCompressionProgress(formIndex, percent, message) {
-            const progressBar = document.getElementById(`compress-progress-${formIndex}`);
-            const progressText = document.getElementById(`compress-text-${formIndex}`);
-            
-            if (progressBar) {
-                progressBar.style.width = `${percent}%`;
-            }
-            
-            if (progressText) {
-                progressText.textContent = message;
-            }
-        }
-
-        // ===== CREATE PREVIEW =====
-        function createPreview(file, formIndex, originalFile) {
+        // ===== CREATE FILE PREVIEW =====
+        function createFilePreview(file, formIndex, fileSizeFormatted, isVideo) {
             const previewArea = document.getElementById(`file-preview-${formIndex}`);
             if (!previewArea) return;
             
             const reader = new FileReader();
             
             reader.onload = function(e) {
-                const isVideo = file.type.startsWith('video/');
-                const isImage = file.type.startsWith('image/');
-                const isAudio = file.type.startsWith('audio/');
+                const isOverLimit = isVideo && file.size > MAX_VIDEO_SIZE;
+                const sizeWarningClass = isOverLimit ? ' warning' : '';
+                const sizeWarningIcon = isOverLimit ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-database"></i>';
                 
-                let previewHTML = '';
+                let mediaHtml = '';
                 
-                if (isVideo) {
-                    previewHTML = `
-                        <div class="file-preview-wrapper">
-                            <div class="file-preview-item">
-                                <video controls style="width:100%; max-height:300px;">
-                                    <source src="${e.target.result}" type="${file.type}">
-                                </video>
-                                ${file.size < originalFile.size ? 
-                                    `<div class="compression-badge">
-                                        <i class="fas fa-check-circle"></i> Compressed
-                                    </div>` : ''}
-                                <div class="preview-badge">
-                                    <i class="fas fa-video"></i> Video
-                                    <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
-                                </div>
-                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="file-name">
-                                ${file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name}
-                                ${file.size < originalFile.size ? 
-                                    `<span style="color:#00b87a; margin-left:8px;">
-                                        (was ${(originalFile.size/1024/1024).toFixed(1)}MB)
-                                    </span>` : ''}
-                            </div>
+                if (file.type.startsWith('image/')) {
+                    mediaHtml = `<img src="${e.target.result}" alt="Preview">`;
+                } else if (file.type.startsWith('video/')) {
+                    mediaHtml = `
+                        <video controls>
+                            <source src="${e.target.result}" type="${file.type}">
+                            Your browser does not support the video tag.
+                        </video>
+                    `;
+                } else if (file.type.startsWith('audio/')) {
+                    mediaHtml = `
+                        <div class="audio-preview">
+                            <i class="fas fa-music" style="font-size: 32px; color: #1d9bf0; margin-bottom: 8px;"></i>
+                            <audio controls style="width: 100%;">
+                                <source src="${e.target.result}" type="${file.type}">
+                            </audio>
                         </div>
                     `;
-                } else if (isImage) {
-                    previewHTML = `
-                        <div class="file-preview-wrapper">
-                            <div class="file-preview-item">
-                                <img src="${e.target.result}" style="width:100%; max-height:300px; object-fit:contain;">
-                                <div class="preview-badge">
-                                    <i class="fas fa-image"></i> Image
-                                    <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
-                                </div>
-                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="file-name">${file.name}</div>
-                        </div>
-                    `;
-                } else if (isAudio) {
-                    previewHTML = `
-                        <div class="file-preview-wrapper">
-                            <div class="file-preview-item" style="padding:20px;">
-                                <div style="text-align:center;">
-                                    <i class="fas fa-music" style="font-size:48px; color:#1d9bf0; margin-bottom:10px;"></i>
-                                    <audio controls style="width:100%;">
-                                        <source src="${e.target.result}" type="${file.type}">
-                                    </audio>
-                                    <div class="preview-badge" style="position:static; margin-top:10px;">
-                                        <i class="fas fa-headphones"></i> Audio
-                                        <span class="file-size">${(file.size/1024/1024).toFixed(1)}MB</span>
-                                    </div>
-                                </div>
-                                <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div class="file-name">${file.name}</div>
+                } else {
+                    mediaHtml = `
+                        <div style="padding: 20px; text-align: center;">
+                            <i class="fas fa-file" style="font-size: 32px; color: #71767b;"></i>
+                            <div style="margin-top: 8px;">${file.name}</div>
                         </div>
                     `;
                 }
                 
-                previewArea.innerHTML = previewHTML;
+                previewArea.innerHTML = `
+                    <div class="file-preview-wrapper">
+                        <div class="file-preview-item">
+                            ${mediaHtml}
+                            <div class="preview-badge ${sizeWarningClass}">
+                                ${sizeWarningIcon}
+                                <span>${fileSizeFormatted}</span>
+                            </div>
+                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="file-name">
+                            <span>${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}</span>
+                            <span class="file-size ${isOverLimit ? 'warning' : ''}">${fileSizeFormatted}</span>
+                        </div>
+                        ${isOverLimit ? `
+                            <div style="padding: 8px 12px; background: rgba(244, 33, 46, 0.1); color: #f4212e; font-size: 12px; border-top: 1px solid var(--border-color);">
+                                <i class="fas fa-exclamation-circle"></i> Video exceeds 40MB limit. Please choose a smaller file.
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
             };
             
             reader.readAsDataURL(file);
@@ -2241,13 +2120,11 @@
             const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
             const previewArea = document.getElementById(`file-preview-${formIndex}`);
             const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
-            const compressionUI = document.getElementById(`compression-ui-${formIndex}`);
             
             if (fileInput) fileInput.value = '';
             if (djangoFileInput) djangoFileInput.value = '';
             if (previewArea) previewArea.innerHTML = '';
             if (screenshotContainer) screenshotContainer.style.display = 'none';
-            if (compressionUI) compressionUI.remove();
             
             // Show existing file if any
             const existingFile = document.getElementById(`existing-file-${formIndex}`);
@@ -2387,6 +2264,19 @@
         document.getElementById('activityForm')?.addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             let hasErrors = false;
+            
+            // Check for any oversized videos
+            const fileInputs = document.querySelectorAll('input[type="file"][id^="file-input-"]');
+            for (let input of fileInputs) {
+                if (input.files && input.files.length > 0) {
+                    const file = input.files[0];
+                    if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
+                        e.preventDefault();
+                        showNotification('One or more videos exceed the 40MB limit. Please remove them before submitting.', 'error');
+                        return false;
+                    }
+                }
+            }
             
             {% if is_next_day_locked %}
             const hasLockedForms = document.querySelectorAll('.form-section.locked').length > 0;
