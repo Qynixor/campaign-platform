@@ -162,10 +162,20 @@ path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
  path('chat/<int:chat_id>/send/', views.send_message, name='send_message'),
     path('testimonial/', views.testimonial, name='testimonial'),
 
-      path('get_activity_comments/<int:activity_id>/', views.get_activity_comments, name='get_activity_comments'),
-    path('post_activity_comment/', views.post_activity_comment, name='post_activity_comment'),
-    path('like_activity_comment/', views.like_activity_comment, name='like_activity_comment'),
-   
+  # These should be in your urlpatterns:
+path('love_activity/<int:activity_id>/', views.love_activity, name='love_activity'),
+path('get_activity_comments/<int:activity_id>/', views.get_activity_comments, name='get_activity_comments'),
+path('post_activity_comment/', views.post_activity_comment, name='post_activity_comment'),
+path('like_activity_comment/', views.like_activity_comment, name='like_activity_comment'),
+
+# Add these to your urlpatterns if they're missing:
+path('post_comment_reply/', views.post_comment_reply, name='post_comment_reply'),
+path('get_comment_replies/<int:comment_id>/', views.get_comment_replies, name='get_comment_replies'),
+path('like_comment_reply/', views.like_comment_reply, name='like_comment_reply'),
+
+
+
+
 path('initiate-pledge-payment/<int:pledge_id>/', views.initiate_pledge_payment, name='initiate_pledge_payment'),
 path('pledge-payment-callback/<int:pledge_id>/', views.pledge_payment_callback, name='pledge_payment_callback'),
 path('pledge-success/<int:pledge_id>/', views.pledge_success, name='pledge_success'),
