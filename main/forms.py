@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile, Campaign, Comment, Activity, SupportCampaign, Chat, Message, Follow
+from .models import Profile, Campaign, Comment, Activity, SupportCampaign, Follow
 
 from django.forms import inlineformset_factory
 
@@ -254,24 +254,6 @@ class ProfileForm(forms.ModelForm):
 
 
 
-
-# forms.py
-class MessageForm(forms.ModelForm):
-    class Meta:
-        model = Message
-        fields = ['content', 'file']
-        widgets = {
-            'content': forms.Textarea(attrs={
-                'rows': 1,
-                'placeholder': 'Type a message...',
-                'id': 'messageInput'
-            }),
-            'file': forms.FileInput(attrs={
-                'id': 'fileInput',
-                'style': 'display: none;',
-                'accept': 'image/*,.pdf,.doc,.docx,.txt'
-            })
-        }
 
 # CommentForm
 class CommentForm(forms.ModelForm):
@@ -580,30 +562,6 @@ class CampaignForm(forms.ModelForm):
 
 
 
-
-
-
-
-class ChatForm(forms.ModelForm):
-    participants = forms.ModelMultipleChoiceField(queryset=None, widget=forms.CheckboxSelectMultiple)
-    
-    class Meta:
-        model = Chat
-        fields = ('title', 'participants',)
-
-    def __init__(self, user, *args, **kwargs):
-        super(ChatForm, self).__init__(*args, **kwargs)
-        
-        # Get the current user's followers and followings
-        followers = Follow.objects.filter(followed=user)
-        followings = Follow.objects.filter(follower=user)
-        
-        # Create a list of followers and followings
-        user_choices = [(follower.follower.pk, follower.follower.username) for follower in followers] + \
-                       [(following.followed.pk, following.followed.username) for following in followings]
-        
-        # Set the queryset for the participants field
-        self.fields['participants'].queryset = User.objects.filter(pk__in=[choice[0] for choice in user_choices])
 
 
 

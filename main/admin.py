@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile, Follow, Comment, Activity, SupportCampaign, Love, CampaignView, Chat, Message
+from .models import Profile, Follow, Comment, Activity, SupportCampaign, Love, CampaignView
 from .models import  AffiliateLink
 from .models import ActivityLove, ActivityComment,CampaignProduct
 from .models import Notification,Report,NotInterested 
@@ -288,18 +288,6 @@ class LoveAdmin(admin.ModelAdmin):
 class CampaignViewAdmin(admin.ModelAdmin):
     list_display = ('campaign', 'user', 'timestamp')  # Remove 'time_spent'
     search_fields = ('campaign__title', 'user__username')
-    list_filter = ('timestamp',)
-
-@admin.register(Chat)
-class ChatAdmin(admin.ModelAdmin):
-    filter_horizontal = ('participants',)  # Allows selecting multiple participants easily
-    list_display = ('id', 'created_at')
-    search_fields = ('id',)
-
-@admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'chat', 'sender', 'timestamp', 'content')
-    search_fields = ('chat__id', 'sender__username', 'content')
     list_filter = ('timestamp',)
 
 

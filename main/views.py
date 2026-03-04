@@ -14,12 +14,12 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from .forms import (
     UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
-    SupportForm, ChatForm, MessageForm, CampaignSearchForm, ProfileSearchForm
+    SupportForm, CampaignSearchForm, ProfileSearchForm
 )
 
 from .models import (
     Profile, Campaign, Comment, Follow, Activity, SupportCampaign,
-    User, Love, CampaignView, Chat, Notification,Message
+    User, Love, CampaignView, Notification
 )
 from main.models import UserSubscription
 
@@ -108,7 +108,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Case, When, Value, BooleanField, Q
 from django.utils import timezone
-from .models import Campaign, Profile, Notification, Chat, Message, NativeAd, NotInterested, Love
+from .models import Campaign, Profile, Notification,  NativeAd, NotInterested, Love
 from django.contrib.auth.models import AnonymousUser
 
 
@@ -238,8 +238,7 @@ def campaign_engagement_data(request, campaign_id):
     # Other data to pass to the template (e.g., unread notifications, ads, etc.)
     form = SubscriptionForm()
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+  
     ads = NativeAd.objects.all()
     # Pass data to the template
     # Suggested users
@@ -298,7 +297,7 @@ def campaign_engagement_data(request, campaign_id):
 
     return render(request, 'revenue/engagement_graph.html', {"campaign": campaign, "engagement_data": engagement_data,'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
+      
         'form': form,
         'ads': ads,
            
@@ -401,8 +400,7 @@ def top_participants_view(request, campaign_id):
 
     # Other template data
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+   
     ads = NativeAd.objects.all()
     form = SubscriptionForm()
 
@@ -411,7 +409,7 @@ def top_participants_view(request, campaign_id):
         'top_participants': top_participants,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
+      
         'form': form,
         'ads': ads,
         'suggested_users': suggested_users,
@@ -447,8 +445,7 @@ def verify_profile(request):
     # Other data to pass to the template
     form = SubscriptionForm()
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+    
     ads = NativeAd.objects.all()
 
     if request.method == 'POST':
@@ -531,7 +528,7 @@ def verify_profile(request):
         'form': form,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
+      
         'ads': ads,
         'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
@@ -593,12 +590,7 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
         unread_notifications = Notification.objects.filter(user=self.request.user, viewed=False)
         context['unread_notifications'] = unread_notifications
 
-        # Unread messages
-        user_chats = Chat.objects.filter(participants=self.request.user)
-        unread_messages_count = Message.objects.filter(
-            chat__in=user_chats
-        ).exclude(sender=self.request.user).count()
-        context['unread_messages_count'] = unread_messages_count
+        
 
         # User profile
         context['user_profile'] = user_profile
@@ -1500,28 +1492,6 @@ def upload_image(request):
         # Example: activity.image = image_file; activity.save()
         return JsonResponse({'success': True})
     return JsonResponse({'success': False})
-
-
-
-
-
-
-def love_activity(request, activity_id):
-    if request.method == 'POST' and request.user.is_authenticated:
-        try:
-            activity = Activity.objects.get(id=activity_id)
-            # Check if the user has already loved this activity
-            if not ActivityLove.objects.filter(activity=activity, user=request.user).exists():
-                # Create a new love for this activity by the user
-                ActivityLove.objects.create(activity=activity, user=request.user)
-            # Get updated love count for the activity
-            love_count = activity.loves.count()
-            return JsonResponse({'love_count': love_count})
-        except Activity.DoesNotExist:
-            return JsonResponse({'error': 'Activity not found'}, status=404)
-    else:
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
-
 
 
 
@@ -2612,476 +2582,6 @@ def notification_list(request):
 
 
 
-
-@login_required
-def create_chat(request):
-    following_users = [follow.followed for follow in request.user.following.all()]
-    category_filter = request.GET.get('category', '')  # Get category filter from request
-    user_profile = get_object_or_404(Profile, user=request.user)
-    
-    if request.method == 'POST':
-        form = ChatForm(request.user, request.POST)
-        if form.is_valid():
-            chat = form.save(commit=False)
-            chat.manager = request.user
-            chat.save()
-            form.save_m2m()
-            return redirect('chat_detail', chat_id=chat.id)
-    else:
-        form = ChatForm(request.user)
-    
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    new_campaigns_from_follows = Campaign.objects.filter(
-        user__user__in=following_users, 
-        visibility='public', 
-        timestamp__gt=user_profile.last_campaign_check
-    )
-
-    user_profile.last_campaign_check = timezone.now()
-    user_profile.save()
-    
-    ads = NativeAd.objects.all()
-    
-    # Improved suggested users logic
-    current_user_following = request.user.following.all()  # Get all Follow objects
-    following_user_ids = [follow.followed_id for follow in current_user_following]  # Extract user IDs
-    
-    # Exclude current user and already followed users
-    all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-    
-    suggested_users = []
-    
-    for profile in all_profiles:
-        similarity_score = calculate_similarity(user_profile, profile)
-        if similarity_score >= 0.5:
-            followers_count = Follow.objects.filter(followed=profile.user).count()
-            suggested_users.append({
-                'user': profile.user,
-                'followers_count': followers_count
-            })
-
-    # Limit to 2 suggested users
-    suggested_users = suggested_users[:2]
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-      
-
-    # Apply category filter if provided
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    categories = Campaign.objects.values_list('category', flat=True).distinct()
-
-    context = {
-        'ads': ads,
-        'form': form,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-        'new_campaigns_from_follows': new_campaigns_from_follows,
-        'suggested_users': suggested_users,
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-        'categories': categories,
-        'selected_category': category_filter,
-    }
-    
-    return render(request, 'main/create_chat.html', context)
-
-
-# views.py - Fixed send_message view
-import re
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-from django.db.models import Count
-from itertools import chain
-from collections import defaultdict
-from django.contrib.auth.models import User
-from django.views.decorators.http import require_POST
-from .models import Chat, Message, Profile, Notification, Campaign, NativeAd, Follow, Love, Comment, CampaignView, ActivityLove, ActivityComment
-from .forms import MessageForm
-from .utils import calculate_similarity
-
-@method_decorator(login_required, name='dispatch')
-class ChatDetailView(View):
-    def get(self, request, chat_id):
-        chat = get_object_or_404(
-            Chat.objects.select_related("manager").prefetch_related("participants"),
-            id=chat_id
-        )
-        
-        # Check if user is a participant or manager
-        if request.user not in chat.participants.all() and request.user != chat.manager:
-            return redirect('home')
-        
-        category_filter = request.GET.get('category', '')
-        user_profile = get_object_or_404(Profile, user=request.user)
-        following_users = request.user.following.values_list('followed', flat=True)
-        followers = request.user.followers.values_list('follower', flat=True)
-
-        combined_users = set(following_users) | set(followers)
-
-        user_choices = User.objects.filter(pk__in=combined_users).exclude(
-            pk=request.user.pk
-        ).exclude(pk__in=chat.participants.values_list("pk", flat=True))
-
-        messages = Message.objects.filter(chat=chat).select_related("sender__profile").order_by('timestamp')[:50]
-
-        # Initialize message_form
-        message_form = MessageForm(initial={'chat': chat})
-        
-        # Handle AJAX polling for new messages
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            last_message_id = request.GET.get('last_message', 0)
-            try:
-                last_message_id = int(last_message_id)
-            except (ValueError, TypeError):
-                last_message_id = 0
-                
-            new_messages = Message.objects.filter(
-                chat=chat, 
-                id__gt=last_message_id
-            ).select_related("sender__profile").order_by('timestamp')
-            
-            messages_data = []
-            for msg in new_messages:
-                messages_data.append({
-                    'id': msg.id,
-                    'content': msg.content,
-                    'sender': msg.sender.username,
-                    'sender_image': msg.sender.profile.image.url,
-                    'timestamp': msg.timestamp.isoformat(),
-                    'is_own': msg.sender == request.user,
-                    'file_url': msg.file.url if msg.file else None,
-                    'file_name': msg.file_name if msg.file else None,
-                    'file_type': msg.file_type if msg.file else None
-                })
-            
-            return JsonResponse({'messages': messages_data})
-        
-        # Regular page load - prepare context
-        unread_notifications = Notification.objects.filter(user=request.user, viewed=False)[:10]
-        new_campaigns_from_follows = Campaign.objects.filter(
-            user__in=following_users, visibility='public', timestamp__gt=user_profile.last_campaign_check
-        )
-
-        user_profile.last_campaign_check = timezone.now()
-        user_profile.save()
-
-        ads = NativeAd.objects.all()
-        
-        # Suggested users logic
-        current_user_following = request.user.following.all()
-        following_user_ids = [follow.followed_id for follow in current_user_following]
-        
-        all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-        
-        suggested_users = []
-        
-        for profile in all_profiles:
-            similarity_score = calculate_similarity(user_profile, profile)
-            if similarity_score >= 0.5:
-                followers_count = Follow.objects.filter(followed=profile.user).count()
-                suggested_users.append({
-                    'user': profile.user,
-                    'followers_count': followers_count
-                })
-
-        suggested_users = suggested_users[:2]
-
-        trending_campaigns = Campaign.objects.filter(visibility='public') \
-            .annotate(love_count_annotated=Count('loves')) \
-            .filter(love_count_annotated__gte=1)
-           
-        if category_filter:
-            trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-        trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-        # Top Contributors logic
-        contributor_data = []
-        try:
-            love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-            comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-            view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-            activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-            activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-            all_pairs = chain(love_pairs, comment_pairs, view_pairs, activity_love_pairs, activity_comment_pairs)
-
-            user_campaign_map = defaultdict(set)
-            for user_id, campaign_id in all_pairs:
-                user_campaign_map[user_id].add(campaign_id)
-
-            for user_id, campaign_set in user_campaign_map.items():
-                try:
-                    profile = Profile.objects.get(user__id=user_id)
-                    contributor_data.append({
-                        'user': profile.user,
-                        'image': profile.image,
-                        'campaign_count': len(campaign_set),
-                    })
-                except Profile.DoesNotExist:
-                    continue
-
-            top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-        except Exception as e:
-            top_contributors = []
-
-        categories = Campaign.objects.values_list('category', flat=True).distinct()
-
-        context = {
-            'ads': ads,
-            'unread_notifications': unread_notifications,
-            'new_campaigns_from_follows': new_campaigns_from_follows,
-            'user_profile': user_profile,
-            'chat': chat,
-            'message_form': message_form,
-            'messages': messages,
-            'user_choices': user_choices,
-            'suggested_users': suggested_users,
-            'trending_campaigns': trending_campaigns,
-            'top_contributors': top_contributors,
-            'categories': categories,
-            'selected_category': category_filter,
-            'user': request.user,
-        }
-
-        return render(request, 'main/chat_detail.html', context)
-
-@csrf_exempt
-@login_required
-def send_message(request, chat_id):
-    if request.method == 'POST':
-        content = request.POST.get('content', '').strip()
-        file = request.FILES.get('file')
-        
-        # Allow either content or file (or both)
-        if not content and not file:
-            return JsonResponse({'success': False, 'error': 'Message cannot be empty'})
-        
-        chat = get_object_or_404(Chat, id=chat_id)
-        
-        # Check if user is a participant or manager
-        if request.user not in chat.participants.all() and request.user != chat.manager:
-            return JsonResponse({'success': False, 'error': 'You are not authorized to send messages in this chat'})
-        
-        try:
-            # Auto-detect and convert URLs to clickable links if there's content
-            if content:
-                url_pattern = re.compile(r'https?://\S+')
-                content = url_pattern.sub(
-                    lambda m: f'<a href="{m.group(0)}" target="_blank" style="color: #075e54; text-decoration: underline;">{m.group(0)}</a>', 
-                    content
-                )
-            
-            # Create the message
-            message = Message.objects.create(
-                chat=chat,
-                sender=request.user,
-                content=content,
-                file=file,
-                file_name=file.name if file else '',
-                file_type=file.content_type if file else ''
-            )
-            
-            # Return the message data
-            return JsonResponse({
-                'success': True,
-                'message': {
-                    'id': message.id,
-                    'content': message.content,
-                    'sender': message.sender.username,
-                    'sender_image': message.sender.profile.image.url,
-                    'timestamp': message.timestamp.isoformat(),
-                    'is_own': True,
-                    'file_url': message.file.url if message.file else None,
-                    'file_name': message.file_name,
-                    'file_type': message.file_type
-                }
-            })
-            
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
-
-
-@login_required
-def user_chats(request):
-    user_profile = get_object_or_404(Profile, user=request.user)
-    last_chat_check = user_profile.last_chat_check
-
-    # Update user's last chat check timestamp
-    user_profile.last_chat_check = timezone.now()
-    user_profile.save()
-
-    # Get user chats and check for unread messages
-    user_chats = Chat.objects.filter(participants=request.user) | Chat.objects.filter(manager=request.user)
-    for chat in user_chats:
-        chat.has_unread_messages = chat.messages.filter(timestamp__gt=last_chat_check).exists()
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    engaged_users = set()
-  
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    # Get suggested users with improved logic
-    current_user_following = request.user.following.all()
-    following_user_ids = [follow.followed_id for follow in current_user_following]
-    
-    # Exclude current user and already followed users
-    all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)
-    
-    suggested_users = []
-    
-    for profile in all_profiles:
-        similarity_score = calculate_similarity(user_profile, profile)
-        if similarity_score >= 0.5:
-            followers_count = Follow.objects.filter(followed=profile.user).count()
-            suggested_users.append({
-                'user': profile.user,
-                'followers_count': followers_count
-            })
-
-    # Limit to only 2 suggested users
-    suggested_users = suggested_users[:2]
-
-    # Other data
-    following_users = [follow.followed for follow in request.user.following.all()]
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    new_campaigns_from_follows = Campaign.objects.filter(
-        user__user__id__in=following_user_ids,
-        visibility='public', 
-        timestamp__gt=user_profile.last_campaign_check
-    )
-    ads = NativeAd.objects.all()
-
-    context = {
-        'ads': ads,
-        'user_chats': user_chats,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-        'new_campaigns_from_follows': new_campaigns_from_follows,
-        'suggested_users': suggested_users,
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-    }
-    
-    return render(request, 'main/user_chats.html', context)
-
-
-@require_POST
-@login_required
-def add_participants(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if request.user == chat.manager:
-        user_ids = request.POST.getlist('participants')
-        users_to_add = User.objects.filter(id__in=user_ids)
-        chat.participants.add(*users_to_add)
-        return JsonResponse({'redirect': f'/chat/{chat_id}/'})
-    return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-@require_POST
-@login_required
-def remove_participants(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if request.user == chat.manager:
-        user_ids = request.POST.getlist('participants')
-        users_to_remove = chat.participants.filter(id__in=user_ids)
-        chat.participants.remove(*users_to_remove)
-        return JsonResponse({'redirect': f'/chat/{chat_id}/'})
-    return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-@require_POST
-@login_required
-def delete_chat(request, chat_id):
-    chat = get_object_or_404(Chat, id=chat_id)
-    if request.user == chat.manager:
-        chat.delete()
-        return JsonResponse({'redirect': '/user/chats/'})
-    return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Q
 from collections import defaultdict
@@ -3617,6 +3117,28 @@ def activity_list(request, campaign_id):
     }
     
     return render(request, 'main/activity_list.html', context)
+
+
+
+
+
+
+def love_activity(request, activity_id):
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            activity = Activity.objects.get(id=activity_id)
+            # Check if the user has already loved this activity
+            if not ActivityLove.objects.filter(activity=activity, user=request.user).exists():
+                # Create a new love for this activity by the user
+                ActivityLove.objects.create(activity=activity, user=request.user)
+            # Get updated love count for the activity
+            love_count = activity.loves.count()
+            return JsonResponse({'love_count': love_count})
+        except Activity.DoesNotExist:
+            return JsonResponse({'error': 'Activity not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
 
 
 
@@ -4424,8 +3946,7 @@ def private_campaign(request):
 
     # Notifications and messages
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+  
 
     # New campaigns from follows using consistent following_user_ids
     new_campaigns_from_follows = Campaign.objects.filter(
@@ -4495,7 +4016,7 @@ def private_campaign(request):
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
         'new_campaigns_from_follows': new_campaigns_from_follows,
-        'unread_messages_count': unread_messages_count,
+       
         'categories': categories,
         'selected_category': category_filter,
         'suggested_users': suggested_users,
@@ -4932,9 +4453,7 @@ def home(request):
     trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
 
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
-    
+   
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users, 
         visibility='public', 
@@ -5005,7 +4524,7 @@ def home(request):
         'already_loved': already_loved,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
+       
         'new_campaigns_from_follows': new_campaigns_from_follows,
                'categories': categories,
         'selected_category': category_filter,
@@ -5171,12 +4690,7 @@ def campaign_comments(request, campaign_id):
     # Fetch unread notifications for the user
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
 
-    # Fetch unread messages for the user
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(
-        chat__in=user_chats
-    ).exclude(sender=request.user).count()
-
+    
     # Check if there are new campaigns from follows
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users, 
@@ -5266,8 +4780,7 @@ def campaign_comments(request, campaign_id):
         'form': form,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
-        'new_campaigns_from_follows': new_campaigns_from_follows,
+              'new_campaigns_from_follows': new_campaigns_from_follows,
         'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
@@ -6257,8 +5770,6 @@ def home(request):
     trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
 
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    user_chats = Chat.objects.filter(participants=request.user)
-    unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
     
     new_campaigns_from_follows = Campaign.objects.filter(
         user__user__in=following_users, 
@@ -6344,7 +5855,7 @@ def home(request):
         'already_loved': already_loved,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
+      
         'new_campaigns_from_follows': new_campaigns_from_follows,
         'user_joined_status': user_joined_status,  # Pass to template
         'categories': categories,

@@ -3,8 +3,7 @@ from . import views
 
 from .views import CustomLoginView
 from .views import CampaignDeleteView
-# urls.py
-from .views import ChatDetailView
+
 from django.views.generic.base import RedirectView
 from .views import get_activity_comments, post_activity_comment, like_activity_comment
 
@@ -114,12 +113,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('search_profile_results/', views.search_profile_results, name='search_profile_results'),
     path('search/', views.search_campaign, name='search_campaign'),
     path('notifications/', views.notification_list, name='notification_list'),
-    path('create-chat/', views.create_chat, name='create_chat'),
-   path('chat/<int:chat_id>/', ChatDetailView.as_view(), name='chat_detail'),
-    path('user/chats/', views.user_chats, name='user_chats'),
-    path('chat/<int:chat_id>/add_participants/', views.add_participants, name='add_participants'),
-    path('chat/<int:chat_id>/remove_participants/', views.remove_participants, name='remove_participants'),
-    path('chat/<int:chat_id>/delete/', views.delete_chat, name='delete_chat'),
+ 
     path('campaign/<int:campaign_id>/toggle-love/', views.toggle_love, name='toggle_love'),
     path('campaign/<int:campaign_id>/support/', views.support, name='support'),
     path('campaign/<int:campaign_id>/support-campaign/', views.campaign_support, name='campaign_support'),
@@ -158,8 +152,7 @@ path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
 
     path('campaign-stories/', campaign_story_list, name='campaign_story_list'),
     path('campaign-stories/<slug:slug>/', campaign_story_detail, name='campaign_story_detail'),
-  
- path('chat/<int:chat_id>/send/', views.send_message, name='send_message'),
+
     path('testimonial/', views.testimonial, name='testimonial'),
 
   # These should be in your urlpatterns:

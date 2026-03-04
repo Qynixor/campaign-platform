@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 
 from main.models import (
     Profile, Campaign, Comment, Follow, Activity, SupportCampaign,
-    User, Love, CampaignView, Chat, Notification, Message,
+    User, Love, CampaignView,  Notification, 
     AffiliateLink, AffiliateLibrary, AffiliateNewsSource, NativeAd,
     Report, NotInterested, QuranVerse, Surah, Adhkar, Hadith,
     PlatformFund,CampaignProduct, ActivityComment, ActivityLove
@@ -38,7 +38,7 @@ from main.models import (
 
 from main.forms import (
     UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
-    SupportForm, ChatForm, MessageForm, CampaignSearchForm, ProfileSearchForm,
+    SupportForm, CampaignSearchForm, ProfileSearchForm,
      CampaignProductForm, ReportForm, NotInterestedForm,
     SubscriptionForm, UpdateVisibilityForm, ActivityCommentForm,
     UserVerificationForm
@@ -102,8 +102,8 @@ def index(request):
                 user_profile.last_campaign_check = timezone.now()
                 user_profile.save()
                 unread_notifications = list(Notification.objects.filter(user=request.user, viewed=False))
-                user_chats = Chat.objects.filter(participants=request.user)
-                unread_messages_count = Message.objects.filter(chat__in=user_chats).exclude(sender=request.user).count()
+              
+              
         except OperationalError as e:
             print(f"Database error in authenticated section: {e}")
             # Continue with limited functionality
