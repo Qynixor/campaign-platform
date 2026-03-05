@@ -106,27 +106,6 @@
             gap: 12px;
         }
 
-        /* Back Arrow */
-        .back-arrow {
-            width: 44px;
-            height: 44px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 22px;
-            cursor: pointer;
-            border: 1.5px solid rgba(255,255,255,0.3);
-            transition: all 0.2s;
-            backdrop-filter: blur(2px);
-        }
-
-        .back-arrow:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.95);
-        }
 
         /* Stats Icon */
         .stats-icon {
@@ -603,6 +582,92 @@
             display: block;
         }
     </style>
+
+<style>
+    /* Desktop Back Arrow - Only visible on desktop */
+    .desktop-back-arrow {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.2s;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 10000;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .desktop-back-arrow:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .desktop-back-arrow:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Mobile Back Arrow - Inside the journey container */
+    .mobile-back-arrow {
+        width: 44px;
+        height: 44px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        border: 1.5px solid rgba(255,255,255,0.3);
+        transition: all 0.2s;
+        backdrop-filter: blur(2px);
+        margin-right: 8px;
+    }
+
+    .mobile-back-arrow:active {
+        background: rgba(255,255,255,0.3);
+        transform: scale(0.95);
+    }
+
+    /* Dark mode support */
+    .dark-mode .desktop-back-arrow,
+    .dark-mode .mobile-back-arrow {
+        background: rgba(0, 0, 0, 0.5);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .dark-mode .desktop-back-arrow:hover {
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    /* Responsive: Show/hide based on screen size */
+    @media (min-width: 769px) {
+        .mobile-back-arrow {
+            display: none; /* Hide mobile back arrow on desktop */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .desktop-back-arrow {
+            display: none; /* Hide desktop back arrow on mobile */
+        }
+        .mobile-back-arrow {
+            display: flex; /* Show mobile back arrow */
+        }
+    }
+</style>
 </head>
 <body>
     <div class="popup-backdrop" id="popupBackdrop" onclick="closeAllPopups()"></div>
@@ -618,13 +683,16 @@
 
         <div class="gradient-top"></div>
         <div class="gradient-bottom"></div>
-
+<div class="desktop-back-arrow" onclick="window.location.href='{% url 'index' %}'">
+    <i class="fas fa-arrow-left"></i>
+</div>
         <!-- TOP BAR with back arrow and stats -->
         <div class="top-bar">
             <div class="left-group">
-                <div class="back-arrow" onclick="goBack()">
-                    <i class="fas fa-arrow-left"></i>
-                </div>
+            <!-- Mobile Back Arrow - Only shows on mobile -->
+            <div class="mobile-back-arrow" onclick="window.location.href='{% url 'index' %}'">
+                <i class="fas fa-arrow-left"></i>
+            </div>
                 <div style="position: relative;">
                     <div class="stats-icon" onclick="toggleStats(event)">
                         <i class="fas fa-chart-bar"></i>

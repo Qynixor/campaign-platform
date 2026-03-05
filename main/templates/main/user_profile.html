@@ -1178,20 +1178,22 @@ body.dark-mode .payment-section {
     <!-- ===== STATS SECTION ===== -->
     <div class="profile-stats">
         <div class="stat-item">
-            <a href="{% url 'follower_list' user_profile.user.username %}">
-                <span class="stat-value" id="follower-count">{{ followers_count|format_count }}</span>
-                <span class="stat-label">Followers</span>
+            <a href="#">
+                <span class="stat-value" id="follower-count">1</span>
+                <span class="stat-label">Supporters</span>
             </a>
         </div>
-        <div class="stat-item">
-            <a href="{% url 'following_list' user_profile.user.username %}">
-                <span class="stat-value">{{ following_count|format_count }}</span>
-                <span class="stat-label">Following</span>
-            </a>
-        </div>
+      
         <div class="stat-item">
             <span class="stat-value">{{ public_campaigns_count|format_count }}</span>
             <span class="stat-label">Causes</span>
+        </div>
+
+          <div class="stat-item">
+            <a href="#">
+                <span class="stat-value">2</span>
+                <span class="stat-label">Following </span>
+            </a>
         </div>
         <div class="stat-item">
             <span class="stat-value">{{ user_profile.total_loves|format_count }}</span>
@@ -1425,8 +1427,25 @@ body.dark-mode .payment-section {
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeDetailsModal()">
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px;">
+                {% if user.is_authenticated %}
+                    <!-- Logout Form -->
+                    <form id="modal-logout-form" action="{% url 'logout' %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                {% else %}
+                    <!-- Login Button -->
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="background-color: #007bff; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; display: inline-block;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                {% endif %}
+            </div>
+            
+            <button class="btn btn-secondary" onclick="closeDetailsModal()" style="padding: 8px 16px; border-radius: 4px; cursor: pointer;">
                 Close
             </button>
         </div>
