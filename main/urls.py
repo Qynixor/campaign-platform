@@ -217,6 +217,16 @@ path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name=
     # In urls.py
 # In urls.py
 path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug_video'),
+
+
+
+    # Supporters and Following (empty templates for now)
+    path('<str:username>/supporters/', views.supporters_view, name='supporters'),
+    path('<str:username>/following/causes/', views.following_causes_view, name='following_causes'),
+
+        # New and Trending Causes
+    path('causes/new/', views.new_causes_view, name='new_causes'),
+    path('causes/trending/', views.trending_causes_view, name='trending_causes'),
 ]
 
 

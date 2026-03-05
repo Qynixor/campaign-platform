@@ -127,11 +127,39 @@ Sitemap: https://rallynex.com/sitemap.xml
 
 """
     return HttpResponse(content, content_type="text/plain")
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def supporters_view(request, username):
+    """
+    Empty template for now - will add dynamic data later
+    """
+    return render(request, 'main/supporters.html')
+
+
+@login_required
+def following_causes_view(request, username):
+    """
+    Empty template for now - will add dynamic data later
+    """
+    return render(request, 'main/following_causes.html')
 
 
 
+from django.shortcuts import render
 
+def new_causes_view(request):
+    """
+    Demo view for new causes
+    """
+    return render(request, 'main/new_causes.html')
 
+def trending_causes_view(request):
+    """
+    Demo view for trending causes
+    """
+    return render(request, 'main/trending_causes.html')
 
 
 
