@@ -57,32 +57,14 @@ path('project_support/', RedirectView.as_view(
  path('edit/', views.edit_gif, name='edit_gif'),
 
     path('campaign/delete/<int:pk>/', CampaignDeleteView.as_view(), name='campaign-delete'),
-    path('libraries/', views.library_affiliates, name='library_affiliates'),
-    path('news/', views.news_affiliates, name='news_affiliates'),
-
-    path('poster-canva/', views.poster_canva, name='poster_canva'),
-
-    path('video-canva/', views.video_canva, name='video_canva'),
 
        path('login/', CustomLoginView.as_view(), name='login'),
   
     path('rallynex-logo/', views.rallynex_logo, name='rallynex_logo'),
-   path('campaign/<int:campaign_id>/update_visibilit/', views.update_visibilit, name='update_visibilit'),
-
-    path('subscribe/', views.subscribe, name='subscribe'),
-    path('jobs/', views.jobs, name='jobs'),
-    path('events/', views.events, name='events'),
-
-
-
-    path('project_support/', views.project_support, name='project_support'),
+  
 
     path('campaign/<int:campaign_id>/top-participants/', views.top_participants_view, name='top_participants'),
-     path('quran/', views.quran_view, name='quran_view'),
-    path('adhkar/', views.adhkar_list, name='adhkar_list'),
-    path('adhkar/<int:adhkar_id>/', views.adhkar_detail, name='adhkar_detail'),
-       path('hadith/', views.hadith_list, name='hadith_list'),
-    path('hadith/<int:hadith_id>/', views.hadith_detail, name='hadith_detail'),
+     path('project-support/', views.project_support, name='project_support'),
     # Other URL patterns...
       # Other URL patterns for your project
       path('campaigns/mark_not_interested/<int:campaign_id>/', views.mark_not_interested, name='mark_not_interested'),
@@ -97,19 +79,14 @@ path('project_support/', RedirectView.as_view(
 
     path('delete/<int:campaign_id>/', views.delete_campaign, name='delete_campaign'),
 path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name='add_activity_comment'),
-    path('suggest/', views.suggest, name='suggest'),
-  
-    path('affiliate-links/', views.affiliate_links, name='affiliate_links'),
-
-     path('platformfund/', views.platformfund_view, name='platformfund'),
+ 
    
     path('campaign/<int:campaign_id>/', views.view_campaign, name='view_campaign'),  # Corrected URL pattern
     path('update_visibility/<int:campaign_id>/', views.update_visibility, name='update_visibility'),
     path('update_hidden_links/', views.update_hidden_links, name='update_hidden_links'),
  path('upload/', views.upload_file, name='upload_file'),
       path('campaign/<int:campaign_id>/donate/', views.create_donation, name='create_donation'),
-       path('campaign/<int:campaign_id>/join-sound-tribe/', views.join_sound_tribe, name='join_sound_tribe'),
-    path('campaign/<int:campaign_id>/sound-tribe-data/', views.get_sound_tribe_data, name='get_sound_tribe_data'),
+    
     path('search_profile_results/', views.search_profile_results, name='search_profile_results'),
     path('search/', views.search_campaign, name='search_campaign'),
     path('notifications/', views.notification_list, name='notification_list'),
@@ -124,12 +101,8 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('create_campaign/', views.create_campaign, name='create_campaign'),
     path('edit-profile/<str:username>/', views.profile_edit, name='edit_profile'),
   path('user-profile/@<str:username>/', views.profile_view, name='profile_view'),
-   path('toggle-follow/', views.toggle_follow, name='toggle_follow'),
-    # In your urls.py
-path('campaign/<int:campaign_id>/leave-sound-tribe/', views.leave_sound_tribe, name='leave_sound_tribe'),
-    path('followers/<str:username>/', views.follower_list, name='follower_list'),
-    path('following/<str:username>/', views.following_list, name='following_list'),
-    path('private-campaign/', views.private_campaign, name='private_campaign'),
+ 
+
     path('recreate-campaign/<int:campaign_id>/', views.recreate_campaign, name='recreate_campaign'),
      path('success/', views.success_page, name='success_page'),
     path('campaign/<int:campaign_id>/activity/create/', views.create_activity, name='create_activity'),
@@ -146,7 +119,6 @@ path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
     path('blog/<slug:slug>/view/', views.blog_view_increment, name='blog_view_increment'),
     path('blog/<slug:slug>/like/', views.blog_like, name='blog_like'),
     path('blog/<slug:slug>/share/', views.blog_share, name='blog_share'),
-    path('newsletter/subscribe/', views.newsletter_subscribe, name='newsletter_subscribe'),
  
 
 
@@ -189,14 +161,12 @@ path('pledge-failure/', views.pledge_failure, name='pledge_failure'),
     path("payment/success/<int:transaction_id>/", views.payment_success, name="payment_success"),
     path("payment/failure/", views.payment_failure, name="payment_failure"),
     path("transactions/", views.transaction_history, name="transaction_history"),
-   path('paypal/return/', views.paypal_return, name='paypal_return'),
-path('paypal/cancel/', views.paypal_cancel, name='paypal_cancel'),
-path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
+  
+
     
     # Common URLs
     path('success-page/', views.success_page, name='success_page'),
-    path('pro/', views.subscription_required, name='subscription_required'),
-
+   
 # DM URLs - ALL 4 ARE REQUIRED
 path('dm/inbox/', views.dm_inbox, name='dm_inbox'),
 path('dm/<int:dm_id>/', views.dm_page, name='dm_page'),
@@ -207,8 +177,7 @@ path('update-activity/', views.update_activity, name='update_activity'),
 path('check-status/<int:user_id>/', views.check_status, name='check_status'),
 path('campaign/<int:campaign_id>/pledge/', views.create_pledge, name='create_pledge'),
 # urls.py
-path('campaign/<int:campaign_id>/tribe/', views.sound_tribe_members, name='sound_tribe_members'),
-# Add this to your urls.py
+
 # Add this line to your urlpatterns:
 path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),
     path('api/update-active-audio/', views.update_active_audio, name='update_active_audio'),

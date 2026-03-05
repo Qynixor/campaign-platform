@@ -1,237 +1,29 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Profile, Campaign, Comment, Activity, SupportCampaign, Follow
-
-from django.forms import inlineformset_factory
-
-from .models import ActivityComment,CampaignProduct
-
-from tinymce.widgets import TinyMCE
-from .models import Report
-from .models import NotInterested
-from .models import Subscriber
-
 from django.core.exceptions import ValidationError
-from django import forms
-from .models import UserVerification
+from tinymce.widgets import TinyMCE
+
+from .models import (
+    Profile, Campaign, Comment, Activity, SupportCampaign,
+    ActivityComment, CampaignProduct, Report, NotInterested,
+    UserVerification, Pledge, Blog, Donation
+)
 
 
+# ============================================================================
+# CUSTOM VALIDATORS
+# ============================================================================
 
-# Custom validator to check for long words
 def validate_no_long_words(value):
+    """Check if any word exceeds 20 characters"""
     for word in value.split():
-        if len(word) > 20:  # Check if any word exceeds 20 characters
+        if len(word) > 20:
             raise ValidationError(f"Word '{word}' exceeds the allowed length of 20 characters.")
 
-# ReportForm
-class ReportForm(forms.ModelForm):
-    class Meta:
-        model = Report
-        fields = ['reason', 'description']
-        widgets = {
-            'reason': forms.Select(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
 
-    def clean_reason(self):
-        reason = self.cleaned_data.get('reason')
-        validate_no_long_words(reason)  # Validate the reason field
-        return reason
-
-    def clean_description(self):
-        description = self.cleaned_data.get('description')
-        validate_no_long_words(description)  # Validate the description field
-        return description
-
-
-
-
-
-from django import forms
-from .models import CampaignProduct
-
-
-from django import forms
-from .models import CampaignProduct
-
-class CampaignProductForm(forms.ModelForm):
-    class Meta:
-        model = CampaignProduct
-        fields = ['name', 'description', 'image', 'price', 'stock_quantity', 'stock_status', 'is_active']
-
-
-
-
-
-
-# ActivityCommentForm
-class ActivityCommentForm(forms.ModelForm):
-    class Meta:
-        model = ActivityComment
-        fields = ['content']
-
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        validate_no_long_words(content)  # Validate the content field
-        return content
-
-
-
-
-
-from django import forms
-from .models import Activity
-from .utils import validate_no_long_words
-
-class ActivityForm(forms.ModelForm):
-    file = forms.FileField(
-        required=False,
-        label="Add Media (optional)",
-        help_text="Upload image, video or audio file (max 100MB for videos, 10MB for images)",
-        widget=forms.ClearableFileInput(attrs={
-            'accept': 'image/*,video/*,audio/*',
-            'class': 'file-input',
-            'multiple': False
-        })
-    )
-    
-    screenshot_count = forms.ChoiceField(
-        choices=[(3, '3 photos'), (5, '5 photos'), (7, '7 photos'), (10, '10 photos')],
-        initial=5,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'screenshot-count-select',
-            'style': 'display: none;'  # Hidden by default, shown only for videos
-        })
-    )
-    
-    class Meta:
-        model = Activity
-        fields = ['content', 'file', 'screenshot_count']
-        widgets = {
-            'content': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Share an update, ask for help, celebrate progress...',
-                'class': 'activity-content'
-            }),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.instance.pk:
-            self.fields['content'].required = False
-            self.fields['content'].initial = ''
-    
-    def _get_file_name(self, file):
-        """Safely get filename from any file type (regular file or Cloudinary)"""
-        try:
-            if hasattr(file, 'name'):
-                return file.name.lower()
-            elif hasattr(file, 'public_id'):
-                return file.public_id.lower()
-            elif hasattr(file, 'url'):
-                # Extract from URL
-                url_parts = str(file.url).split('/')
-                return url_parts[-1].lower() if url_parts else ""
-            else:
-                return str(file).lower()
-        except (AttributeError, TypeError):
-            return ""
-    
-    def _get_content_type(self, file):
-        """Safely get content type from any file type"""
-        try:
-            if hasattr(file, 'content_type'):
-                return file.content_type
-            elif hasattr(file, 'file') and hasattr(file.file, 'content_type'):
-                return file.file.content_type
-            elif hasattr(file, 'resource_type'):
-                # Cloudinary resource_type
-                return file.resource_type
-            return ""
-        except (AttributeError, TypeError):
-            return ""
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        content = cleaned_data.get('content')
-        file = cleaned_data.get('file')
-        
-        if not content and not file:
-            raise forms.ValidationError(
-                "Please provide either content or a media file for the activity."
-            )
-        return cleaned_data
-
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        if content:
-            validate_no_long_words(content)
-        return content
-
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        
-        if file:
-            # Safely get file info
-            file_name = self._get_file_name(file)
-            content_type = self._get_content_type(file)
-            
-            # Determine file type
-            is_video = False
-            is_image = False
-            
-            # Check by content type
-            if content_type:
-                is_video = content_type.startswith('video/') or content_type == 'video'
-                is_image = content_type.startswith('image/') or content_type == 'image'
-            
-            # Check by file extension if not determined
-            if not (is_video or is_image):
-                video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
-                image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
-                
-                is_video = any(file_name.endswith(ext) for ext in video_exts)
-                is_image = any(file_name.endswith(ext) for ext in image_exts)
-            
-            # Set different size limits based on file type
-            max_size = 500 * 1024 * 1024  # Default 500MB
-            size_limit_mb = 500
-            
-            if is_image:
-                max_size = 20 * 1024 * 1024  # 20MB for images
-                size_limit_mb = 20
-            elif is_video:
-                max_size = 500 * 1024 * 1024  # 500MB for videos
-                size_limit_mb = 500
-            
-            # Check file size (only for new uploads, not existing Cloudinary files)
-            if hasattr(file, 'size') and file.size:
-                if file.size > max_size:
-                    file_type = "Video" if is_video else "Image" if is_image else "File"
-                    raise forms.ValidationError(
-                        f'{file_type} size must be under {size_limit_mb}MB. '
-                        f'Current size: {file.size / (1024*1024):.1f}MB'
-                    )
-            
-            # Validate file type
-            if not (is_video or is_image) and content_type and not content_type.startswith('audio/'):
-                # Check if it's audio
-                audio_exts = ['.mp3', '.wav', '.ogg', '.m4a']
-                is_audio = any(file_name.endswith(ext) for ext in audio_exts) or content_type.startswith('audio/')
-                if not is_audio:
-                    raise forms.ValidationError('Only image, video, and audio files are allowed')
-            
-            # Add file type info to cleaned data for use in view
-            self.cleaned_data['_is_video'] = is_video
-            self.cleaned_data['_is_image'] = is_image
-        
-        return file
-
-
-
-
-
+# ============================================================================
+# PROFILE FORMS
+# ============================================================================
 
 class ProfileForm(forms.ModelForm):
     paypal_email = forms.EmailField(
@@ -251,111 +43,13 @@ class ProfileForm(forms.ModelForm):
         ]
 
 
-
-
-
-
-# CommentForm
-class CommentForm(forms.ModelForm):
-    class Meta:
-        model = Comment
-        fields = ['text']
-
-    def clean_text(self):
-        text = self.cleaned_data.get('text')
-        validate_no_long_words(text)  # Validate the text field
-        return text
-
-
-
-
-class UserVerificationForm(forms.ModelForm):
-    class Meta:
-        model = UserVerification
-        fields = ['document_type', 'document']  # Exclude the user field
-
-        widgets = {
-            'document_type': forms.Select(attrs={'class': 'custom-select'}),
-            'document': forms.ClearableFileInput(attrs={'class': 'custom-file-input'}),
-        }
-    def clean_document(self):
-        document = self.cleaned_data.get('document')
-        if document:
-            # You can add validation logic here, e.g., checking file type or size
-            if document.size > 5 * 1024 * 1024:  # Example: limit file size to 5 MB
-                raise forms.ValidationError("File size must be under 5 MB.")
-        return document
-
-    def save(self, commit=True, user=None):
-        instance = super().save(commit=False)
-        if user:
-            instance.user = user  # Set the user from the view
-        if commit:
-            instance.save()
-        return instance
-
-
-
-class SubscriptionForm(forms.ModelForm):
-    class Meta:
-        model = Subscriber
-        fields = ['email']
-        widgets = {
-            'email': forms.EmailInput(attrs={
-                'placeholder': 'Enter your email',
-                'required': True,
-                'style': 'padding: 10px; width: 100%; box-sizing: border-box;'
-            })
-        }
-
-
-
-
-
-
-
-class VerificationRequestForm(forms.Form):
-    # You can include additional fields if needed
-    message = forms.CharField(widget=forms.Textarea)
-
-class VerificationReviewForm(forms.Form):
-    # You can include additional fields if needed
-    approval_status = forms.ChoiceField(choices=[(True, 'Approve'), (False, 'Deny')])
-    review_comment = forms.CharField(widget=forms.Textarea, required=False)
-
-
-
-
-class NotInterestedForm(forms.ModelForm):
-    class Meta:
-        model = NotInterested
-        fields = ['campaign']
-
-
-
-
-
-
-
-
-
-
-
 class ProfileSearchForm(forms.Form):
     search_query = forms.CharField(label='Search', max_length=100)
 
-class CampaignSearchForm(forms.Form):
-    search_query = forms.CharField(label='Search', max_length=100)
 
-
-class SupportForm(forms.ModelForm):
-    class Meta:
-        model = SupportCampaign
-        fields = []  # Remove the 'category' field from the list
-
-
-
-
+# ============================================================================
+# USER FORMS
+# ============================================================================
 
 class UserForm(forms.ModelForm):
     class Meta:
@@ -367,20 +61,9 @@ class UserForm(forms.ModelForm):
         }
 
 
-
-
-
-# Custom validator to check for long words
-def validate_no_long_words(value):
-    for word in value.split():
-        if len(word) > 20:  # Check if any word exceeds 20 characters
-            raise ValidationError(f"Word '{word}' exceeds the allowed length of 20 characters.")
-
-from django import forms
-from .models import Campaign, Tag, CampaignTag
-from django.core.exceptions import ValidationError
-import os
-from PIL import Image
+# ============================================================================
+# CAMPAIGN FORMS
+# ============================================================================
 
 class CampaignForm(forms.ModelForm):
     tags_input = forms.CharField(
@@ -554,16 +237,15 @@ class CampaignForm(forms.ModelForm):
                 # Add new tags
                 tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
                 for tag_name in tag_names:
+                    from .models import Tag
                     tag, created = Tag.objects.get_or_create(name=tag_name.lower())
                     instance.tags.add(tag)
         
         return instance
 
 
-
-
-
-
+class CampaignSearchForm(forms.Form):
+    search_query = forms.CharField(label='Search', max_length=100)
 
 
 class UpdateVisibilityForm(forms.ModelForm):
@@ -586,23 +268,289 @@ class UpdateVisibilityForm(forms.ModelForm):
             self.fields['followers_visibility'].queryset = followers
 
 
+# ============================================================================
+# ACTIVITY FORMS
+# ============================================================================
+
+class ActivityForm(forms.ModelForm):
+    file = forms.FileField(
+        required=False,
+        label="Add Media (optional)",
+        help_text="Upload image, video or audio file (max 100MB for videos, 10MB for images)",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'image/*,video/*,audio/*',
+            'class': 'file-input',
+            'multiple': False
+        })
+    )
+    
+    screenshot_count = forms.ChoiceField(
+        choices=[(3, '3 photos'), (5, '5 photos'), (7, '7 photos'), (10, '10 photos')],
+        initial=5,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'screenshot-count-select',
+            'style': 'display: none;'  # Hidden by default, shown only for videos
+        })
+    )
+    
+    class Meta:
+        model = Activity
+        fields = ['content', 'file', 'screenshot_count']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Share an update, ask for help, celebrate progress...',
+                'class': 'activity-content'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['content'].required = False
+            self.fields['content'].initial = ''
+    
+    def _get_file_name(self, file):
+        """Safely get filename from any file type (regular file or Cloudinary)"""
+        try:
+            if hasattr(file, 'name'):
+                return file.name.lower()
+            elif hasattr(file, 'public_id'):
+                return file.public_id.lower()
+            elif hasattr(file, 'url'):
+                # Extract from URL
+                url_parts = str(file.url).split('/')
+                return url_parts[-1].lower() if url_parts else ""
+            else:
+                return str(file).lower()
+        except (AttributeError, TypeError):
+            return ""
+    
+    def _get_content_type(self, file):
+        """Safely get content type from any file type"""
+        try:
+            if hasattr(file, 'content_type'):
+                return file.content_type
+            elif hasattr(file, 'file') and hasattr(file.file, 'content_type'):
+                return file.file.content_type
+            elif hasattr(file, 'resource_type'):
+                # Cloudinary resource_type
+                return file.resource_type
+            return ""
+        except (AttributeError, TypeError):
+            return ""
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        content = cleaned_data.get('content')
+        file = cleaned_data.get('file')
+        
+        if not content and not file:
+            raise forms.ValidationError(
+                "Please provide either content or a media file for the activity."
+            )
+        return cleaned_data
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        if content:
+            validate_no_long_words(content)
+        return content
+
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        
+        if file:
+            # Safely get file info
+            file_name = self._get_file_name(file)
+            content_type = self._get_content_type(file)
+            
+            # Determine file type
+            is_video = False
+            is_image = False
+            
+            # Check by content type
+            if content_type:
+                is_video = content_type.startswith('video/') or content_type == 'video'
+                is_image = content_type.startswith('image/') or content_type == 'image'
+            
+            # Check by file extension if not determined
+            if not (is_video or is_image):
+                video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+                image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+                
+                is_video = any(file_name.endswith(ext) for ext in video_exts)
+                is_image = any(file_name.endswith(ext) for ext in image_exts)
+            
+            # Set different size limits based on file type
+            max_size = 500 * 1024 * 1024  # Default 500MB
+            size_limit_mb = 500
+            
+            if is_image:
+                max_size = 20 * 1024 * 1024  # 20MB for images
+                size_limit_mb = 20
+            elif is_video:
+                max_size = 500 * 1024 * 1024  # 500MB for videos
+                size_limit_mb = 500
+            
+            # Check file size (only for new uploads, not existing Cloudinary files)
+            if hasattr(file, 'size') and file.size:
+                if file.size > max_size:
+                    file_type = "Video" if is_video else "Image" if is_image else "File"
+                    raise forms.ValidationError(
+                        f'{file_type} size must be under {size_limit_mb}MB. '
+                        f'Current size: {file.size / (1024*1024):.1f}MB'
+                    )
+            
+            # Validate file type
+            if not (is_video or is_image) and content_type and not content_type.startswith('audio/'):
+                # Check if it's audio
+                audio_exts = ['.mp3', '.wav', '.ogg', '.m4a']
+                is_audio = any(file_name.endswith(ext) for ext in audio_exts) or content_type.startswith('audio/')
+                if not is_audio:
+                    raise forms.ValidationError('Only image, video, and audio files are allowed')
+            
+            # Add file type info to cleaned data for use in view
+            self.cleaned_data['_is_video'] = is_video
+            self.cleaned_data['_is_image'] = is_image
+        
+        return file
 
 
-from django import forms
-from .models import Pledge
+class ActivityCommentForm(forms.ModelForm):
+    class Meta:
+        model = ActivityComment
+        fields = ['content']
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content')
+        validate_no_long_words(content)
+        return content
+
+
+# ============================================================================
+# COMMENT FORMS
+# ============================================================================
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['text']
+
+    def clean_text(self):
+        text = self.cleaned_data.get('text')
+        validate_no_long_words(text)
+        return text
+
+
+# ============================================================================
+# SUPPORT FORMS
+# ============================================================================
+
+class SupportForm(forms.ModelForm):
+    class Meta:
+        model = SupportCampaign
+        fields = []  # Remove the 'category' field from the list
+
+
+# ============================================================================
+# PRODUCT FORMS
+# ============================================================================
+
+class CampaignProductForm(forms.ModelForm):
+    class Meta:
+        model = CampaignProduct
+        fields = ['name', 'description', 'image', 'price', 'stock_quantity', 'stock_status', 'is_active']
+
+
+# ============================================================================
+# REPORT FORMS
+# ============================================================================
+
+class ReportForm(forms.ModelForm):
+    class Meta:
+        model = Report
+        fields = ['reason', 'description']
+        widgets = {
+            'reason': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def clean_reason(self):
+        reason = self.cleaned_data.get('reason')
+        validate_no_long_words(reason)
+        return reason
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        validate_no_long_words(description)
+        return description
+
+
+# ============================================================================
+# NOT INTERESTED FORMS
+# ============================================================================
+
+class NotInterestedForm(forms.ModelForm):
+    class Meta:
+        model = NotInterested
+        fields = ['campaign']
+
+
+# ============================================================================
+# VERIFICATION FORMS
+# ============================================================================
+
+class UserVerificationForm(forms.ModelForm):
+    class Meta:
+        model = UserVerification
+        fields = ['document_type', 'document']
+        widgets = {
+            'document_type': forms.Select(attrs={'class': 'custom-select'}),
+            'document': forms.ClearableFileInput(attrs={'class': 'custom-file-input'}),
+        }
+    
+    def clean_document(self):
+        document = self.cleaned_data.get('document')
+        if document:
+            if document.size > 5 * 1024 * 1024:  # Limit file size to 5 MB
+                raise forms.ValidationError("File size must be under 5 MB.")
+        return document
+
+    def save(self, commit=True, user=None):
+        instance = super().save(commit=False)
+        if user:
+            instance.user = user
+        if commit:
+            instance.save()
+        return instance
+
+
+class VerificationRequestForm(forms.Form):
+    message = forms.CharField(widget=forms.Textarea)
+
+
+class VerificationReviewForm(forms.Form):
+    approval_status = forms.ChoiceField(choices=[(True, 'Approve'), (False, 'Deny')])
+    review_comment = forms.CharField(widget=forms.Textarea, required=False)
+
+
+# ============================================================================
+# PLEDGE FORMS
+# ============================================================================
 
 class PledgeForm(forms.ModelForm):
     class Meta:
         model = Pledge
         fields = ['campaign', 'amount', 'contact']
         widgets = {
-            'campaign': forms.HiddenInput(),  # We'll typically set this in the view
+            'campaign': forms.HiddenInput(),
             'amount': forms.NumberInput(attrs={
                 'min': '1',
                 'step': '0.01',
                 'class': 'form-control'
             }),
-           
         }
     
     def __init__(self, *args, **kwargs):
@@ -614,33 +562,17 @@ class PledgeForm(forms.ModelForm):
             self.initial['campaign'] = campaign
             self.fields['campaign'].widget = forms.HiddenInput()
         
-        # Set minimum amount validation
         self.fields['amount'].min_value = 1
 
 
-from django import forms
-from tinymce.widgets import TinyMCE
-from .models import Blog
+# ============================================================================
+# DONATION FORMS
+# ============================================================================
 
-class BlogForm(forms.ModelForm):
-    class Meta:
-        model = Blog
-        fields = '__all__'
-        widgets = {
-            'content': TinyMCE(attrs={'cols': 80, 'rows': 30}),
-            'excerpt': forms.Textarea(attrs={'rows': 4}),
-            'meta_description': forms.Textarea(attrs={'rows': 3}),
-        }
-
-# forms.py
-from django import forms
-from .models import Donation
-
-# forms.py
 class DonationForm(forms.ModelForm):
     class Meta:
         model = Donation
-        fields = ['amount']  # remove 'destination'
+        fields = ['amount']
         widgets = {
             'amount': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -654,4 +586,16 @@ class DonationForm(forms.ModelForm):
         }
 
 
+# ============================================================================
+# BLOG FORMS
+# ============================================================================
 
+class BlogForm(forms.ModelForm):
+    class Meta:
+        model = Blog
+        fields = '__all__'
+        widgets = {
+            'content': TinyMCE(attrs={'cols': 80, 'rows': 30}),
+            'excerpt': forms.Textarea(attrs={'rows': 4}),
+            'meta_description': forms.Textarea(attrs={'rows': 3}),
+        }

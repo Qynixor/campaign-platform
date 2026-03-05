@@ -29,18 +29,16 @@ from decimal import Decimal
 from dotenv import load_dotenv
 
 from main.models import (
-    Profile, Campaign, Comment, Follow, Activity, SupportCampaign,
-    User, Love, CampaignView,  Notification, 
-    AffiliateLink, AffiliateLibrary, AffiliateNewsSource, NativeAd,
-    Report, NotInterested, QuranVerse, Surah, Adhkar, Hadith,
-    PlatformFund,CampaignProduct, ActivityComment, ActivityLove
+    Profile, Campaign, Comment, Activity, SupportCampaign,
+    User, Love, CampaignView,  Notification,Report, NotInterested,
+   CampaignProduct, ActivityComment, ActivityLove
 )
 
 from main.forms import (
     UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
     SupportForm, CampaignSearchForm, ProfileSearchForm,
      CampaignProductForm, ReportForm, NotInterestedForm,
-    SubscriptionForm, UpdateVisibilityForm, ActivityCommentForm,
+    UpdateVisibilityForm, ActivityCommentForm,
     UserVerificationForm
 )
 
@@ -51,7 +49,7 @@ from itertools import chain
 from collections import defaultdict
 
 from main.models import Campaign
-from main.models import SoundTribe
+
 from django.db import connection, connections
 from django.db.utils import OperationalError
 from itertools import chain
@@ -217,43 +215,6 @@ def index(request):
         print(f"Database error in contributors logic: {e}")
         top_contributors = []  # Fallback to empty list
 
-    # Suggested Users (only for authenticated users)
-    suggested_users = []
-    if request.user.is_authenticated and user_profile:
-        try:
-            current_user_following = request.user.following.all()
-            following_user_ids = [follow.followed_id for follow in current_user_following]
-            all_profiles = Profile.objects.exclude(user=request.user).exclude(user__id__in=following_user_ids)[:20]  # Limit
-
-            suggested_users = []
-            for profile in all_profiles:
-                similarity_score = calculate_similarity(user_profile, profile)
-                if similarity_score >= 0.5:
-                    followers_count = Follow.objects.filter(followed=profile.user).count()
-                    suggested_users.append({
-                        'user': profile.user,
-                        'followers_count': followers_count
-                    })
-                    if len(suggested_users) >= 2:
-                        break
-
-            # Limit to only 2 suggested users
-            suggested_users = suggested_users[:2]
-        except OperationalError as e:
-            print(f"Database error in suggested users: {e}")
-            suggested_users = []
-
-    # Fetch available categories
-    try:
-        categories = list(Campaign.objects.values_list('category', flat=True).distinct()[:50])
-    except OperationalError:
-        categories = []
-
-    form = SubscriptionForm()
-    ads = list(NativeAd.objects.all()[:10])  # Limit ads
-
-    # =============================
-    # BUILD TAGS DICTIONARY (SAFE)
     # =============================
     campaign_tags_dict = {}
 
@@ -267,22 +228,6 @@ def index(request):
 
     campaign_tags_json = json.dumps(campaign_tags_dict)
     
-    # Create a dictionary to store join status for each campaign
-    user_joined_status = {}
-    
-    if user_profile:
-        try:
-            joined_campaign_ids = list(SoundTribe.objects.filter(
-                user=user_profile
-            ).values_list('campaign_id', flat=True))
-            
-            # Convert to set for faster lookup
-            joined_set = set(joined_campaign_ids)
-            
-            for campaign in campaigns:
-                user_joined_status[campaign.id] = campaign.id in joined_set
-        except OperationalError:
-            user_joined_status = {}
 
     context = {
         'campaign_tags_json': campaign_tags_json,
@@ -290,15 +235,14 @@ def index(request):
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
         'unread_messages_count': unread_messages_count,
-        'form': form,
-        'ads': ads,
+     
+       
         'show_login_button': show_login_button,
-        'categories': categories,
+    
         'selected_category': category_filter,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
-        'suggested_users': suggested_users,
-        'user_joined_status': user_joined_status,
+    
     }
 
     return render(request, 'accounts/index.html', context)
