@@ -63,8 +63,8 @@ admin.site.register(Profile, ProfileAdmin)
 class CampaignAdmin(admin.ModelAdmin):
     list_display = ('title', 'user', 'category', 'is_active', 'timestamp')
     search_fields = ('user__user__username', 'title', 'content')
-    list_filter = ('category', 'is_active', 'visibility', 'timestamp')
-    raw_id_fields = ('user', 'tags', 'visible_to_followers')
+    list_filter = ('category', 'is_active', 'timestamp')
+    raw_id_fields = ('user', 'tags')
     readonly_fields = ('timestamp', 'end_date', 'duration_last_updated')
 
 

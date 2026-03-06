@@ -88,7 +88,7 @@ class CampaignForm(forms.ModelForm):
         model = Campaign
         fields = [
             'title', 'category', 'poster', 'audio',
-            'visibility', 'content', 'duration',
+           'content', 'duration',
             'duration_unit', 'funding_goal'
         ]
         
@@ -103,7 +103,7 @@ class CampaignForm(forms.ModelForm):
                 'rows': 5
             }),
             'category': forms.Select(attrs={'class': 'form-select'}),
-            'visibility': forms.Select(attrs={'class': 'form-select'}),
+         
             'duration': forms.NumberInput(attrs={
                 'class': 'form-input',
                 'min': '1',
@@ -135,7 +135,7 @@ class CampaignForm(forms.ModelForm):
         self.fields['title'].required = True
         self.fields['content'].required = True
         self.fields['category'].required = True
-        self.fields['visibility'].required = True
+       
         
         # Optional fields
         self.fields['poster'].required = False
@@ -155,7 +155,6 @@ class CampaignForm(forms.ModelForm):
         
         # Set defaults for required fields for new campaigns
         if not self.instance.pk:
-            self.fields['visibility'].initial = 'public'
             self.fields['category'].initial = 'Personal Empowerment'
         
         # Pre-populate with existing tags if editing
@@ -246,27 +245,6 @@ class CampaignForm(forms.ModelForm):
 
 class CampaignSearchForm(forms.Form):
     search_query = forms.CharField(label='Search', max_length=100)
-
-
-class UpdateVisibilityForm(forms.ModelForm):
-    followers_visibility = forms.ModelMultipleChoiceField(
-        queryset=Profile.objects.none(),
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select followers to view"
-    )
-
-    class Meta:
-        model = Campaign
-        fields = ['visibility', 'followers_visibility']
-
-    def __init__(self, *args, **kwargs):
-        followers = kwargs.pop('followers', None)
-        super().__init__(*args, **kwargs)
-
-        if followers:
-            self.fields['followers_visibility'].queryset = followers
-
 
 # ============================================================================
 # ACTIVITY FORMS

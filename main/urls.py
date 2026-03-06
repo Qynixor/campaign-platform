@@ -8,10 +8,9 @@ from django.views.generic.base import RedirectView
 from .views import get_activity_comments, post_activity_comment, like_activity_comment
 
 from .views import campaign_story_list, campaign_story_detail
-from .views import get_comments, post_comment
+
 urlpatterns = [
-    path('get_comments/', get_comments, name='get_comments'),
-    path('post_comment/', post_comment, name='post_comment'),
+
   path('product/<int:product_id>/toggle-status/', views.toggle_product_status, name='toggle_product_status'),
 path('product/<int:product_id>/mark-out-of-stock/', views.mark_out_of_stock, name='mark_out_of_stock'),
    path('campaign/<int:campaign_id>/engagement/', views.campaign_engagement_data, name='campaign_engagement'),
@@ -82,7 +81,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
  
    
     path('campaign/<int:campaign_id>/', views.view_campaign, name='view_campaign'),  # Corrected URL pattern
-    path('update_visibility/<int:campaign_id>/', views.update_visibility, name='update_visibility'),
+  
     path('update_hidden_links/', views.update_hidden_links, name='update_hidden_links'),
  path('upload/', views.upload_file, name='upload_file'),
       path('campaign/<int:campaign_id>/donate/', views.create_donation, name='create_donation'),
@@ -91,11 +90,11 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('search/', views.search_campaign, name='search_campaign'),
     path('notifications/', views.notification_list, name='notification_list'),
  
-    path('campaign/<int:campaign_id>/toggle-love/', views.toggle_love, name='toggle_love'),
+
     path('campaign/<int:campaign_id>/support/', views.support, name='support'),
     path('campaign/<int:campaign_id>/support-campaign/', views.campaign_support, name='campaign_support'),
     path('thank-you/', views.thank_you, name='thank_you'),
-    path('home/', views.home, name='home'),
+   
     path('manage_campaigns/', views.manage_campaigns, name='manage_campaigns'),
 
     path('create_campaign/', views.create_campaign, name='create_campaign'),
@@ -108,10 +107,8 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('campaign/<int:campaign_id>/activity/create/', views.create_activity, name='create_activity'),
     path('campaign/<int:campaign_id>/activity_list/', views.activity_list, name='activity_list'),
     path('campaign/<int:campaign_id>/comments/', views.campaign_comments, name='campaign_comments'),
-   path('like_dislike_comment/', views.like_dislike_comment, name='like_dislike_comment'),
-path('post_comment/', views.post_comment, name='post_comment'),
-path('get_comments/', views.get_comments, name='get_comments'),
-path('get_replies/<int:comment_id>/', views.get_replies, name='get_replies'),
+
+
     path('record_campaign_view/<int:campaign_id>/', views.record_campaign_view, name='record_campaign_view'),
 # marketing 
     path('blog/', views.blog_list, name='blog_list'),
@@ -180,9 +177,7 @@ path('campaign/<int:campaign_id>/pledge/', views.create_pledge, name='create_ple
 
 # Add this line to your urlpatterns:
 path('campaign/<int:campaign_id>/pledgers/', views.campaign_pledgers_view, name='campaign_pledgers'),
-    path('api/update-active-audio/', views.update_active_audio, name='update_active_audio'),
-    path('api/audio-heartbeat/', views.audio_heartbeat, name='audio_heartbeat'),
-    path('api/stop-audio/', views.stop_audio, name='stop_audio'),
+
     # In urls.py
 # In urls.py
 path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug_video'),
@@ -196,6 +191,18 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
         # New and Trending Causes
     path('causes/new/', views.new_causes_view, name='new_causes'),
     path('causes/trending/', views.trending_causes_view, name='trending_causes'),
+
+   
+    # Add these to your existing urlpatterns
+# Add these to your existing urlpatterns
+# Add these to your urlpatterns
+# In your urls.py, add these:
+path('journey/', views.journey, name='journey'),
+path('campaign/<int:campaign_id>/toggle-love/', views.toggle_campaign_love, name='toggle_campaign_love'),
+path('campaign/<int:campaign_id>/toggle-follow/', views.toggle_campaign_follow, name='toggle_campaign_follow'),
+path('campaign/<int:campaign_id>/comments/', views.get_campaign_comments, name='get_campaign_comments'),
+path('campaign/<int:campaign_id>/add-comment/', views.add_campaign_comment, name='add_campaign_comment'),
+path('campaign/<int:campaign_id>/stats/', views.get_campaign_stats, name='get_campaign_stats'),
 ]
 
 

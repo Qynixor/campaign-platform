@@ -56,8 +56,7 @@ class Profile(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     campaigns = models.ManyToManyField('Campaign', related_name='user_profiles', blank=True)
-    following = models.ManyToManyField(User, related_name='following_profiles', blank=True)
-    followers = models.ManyToManyField(User, related_name='follower_profiles', blank=True)
+    # REMOVED: following and followers fields
     last_campaign_check = models.DateTimeField(default=timezone.now)
     last_chat_check = models.DateTimeField(default=timezone.now)
     profile_verified = models.BooleanField(default=False)
@@ -123,7 +122,6 @@ import requests
 from django.core.files.base import ContentFile
 import cloudinary
 import cloudinary.uploader
-
 class Campaign(models.Model):
     user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='user_campaigns')
     title = models.CharField(max_length=300)
@@ -179,12 +177,7 @@ class Campaign(models.Model):
             'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3'
         )
 
-    VISIBILITY_CHOICES = (
-        ('public', 'Public'),
-        ('private', 'Private'),
-    )
-    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
-    visible_to_followers = models.ManyToManyField(Profile, blank=True, related_name='visible_campaigns')
+    # REMOVED: visibility and visible_to_followers fields
 
     DURATION_UNITS = (
         ('minutes', 'Minutes'),
@@ -214,6 +207,15 @@ class Campaign(models.Model):
     )
     
     tags = models.ManyToManyField('Tag', through='CampaignTag', related_name='campaigns', blank=True)
+    
+    # Campaign following system
+    followers = models.ManyToManyField(
+        User, 
+        through='CampaignFollow',
+        related_name='following_campaigns',
+        blank=True,
+        help_text="Users following this campaign"
+    )
 
     class Meta:
         indexes = [
@@ -227,35 +229,7 @@ class Campaign(models.Model):
     def __str__(self):
         return self.title
 
-    # ==================== SOUND TRIBE METHODS ====================
-    def get_sound_tribe_members_count(self):
-        """Get the number of members in the sound tribe for this campaign"""
-        return SoundTribe.objects.filter(campaign=self).count()
-    
-    def has_user_joined_tribe(self, user_profile):
-        """Check if a specific user has joined the sound tribe"""
-        if not user_profile:
-            return False
-        return SoundTribe.objects.filter(
-            user=user_profile,
-            campaign=self
-        ).exists()
-    
-    def get_recent_tribe_members(self, limit=6):
-        """Get recent tribe members with profile data"""
-        recent_members = SoundTribe.objects.filter(
-            campaign=self
-        ).select_related('user__user', 'user').order_by('-timestamp')[:limit]
-        
-        return [
-            {
-                'username': member.user.user.username,
-                'profile_pic': member.user.image.url if member.user.image else '',
-                'profile_url': reverse('profile_view', kwargs={'username': member.user.user.username}),
-                'timestamp': member.timestamp
-            }
-            for member in recent_members
-        ]
+    # REMOVED: notify_visible_to_followers method
 
     # ==================== FUNDING PROPERTIES ====================
     @property
@@ -448,6 +422,17 @@ class Campaign(models.Model):
         completed = self.get_completed_days_count()
         return max(0, self.duration - completed)
 
+    # NEW: Campaign follower methods
+    @property
+    def follower_count(self):
+        return self.followers.count()
+    
+    def is_followed_by(self, user):
+        """Check if a user follows this campaign"""
+        if not user or not user.is_authenticated:
+            return False
+        return self.followers.filter(id=user.id).exists()
+
     # ==================== SAVE METHOD & HELPERS ====================
     def has_duration_changed(self):
         if not self.pk:
@@ -483,25 +468,7 @@ class Campaign(models.Model):
             
             if self.duration and self.duration_unit:
                 self.end_date = self.calculate_end_date()
-            
-            visibility_changed = False
-        else:
-            old_instance = Campaign.objects.get(pk=self.pk)
-            visibility_changed = old_instance.visibility != self.visibility
-            
-            if self.has_duration_changed():
-                if not self.original_duration:
-                    self.original_duration = old_instance.original_duration or old_instance.duration
-                if not self.original_duration_unit:
-                    self.original_duration_unit = old_instance.original_duration_unit or old_instance.duration_unit
-                
-                self.duration_last_updated = timezone.now()
-                self.end_date = self.calculate_end_date()
-        
-        super().save(*args, **kwargs)
-
-        if not is_new and visibility_changed and self.visibility == 'private':
-            self.notify_visible_to_followers()
+      
 
     def notify_visible_to_followers(self):
         for profile in self.visible_to_followers.all():
@@ -684,6 +651,44 @@ class Campaign(models.Model):
             },
         }
         return goals_activities.get(self.category, {})
+
+
+# NEW: Campaign Follow through model
+class CampaignFollow(models.Model):
+    """Model to track users following campaigns"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='campaign_follows')
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='campaign_follows')
+    followed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'campaign')
+        ordering = ['-followed_at']
+        indexes = [
+            models.Index(fields=['user', '-followed_at']),
+            models.Index(fields=['campaign', '-followed_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} follows {self.campaign.title}"
+    
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # Create notification when someone follows a campaign
+        if is_new:
+            try:
+                Notification.objects.create(
+                    user=self.campaign.user.user,  # Campaign owner
+                    message=f"{self.user.username} is now following your campaign '{self.campaign.title}'",
+                    redirect_link=reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk}),
+                    campaign_notification=True,
+                    campaign=self.campaign
+                )
+            except Exception as e:
+                print(f"Failed to create follow notification: {e}")
+
+
 class Tag(models.Model):
     """Model for campaign tags"""
     name = models.CharField(max_length=50, unique=True)
@@ -701,6 +706,7 @@ class Tag(models.Model):
             from django.utils.text import slugify
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
 
 class CampaignView(models.Model):
     user = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)
@@ -1114,9 +1120,10 @@ class Activity(models.Model):
                 message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
                 Notification.objects.create(user=self.campaign.user.user, message=message_owner)
                 
-                followers = self.campaign.user.followers.all()
-                for follower in followers:
-                    message_follower = f"An activity was added to a cause you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
+                # UPDATED: Send notifications to campaign followers instead of profile followers
+                campaign_followers = self.campaign.followers.all()
+                for follower in campaign_followers:
+                    message_follower = f"New activity in a campaign you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
                     Notification.objects.create(user=follower, message=message_follower)
                     
         except Exception as e:
@@ -1712,7 +1719,6 @@ class CartItem(models.Model):
     @property
     def total_price(self):
         return self.product.price * self.quantity
-
 
 # ============================================================================
 # FUTURE MONETIZATION MODELS - PHASE 2 & 3 (EXCLUDING SOUND TRIBE)

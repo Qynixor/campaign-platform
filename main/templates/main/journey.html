@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cause Journey · Reel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        :root {
+            --twitter-blue: #1DA1F2;
+        }
+
+        .reel-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            max-height: 932px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* Vertical Campaigns Container */
+        .campaigns-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .campaigns-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Individual Campaign */
+        .campaign-item {
+            min-height: 100%;
+            height: 100vh;
+            max-height: 932px;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Clickable area for audio */
+        .audio-trigger-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        /* Slideshow */
+        .reel-slideshow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .slides-track {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.3s ease;
+            transform: translateX(0%);
+        }
+
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gradient-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .gradient-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 350px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 50px 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+        }
+
+        .left-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Stats Icon */
+        .stats-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(2px);
+        }
+
+        .stats-popup {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 20px;
+            width: 280px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 999999;
+            pointer-events: none;
+        }
+
+        .stats-popup.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
+        .stats-popup h3 {
+            color: white;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-popup h3 i {
+            color: var(--twitter-blue);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--twitter-blue);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* Right Group */
+        .right-group {
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .menu-container {
+            position: relative;
+        }
+
+        .menu-dots {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(2px);
+        }
+
+        .menu-dropdown {
+            position: fixed;
+            top: 110px;
+            right: 16px;
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 8px;
+            width: 220px;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 999999;
+            pointer-events: none;
+        }
+
+        .menu-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
+        .menu-item {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: left;
+        }
+
+        .menu-item:hover {
+            background: #333;
+        }
+
+        .menu-item i {
+            width: 22px;
+            color: var(--twitter-blue);
+            font-size: 18px;
+        }
+
+        /* Audio Indicator - Small and unobtrusive */
+        .audio-indicator {
+            position: absolute;
+            top: 120px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .audio-indicator.playing {
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Carousel Dots */
+        .carousel-dots {
+            position: absolute;
+            top: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 15;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 30px;
+            backdrop-filter: blur(4px);
+        }
+
+        .dot {
+            width: 24px;
+            height: 3px;
+            background: rgba(255,255,255,0.4);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+        }
+
+        .dot.active {
+            background: var(--twitter-blue);
+            width: 32px;
+        }
+
+        /* Center "VIEW JOURNEY" Link */
+        .journey-center-link {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            text-align: center;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+
+        .journey-link {
+            display: inline-block;
+            padding: 12px 28px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            font-size: 16px;
+            letter-spacing: 0.3px;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .journey-link i {
+            margin-right: 8px;
+            font-size: 15px;
+            color: var(--twitter-blue);
+            opacity: 0.9;
+        }
+
+        .journey-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .journey-link:active {
+            transform: scale(0.98);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            position: absolute;
+            right: 12px;
+            bottom: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            z-index: 20;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+            min-width: 60px;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .action-btn i {
+            font-size: 28px;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .action-btn span {
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .action-profile {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid var(--twitter-blue);
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .action-btn.follow-btn i {
+            color: var(--twitter-blue);
+        }
+
+        .action-btn.follow-btn.following i {
+            color: #4CAF50;
+        }
+
+        .action-btn.loved i {
+            color: #ff3b30;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .action-buttons {
+                bottom: 140px;
+            }
+            
+            .audio-indicator {
+                top: 120px;
+                right: 16px;
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        /* Small phones */
+        @media (max-width: 375px) {
+            .action-buttons {
+                bottom: 130px;
+            }
+            
+            .audio-indicator {
+                top: 110px;
+                right: 12px;
+            }
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 16px;
+            right: 80px;
+            z-index: 20;
+            color: white;
+        }
+
+        .username-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .username {
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .username:hover {
+            text-decoration: underline;
+        }
+
+        .verified {
+            color: var(--twitter-blue);
+            font-size: 14px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .caption {
+            font-size: 15px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .caption.expanded {
+            -webkit-line-clamp: unset;
+        }
+
+        .more-link {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--twitter-blue);
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .meta-row i {
+            margin-right: 4px;
+            color: var(--twitter-blue);
+        }
+
+        .media-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            width: fit-content;
+            margin: 10px 0 5px;
+            backdrop-filter: blur(4px);
+        }
+
+        .slide-counter {
+            display: inline-flex;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-top: 8px;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(4px);
+        }
+
+        .slide-counter i {
+            color: var(--twitter-blue);
+            font-size: 10px;
+        }
+
+        /* Backdrop */
+        .popup-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999990;
+            display: none;
+        }
+
+        .popup-backdrop.active {
+            display: block;
+        }
+
+        /* Comments Modal */
+        .comments-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 100000;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comments-modal.active {
+            transform: translateY(0);
+        }
+
+        .comments-header {
+            padding: 16px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comments-header h3 {
+            color: white;
+            font-size: 18px;
+        }
+
+        .close-comments {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .comments-list {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: 60vh;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .comment-username {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .comment-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .comment-text {
+            color: white;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .comment-action {
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .comment-action i {
+            font-size: 14px;
+        }
+
+        .comment-action:hover {
+            color: var(--twitter-blue);
+        }
+
+        .add-comment {
+            padding: 16px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 12px;
+        }
+
+        .add-comment input {
+            flex: 1;
+            background: #333;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .add-comment input:focus {
+            outline: none;
+            border: 1px solid var(--twitter-blue);
+        }
+
+        .add-comment button {
+            background: var(--twitter-blue);
+            border: none;
+            border-radius: 20px;
+            padding: 0 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .add-comment button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Desktop Back Arrow */
+        .desktop-back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.2s;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .desktop-back-arrow:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .desktop-back-arrow:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Mobile Back Arrow */
+        .mobile-back-arrow {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+            margin-right: 8px;
+        }
+
+        .mobile-back-arrow:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+
+        /* No Campaigns Message */
+        .no-campaigns {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .no-campaigns i {
+            font-size: 48px;
+            color: var(--twitter-blue);
+            margin-bottom: 16px;
+        }
+
+        .no-campaigns p {
+            font-size: 18px;
+            margin-bottom: 24px;
+        }
+
+        .create-campaign-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--twitter-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (min-width: 769px) {
+            .mobile-back-arrow {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .desktop-back-arrow {
+                display: none;
+            }
+            .mobile-back-arrow {
+                display: flex;
+            }
+            .audio-indicator {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-backdrop" id="popupBackdrop" onclick="closeAllPopups()"></div>
+
+    <div class="reel-container">
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+
+        {% if campaigns %}
+            <!-- Vertical Campaigns Container -->
+            <div class="campaigns-container" id="campaignsContainer">
+                {% for campaign in campaigns %}
+                    <div class="campaign-item" data-campaign-id="{{ campaign.id }}" data-campaign-index="{{ forloop.counter0 }}">
+                        <!-- Clickable area for audio (tap anywhere to play/pause) -->
+                        <div class="audio-trigger-area" onclick="toggleAudio(event, {{ forloop.counter0 }})"></div>
+                        
+                        <!-- Horizontal Image Slideshow -->
+                        <div class="reel-slideshow">
+                            <div class="slides-track" id="slidesTrack-{{ forloop.counter0 }}">
+                                {% for image in campaign.images %}
+                                    <div class="slide">
+                                        <img src="{{ image }}" alt="{{ campaign.title }}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="gradient-top"></div>
+                        <div class="gradient-bottom"></div>
+
+                        <!-- TOP BAR -->
+                        <div class="top-bar">
+                            <div class="left-group">
+                                <!-- Mobile Back Arrow -->
+                                <div class="mobile-back-arrow" onclick="window.location.href='{% url 'index' %}'">
+                                    <i class="fas fa-arrow-left"></i>
+                                </div>
+                                
+                                <!-- Stats Icon -->
+                                <div style="position: relative;">
+                                    <div class="stats-icon" onclick="toggleStats(event, {{ forloop.counter0 }})">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </div>
+                                    <div class="stats-popup" id="statsPopup-{{ forloop.counter0 }}" onclick="event.stopPropagation()">
+                                        <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
+                                        <div class="stats-grid">
+                                            <div class="stat-item">
+                                                <span class="stat-value" id="statSupporters-{{ forloop.counter0 }}">{{ campaign.stats.follower_count }}</span>
+                                                <span class="stat-label">Supporters</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value" id="statRaised-{{ forloop.counter0 }}">${{ campaign.stats.total_donations|floatformat:0 }}</span>
+                                                <span class="stat-label">Raised</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value" id="statActivities-{{ forloop.counter0 }}">{{ campaign.stats.activity_count }}</span>
+                                                <span class="stat-label">Activities</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <span class="stat-value" id="statDaysLeft-{{ forloop.counter0 }}">{{ campaign.stats.days_left }}</span>
+                                                <span class="stat-label">Days Left</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="right-group">
+                                <div class="menu-container">
+                                    <div class="menu-dots" onclick="toggleMenu(event, {{ forloop.counter0 }})">
+                                        <i class="fas fa-ellipsis"></i>
+                                    </div>
+                                    <div class="menu-dropdown" id="menuDropdown-{{ forloop.counter0 }}" onclick="event.stopPropagation()">
+                                        <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="menu-item">
+                                            <i class="fas fa-tasks"></i> Activities
+                                        </a>
+                                        <a href="{% url 'campaign_pledgers' campaign_id=campaign.id %}" class="menu-item">
+                                            <i class="fas fa-trophy"></i> Top Supporters
+                                        </a>
+                                        <a href="{% url 'create_pledge' campaign_id=campaign.id %}" class="menu-item">
+                                            <i class="fas fa-hand-holding-heart"></i> Make a Pledge
+                                        </a>
+                                        <a href="{% url 'report_campaign' campaign_id=campaign.id %}" class="menu-item">
+                                            <i class="fas fa-flag"></i> Report
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Small Audio Indicator (non-interactive, just shows state) -->
+                        <div class="audio-indicator" id="audioIndicator-{{ forloop.counter0 }}">
+                            <i class="fas fa-music"></i>
+                        </div>
+
+                        <!-- Carousel Dots (only show if multiple images) -->
+                        {% if campaign.images|length > 1 %}
+                        <div class="carousel-dots" id="carouselDots-{{ forloop.counter0 }}">
+                            {% for image in campaign.images %}
+                                <button class="dot {% if forloop.first %}active{% endif %}" onclick="goToSlide({{ forloop.counter0 }}, {{ forloop.parentloop.counter0 }}); event.stopPropagation();"></button>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Center "VIEW JOURNEY" Link -->
+                        <div class="journey-center-link">
+                            <a href="{% url 'view_campaign' campaign_id=campaign.id %}" class="journey-link">
+                                <i class="fas fa-compass"></i> view journey
+                            </a>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <img src="{% if campaign.user.profile_image %}{{ campaign.user.profile_image }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
+                                 class="action-profile" 
+                                 alt="Profile"
+                                 onclick="window.location.href='{% url 'profile_view' username=campaign.user.username %}'">
+                            
+                            <button class="action-btn {% if campaign.user_loved %}loved{% endif %}" id="loveBtn-{{ forloop.counter0 }}" onclick="toggleLove(this, {{ campaign.id }}, {{ forloop.counter0 }})">
+                                <i class="{% if campaign.user_loved %}fas{% else %}far{% endif %} fa-heart"></i>
+                                <span id="loveCount-{{ forloop.counter0 }}">{{ campaign.stats.love_count }}</span>
+                            </button>
+                            
+                            <button class="action-btn" onclick="openComments({{ campaign.id }}, {{ forloop.counter0 }})">
+                                <i class="far fa-comment"></i>
+                                <span id="commentCount-{{ forloop.counter0 }}">{{ campaign.stats.comment_count }}</span>
+                            </button>
+                            
+                            <button class="action-btn follow-btn {% if campaign.user_following %}following{% endif %}" id="followBtn-{{ forloop.counter0 }}" onclick="toggleFollow(this, {{ campaign.id }}, {{ forloop.counter0 }})">
+                                <i class="{% if campaign.user_following %}fas fa-check{% else %}fas fa-plus{% endif %}"></i>
+                                <span id="followText-{{ forloop.counter0 }}">{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
+                            </button>
+                            
+                            <button class="action-btn" onclick="openShare({{ campaign.id }})">
+                                <i class="fas fa-share-alt"></i>
+                                <span></span>
+                            </button>
+                        </div>
+
+                        <!-- Info Panel -->
+                        <div class="info-panel">
+                            <div class="username-row">
+                                <a href="{% url 'profile_view' username=campaign.user.username %}" class="username" id="campaignUsername-{{ forloop.counter0 }}">@{{ campaign.user.username }}</a>
+                                {% if campaign.user.verified %}
+                                    <i class="fas fa-check-circle verified"></i>
+                                {% endif %}
+                                <span class="timestamp" id="campaignTimestamp-{{ forloop.counter0 }}">• {{ campaign.time_ago }}</span>
+                            </div>
+                            
+                            <div class="caption" id="caption-{{ forloop.counter0 }}">{{ campaign.content }}</div>
+                            <span class="more-link" onclick="toggleCaption({{ forloop.counter0 }})">more</span>
+                            
+                            <div class="meta-row">
+                                <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-{{ forloop.counter0 }}">{{ campaign.location }}</span></span>
+                                <span><i class="fas fa-calendar"></i> Day <span id="currentDay-{{ forloop.counter0 }}">{{ campaign.stats.current_day }}</span> of <span id="totalDays-{{ forloop.counter0 }}">{{ campaign.stats.total_days }}</span></span>
+                            </div>
+                            
+                            <!-- Media counter -->
+                            <div class="media-counter">
+                                <i class="fas fa-images"></i>
+                                <span id="mediaCount-{{ forloop.counter0 }}">{{ campaign.images|length }} photo{% if campaign.images|length != 1 %}s{% endif %}</span>
+                            </div>
+                            
+                            <!-- Slide counter (only show if multiple images) -->
+                            {% if campaign.images|length > 1 %}
+                            <div class="slide-counter" id="slideCounter-{{ forloop.counter0 }}">
+                                <i class="fas fa-image"></i>
+                                <span id="currentSlide-{{ forloop.counter0 }}">1</span> / <span id="totalSlides-{{ forloop.counter0 }}">{{ campaign.images|length }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Audio Element -->
+                        <audio class="bg-audio" id="bgAudio-{{ forloop.counter0 }}" loop src="{{ campaign.audio_url }}"></audio>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Desktop Back Arrow -->
+            <div class="desktop-back-arrow" onclick="window.location.href='{% url 'index' %}'">
+                <i class="fas fa-arrow-left"></i>
+            </div>
+
+        {% else %}
+            <!-- No Campaigns Message -->
+            <div class="no-campaigns">
+                <i class="fas fa-compass"></i>
+                <p>No journeys to explore yet</p>
+                <a href="{% url 'create_campaign' %}" class="create-campaign-btn">Start Your Journey</a>
+            </div>
+        {% endif %}
+
+        <!-- Comments Modal -->
+        <div class="comments-modal" id="commentsModal">
+            <div class="comments-header">
+                <h3>Comments (<span id="totalComments">0</span>)</h3>
+                <button class="close-comments" onclick="closeComments()">&times;</button>
+            </div>
+            <div class="comments-list" id="commentsList">
+                <div style="text-align: center; color: #888; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading comments...
+                </div>
+            </div>
+            <div class="add-comment">
+                <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="500">
+                <button onclick="postComment()" id="postCommentBtn">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Parse campaigns data safely
+        let campaignsData = [];
+        try {
+            campaignsData = JSON.parse('{{ campaigns_json|safe }}');
+            console.log('Campaigns loaded:', campaignsData.length);
+        } catch (e) {
+            console.error('Error parsing campaigns data:', e);
+            campaignsData = [];
+        }
+        
+        let currentCampaignIndex = 0;
+        let currentCommentCampaignId = null;
+        
+        // Store image indices per campaign
+        let campaignImageIndices = {};
+        campaignsData.forEach((campaign, index) => {
+            campaignImageIndices[index] = 0;
+        });
+
+        // Audio elements
+        let audioElements = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            
+            // Store all audio elements
+            document.querySelectorAll('.bg-audio').forEach((audio, index) => {
+                audioElements[index] = audio;
+            });
+            
+            // Update slide counters for all campaigns
+            updateAllSlideCounters();
+            
+            // Hide loading spinner
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) spinner.style.display = 'none';
+            
+            // Initialize slide positions
+            initializeSlidePositions();
+        });
+
+        function initializeSlidePositions() {
+            campaignsData.forEach((campaign, campaignIndex) => {
+                if (campaign.images && campaign.images.length > 0) {
+                    const track = document.getElementById(`slidesTrack-${campaignIndex}`);
+                    if (track) {
+                        track.style.transform = 'translateX(0%)';
+                    }
+                }
+            });
+        }
+
+        function updateAllSlideCounters() {
+            campaignsData.forEach((campaign, campaignIndex) => {
+                if (campaign.images && campaign.images.length > 0) {
+                    const totalImages = campaign.images.length;
+                    if (totalImages > 1) {
+                        const totalSlidesElement = document.getElementById(`totalSlides-${campaignIndex}`);
+                        if (totalSlidesElement) {
+                            totalSlidesElement.textContent = totalImages;
+                        }
+                        updateSlideCounter(campaignIndex);
+                    }
+                }
+            });
+        }
+
+        function updateSlideCounter(campaignIndex) {
+            const currentImage = campaignImageIndices[campaignIndex] + 1;
+            const counterElement = document.getElementById(`currentSlide-${campaignIndex}`);
+            if (counterElement) {
+                counterElement.textContent = currentImage;
+            }
+            
+            // Update dots
+            const dotsContainer = document.getElementById(`carouselDots-${campaignIndex}`);
+            if (dotsContainer) {
+                const dots = dotsContainer.querySelectorAll('.dot');
+                dots.forEach((dot, i) => {
+                    if (i === campaignImageIndices[campaignIndex]) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        function goToSlide(imageIndex, campaignIndex) {
+            console.log('goToSlide called:', imageIndex, campaignIndex);
+            
+            if (!campaignsData[campaignIndex]) {
+                console.log('Campaign not found:', campaignIndex);
+                return;
+            }
+            
+            const campaign = campaignsData[campaignIndex];
+            if (!campaign.images) {
+                console.log('No images for campaign:', campaignIndex);
+                return;
+            }
+            
+            // Validate image index
+            if (imageIndex >= 0 && imageIndex < campaign.images.length) {
+                campaignImageIndices[campaignIndex] = imageIndex;
+                
+                // Update slideshow position
+                const track = document.getElementById(`slidesTrack-${campaignIndex}`);
+                if (track) {
+                    track.style.transform = `translateX(-${imageIndex * 100}%)`;
+                    console.log('Updated track position to:', imageIndex * 100 + '%');
+                } else {
+                    console.log('Track not found for campaign:', campaignIndex);
+                }
+                
+                updateSlideCounter(campaignIndex);
+            } else {
+                console.log('Invalid image index:', imageIndex);
+            }
+        }
+
+        // ==================== VERTICAL NAVIGATION (Campaign Swipe) ====================
+        const campaignsContainer = document.getElementById('campaignsContainer');
+        if (campaignsContainer) {
+            let scrollTimeout;
+            campaignsContainer.addEventListener('scroll', function() {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    const containerHeight = this.clientHeight;
+                    const scrollTop = this.scrollTop;
+                    const newIndex = Math.round(scrollTop / containerHeight);
+                    
+                    if (newIndex !== currentCampaignIndex && newIndex >= 0 && newIndex < campaignsData.length) {
+                        // Pause previous audio
+                        if (audioElements[currentCampaignIndex]) {
+                            audioElements[currentCampaignIndex].pause();
+                            updateAudioIndicator(currentCampaignIndex, false);
+                        }
+                        
+                        currentCampaignIndex = newIndex;
+                        closeAllPopups();
+                    }
+                }, 100);
+            });
+        }
+// ==================== HORIZONTAL NAVIGATION (Image Swipe) ====================
+let touchStartX = 0;
+let touchEndX = 0;
+let activeCampaignIndex = 0;
+let isSwiping = false;
+
+// Use event delegation for slideshow touches
+document.addEventListener('touchstart', (e) => {
+    const slideshow = e.target.closest('.reel-slideshow');
+    if (slideshow) {
+        isSwiping = true;
+        touchStartX = e.touches[0].clientX; // Changed from changedTouches to touches
+        const campaignItem = slideshow.closest('.campaign-item');
+        if (campaignItem) {
+            activeCampaignIndex = parseInt(campaignItem.dataset.campaignIndex);
+            console.log('Touch start on campaign:', activeCampaignIndex, 'at X:', touchStartX);
+        }
+    }
+}, { passive: true }); // Use passive: true for better performance
+
+document.addEventListener('touchmove', (e) => {
+    if (!isSwiping) return;
+    
+    const slideshow = e.target.closest('.reel-slideshow');
+    if (!slideshow) return;
+    
+    // Prevent page scroll only when swiping horizontally
+    const touch = e.touches[0];
+    const diffX = Math.abs(touch.clientX - touchStartX);
+    const diffY = Math.abs(touch.clientY - e.touches[0].clientY); // Approximate
+    
+    // If horizontal swipe is greater than vertical, prevent default
+    if (diffX > diffY) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', (e) => {
+    if (!isSwiping) return;
+    
+    const slideshow = e.target.closest('.reel-slideshow');
+    if (!slideshow) {
+        isSwiping = false;
+        return;
+    }
+    
+    // Get the touch end position
+    if (e.changedTouches && e.changedTouches.length > 0) {
+        touchEndX = e.changedTouches[0].clientX;
+    } else {
+        isSwiping = false;
+        return;
+    }
+    
+    const swipeThreshold = 50; // Minimum distance for swipe
+    const diffX = touchEndX - touchStartX;
+    
+    console.log('Touch end - Start:', touchStartX, 'End:', touchEndX, 'Diff:', diffX);
+    
+    if (Math.abs(diffX) > swipeThreshold) {
+        const campaign = campaignsData[activeCampaignIndex];
+        if (!campaign || !campaign.images) {
+            isSwiping = false;
+            return;
+        }
+        
+        const currentIndex = campaignImageIndices[activeCampaignIndex];
+        
+        if (diffX < 0) {
+            // Swipe left - next image
+            const nextIndex = currentIndex + 1;
+            console.log('Swipe left - going to next image:', nextIndex);
+            if (nextIndex < campaign.images.length) {
+                goToSlide(nextIndex, activeCampaignIndex);
+            }
+        } else {
+            // Swipe right - previous image
+            const prevIndex = currentIndex - 1;
+            console.log('Swipe right - going to previous image:', prevIndex);
+            if (prevIndex >= 0) {
+                goToSlide(prevIndex, activeCampaignIndex);
+            }
+        }
+    }
+    
+    isSwiping = false;
+}, { passive: true });
+
+        // ==================== AUDIO FUNCTIONALITY ====================
+        function toggleAudio(event, campaignIndex) {
+            // Don't trigger if clicking on interactive elements
+            if (event.target.closest('.action-btn') || 
+                event.target.closest('.stats-icon') || 
+                event.target.closest('.menu-dots') ||
+                event.target.closest('.mobile-back-arrow') ||
+                event.target.closest('.journey-link') ||
+                event.target.closest('.dot') ||
+                event.target.closest('.more-link')) {
+                return;
+            }
+            
+            event.stopPropagation();
+            const audio = audioElements[campaignIndex];
+            
+            if (!audio) return;
+            
+            // Pause all other audio
+            audioElements.forEach((otherAudio, index) => {
+                if (index !== campaignIndex && otherAudio && !otherAudio.paused) {
+                    otherAudio.pause();
+                    updateAudioIndicator(index, false);
+                }
+            });
+            
+            if (audio.paused) { 
+                audio.play().then(() => {
+                    updateAudioIndicator(campaignIndex, true);
+                }).catch(e => console.log('Audio play failed:', e));
+            } else { 
+                audio.pause();
+                updateAudioIndicator(campaignIndex, false);
+            }
+        }
+
+        // ==================== LOVE FUNCTIONALITY ====================
+        function toggleLove(btn, campaignId, campaignIndex) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            
+            btn.style.opacity = '0.5';
+            
+            fetch(`/campaign/${campaignId}/toggle-love/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.loved) {
+                        btn.classList.add('loved');
+                        btn.querySelector('i').className = 'fas fa-heart';
+                    } else {
+                        btn.classList.remove('loved');
+                        btn.querySelector('i').className = 'far fa-heart';
+                    }
+                    
+                    const loveCount = document.getElementById(`loveCount-${campaignIndex}`);
+                    if (loveCount) loveCount.textContent = data.love_count;
+                    
+                    if (campaignsData[campaignIndex]) {
+                        campaignsData[campaignIndex].stats.love_count = data.love_count;
+                        campaignsData[campaignIndex].user_loved = data.loved;
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => {
+                btn.style.opacity = '1';
+            });
+        }
+
+        // ==================== FOLLOW FUNCTIONALITY ====================
+        function toggleFollow(btn, campaignId, campaignIndex) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            
+            btn.style.opacity = '0.5';
+            
+            fetch(`/campaign/${campaignId}/toggle-follow/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.following) {
+                        btn.classList.add('following');
+                        btn.querySelector('i').className = 'fas fa-check';
+                        const followText = document.getElementById(`followText-${campaignIndex}`);
+                        if (followText) followText.textContent = 'Following';
+                    } else {
+                        btn.classList.remove('following');
+                        btn.querySelector('i').className = 'fas fa-plus';
+                        const followText = document.getElementById(`followText-${campaignIndex}`);
+                        if (followText) followText.textContent = 'Follow';
+                    }
+                    
+                    if (campaignsData[campaignIndex]) {
+                        campaignsData[campaignIndex].user_following = data.following;
+                        campaignsData[campaignIndex].stats.follower_count = data.follower_count;
+                    }
+                    
+                    const statSupporters = document.getElementById(`statSupporters-${campaignIndex}`);
+                    if (statSupporters) statSupporters.textContent = data.follower_count;
+                }
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => {
+                btn.style.opacity = '1';
+            });
+        }
+
+        // ==================== COMMENT FUNCTIONALITY ====================
+        function openComments(campaignId, campaignIndex) {
+            currentCommentCampaignId = campaignId;
+            const modal = document.getElementById('commentsModal');
+            modal.classList.add('active');
+            document.getElementById('popupBackdrop').classList.add('active');
+            loadComments(campaignId);
+        }
+
+        function closeComments() {
+            document.getElementById('commentsModal').classList.remove('active');
+            document.getElementById('popupBackdrop').classList.remove('active');
+        }
+
+        function loadComments(campaignId) {
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
+            
+            fetch(`/campaign/${campaignId}/comments/`)
+                .then(response => response.json())
+                .then(data => {
+                    displayComments(data.comments);
+                })
+                .catch(error => {
+                    console.error('Error loading comments:', error);
+                    commentsList.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Failed to load comments</div>';
+                });
+        }
+
+        function displayComments(comments) {
+            const commentsList = document.getElementById('commentsList');
+            const totalComments = document.getElementById('totalComments');
+            
+            totalComments.textContent = comments.length;
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No comments yet. Be the first to comment!</div>';
+                return;
+            }
+            
+            let html = '';
+            comments.forEach(comment => {
+                html += `
+                    <div class="comment-item">
+                        <img src="${comment.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" 
+                             class="comment-avatar" 
+                             alt="${comment.user.username}"
+                             onclick="window.location.href='/user-profile/@${comment.user.username}/'">
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <a href="/user-profile/@${comment.user.username}/" class="comment-username">@${comment.user.username}</a>
+                                <span class="comment-time">${comment.time_ago}</span>
+                            </div>
+                            <div class="comment-text">${comment.text}</div>
+                            <div class="comment-actions">
+                                <span class="comment-action" onclick="likeComment(${comment.id})">
+                                    <i class="far fa-heart"></i> ${comment.like_count}
+                                </span>
+                                <span class="comment-action" onclick="replyToComment(${comment.id})">
+                                    <i class="far fa-comment"></i> Reply
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            commentsList.innerHTML = html;
+        }
+
+        function postComment() {
+            const input = document.getElementById('commentInput');
+            const text = input.value.trim();
+            const btn = document.getElementById('postCommentBtn');
+            
+            if (!text || !currentCommentCampaignId) return;
+            
+            btn.disabled = true;
+            
+            fetch(`/campaign/${currentCommentCampaignId}/add-comment/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    loadComments(currentCommentCampaignId);
+                    
+                    // Update comment count for current campaign
+                    const commentCountSpan = document.getElementById(`commentCount-${currentCampaignIndex}`);
+                    if (commentCountSpan) {
+                        const newCount = parseInt(commentCountSpan.textContent) + 1;
+                        commentCountSpan.textContent = newCount;
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => {
+                btn.disabled = false;
+            });
+        }
+
+        // Placeholder functions for comment actions
+        function likeComment(commentId) {
+            console.log('Like comment:', commentId);
+        }
+
+        function replyToComment(commentId) {
+            console.log('Reply to comment:', commentId);
+        }
+
+        // ==================== POPUP FUNCTIONS ====================
+        function toggleStats(event, campaignIndex) {
+            event.stopPropagation();
+            const popup = document.getElementById(`statsPopup-${campaignIndex}`);
+            const backdrop = document.getElementById('popupBackdrop');
+            
+            // Close all other popups
+            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => {
+                if (p.id !== `statsPopup-${campaignIndex}`) {
+                    p.classList.remove('active');
+                }
+            });
+            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+            
+            popup.classList.toggle('active');
+            backdrop.classList.toggle('active');
+        }
+
+        function toggleMenu(event, campaignIndex) {
+            event.stopPropagation();
+            const menu = document.getElementById(`menuDropdown-${campaignIndex}`);
+            const backdrop = document.getElementById('popupBackdrop');
+            
+            // Close all other menus
+            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => {
+                if (m.id !== `menuDropdown-${campaignIndex}`) {
+                    m.classList.remove('active');
+                }
+            });
+            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+            
+            menu.classList.toggle('active');
+            backdrop.classList.toggle('active');
+        }
+
+        function closeAllPopups() {
+            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+            document.getElementById('commentsModal').classList.remove('active');
+            document.getElementById('popupBackdrop').classList.remove('active');
+        }
+
+        function toggleCaption(campaignIndex) {
+            const caption = document.getElementById(`caption-${campaignIndex}`);
+            if (caption) caption.classList.toggle('expanded');
+        }
+
+        function openShare(campaignId) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Check out this cause',
+                    url: window.location.origin + `/campaign/${campaignId}/`
+                }).catch(console.error);
+            } else {
+                prompt('Copy this link:', window.location.origin + `/campaign/${campaignId}/`);
+            }
+        }
+
+        // ==================== KEYBOARD NAVIGATION ====================
+        document.addEventListener('keydown', (e) => {
+            if (campaignsData.length === 0) return;
+            
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const newIndex = currentCampaignIndex - 1;
+                if (newIndex >= 0 && campaignsContainer) {
+                    campaignsContainer.scrollTo({
+                        top: newIndex * campaignsContainer.clientHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const newIndex = currentCampaignIndex + 1;
+                if (newIndex < campaignsData.length && campaignsContainer) {
+                    campaignsContainer.scrollTo({
+                        top: newIndex * campaignsContainer.clientHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                goToSlide(campaignImageIndices[currentCampaignIndex] - 1, currentCampaignIndex);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                goToSlide(campaignImageIndices[currentCampaignIndex] + 1, currentCampaignIndex);
+            } else if (e.key === 'Escape') {
+                closeAllPopups();
+            }
+        });
+
+        // ==================== CLICK OUTSIDE TO CLOSE POPUPS ====================
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[id^="statsPopup-"]') && 
+                !event.target.closest('.stats-icon') &&
+                !event.target.closest('[id^="menuDropdown-"]') && 
+                !event.target.closest('.menu-dots') &&
+                !event.target.closest('.comments-modal') &&
+                !event.target.closest('.action-btn')) {
+                
+                document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+                document.getElementById('popupBackdrop').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

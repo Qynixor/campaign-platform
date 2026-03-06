@@ -38,7 +38,7 @@ from main.forms import (
     UserForm, ProfileForm, CampaignForm, CommentForm, ActivityForm,
     SupportForm, CampaignSearchForm, ProfileSearchForm,
      CampaignProductForm, ReportForm, NotInterestedForm,
-    UpdateVisibilityForm, ActivityCommentForm,
+     ActivityCommentForm,
     UserVerificationForm
 )
 
@@ -72,93 +72,138 @@ from cloudinary.models import CloudinaryResource
 from django.http import JsonResponse
 import time
 import traceback
+from django.shortcuts import render, get_object_or_404
+from django.db import connection, transaction
+from django.db.models import Count
+from django.utils import timezone
+from django.db.utils import OperationalError
+import json
+import time
+from collections import defaultdict
+from itertools import chain
+
 
 def index(request):
     """
-    Homepage view with proper database connection handling
-    FIXED: Added connection health checks and retry logic
+    Homepage view (clean + safe version)
     """
-    # Ensure we have a fresh connection at the start
+
+    # Ensure database connection
     try:
         connection.close_if_unusable_or_obsolete()
         connection.ensure_connection()
     except:
-        pass  # Let the view handle connection errors
-    
+        pass
+
     user_profile = None
     unread_notifications = []
     unread_messages_count = 0
-    show_login_button = not request.user.is_authenticated  # Show the login button for anonymous users
+    show_login_button = not request.user.is_authenticated
 
-    # Get selected category filter from request
     category_filter = request.GET.get('category', '')
+
+    # -------------------------
+    # AUTHENTICATED USER DATA
+    # -------------------------
 
     if request.user.is_authenticated:
         try:
             with transaction.atomic():
                 user_profile = get_object_or_404(Profile, user=request.user)
+
                 user_profile.last_campaign_check = timezone.now()
                 user_profile.save()
-                unread_notifications = list(Notification.objects.filter(user=request.user, viewed=False))
-              
-              
+
+                unread_notifications = list(
+                    Notification.objects.filter(
+                        user=request.user,
+                        viewed=False
+                    )
+                )
+
         except OperationalError as e:
             print(f"Database error in authenticated section: {e}")
-            # Continue with limited functionality
 
-    # Fetch public campaigns with retry logic
+    # -------------------------
+    # CAMPAIGNS
+    # -------------------------
+
     campaigns = []
     trending_campaigns = []
-    
+
     try:
-        # Use a fresh connection for complex queries
+
         connection.close_if_unusable_or_obsolete()
-        
-        # Campaigns query with retry
+
         for attempt in range(3):
             try:
-                campaigns_query = Campaign.objects.filter(visibility='public')
+
+                campaigns_query = Campaign.objects.all()
 
                 if category_filter:
-                    campaigns_query = campaigns_query.filter(category=category_filter)
+                    campaigns_query = campaigns_query.filter(
+                        category=category_filter
+                    )
 
-                campaigns = list(campaigns_query.select_related('user') \
-                    .annotate(love_count_annotated=Count('loves')) \
-                    .filter(love_count_annotated__gte=1) \
-                    .order_by('-love_count_annotated')\
-                    .select_related('user').prefetch_related('tags')[:50])  # Limit to prevent memory issues
+                campaigns = list(
+
+                    campaigns_query
+                    .select_related('user')
+                    .prefetch_related('tags')
+                    .annotate(love_count_annotated=Count('loves'))
+                    .filter(love_count_annotated__gte=1)
+                    .order_by('-love_count_annotated')[:50]
+
+                )
+
                 break
-            except OperationalError as e:
+
+            except OperationalError:
+
                 if attempt < 2:
-                    print(f"🔄 Retrying campaigns query (attempt {attempt + 2}/3)...")
+                    print(f"Retrying campaigns query {attempt+2}/3")
                     connection.close()
                     time.sleep(1)
                 else:
                     raise
 
-        # Trending campaigns with retry
+        # -------------------------
+        # TRENDING CAMPAIGNS
+        # -------------------------
+
         for attempt in range(3):
             try:
-                trending_query = Campaign.objects.filter(visibility='public') \
-                    .annotate(love_count_annotated=Count('loves')) \
-                    .filter(love_count_annotated__gte=1)
+
+                trending_query = Campaign.objects.annotate(
+                    love_count_annotated=Count('loves')
+                ).filter(
+                    love_count_annotated__gte=1
+                )
 
                 if category_filter:
-                    trending_query = trending_query.filter(category=category_filter)
+                    trending_query = trending_query.filter(
+                        category=category_filter
+                    )
 
-                trending_campaigns = list(trending_query.order_by('-love_count_annotated')[:10])
+                trending_campaigns = list(
+                    trending_query.order_by('-love_count_annotated')[:10]
+                )
+
                 break
-            except OperationalError as e:
+
+            except OperationalError:
+
                 if attempt < 2:
-                    print(f"🔄 Retrying trending query (attempt {attempt + 2}/3)...")
+                    print(f"Retrying trending query {attempt+2}/3")
                     connection.close()
                     time.sleep(1)
                 else:
                     raise
 
     except OperationalError as e:
-        print(f"❌ Database error in campaign queries: {e}")
-        # Return a simplified page with error message
+
+        print(f"Database error loading campaigns: {e}")
+
         context = {
             'campaigns': [],
             'trending_campaigns': [],
@@ -166,59 +211,43 @@ def index(request):
             'unread_notifications': unread_notifications,
             'unread_messages_count': unread_messages_count,
             'show_login_button': show_login_button,
-            'categories': [],
             'selected_category': category_filter,
             'top_contributors': [],
-            'suggested_users': [],
-            'user_joined_status': {},
-            'error_message': "Temporary connection issue. Please refresh the page."
+            'campaign_tags_json': "{}",
+            'error_message': "Temporary connection issue. Please refresh."
         }
+
         return render(request, 'accounts/index.html', context)
 
-    # Top Contributors logic - with connection handling
+    # -------------------------
+    # TOP CONTRIBUTORS
+    # -------------------------
+
     top_contributors = []
+
     try:
-        # Use list() to force evaluation and catch errors early
-        love_pairs = list(Love.objects.values_list('user_id', 'campaign_id'))
-        comment_pairs = list(Comment.objects.values_list('user_id', 'campaign_id'))
-        view_pairs = list(CampaignView.objects.values_list('user_id', 'campaign_id'))
-        activity_love_pairs = list(ActivityLove.objects.values_list('user_id', 'activity__campaign_id'))
-        activity_comment_pairs = list(ActivityComment.objects.values_list('user_id', 'activity__campaign_id'))
 
-        # Combine all engagement pairs
-        all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                          activity_love_pairs, activity_comment_pairs)
+        contributor_data = (
+            Profile.objects
+            .annotate(
+                campaign_count=Count('user__love')
+            )
+            .order_by('-campaign_count')[:5]
+        )
 
-        # Count number of unique campaigns each user engaged with
-        user_campaign_map = defaultdict(set)
+        top_contributors = contributor_data
 
-        for user_id, campaign_id in all_pairs:
-            if user_id and campaign_id:  # Skip null values
-                user_campaign_map[user_id].add(campaign_id)
+    except Exception as e:
+        print(f"Contributor error: {e}")
 
-        # Build a list of contributors with their campaign engagement count
-        contributor_data = []
-        for user_id, campaign_set in list(user_campaign_map.items())[:50]:  # Limit processing
-            try:
-                profile = Profile.objects.get(user__id=user_id)
-                contributor_data.append({
-                    'user': profile.user,
-                    'image': profile.image,
-                    'campaign_count': len(campaign_set),
-                })
-            except Profile.DoesNotExist:
-                continue
+    # -------------------------
+    # CAMPAIGN TAGS JSON
+    # -------------------------
 
-        # Sort contributors by campaign_count descending
-        top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-    except OperationalError as e:
-        print(f"Database error in contributors logic: {e}")
-        top_contributors = []  # Fallback to empty list
-
-    # =============================
     campaign_tags_dict = {}
 
     for camp in campaigns:
+
         try:
             campaign_tags_dict[str(camp.id)] = list(
                 camp.tags.values_list('name', flat=True)
@@ -227,26 +256,31 @@ def index(request):
             campaign_tags_dict[str(camp.id)] = []
 
     campaign_tags_json = json.dumps(campaign_tags_dict)
-    
+
+    # -------------------------
+    # CONTEXT
+    # -------------------------
 
     context = {
-        'campaign_tags_json': campaign_tags_json,
+
         'campaigns': campaigns,
+        'trending_campaigns': trending_campaigns,
+
+        'campaign_tags_json': campaign_tags_json,
+
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
         'unread_messages_count': unread_messages_count,
-     
-       
+
         'show_login_button': show_login_button,
-    
+
         'selected_category': category_filter,
-        'trending_campaigns': trending_campaigns,
+
         'top_contributors': top_contributors,
-    
+
     }
 
     return render(request, 'accounts/index.html', context)
-
 
 
 def home(request):

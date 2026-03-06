@@ -69,7 +69,7 @@ from .models import  NotInterested
 from django.contrib.admin.views.decorators import staff_member_required
 
 from django.views.decorators.http import require_POST
-from .forms import UpdateVisibilityForm
+
 
 from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView
@@ -303,16 +303,16 @@ def campaign_engagement_data(request, campaign_id):
     user_profile.save()
 
     # Other data to pass to the template (e.g., unread notifications, ads, etc.)
-    form = SubscriptionForm()
+   
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
   
-    ads = NativeAd.objects.all()
+ 
     # Pass data to the template
 
 
 
     # Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -394,7 +394,7 @@ def top_participants_view(request, campaign_id):
     ]
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -437,9 +437,7 @@ def top_participants_view(request, campaign_id):
 
     # Other template data
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-   
-    ads = NativeAd.objects.all()
-    form = SubscriptionForm()
+ 
 
     context = {
         'campaign': campaign,
@@ -448,8 +446,7 @@ def top_participants_view(request, campaign_id):
         'unread_notifications': unread_notifications,
       
         'form': form,
-        'ads': ads,
-        'suggested_users': suggested_users,
+      
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
     }
@@ -459,7 +456,7 @@ def top_participants_view(request, campaign_id):
 
 def explore_campaigns(request):
         # Fetch all public campaigns
-    public_campaigns = Campaign.objects.filter(visibility='public')  # Adjust this query to match your actual filtering criteria
+    public_campaigns = Campaign.objects.filter()  # Adjust this query to match your actual filtering criteria
     
     # Pass the public_campaigns to the template
     return render(request, 'marketing/landing.html', {'public_campaigns': public_campaigns})
@@ -479,11 +476,9 @@ def verify_profile(request):
     user_profile.last_campaign_check = timezone.now()
     user_profile.save()
 
-    # Other data to pass to the template
-    form = SubscriptionForm()
+
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    
-    ads = NativeAd.objects.all()
+ 
 
     if request.method == 'POST':
         form = UserVerificationForm(request.POST, request.FILES)
@@ -500,7 +495,7 @@ def verify_profile(request):
         form = UserVerificationForm()
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -604,7 +599,7 @@ class CampaignDeleteView(LoginRequiredMixin, DeleteView):
      
 
         # 🔥 Trending campaigns (Only those with at least 1 love)
-        trending_campaigns = Campaign.objects.filter(visibility='public') \
+        trending_campaigns = Campaign.objects.filter() \
             .annotate(love_count_annotated=Count('loves')) \
             .filter(love_count_annotated__gte=1)
 
@@ -741,7 +736,7 @@ def report_campaign(request, campaign_id):
         form = ReportForm()
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -824,7 +819,7 @@ def activity_detail(request, activity_id):
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
     
@@ -900,7 +895,7 @@ def add_activity_comment(request, activity_id):
     
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
        
@@ -994,84 +989,6 @@ def suggest(request):
 
 
 
-
-@login_required
-def update_visibility(request, campaign_id):
-    
-    user_profile = get_object_or_404(Profile, user=request.user)
-    
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-
-    try:
-        campaign = Campaign.objects.get(pk=campaign_id)
-    except ObjectDoesNotExist:
-        return HttpResponseServerError("Campaign not found")
-
-    # Get all support campaigns
-    support_campaigns = SupportCampaign.objects.filter(campaign_id=campaign_id)
-
-    if request.method == 'POST':
-        # Update visibility settings: only donation, pledge, and products
-        for support_campaign in support_campaigns:
-            support_campaign.donate_monetary_visible = request.POST.get('donate_monetary_visible', False) == 'on'
-            support_campaign.campaign_product_visible = request.POST.get('campaign_product_visible', False) == 'on'
-            support_campaign.pledge_visible = request.POST.get('pledge_visible', False) == 'on'
-            support_campaign.save()
-        return redirect('support', campaign_id=campaign_id)
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    engaged_users = set()
-
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs, activity_love_pairs, activity_comment_pairs)
-
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    
-    context = {
-      
-        'campaign': campaign,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-    
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-    }
-
-    return render(request, 'main/update_visibility.html', context)
-
-
-
-
-
-
 @login_required
 def support(request, campaign_id):
    
@@ -1095,7 +1012,7 @@ def support(request, campaign_id):
   
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
      
@@ -1210,7 +1127,7 @@ def donate_monetary(request, campaign_id):
     user_profile.save()
   
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
     
@@ -1373,7 +1290,7 @@ def search_campaign(request):
     unread_count = unread_notifications.count()
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -1475,7 +1392,7 @@ def notification_list(request):
     user_profile.save()
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
       
@@ -1561,13 +1478,13 @@ def view_campaign(request, campaign_id):
 
         # Track campaign view
     if not CampaignView.objects.filter(user=user_profile, campaign=campaign).exists():
-        ampaignView.objects.create(user=user_profile, campaign=campaign)
+        CampaignView.objects.create(user=user_profile, campaign=campaign)
 
         # Unread notifications
         unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
 
     # 🔥 Trending campaigns
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)
 
@@ -1618,7 +1535,7 @@ def view_campaign(request, campaign_id):
     # Convert to JSON for JavaScript
     campaign_tags_json = json.dumps(campaign_tags_dict)
     # Fetch public campaigns, filter by category if selected
-    campaigns = Campaign.objects.filter(visibility='public')
+    campaigns = Campaign.objects.filter()
     # Create a dictionary to store join status for each campaign
 
     context = {
@@ -1643,7 +1560,7 @@ def view_campaign(request, campaign_id):
 def campaign_detail(request, pk):
     # Retrieve the campaign object using its primary key (pk)
     campaign = get_object_or_404(Campaign, pk=pk)
-    form = SubscriptionForm()
+    
     # Pass the campaign object to the template for rendering
     return render(request, 'main/campaign_detail.html', {'campaign': campaign,'form':form})
 
@@ -1714,7 +1631,7 @@ def activity_list(request, campaign_id):
     
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)
      
@@ -2538,38 +2455,6 @@ def success_page(request):
     return render(request, 'main/success_page.html')
 
 
-
-
-
-def toggle_love(request, campaign_id):
-    if request.method == 'POST' and request.user.is_authenticated:
-        campaign = get_object_or_404(Campaign, pk=campaign_id)
-        user = request.user
-
-        # Check if the user has already loved the campaign
-        if Love.objects.filter(campaign=campaign, user=user).exists():
-            # User has loved the campaign, remove the love
-            Love.objects.filter(campaign=campaign, user=user).delete()
-            love_count = campaign.love_count
-        else:
-            # User hasn't loved the campaign, add the love
-            Love.objects.create(campaign=campaign, user=user)
-            love_count = campaign.love_count
-
-        # Return updated love count
-        return JsonResponse({'love_count': love_count})
-
-    # If the request method is not POST or user is not authenticated, return 404
-    return JsonResponse({}, status=404)
-
-from .models import CommentLike  # Adjust path if it's in another app
-
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from .models import Campaign
-from django.db.models import Count, Case, When, Value, Q
-from django.db.models.fields import CharField
-
 # views.py
 from django.http import JsonResponse
 
@@ -2578,304 +2463,248 @@ def record_campaign_view(request, campaign_id):
         # Handle logic (e.g., increment views)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
-
-
-@login_required
-def get_comments(request):
-    campaign_id = request.GET.get('campaign_id')
-    if not campaign_id:
-        return JsonResponse({'error': 'Campaign ID is required'}, status=400)
-    
-    try:
-        campaign = Campaign.objects.get(pk=campaign_id)
-        # Get top-level comments (not replies)
-        comments = campaign.comments.filter(parent_comment__isnull=True).annotate(
-            like_count=Count('likes', filter=Q(likes__is_like=True)),
-            dislike_count=Count('likes', filter=Q(likes__is_like=False)),
-            reply_count=Count('replies'),
-            user_like_status=Case(
-                When(likes__user=request.user.profile, likes__is_like=True, then=Value('liked')),
-                When(likes__user=request.user.profile, likes__is_like=False, then=Value('disliked')),
-                default=Value(None),
-                output_field=CharField()  # Changed from models.CharField() to CharField()
-            )
-        ).order_by('-timestamp')
-        
-        # Prepare comments data for JSON response
-        comments_data = []
-        for comment in comments:
-            profile_image_url = comment.user.image.url if comment.user.image else None
-            comments_data.append({
-                'id': comment.id,
-                'user_username': comment.user.user.username,
-                'user_profile_image': request.build_absolute_uri(profile_image_url) if profile_image_url else None,
-                'text': comment.text,
-                'timestamp': comment.timestamp.isoformat(),
-                'like_count': comment.like_count,
-                'dislike_count': comment.dislike_count,
-                'reply_count': comment.reply_count,
-                'user_like_status': comment.user_like_status,
-                'is_reply': False,  # This is a top-level comment
-            })
-        
-        return JsonResponse({'comments': comments_data})
-    except Campaign.DoesNotExist:
-        return JsonResponse({'error': 'Campaign not found'}, status=404)
+import json
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.db.models import Q, Sum
+from django.utils import timezone
+from .models import Campaign, Love, CampaignFollow, Comment, Notification
 
 @login_required
-def post_comment(request):
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user.profile
-            
-            campaign_id = request.POST.get('campaign_id')
-            parent_comment_id = request.POST.get('parent_comment_id')
-            
+def journey(request):
+    """Main journey feed view - displays campaigns in a reel format"""
+    # Get all active campaigns
+    campaigns = Campaign.objects.filter(is_active=True).select_related(
+        'user', 'user__user'
+    ).prefetch_related(
+        'loves', 'comments', 'followers', 'pledges', 'donations'
+    ).order_by('-timestamp')
+
+    # Prepare campaign data for the template
+    campaign_data = []
+    for campaign in campaigns:
+        # Get campaign images (poster + additional images)
+        images = []
+        if campaign.poster:
+            images.append(campaign.poster.url)
+        
+        # Parse additional images from JSON field
+        if campaign.additional_images:
             try:
-                campaign = Campaign.objects.get(pk=campaign_id)
-                comment.campaign = campaign
-                
-                if parent_comment_id:
-                    parent_comment = Comment.objects.get(pk=parent_comment_id)
-                    comment.parent_comment = parent_comment
-                
-                comment.save()
-                
-                # Return the new comment data
-                return JsonResponse({
-                    'success': True,
-                    'comment': {
-                        'id': comment.id,
-                        'user_username': comment.user.user.username,
-                        'user_profile_image': comment.user.image.url if comment.user.image else None,
-                        'text': comment.text,
-                        'timestamp': comment.timestamp.isoformat(),
-                        'like_count': 0,
-                        'dislike_count': 0,
-                        'reply_count': 0,
-                        'user_like_status': None,
-                        'is_reply': parent_comment_id is not None,
-                    }
-                })
-            except (Campaign.DoesNotExist, Comment.DoesNotExist):
-                return JsonResponse({'error': 'Campaign or parent comment not found'}, status=404)
+                if isinstance(campaign.additional_images, list):
+                    images.extend(campaign.additional_images)
+                elif isinstance(campaign.additional_images, str):
+                    additional = json.loads(campaign.additional_images)
+                    if isinstance(additional, list):
+                        images.extend(additional)
+            except:
+                pass
+        
+        # Get audio URL
+        audio_url = None
+        if campaign.audio:
+            audio_url = campaign.audio.url
         else:
-            return JsonResponse({'error': 'Invalid form data', 'details': form.errors}, status=400)
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-
-@login_required
-@require_POST
-def like_dislike_comment(request):
-    comment_id = request.POST.get('comment_id')
-    action = request.POST.get('action')  # 'like', 'dislike', or 'remove'
-    
-    if not comment_id or not action:
-        return JsonResponse({'error': 'Missing parameters'}, status=400)
-    
-    try:
-        comment = Comment.objects.get(pk=comment_id)
-        profile = request.user.profile
+            audio_url = campaign.get_default_audio()
         
-        # Check if user already liked/disliked this comment
-        try:
-            like = CommentLike.objects.get(user=profile, comment=comment)
-            
-            if action == 'remove' or (action == 'like' and like.is_like) or (action == 'dislike' and not like.is_like):
-                # Remove the like/dislike
-                like.delete()
-                return JsonResponse({
-                    'success': True, 
-                    'action': 'removed',
-                    'like_count': comment.likes.filter(is_like=True).count(),
-                    'dislike_count': comment.likes.filter(is_like=False).count()
-                })
-            else:
-                # Update existing like/dislike
-                like.is_like = action == 'like'
-                like.save()
-                return JsonResponse({
-                    'success': True, 
-                    'action': 'updated',
-                    'like_count': comment.likes.filter(is_like=True).count(),
-                    'dislike_count': comment.likes.filter(is_like=False).count()
-                })
-        except CommentLike.DoesNotExist:
-            if action in ['like', 'dislike']:
-                # Create new like/dislike
-                CommentLike.objects.create(
-                    user=profile,
-                    comment=comment,
-                    is_like=(action == 'like')
-                )
-                return JsonResponse({
-                    'success': True, 
-                    'action': 'added',
-                    'like_count': comment.likes.filter(is_like=True).count(),
-                    'dislike_count': comment.likes.filter(is_like=False).count()
-                })
-            else:
-                return JsonResponse({'error': 'Invalid action for new interaction'}, status=400)
-    except Comment.DoesNotExist:
-        return JsonResponse({'error': 'Comment not found'}, status=404)
-
-from django.db.models import Q, Count
-
-@login_required
-def get_replies(request, comment_id):
-    try:
-        comment = Comment.objects.get(pk=comment_id)
-        replies = comment.replies.annotate(
-    like_count=Count('likes', filter=Q(likes__is_like=True)),
-    dislike_count=Count('likes', filter=Q(likes__is_like=False)),
-    user_like_status=Case(
-        When(likes__user=request.user.profile, likes__is_like=True, then=Value('liked')),
-        When(likes__user=request.user.profile, likes__is_like=False, then=Value('disliked')),
-        default=Value(None),
-        output_field=CharField()
-    )
-).order_by('timestamp')
-
-
+        # Check if current user has loved/following this campaign
+        user_loved = False
+        user_following = False
         
-        replies_data = []
-        for reply in replies:
-            profile_image_url = reply.user.image.url if reply.user.image else None
-            replies_data.append({
-                'id': reply.id,
-                'user_username': reply.user.user.username,
-                'user_profile_image': request.build_absolute_uri(profile_image_url) if profile_image_url else None,
-                'text': reply.text,
-                'timestamp': reply.timestamp.isoformat(),
-                'like_count': reply.like_count,
-                'dislike_count': reply.dislike_count,
-                'user_like_status': reply.user_like_status,
-                'is_reply': True,
-            })
+        if request.user.is_authenticated:
+            user_loved = campaign.loves.filter(user=request.user).exists()
+            user_following = campaign.is_followed_by(request.user)
         
-        return JsonResponse({'replies': replies_data})
-    except Comment.DoesNotExist:
-        return JsonResponse({'error': 'Comment not found'}, status=404)
+        # Calculate totals safely
+        total_pledges = campaign.pledges.aggregate(total=Sum('amount'))['total'] or 0
+        total_donations = campaign.donations.filter(fulfilled=True).aggregate(total=Sum('amount'))['total'] or 0
+        
+        campaign_data.append({
+            'id': campaign.id,
+            'title': campaign.title,
+            'content': campaign.content,
+            'images': images,
+            'audio_url': audio_url,
+            'user': {
+                'username': campaign.user.user.username,
+                'profile_image': campaign.user.image.url if campaign.user.image else None,
+                'verified': campaign.user.profile_verified,
+            },
+            'stats': {
+                'love_count': campaign.love_count,
+                'comment_count': campaign.comments.count(),
+                'follower_count': campaign.follower_count,
+                'activity_count': campaign.activity_set.count(),
+                'total_pledges': float(total_pledges),
+                'total_donations': float(total_donations),
+                'funding_goal': float(campaign.funding_goal) if campaign.funding_goal else 0,
+                'donation_percentage': campaign.donation_percentage,
+                'days_left': campaign.days_left if campaign.days_left is not None else 0,
+                'current_day': campaign.get_current_day(),
+                'total_days': campaign.duration or 30,
+            },
+            'location': campaign.user.location or 'Unknown',
+            'timestamp': campaign.timestamp.isoformat(),
+            'time_ago': get_time_ago(campaign.timestamp),
+            'category': campaign.category,
+            'user_loved': user_loved,
+            'user_following': user_following,
+        })
 
-
-
-
-
-
-@login_required
-def home(request):
-    user_profile = get_object_or_404(Profile, user=request.user)
-    campaign_id = request.GET.get('campaign_id')
-    category_filter = request.GET.get('category', '')
+    context = {
+        'campaigns': campaign_data,
+        'campaigns_json': json.dumps(campaign_data, default=str),
+    }
     
-    if campaign_id:
-        campaign = get_object_or_404(Campaign, pk=campaign_id)
+    return render(request, 'main/journey.html', context)
+
+def get_time_ago(timestamp):
+    """Helper function to get human readable time ago"""
+    now = timezone.now()
+    diff = now - timestamp
+    
+    if diff.days > 365:
+        years = diff.days // 365
+        return f"{years}y ago"
+    elif diff.days > 30:
+        months = diff.days // 30
+        return f"{months}mo ago"
+    elif diff.days > 0:
+        return f"{diff.days}d ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours}h ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes}m ago"
     else:
-        campaign = Campaign.objects.first()
+        return "Just now"
 
-    user = request.user
-    already_loved = campaign and user != campaign.user and Love.objects.filter(campaign=campaign, user=user).exists()
-
-    # Get campaigns, annotate whether the user marked them as "not interested"
-    campaigns = Campaign.objects.annotate(
-        is_not_interested=Case(
-            When(not_interested_by__user=user_profile, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        )
-    ).filter(is_not_interested=False, visibility='public')
-
-    if category_filter:
-        campaigns = campaigns.filter(category=category_filter)
-
-    campaigns = campaigns.order_by('-timestamp')
-
-    own_campaigns = campaigns.filter(user=user_profile)
-   
-    # FIX: Annotate campaigns with sound community data properly
-    campaigns_with_sound_data = []
-    for camp in campaigns_to_display:
-        sound_data = {
-            'member_count': camp.get_sound_tribe_members_count(),
-            'user_reaction': camp.get_user_reaction(user_profile) if request.user.is_authenticated else None,
-            'campaign_id': camp.id  # Add campaign ID for JS reference
-        }
-        campaigns_with_sound_data.append((camp, sound_data))
-
-    # Trending campaigns
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)\
-      
-
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-   
-    categories = Campaign.objects.values_list('category', flat=True).distinct()
-
-   
-    # Top Contributors logic
-    engaged_users = set()
+@require_POST
+@login_required
+def toggle_campaign_love(request, campaign_id):
+    """Toggle love on a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
-         activity_love_pairs, activity_comment_pairs)
-
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    return render(request, 'main/home.html', {
-      
-        'public_campaigns': campaigns_to_display if campaigns_to_display.exists() else trending_campaigns,
-        'campaign': Campaign.objects.last(),
-        'already_loved': already_loved,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-       
-      
-               'categories': categories,
-        'selected_category': category_filter,
-        'trending_campaigns': trending_campaigns,
-       
-        'top_contributors': top_contributors,
+    love, created = Love.objects.get_or_create(
+        campaign=campaign,
+        user=request.user
+    )
+    
+    if not created:
+        love.delete()
+        loved = False
+    else:
+        loved = True
+    
+    return JsonResponse({
+        'success': True,
+        'loved': loved,
+        'love_count': campaign.love_count
     })
 
+@require_POST
+@login_required
+def toggle_campaign_follow(request, campaign_id):
+    """Toggle follow on a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    if campaign.is_followed_by(request.user):
+        # Unfollow
+        CampaignFollow.objects.filter(
+            user=request.user,
+            campaign=campaign
+        ).delete()
+        following = False
+    else:
+        # Follow
+        CampaignFollow.objects.create(
+            user=request.user,
+            campaign=campaign
+        )
+        following = True
+    
+    return JsonResponse({
+        'success': True,
+        'following': following,
+        'follower_count': campaign.follower_count
+    })
 
+@login_required
+def get_campaign_comments(request, campaign_id):
+    """Get comments for a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    comments = campaign.comments.filter(parent_comment=None).select_related(
+        'user', 'user__user'
+    ).prefetch_related('replies').order_by('-timestamp')[:20]
+    
+    comments_data = []
+    for comment in comments:
+        comments_data.append({
+            'id': comment.id,
+            'user': {
+                'username': comment.user.user.username,
+                'profile_image': comment.user.image.url if comment.user.image else None,
+            },
+            'text': comment.text,
+            'timestamp': comment.timestamp.isoformat(),
+            'time_ago': get_time_ago(comment.timestamp),
+            'like_count': comment.likes.filter(is_like=True).count(),
+            'reply_count': comment.replies.count(),
+        })
+    
+    return JsonResponse({'comments': comments_data})
 
+@require_POST
+@login_required
+def add_campaign_comment(request, campaign_id):
+    """Add a comment to a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    data = json.loads(request.body)
+    text = data.get('text', '').strip()
+    
+    if not text:
+        return JsonResponse({'success': False, 'error': 'Comment text is required'}, status=400)
+    
+    comment = Comment.objects.create(
+        user=request.user.profile,
+        campaign=campaign,
+        text=text
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'user': {
+                'username': comment.user.user.username,
+                'profile_image': comment.user.image.url if comment.user.image else None,
+            },
+            'text': comment.text,
+            'timestamp': comment.timestamp.isoformat(),
+            'time_ago': get_time_ago(comment.timestamp),
+            'like_count': 0,
+            'reply_count': 0,
+        }
+    })
 
-
-
-
-
-
+@login_required
+def get_campaign_stats(request, campaign_id):
+    """Get updated stats for a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    return JsonResponse({
+        'love_count': campaign.love_count,
+        'comment_count': campaign.comments.count(),
+        'follower_count': campaign.follower_count,
+        'total_pledges': float(campaign.total_pledges),
+        'total_donations': float(campaign.total_donations),
+        'donation_percentage': campaign.donation_percentage,
+        'days_left': campaign.days_left,
+        'current_day': campaign.get_current_day(),
+    })
 
 
 
@@ -2897,7 +2726,7 @@ def face(request):
     user_profile.save()
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)\
       
@@ -3000,7 +2829,7 @@ def campaign_comments(request, campaign_id):
 
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
       
@@ -3081,7 +2910,7 @@ def campaign_support(request, campaign_id):
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False) if request.user.is_authenticated else []
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -3151,20 +2980,6 @@ def recreate_campaign(request, campaign_id):
     if existing_campaign.user != user_profile:
         messages.error(request, "You don't have permission to edit this campaign.")
         return redirect('home')
-    
-    # ================ SUBSCRIPTION VALIDATION ================
-  
-    # If user doesn't have active subscription, check campaign count
-    if not subscription.has_active_subscription():
-        user_campaign_count = Campaign.objects.filter(user=user_profile).count()
-        
-        # Check if user has reached their free limit
-        if user_campaign_count >= subscription.campaign_limit:
-            messages.warning(
-                request,
-                "You've reached your free campaign limit. Upgrade to Rallynex Pro to edit or create more campaigns."
-            )
-            return redirect('subscription_required')
     
     categories = Campaign.CATEGORY_CHOICES
 
@@ -3345,7 +3160,7 @@ def recreate_campaign(request, campaign_id):
     from itertools import chain
     from collections import defaultdict
     
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -3444,406 +3259,255 @@ def success_page(request):
     return render(request, 'main/success.html')
 
 
-
-
-
 @login_required
 def create_campaign(request):
-   
+
     user_profile = get_object_or_404(Profile, user=request.user)
     categories = Campaign.CATEGORY_CHOICES
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CampaignForm(request.POST, request.FILES)
+
         if form.is_valid():
             campaign = form.save(commit=False)
             campaign.user = request.user.profile
-            
-            # Handle Canva poster data
-            canva_poster_data = request.POST.get('canva_poster_data')
+            campaign.audio = None
+
+            # SAVE FIRST (IMPORTANT: generates campaign.id)
+            campaign.save()
+
+            # -----------------------------
+            # Canva Poster
+            # -----------------------------
+            canva_poster_data = request.POST.get("canva_poster_data")
+
             if canva_poster_data:
                 try:
                     canva_data = json.loads(canva_poster_data)
-                    response = requests.get(canva_data['previewUrl'])
+                    response = requests.get(canva_data["previewUrl"])
+
                     if response.status_code == 200:
-                        img_name = f"canva_poster_{campaign.user.username}_{int(time.time())}.png"
-                        img_content = ContentFile(response.content)
-                        campaign.poster.save(img_name, img_content, save=False)
+                        upload_result = cloudinary.uploader.upload(
+                            response.content,
+                            folder="campaign_files",
+                            public_id=f"campaign_{campaign.id}_canva_{int(time.time())}",
+                        )
+                        campaign.poster = upload_result["secure_url"]
+
                 except Exception as e:
-                    print(f"Error processing Canva poster: {e}")
-            
-            # Save to get ID (without processing audio through CloudinaryField)
-            # We'll handle audio separately
-            
-            # Handle main poster
-            main_poster = request.FILES.get('poster')
+                    print("Canva poster error:", e)
+
+            # -----------------------------
+            # Main Poster Upload
+            # -----------------------------
+            main_poster = request.FILES.get("poster")
+
             if main_poster:
                 try:
                     upload_result = cloudinary.uploader.upload(
                         main_poster,
                         folder="campaign_files",
+                        public_id=f"campaign_{campaign.id}_poster",
                         transformation=[
-                            {'width': 1200, 'crop': 'limit'},
-                            {'quality': 'auto'},
-                            {'format': 'auto'}
-                        ]
+                            {"width": 1200, "crop": "limit"},
+                            {"quality": "auto"},
+                            {"format": "auto"},
+                        ],
                     )
-                    campaign.poster = upload_result['secure_url']
+
+                    campaign.poster = upload_result["secure_url"]
+
                 except Exception as e:
-                    print(f"Error uploading main poster: {e}")
-            
-            # Handle additional images
-            additional_images = request.FILES.getlist('additional_images')
+                    print("Poster upload error:", e)
+
+            # -----------------------------
+            # Additional Images
+            # -----------------------------
+            additional_images = request.FILES.getlist("additional_images")
             additional_image_urls = []
-            
+
             for idx, image in enumerate(additional_images[:4]):
-                if image:
-                    try:
-                        upload_result = cloudinary.uploader.upload(
-                            image,
-                            folder="campaign_files/slideshow",
-                            public_id=f"{campaign.id}_{idx}_{int(time.time())}",
-                            transformation=[
-                                {'width': 1200, 'crop': 'limit'},
-                                {'quality': 'auto'},
-                                {'format': 'auto'}
-                            ]
-                        )
-                        additional_image_urls.append(upload_result['secure_url'])
-                    except Exception as e:
-                        print(f"Error uploading additional image {idx}: {e}")
-            
-            # IMPORTANT: Set audio to None initially to avoid CloudinaryField auto-upload
-            campaign.audio = None
-            
-            # Save the campaign first
-            campaign.save()
-            
-            # NOW handle audio upload separately
-            audio_file = request.FILES.get('audio')
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        image,
+                        folder="campaign_files/slideshow",
+                        public_id=f"campaign_{campaign.id}_img_{idx}_{int(time.time())}",
+                        transformation=[
+                            {"width": 1200, "crop": "limit"},
+                            {"quality": "auto"},
+                            {"format": "auto"},
+                        ],
+                    )
+
+                    additional_image_urls.append(upload_result["secure_url"])
+
+                except Exception as e:
+                    print("Additional image upload error:", e)
+
+            if additional_image_urls:
+                campaign.additional_images = additional_image_urls
+
+                if not campaign.poster:
+                    campaign.poster = additional_image_urls[0]
+                    campaign.additional_images = additional_image_urls[1:]
+
+            # -----------------------------
+            # Audio Upload
+            # -----------------------------
+            audio_file = request.FILES.get("audio")
+
             if audio_file:
                 try:
-                    # Validate file size (10MB max)
                     if audio_file.size > 10 * 1024 * 1024:
-                        messages.error(request, 'Audio file is too large. Maximum size is 10MB.')
-                        # Delete the partially created campaign
+                        messages.error(request, "Audio must be under 10MB")
                         campaign.delete()
-                        return render(request, 'main/campaign_form.html', {
-                            'form': form,
-                            'categories': categories,
-                            'user_profile': user_profile,
-                            'unread_notifications': Notification.objects.filter(user=request.user, viewed=False),
-                            
-                            'trending_campaigns': Campaign.objects.filter(visibility='public')
-                                .annotate(love_count_annotated=Count('loves'))
-                                .filter(love_count_annotated__gte=1)
-                                .order_by('-love_count_annotated')[:10],
-                        })
-                    
-                    # Validate file type
-                    file_name = audio_file.name.lower()
-                    allowed_extensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac']
-                    is_valid_extension = any(file_name.endswith(ext) for ext in allowed_extensions)
-                    
-                    if not is_valid_extension:
-                        messages.error(request, 'Invalid audio format. Please upload MP3, WAV, OGG, M4A, or AAC files.')
+                        return redirect("create_campaign")
+
+                    allowed_extensions = [
+                        ".mp3",
+                        ".wav",
+                        ".ogg",
+                        ".m4a",
+                        ".aac",
+                        ".flac",
+                    ]
+
+                    if not any(audio_file.name.lower().endswith(ext) for ext in allowed_extensions):
+                        messages.error(request, "Invalid audio format")
                         campaign.delete()
-                        return render(request, 'main/campaign_form.html', {
-                            'form': form,
-                            'categories': categories,
-                            'user_profile': user_profile,
-                            'unread_notifications': Notification.objects.filter(user=request.user, viewed=False),
-                           
-                            'trending_campaigns': Campaign.objects.filter(visibility='public')
-                                .annotate(love_count_annotated=Count('loves'))
-                                .filter(love_count_annotated__gte=1)
-                                .order_by('-love_count_annotated')[:10],
-                        })
-                    
-                    print(f"Uploading audio file: {audio_file.name}, size: {audio_file.size} bytes")
-                    
-                    # Upload to Cloudinary with resource_type='video' for audio
+                        return redirect("create_campaign")
+
                     upload_result = cloudinary.uploader.upload(
                         audio_file,
-                        resource_type='video',  # This is CRITICAL for audio files
+                        resource_type="video",
                         folder="campaign_audio",
                         public_id=f"campaign_{campaign.id}_audio_{int(time.time())}",
                     )
-                    
-                    # Update campaign with audio URL
-                    campaign.audio = upload_result['secure_url']
-                    campaign.save()  # Save again with audio URL
-                    
-                    print(f"✓ Audio uploaded successfully: {upload_result['secure_url']}")
-                    
+
+                    campaign.audio = upload_result["secure_url"]
+
                 except Exception as e:
-                    print(f"✗ Error uploading audio: {e}")
-                    # Don't delete the campaign, just continue without audio
-                    messages.warning(request, 'Audio upload failed, but campaign was created. You can add audio later.')
-            
-            # Handle additional images logic
-            if additional_image_urls:
-                campaign.additional_images = additional_image_urls
-                if not main_poster and additional_image_urls:
-                    campaign.poster = additional_image_urls[0]
-                    if len(additional_image_urls) > 1:
-                        campaign.additional_images = additional_image_urls[1:]
-                    else:
-                        campaign.additional_images = []
-                campaign.save()
-            
-            # Handle tags using the form's save method
-            # We need to manually handle tags since we already saved the campaign
-            tags_input = form.cleaned_data.get('tags_input', '')
+                    print("Audio upload error:", e)
+                    messages.warning(
+                        request,
+                        "Campaign created but audio upload failed. You can add it later.",
+                    )
+
+            # -----------------------------
+            # Tags
+            # -----------------------------
+            tags_input = form.cleaned_data.get("tags_input", "")
+
             if tags_input:
-                # Clear existing tags
                 campaign.tags.clear()
-                
-                # Add new tags
-                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
+
+                tag_names = [t.strip() for t in tags_input.split(",") if t.strip()]
+
                 for tag_name in tag_names:
                     tag, created = Tag.objects.get_or_create(
                         name=tag_name.lower(),
-                        defaults={'slug': tag_name.lower().replace(' ', '-')}
+                        defaults={"slug": tag_name.lower().replace(" ", "-")},
                     )
                     campaign.tags.add(tag)
-            
-            # Update user's last campaign check
+
+            # -----------------------------
+            # Save Campaign Updates
+            # -----------------------------
+            campaign.save()
+
+            # -----------------------------
+            # Update Profile
+            # -----------------------------
             user_profile.last_campaign_check = timezone.now()
             user_profile.save()
-            
-            messages.success(request, 'Campaign created successfully!')
-            return redirect('view_campaign', campaign_id=campaign.pk)
+
+            messages.success(request, "Campaign created successfully!")
+
+            return redirect("index")
+
         else:
-            messages.error(request, 'There were errors in your form. Please correct them below.')
+            messages.error(request, "Please correct the errors below.")
+
     else:
         form = CampaignForm()
 
-    # Fetch unread notifications
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    
+    # -----------------------------
+    # Notifications
+    # -----------------------------
+    unread_notifications = Notification.objects.filter(
+        user=request.user, viewed=False
+    )
 
-    # Trending campaigns
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1) \
-        .order_by('-love_count_annotated')[:10]
+    # -----------------------------
+    # Trending Campaigns
+    # -----------------------------
+    trending_campaigns = (
+        Campaign.objects.annotate(love_count_annotated=Count("loves"))
+        .filter(love_count_annotated__gte=1)
+        .order_by("-love_count_annotated")[:10]
+    )
 
-    # Top Contributors logic
+    # -----------------------------
+    # Top Contributors
+    # -----------------------------
     from itertools import chain
     from collections import defaultdict
-    
-    engaged_users = set()
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
+    love_pairs = Love.objects.values_list("user_id", "campaign_id")
+    comment_pairs = Comment.objects.values_list("user_id", "campaign_id")
+    view_pairs = CampaignView.objects.values_list("user_id", "campaign_id")
+    activity_love_pairs = ActivityLove.objects.values_list(
+        "user_id", "activity__campaign_id"
+    )
+    activity_comment_pairs = ActivityComment.objects.values_list(
+        "user_id", "activity__campaign_id"
+    )
+
+    all_pairs = chain(
+        love_pairs,
+        comment_pairs,
+        view_pairs,
+        activity_love_pairs,
+        activity_comment_pairs,
+    )
 
     user_campaign_map = defaultdict(set)
+
     for user_id, campaign_id in all_pairs:
         user_campaign_map[user_id].add(campaign_id)
 
     contributor_data = []
+
     for user_id, campaign_set in user_campaign_map.items():
         try:
             profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
+
+            contributor_data.append(
+                {
+                    "user": profile.user,
+                    "image": profile.image,
+                    "campaign_count": len(campaign_set),
+                }
+            )
         except Profile.DoesNotExist:
-            continue
+            pass
 
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
+    top_contributors = sorted(
+        contributor_data,
+        key=lambda x: x["campaign_count"],
+        reverse=True,
+    )[:5]
 
-    
     context = {
-   
-        'form': form,
-        'categories': categories,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-       
-     
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-        'is_pro': subscription.has_active_subscription(),
-        'campaign_count': subscription.get_campaign_count(),
-        'campaign_limit': subscription.campaign_limit,
+        "form": form,
+        "categories": categories,
+        "user_profile": user_profile,
+        "unread_notifications": unread_notifications,
+        "trending_campaigns": trending_campaigns,
+        "top_contributors": top_contributors,
     }
-    
-    return render(request, 'main/campaign_form.html', context)
 
-
-
-# views.py - Add these new view functions
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-from .models import Activity, ActiveAudioSession
-import json
-import logging
-
-logger = logging.getLogger(__name__)
-
-@login_required
-@require_POST
-@csrf_exempt
-def update_active_audio(request):
-    """
-    Backend endpoint to track which activity's audio should play.
-    Only one audio session per user is allowed.
-    """
-    try:
-        data = json.loads(request.body)
-        activity_id = data.get('activity_id')
-        user = request.user
-        
-        # If no activity_id, just stop any playing audio
-        if not activity_id:
-            ActiveAudioSession.objects.filter(user=user).delete()
-            return JsonResponse({
-                'status': 'stopped',
-                'message': 'Audio stopped'
-            })
-        
-        # Verify activity exists and user has access
-        try:
-            activity = Activity.objects.select_related('campaign').get(id=activity_id)
-            
-            # Check if user has permission to view this activity
-            if activity.campaign.visibility == 'private' and activity.campaign.user.user != user:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Permission denied'
-                }, status=403)
-            
-        except Activity.DoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Activity not found'
-            }, status=404)
-        
-        # End any existing audio sessions for this user
-        old_sessions = ActiveAudioSession.objects.filter(user=user)
-        old_activity_ids = list(old_sessions.values_list('activity_id', flat=True))
-        old_sessions.delete()
-        
-        # Log for debugging
-        if old_activity_ids:
-            logger.info(f"User {user.username} stopped audio for activities: {old_activity_ids}")
-        
-        # Create new session for this activity
-        session = ActiveAudioSession.objects.create(
-            user=user,
-            activity=activity
-        )
-        
-        # Prepare response with audio URL if activity has a video file
-        audio_url = None
-        if activity.file and activity.file.url:
-            # Check if it's a video file (has audio)
-            if activity.file.url.lower().endswith(('.mp4', '.mov', '.avi', '.webm', '.mkv')):
-                audio_url = activity.file.url
-        
-        logger.info(f"User {user.username} started audio for activity {activity_id}")
-        
-        return JsonResponse({
-            'status': 'playing',
-            'activity_id': activity_id,
-            'audio_url': audio_url,
-            'session_id': session.id,
-            'started_at': session.started_at.isoformat()
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Invalid JSON'
-        }, status=400)
-    except Exception as e:
-        logger.error(f"Error in update_active_audio: {str(e)}")
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Server error'
-        }, status=500)
-
-
-@login_required
-@require_POST
-@csrf_exempt
-def audio_heartbeat(request):
-    """
-    Keep the audio session alive. Called periodically by frontend.
-    """
-    try:
-        data = json.loads(request.body)
-        activity_id = data.get('activity_id')
-        user = request.user
-        
-        if not activity_id:
-            return JsonResponse({'status': 'error', 'message': 'No activity_id'}, status=400)
-        
-        # Update the session's last_heartbeat
-        session = ActiveAudioSession.objects.filter(
-            user=user, 
-            activity_id=activity_id
-        ).first()
-        
-        if session:
-            session.save()  # This updates last_heartbeat due to auto_now
-            return JsonResponse({
-                'status': 'alive',
-                'session_id': session.id
-            })
-        else:
-            # Session expired or doesn't exist
-            return JsonResponse({
-                'status': 'expired',
-                'message': 'No active session found'
-            })
-            
-    except Exception as e:
-        logger.error(f"Error in audio_heartbeat: {str(e)}")
-        return JsonResponse({'status': 'error'}, status=500)
-
-
-@login_required
-@require_POST
-@csrf_exempt
-def stop_audio(request):
-    """
-    Explicitly stop audio for the user.
-    """
-    try:
-        user = request.user
-        sessions = ActiveAudioSession.objects.filter(user=user)
-        count = sessions.count()
-        sessions.delete()
-        
-        logger.info(f"User {user.username} stopped {count} audio sessions")
-        
-        return JsonResponse({
-            'status': 'stopped',
-            'sessions_ended': count
-        })
-        
-    except Exception as e:
-        logger.error(f"Error in stop_audio: {str(e)}")
-        return JsonResponse({'status': 'error'}, status=500)
-
-
-
-
-
-
+    return render(request, "main/campaign_form.html", context)
 
 
 def poster_canva(request):
@@ -3881,7 +3545,7 @@ def home(request):
             default=Value(False),
             output_field=BooleanField(),
         )
-    ).filter(is_not_interested=False, visibility='public')
+    ).filter(is_not_interested=False, )
 
     if category_filter:
         campaigns = campaigns.filter(category=category_filter)
@@ -3891,7 +3555,7 @@ def home(request):
     own_campaigns = campaigns.filter(user=user_profile)
   
     # Trending campaigns
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)\
       
@@ -3955,7 +3619,7 @@ def home(request):
 
 @login_required
 def face(request):
-    form = SubscriptionForm()
+ 
    
     category_filter = request.GET.get('category', '')  # Get category filter from request
 
@@ -3976,7 +3640,7 @@ def face(request):
     user_profile.save()
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1)\
      
@@ -4085,7 +3749,7 @@ def profile_edit(request, username):
         profile_form = ProfileForm(instance=profile)
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
        
@@ -4162,7 +3826,7 @@ def profile_view(request, username):
     
     
     # Get public campaigns (user_profile is already a Profile object)
-    public_campaigns = user_profile.user_campaigns.filter(visibility='public').order_by('-timestamp')
+    public_campaigns = user_profile.user_campaigns.filter().order_by('-timestamp')
     public_campaigns_count = public_campaigns.count()
     
     # Rest of your code remains the same...
@@ -4186,7 +3850,7 @@ def profile_view(request, username):
     user_profile.save()
     
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -4476,7 +4140,7 @@ def create_pledge(request, campaign_id):
         form = PledgeForm(user=request.user, campaign=campaign)
 
     # Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -4545,7 +4209,7 @@ def campaign_pledgers_view(request, campaign_id):
             pledge.cleaned_contact = ''
 
     # Trending campaigns (with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -4665,7 +4329,7 @@ def product_manage(request, campaign_id=None, product_id=None):
     product_count = products.count() if products else 0
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
@@ -4788,7 +4452,7 @@ def view_cart(request):
     user_profile = get_object_or_404(Profile, user=request.user)
 
     # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter(visibility='public') \
+    trending_campaigns = Campaign.objects.filter() \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
