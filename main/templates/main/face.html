@@ -6377,7 +6377,7 @@ html {
         <!-- Main bottom navigation (5 items) -->
         <ul class="bottom-nav">
  <li>
-    <a href="{% url 'home' %}" class="{% if request.path == '/' %}active{% endif %}" style="position: relative;">
+    <a href="{% url 'journey' %}" class="{% if request.path == '/' %}active{% endif %}" style="position: relative;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle;">
             <!-- Journey/Path icon - represents a journey with a path and destination -->
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -6534,7 +6534,7 @@ html {
    <!-- Home/Feeds link with RSS/Feed icon -->
 <!-- Journey link (instead of Feeds) -->
 <li>
-    <a href="{% url 'home' %}" style="color: black; position: relative;">
+    <a href="{% url 'journey' %}" style="color: black; position: relative;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 5px;">
             <!-- Compass/Path icon for Journey -->
             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -8462,88 +8462,6 @@ startCarousel(); // Start the carousel on page load
         });
 
 </script>
-
-<script type="text/javascript">
-function toggleLove(campaignId) {
-    var loveIcon = document.getElementById('love-icon-' + campaignId);
-    var loveCount = document.getElementById('love-count-' + campaignId);
-    var loveCountMobile = document.getElementById('love-count-mobile-' + campaignId);
-    var loveText = "";
-
-    // Play sound when love is toggled
-    var audio = new Audio('{% static "main/files/sound.mp3" %}');
-    audio.play();
-
-    // Send AJAX request to add or remove love
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '{% url "toggle_love" 0 %}'.replace('0', campaignId), true);
-    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            // Update love count only if there's a response from the server
-            var response = JSON.parse(xhr.responseText);
-            var countText = response.love_count + " " + loveText;
-            loveCount.textContent = countText;
-            if (loveCountMobile) {
-                loveCountMobile.textContent = countText;
-            }
-
-            // Toggle the loved class based on response
-            if (response.love_count > 0) {
-                loveIcon.classList.add('loved');
-                createHearts(loveIcon); // Create heart explosion effect
-            } else {
-                loveIcon.classList.remove('loved');
-            }
-        }
-    };
-    xhr.send();
-}
-
-function createHearts(element) {
-    // Get position of the clicked element
-    const rect = element.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    
-    // Create 15 hearts (you can adjust this number)
-    for (let i = 0; i < 15; i++) {
-        const heart = document.createElement('div');
-        heart.classList.add('heart');
-        
-        // Random size between 10px and 25px
-        const size = Math.random() * 15 + 10;
-        heart.style.width = `${size}px`;
-        heart.style.height = `${size}px`;
-        
-        // Random initial position near the click
-        heart.style.left = `${x + (Math.random() - 0.5) * 20}px`;
-        heart.style.top = `${y + (Math.random() - 0.5) * 20}px`;
-        
-        // Random animation properties
-        const duration = Math.random() * 3 + 2;
-        const randomX = (Math.random() - 0.5) * 2;
-        const randomY = Math.random() * 1.5 + 0.5;
-        heart.style.setProperty('--random-x', randomX);
-        heart.style.setProperty('--random-y', randomY);
-        heart.style.animation = `float ${duration}s ease-in forwards`;
-        
-        // Random rotation
-        heart.style.transform = `rotate(${Math.random() * 360}deg)`;
-        
-        document.body.appendChild(heart);
-        
-        // Remove heart after animation completes
-        setTimeout(() => {
-            heart.remove();
-        }, duration * 1000);
-    }
-}
-</script>
-
-
 
 
 <script type="text/javascript">

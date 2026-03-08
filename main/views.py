@@ -570,7 +570,7 @@ def join_leave_campaign(request, campaign_id):
 class CampaignDeleteView(LoginRequiredMixin, DeleteView):
     model = Campaign
     template_name = 'main/campaign_confirm_delete.html'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('index')
 
     def get_queryset(self):
         user_profile = get_object_or_404(Profile, user=self.request.user)
@@ -714,7 +714,7 @@ def mark_not_interested(request, campaign_id):
         not_interested_entry.save()
     
     # Redirect back to the campaign detail page or any other appropriate page
-    return redirect('home')
+    return redirect('index')
 
 @login_required
 def report_campaign(request, campaign_id):
@@ -2442,7 +2442,7 @@ def delete_campaign(request, campaign_id):
         raise Http404("Campaign does not exist.")
     
     # Redirect to a relevant page after deleting the campaign
-    return redirect('home')
+    return redirect('index')
 
 
 
@@ -2979,7 +2979,7 @@ def recreate_campaign(request, campaign_id):
     user_profile = get_object_or_404(Profile, user=request.user)
     if existing_campaign.user != user_profile:
         messages.error(request, "You don't have permission to edit this campaign.")
-        return redirect('home')
+        return redirect('index')
     
     categories = Campaign.CATEGORY_CHOICES
 
@@ -3524,98 +3524,6 @@ def video_canva(request):
 
 
 
-@login_required
-def home(request):
-    user_profile = get_object_or_404(Profile, user=request.user)
-    campaign_id = request.GET.get('campaign_id')
-    category_filter = request.GET.get('category', '')
-    
-    if campaign_id:
-        campaign = get_object_or_404(Campaign, pk=campaign_id)
-    else:
-        campaign = Campaign.objects.first()
-
-    user = request.user
-    already_loved = campaign and user != campaign.user and Love.objects.filter(campaign=campaign, user=user).exists()
-
-    # Get campaigns, annotate whether the user marked them as "not interested"
-    campaigns = Campaign.objects.annotate(
-        is_not_interested=Case(
-            When(not_interested_by__user=user_profile, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        )
-    ).filter(is_not_interested=False, )
-
-    if category_filter:
-        campaigns = campaigns.filter(category=category_filter)
-
-    campaigns = campaigns.order_by('-timestamp')
-
-    own_campaigns = campaigns.filter(user=user_profile)
-  
-    # Trending campaigns
-    trending_campaigns = Campaign.objects.filter() \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)\
-      
-
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    
-    # Top Contributors logic
-    engaged_users = set()
-    
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
-         activity_love_pairs, activity_comment_pairs)
-
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-    # Create a dictionary to store join status for each campaign
-
-    return render(request, 'main/home.html', {
-   
-      
-        'campaign': Campaign.objects.last(),
-        'already_loved': already_loved,
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-     
-        'selected_category': category_filter,
-        'trending_campaigns': trending_campaigns,
-     
-        'top_contributors': top_contributors,
-
-    })
-
-
-
-
 
 @login_required
 def face(request):
@@ -3743,7 +3651,7 @@ def profile_edit(request, username):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            return redirect('home')
+            return redirect('index')
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
