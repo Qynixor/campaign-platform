@@ -49,28 +49,43 @@ body.dark-mode {
     border: 1px solid var(--border);
 }
 
-/* ===== COVER SECTION ===== */
+/* ===== COVER SECTION - CRYSTAL CLEAR (FIXED) ===== */
 .profile-cover {
     position: relative;
-    height: 280px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    height: 200px;
     overflow: hidden;
+    border-radius: 16px 16px 0 0;
+    background: var(--light-gray); /* Fallback while loading */
 }
 
 .profile-cover img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.15;
+    display: block;
+    /* NO opacity, NO blur - completely clear */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: bicubic;
 }
 
+/* Remove overlay completely - we don't need it */
 .profile-cover-overlay {
+    display: none;
+}
+
+/* Bottom fade for avatar separation (keep this) */
+.profile-cover::after {
+    content: '';
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.2);
+    height: 60px;
+    background: linear-gradient(180deg, transparent 0%, var(--light) 90%);
+    opacity: 0.9;
+    pointer-events: none;
+    z-index: 1;
 }
 
 /* ===== PROFILE AVATAR ===== */
@@ -97,6 +112,11 @@ body.dark-mode {
     object-fit: cover;
     box-shadow: var(--shadow-lg);
     transition: transform 0.2s;
+    /* Anti-aliasing for smooth edges */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    image-rendering: -webkit-optimize-contrast;
 }
 
 .profile-avatar img:hover {
@@ -159,130 +179,7 @@ body.dark-mode {
     background: var(--light-gray);
 }
 
-/* ===== ICON-BASED FOLLOW BUTTON ===== */
-.follow-btn-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    font-size: 18px;
-    transition: all 0.2s ease;
-    border: 1px solid var(--border);
-    background: transparent;
-    cursor: pointer;
-}
-
-.follow-btn-icon i {
-    font-size: 18px;
-}
-
-.follow-btn-icon:not(.following) {
-    background: transparent;
-    color: var(--gray);
-    border-color: var(--border);
-}
-
-.follow-btn-icon:not(.following):hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    transform: scale(1.05);
-}
-
-.follow-btn-icon.following {
-    background: transparent;
-    color: var(--primary);
-    border-color: var(--primary);
-}
-
-.follow-btn-icon.following:hover {
-    background: var(--danger);
-    color: white;
-    border-color: var(--danger);
-    transform: scale(1.05);
-}
-
-.follow-btn-icon.loading {
-    opacity: 0.7;
-    pointer-events: none;
-    position: relative;
-    color: transparent !important;
-}
-
-.follow-btn-icon.loading i {
-    opacity: 0;
-}
-
-.follow-btn-icon.loading::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    top: 50%;
-    left: 50%;
-    margin-top: -10px;
-    margin-left: -10px;
-    border: 2px solid rgba(0,0,0,0.1);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: button-loading-spinner 0.8s linear infinite;
-}
-
-.follow-btn-icon.following.loading::after {
-    border-top-color: var(--danger);
-}
-
-@keyframes button-loading-spinner {
-    from { transform: rotate(0turn); }
-    to { transform: rotate(1turn); }
-}
-
-.follow-btn-icon {
-    position: relative;
-}
-
-.follow-btn-icon:hover::before {
-    content: attr(title);
-    position: absolute;
-    bottom: -35px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--dark);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    pointer-events: none;
-    box-shadow: var(--shadow);
-}
-
-.follow-btn-icon:hover::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent transparent var(--dark) transparent;
-    z-index: 1000;
-    pointer-events: none;
-}
-
-body.dark-mode .follow-btn-icon:hover::before {
-    background: var(--light);
-    color: var(--dark);
-}
-
-body.dark-mode .follow-btn-icon:hover::after {
-    border-color: transparent transparent var(--light) transparent;
-}
-
+/* Message badge */
 .message-badge {
     display: inline-flex;
     align-items: center;
@@ -455,12 +352,6 @@ body.dark-mode .changemaker-badge {
     font-weight: 700;
     font-size: 18px;
     color: var(--dark);
-    transition: all 0.3s ease;
-}
-
-.stat-value.updating {
-    color: var(--primary);
-    transform: scale(1.1);
 }
 
 .stat-label {
@@ -898,14 +789,12 @@ body.dark-mode .payment-section {
         flex-direction: column;
     }
 
-    /* SECTION 1: Name and Username */
     .profile-info-section {
         order: 1;
         padding: 16px 16px 8px;
         border-bottom: none;
     }
 
-    /* SECTION 2: Avatar + Follow/Message buttons */
     .profile-avatar-section {
         order: 2;
         margin-top: 0;
@@ -927,7 +816,6 @@ body.dark-mode .payment-section {
         margin-bottom: 0;
     }
 
-    /* SECTION 3: Stats */
     .profile-stats {
         order: 3;
         padding: 16px;
@@ -936,7 +824,6 @@ body.dark-mode .payment-section {
         gap: 24px;
     }
 
-    /* SECTION 4: Email (now below stats) */
     .email-row {
         order: 4;
         padding: 0 16px 16px;
@@ -945,27 +832,22 @@ body.dark-mode .payment-section {
         justify-content: center;
     }
 
-    /* SECTION 5: Bio */
     .bio-section { 
         order: 5; 
     }
     
-    /* SECTION 6: Payment */
     .payment-section { 
         order: 6; 
     }
     
-    /* SECTION 7: Verification Link */
     .verification-link { 
         order: 7; 
     }
     
-    /* SECTION 8: Campaigns */
     .campaigns-section { 
         order: 8; 
     }
 
-    /* Center text elements */
     .profile-name-row {
         justify-content: center;
         text-align: center;
@@ -1016,108 +898,37 @@ body.dark-mode .payment-section {
         width: 100%;
         justify-content: center;
     }
-
-    .follow-btn-icon {
-        width: 38px;
-        height: 38px;
-    }
-}
-
-
-/* ===== EMAIL ROW ===== */
-.email-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-}
-
-.email-display {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--dark);
-    font-size: 15px;
-    background: var(--light-gray);
-    padding: 8px 16px;
-    border-radius: 9999px;
-    border: 1px solid var(--border);
-    transition: all 0.2s ease;
-}
-
-.email-display:hover {
-    background: var(--primary-light);
-    border-color: var(--primary);
-}
-
-.email-display:hover i,
-.email-display:hover span {
-    color: var(--primary-dark);
-}
-
-.email-display i {
-    color: var(--primary);
-    font-size: 14px;
-    transition: color 0.2s ease;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-    .email-row {
-        order: 4;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        justify-content: center;
-        margin-bottom: 0;
-    }
-    
-    .email-display {
-        width: auto;
-        max-width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .email-display {
-        width: 100%;
-        justify-content: center;
-    }
 }
 </style>
 
 <!-- ===== MAIN PROFILE CONTAINER ===== -->
 <div class="profile-container">
     
-    <!-- ===== COVER SECTION ===== -->
+    <!-- ===== COVER SECTION - CRYSTAL CLEAR ===== -->
     <div class="profile-cover">
-        <img src="{{ user_profile.image.url }}" alt="Cover">
-        <div class="profile-cover-overlay"></div>
+        <img src="{{ user_profile.image.url|cloudinary_cover:'1200,400' }}" alt="Cover">
+        <!-- Overlay removed - completely clear -->
     </div>
 
     <!-- ===== AVATAR + ACTION BUTTONS ===== -->
     <div class="profile-avatar-section">
         <div class="profile-avatar">
             <a href="{{ user_profile.image.url }}" target="_blank">
-                <img src="{{ user_profile.image.url }}" alt="{{ user_profile.user.username }}">
+                <img src="{{ user_profile.image.url|cloudinary_optimize_avatar:280 }}" 
+                     srcset="{{ user_profile.image.url|cloudinary_optimize_avatar:560 }} 2x"
+                     alt="{{ user_profile.user.username }}">
             </a>
         </div>
 
         <div class="profile-actions-bar">
             {% if not user_profile.user == request.user %}
-                <!-- Viewing Another User's Profile -->
-           
-                
                 {% if request.user.is_authenticated %}
                     <a href="{% url 'start_dm' user_id=user_profile.user.id %}" class="btn btn-primary">
                         <i class="fas fa-comment-alt"></i>
                         Message
                     </a>
                 {% endif %}
-                
             {% else %}
-                <!-- Viewing Own Profile -->
                 <a href="{% url 'dm_inbox' %}" class="btn btn-primary">
                     <i class="fas fa-inbox"></i>
                     Messages
@@ -1134,7 +945,7 @@ body.dark-mode .payment-section {
         </div>
     </div>
 
-    <!-- ===== PROFILE INFO (NAME & USERNAME ONLY) ===== -->
+    <!-- ===== PROFILE INFO ===== -->
     <div class="profile-info-section">
         <div class="profile-name-row">
             <h1 class="profile-name">{{ user_profile.user.get_full_name|default:user_profile.user.username }}</h1>
@@ -1156,7 +967,6 @@ body.dark-mode .payment-section {
             @{{ user_profile.user.username }}
         </div>
 
-        <!-- Changemaker Badge (if applicable) -->
         {% if changemaker_category %}
             <div class="changemaker-badge">
                 <i class="fas fa-crown"></i>
@@ -1166,11 +976,10 @@ body.dark-mode .payment-section {
         {% endif %}
     </div>
 
-    <!-- ===== STATS SECTION ===== -->
+    <!-- ===== STATS ===== -->
     <div class="profile-stats">
         <div class="stat-item">
-
-            <a href=" {% url 'supporters' username=request.user.username %}">
+            <a href="{% url 'supporters' username=request.user.username %}">
                 <span class="stat-value" id="follower-count">1</span>
                 <span class="stat-label">Supporters</span>
             </a>
@@ -1181,19 +990,20 @@ body.dark-mode .payment-section {
             <span class="stat-label">Causes</span>
         </div>
 
-          <div class="stat-item">
+        <div class="stat-item">
             <a href="{% url 'following_causes' username=request.user.username %}">
                 <span class="stat-value">2</span>
-                <span class="stat-label">Following </span>
+                <span class="stat-label">Following</span>
             </a>
         </div>
+        
         <div class="stat-item">
             <span class="stat-value">{{ user_profile.total_loves|format_count }}</span>
             <span class="stat-label">Loves</span>
         </div>
     </div>
 
-    <!-- ===== EMAIL + DETAILS BUTTON ===== -->
+    <!-- ===== EMAIL ===== -->
     <div class="email-row">
         <div class="email-display">
             <i class="fas fa-envelope"></i>
@@ -1204,7 +1014,7 @@ body.dark-mode .payment-section {
         </button>
     </div>
 
-    <!-- ===== BIO SECTION ===== -->
+    <!-- ===== BIO ===== -->
     {% if user_profile.bio %}
     <div class="bio-section">
         <h3>Bio</h3>
@@ -1214,7 +1024,7 @@ body.dark-mode .payment-section {
     </div>
     {% endif %}
 
-    <!-- ===== PAYMENT INFORMATION (Owner Only) ===== -->
+    <!-- ===== PAYMENT INFO ===== -->
     {% if request.user.is_authenticated and request.user == user_profile.user %}
     <div class="payment-section">
         <div class="payment-header">
@@ -1228,9 +1038,6 @@ body.dark-mode .payment-section {
             </span>
             <div class="payment-detail">
                 <strong>Email:</strong> {{ user_profile.paypal_email }}
-            </div>
-            <div class="payment-detail">
-                <strong>Status:</strong> Ready to receive payments
             </div>
         {% else %}
             <span class="payment-status inactive">
@@ -1247,7 +1054,7 @@ body.dark-mode .payment-section {
     </div>
     {% endif %}
 
-    <!-- ===== VERIFICATION LINK (if not verified) ===== -->
+    <!-- ===== VERIFICATION ===== -->
     {% if not user_profile.profile_verified %}
         <a href="{% url 'verify_profile' %}" class="verification-link">
             <i class="fas fa-shield-alt"></i>
@@ -1255,7 +1062,7 @@ body.dark-mode .payment-section {
         </a>
     {% endif %}
 
-    <!-- ===== PUBLIC CAUSES SECTION ===== -->
+    <!-- ===== CAMPAIGNS ===== -->
     <div class="campaigns-section">
         <div class="campaigns-header">
             <h2>
@@ -1420,24 +1227,17 @@ body.dark-mode .payment-section {
         </div>
 
         <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; gap: 10px;">
+            <div>
                 {% if user.is_authenticated %}
-                    <!-- Logout Form -->
-                    <form id="modal-logout-form" action="{% url 'logout' %}" method="post" style="display: inline;">
+                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        <button type="submit" class="btn" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
                     </form>
-                {% else %}
-                    <!-- Login Button -->
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="background-color: #007bff; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; display: inline-block;">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
                 {% endif %}
             </div>
-            
-            <button class="btn btn-secondary" onclick="closeDetailsModal()" style="padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+            <button class="btn btn-secondary" onclick="closeDetailsModal()" style="padding: 8px 16px;">
                 Close
             </button>
         </div>
@@ -1449,7 +1249,6 @@ body.dark-mode .payment-section {
 
 <!-- ===== JAVASCRIPT ===== -->
 <script>
-// Modal Functions
 function openDetailsModal() {
     document.getElementById('detailsModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -1460,7 +1259,6 @@ function closeDetailsModal() {
     document.body.style.overflow = '';
 }
 
-// Close modal when clicking outside
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('detailsModal');
     if (modal) {
@@ -1472,7 +1270,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Close modal with Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         const modal = document.getElementById('detailsModal');
@@ -1482,7 +1279,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Toast Notification System
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;

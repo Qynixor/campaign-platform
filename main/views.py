@@ -1232,9 +1232,7 @@ def search_campaign(request):
     # Initialize empty querysets for all searchable models
     campaigns = Campaign.objects.none()
     profiles = Profile.objects.none()
-    quran_verses = QuranVerse.objects.none()
-    adhkar = Adhkar.objects.none()
-    hadiths = Hadith.objects.none()
+  
     
     if query:
         # Search across different models - CLEAN APPROACH
@@ -1261,28 +1259,6 @@ def search_campaign(request):
             Q(bio__icontains=query)
         ).distinct()
         
-        quran_verses = QuranVerse.objects.filter(
-            Q(verse_text__icontains=query) |
-            Q(translation__icontains=query) |
-            Q(description__icontains=query) |
-            Q(surah__name__icontains=query)
-        ).distinct()
-        
-        adhkar = Adhkar.objects.filter(
-            Q(type__icontains=query) |
-            Q(text__icontains=query) |
-            Q(translation__icontains=query) |
-            Q(reference__icontains=query)
-        ).distinct()
-        
-        hadiths = Hadith.objects.filter(
-            Q(narrator__icontains=query) |
-            Q(text__icontains=query) |
-            Q(reference__icontains=query) |
-            Q(authenticity__icontains=query)
-        ).distinct()
-    
-    
     # Notifications handling
     notifications = Notification.objects.filter(user=request.user).order_by('-timestamp')
     unread_notifications = notifications.filter(viewed=False)
@@ -1334,9 +1310,7 @@ def search_campaign(request):
        
         'campaigns': campaigns,
         'profiles': profiles,
-        'quran_verses': quran_verses,
-        'adhkar': adhkar,
-        'hadiths': hadiths,
+      
         'user_profile': user_profile,
         'unread_count': unread_count,
         'unread_notifications': unread_notifications,

@@ -58,15 +58,37 @@ admin.site.register(Profile, ProfileAdmin)
 # ============================================================================
 # CAMPAIGN ADMIN
 # ============================================================================
+# Simpler admin.py without the problematic fields
+from django.contrib import admin
+from .models import Campaign
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'category', 'is_active', 'timestamp')
-    search_fields = ('user__user__username', 'title', 'content')
-    list_filter = ('category', 'is_active', 'timestamp')
-    raw_id_fields = ('user', 'tags')
-    readonly_fields = ('timestamp', 'end_date', 'duration_last_updated')
-
+    list_display = ['title', 'user', 'timestamp', 'is_active', 'category']
+    list_filter = ['is_active', 'category', 'duration_unit']
+    search_fields = ['title', 'content', 'user__username']
+    readonly_fields = ['timestamp', 'end_date', 'duration_last_updated']
+    raw_id_fields = ['user']
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('user', 'title', 'content', 'category', 'is_active')
+        }),
+        ('Media', {
+            'fields': ('poster', 'additional_images', 'audio')
+        }),
+        ('Duration Settings', {
+            'fields': ('journey_start_date', 'duration', 'duration_unit', 'end_date')
+        }),
+        ('Funding', {
+            'fields': ('funding_goal',)
+        }),
+        ('Metadata', {
+            'fields': ('timestamp', 'duration_last_updated', 'original_duration', 'original_duration_unit'),
+            'classes': ('collapse',)
+        }),
+        # Removed tags and followers completely
+    )
 
 @admin.register(CampaignView)
 class CampaignViewAdmin(admin.ModelAdmin):
