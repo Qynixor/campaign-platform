@@ -1132,9 +1132,10 @@
                                 {% endif %}
                                 <span class="timestamp">• {{ campaign.time_ago }}</span>
                             </div>
-                            
-                            <div class="caption" id="caption-{{ forloop.counter0 }}">{{ campaign.content }}</div>
-                            <span class="more-link" onclick="handleMoreCaption(event, {{ forloop.counter0 }})">more</span>
+    <div class="caption" id="caption-{{ forloop.counter0 }}">{{ campaign.content|truncatechars:20 }}</div>
+{% if campaign.content|length > 20 %}
+    <span class="more-link" onclick="handleMoreCaption(event, {{ forloop.counter0 }})">more</span>
+{% endif %}
                             
                             <div class="meta-row">
                                 <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-{{ forloop.counter0 }}">{{ campaign.location }}</span></span>
@@ -1192,623 +1193,642 @@
             </div>
         </div>
     </div>
-    
     <!-- CHANGE 2,3,4: New JavaScript additions (keeping all your existing code) -->
-    <script>
-        // ========== YOUR EXISTING CODE - KEPT EXACTLY AS IS ==========
+<script>
+    // ========== YOUR EXISTING CODE - KEPT EXACTLY AS IS ==========
+    
+    // Parse campaign data
+    let campaignsData = [];
+    try {
+        campaignsData = JSON.parse('{{ campaigns_json|safe }}');
+    } catch (e) {
+        campaignsData = [];
+    }
+    
+    // Simple state
+    let currentSlideIndex = [];
+    let slideshowTimers = [];
+    let slideshowActive = [];
+    let audioElements = [];
+    
+    // Initialize
+    campaignsData.forEach((campaign, i) => {
+        currentSlideIndex[i] = 0;
+        slideshowActive[i] = true; // Start active
+    });
+
+    // DOM Ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store audio elements
+        document.querySelectorAll('.bg-audio').forEach((audio, i) => {
+            audioElements[i] = audio;
+        });
         
-        // Parse campaign data
-        let campaignsData = [];
-        try {
-            campaignsData = JSON.parse('{{ campaigns_json|safe }}');
-        } catch (e) {
-            campaignsData = [];
-        }
+        // Hide spinner
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) spinner.style.display = 'none';
         
-        // Simple state
-        let currentSlideIndex = [];
-        let slideshowTimers = [];
-        let slideshowActive = [];
-        let audioElements = [];
+        // Initialize slides
+        initializeAllSlides();
         
-        // Initialize
+        // Start all timers
+        startAllTimers();
+        
+        // ===== NEW: Setup intersection observers =====
+        setupIntersectionObservers();
+        setupInfiniteScrollObserver();
+    });
+
+    // Initialize all slides to first position
+    function initializeAllSlides() {
         campaignsData.forEach((campaign, i) => {
-            currentSlideIndex[i] = 0;
-            slideshowActive[i] = true; // Start active
+            const container = document.getElementById(`slidesContainer-${i}`);
+            if (container) {
+                container.style.transform = 'translateX(0%)';
+            }
+            
+            // Update counters
+            const totalEl = document.getElementById(`totalSlides-${i}`);
+            if (totalEl) totalEl.textContent = campaign.images.length;
+            
+            updateSlideCounter(i);
         });
+    }
 
-        // DOM Ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Store audio elements
-            document.querySelectorAll('.bg-audio').forEach((audio, i) => {
-                audioElements[i] = audio;
-            });
-            
-            // Hide spinner
-            const spinner = document.getElementById('loadingSpinner');
-            if (spinner) spinner.style.display = 'none';
-            
-            // Initialize slides
-            initializeAllSlides();
-            
-            // Start all timers
-            startAllTimers();
-            
-            // ===== NEW: Setup intersection observers =====
-            setupIntersectionObservers();
-            setupInfiniteScrollObserver();
+    // Start all slideshow timers
+    function startAllTimers() {
+        campaignsData.forEach((campaign, i) => {
+            if (campaign.images && campaign.images.length > 1) {
+                startTimer(i);
+            }
         });
+    }
 
-        // Initialize all slides to first position
-        function initializeAllSlides() {
-            campaignsData.forEach((campaign, i) => {
-                const container = document.getElementById(`slidesContainer-${i}`);
-                if (container) {
-                    container.style.transform = 'translateX(0%)';
-                }
-                
-                // Update counters
-                const totalEl = document.getElementById(`totalSlides-${i}`);
-                if (totalEl) totalEl.textContent = campaign.images.length;
-                
-                updateSlideCounter(i);
-            });
+    // Start timer for specific campaign
+    function startTimer(index) {
+        // Clear existing timer
+        if (slideshowTimers[index]) {
+            clearInterval(slideshowTimers[index]);
         }
+        
+        // Set new timer
+        slideshowTimers[index] = setInterval(() => {
+            if (slideshowActive[index]) {
+                nextSlide(index);
+            }
+        }, 3000);
+    }
 
-        // Start all slideshow timers
-        function startAllTimers() {
-            campaignsData.forEach((campaign, i) => {
-                if (campaign.images && campaign.images.length > 1) {
-                    startTimer(i);
-                }
-            });
+    // Go to next slide
+    function nextSlide(index) {
+        const campaign = campaignsData[index];
+        if (!campaign || !campaign.images) return;
+        
+        const total = campaign.images.length;
+        if (total <= 1) return;
+        
+        // Calculate next
+        const next = (currentSlideIndex[index] + 1) % total;
+        
+        // Update position
+        const container = document.getElementById(`slidesContainer-${index}`);
+        if (container) {
+            container.style.transform = `translateX(-${next * 100}%)`;
+            currentSlideIndex[index] = next;
+            updateSlideCounter(index);
+            updateIndicators(index, next);
         }
+    }
 
-        // Start timer for specific campaign
-        function startTimer(index) {
-            // Clear existing timer
+    // Update slide counter
+    function updateSlideCounter(index) {
+        const current = currentSlideIndex[index] + 1;
+        const counter = document.getElementById(`currentSlide-${index}`);
+        if (counter) counter.textContent = current;
+    }
+
+    // Update indicators
+    function updateIndicators(index, activeIndex) {
+        const indicators = document.getElementById(`slideIndicators-${index}`);
+        if (!indicators) return;
+        
+        const dots = indicators.querySelectorAll('.indicator-dot');
+        dots.forEach((dot, i) => {
+            if (i === activeIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    // ===== MAIN FIX: TOGGLE SLIDESHOW =====
+    function toggleSlideshow(event, index) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        console.log('Button clicked!', index); // Check if this logs
+        
+        const btn = document.getElementById(`autoplayBtn-${index}`);
+        
+        // Toggle state
+        slideshowActive[index] = !slideshowActive[index];
+        
+        if (slideshowActive[index]) {
+            // TURN ON
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            startTimer(index);
+            console.log(`Slideshow ${index} started`);
+        } else {
+            // TURN OFF
+            btn.innerHTML = '<i class="fas fa-play"></i>';
             if (slideshowTimers[index]) {
                 clearInterval(slideshowTimers[index]);
+                slideshowTimers[index] = null;
             }
-            
-            // Set new timer
-            slideshowTimers[index] = setInterval(() => {
-                if (slideshowActive[index]) {
-                    nextSlide(index);
-                }
-            }, 3000);
+            console.log(`Slideshow ${index} paused`);
         }
+    }
 
-        // Go to next slide
-        function nextSlide(index) {
-            const campaign = campaignsData[index];
-            if (!campaign || !campaign.images) return;
-            
-            const total = campaign.images.length;
-            if (total <= 1) return;
-            
-            // Calculate next
-            const next = (currentSlideIndex[index] + 1) % total;
-            
-            // Update position
-            const container = document.getElementById(`slidesContainer-${index}`);
-            if (container) {
-                container.style.transform = `translateX(-${next * 100}%)`;
-                currentSlideIndex[index] = next;
-                updateSlideCounter(index);
-                updateIndicators(index, next);
-            }
-        }
-
-        // Update slide counter
-        function updateSlideCounter(index) {
-            const current = currentSlideIndex[index] + 1;
-            const counter = document.getElementById(`currentSlide-${index}`);
-            if (counter) counter.textContent = current;
-        }
-
-        // Update indicators
-        function updateIndicators(index, activeIndex) {
-            const indicators = document.getElementById(`slideIndicators-${index}`);
-            if (!indicators) return;
-            
-            const dots = indicators.querySelectorAll('.indicator-dot');
-            dots.forEach((dot, i) => {
-                if (i === activeIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
-
-        // ===== MAIN FIX: TOGGLE SLIDESHOW =====
-        function toggleSlideshow(event, index) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            console.log('Button clicked!', index); // Check if this logs
-            
-            const btn = document.getElementById(`autoplayBtn-${index}`);
-            
-            // Toggle state
-            slideshowActive[index] = !slideshowActive[index];
-            
-            if (slideshowActive[index]) {
-                // TURN ON
-                btn.innerHTML = '<i class="fas fa-pause"></i>';
-                startTimer(index);
-                console.log(`Slideshow ${index} started`);
-            } else {
-                // TURN OFF
-                btn.innerHTML = '<i class="fas fa-play"></i>';
-                if (slideshowTimers[index]) {
-                    clearInterval(slideshowTimers[index]);
-                    slideshowTimers[index] = null;
-                }
-                console.log(`Slideshow ${index} paused`);
-            }
-        }
-
-        // Handle indicator click
-        function handleIndicatorClick(event, imageIndex, campaignIndex) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Pause slideshow temporarily
-            if (slideshowActive[campaignIndex]) {
-                slideshowActive[campaignIndex] = false;
-                const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
-                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                if (slideshowTimers[campaignIndex]) {
-                    clearInterval(slideshowTimers[campaignIndex]);
-                }
-                
-                // Resume after 5 seconds
-                setTimeout(() => {
-                    if (!slideshowActive[campaignIndex]) {
-                        slideshowActive[campaignIndex] = true;
-                        const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
-                        if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-                        startTimer(campaignIndex);
-                    }
-                }, 5000);
-            }
-            
-            // Go to selected slide
-            const container = document.getElementById(`slidesContainer-${campaignIndex}`);
-            if (container) {
-                container.style.transform = `translateX(-${imageIndex * 100}%)`;
-                currentSlideIndex[campaignIndex] = imageIndex;
-                updateSlideCounter(campaignIndex);
-                updateIndicators(campaignIndex, imageIndex);
-            }
-        }
-
-        // Handle audio toggle (fixed with Promise)
-        function handleAudioToggle(event, index) {
-            event.stopPropagation();
-            
-            const audio = audioElements[index];
-            if (!audio) return;
-            
-            if (!audio.paused) {
-                audio.pause();
-                updateAudioIndicator(index, false);
-                return;
-            }
-            
-            // Pause others
-            audioElements.forEach((other, i) => {
-                if (i !== index && other && !other.paused) {
-                    other.pause();
-                    updateAudioIndicator(i, false);
-                }
-            });
-            
-            // Play with Promise
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => updateAudioIndicator(index, true))
-                    .catch(() => updateAudioIndicator(index, false));
-            }
-        }
-
-        function updateAudioIndicator(index, playing) {
-            const indicator = document.getElementById(`audioIndicator-${index}`);
-            if (!indicator) return;
-            
-            if (playing) {
-                indicator.classList.add('playing');
-                indicator.innerHTML = '<i class="fas fa-volume-up"></i>';
-            } else {
-                indicator.classList.remove('playing');
-                indicator.innerHTML = '<i class="fas fa-music"></i>';
-            }
-        }
-
-        // Scroll handling
-        const container = document.getElementById('campaignsContainer');
-        let currentView = 0;
+    // Handle indicator click
+    function handleIndicatorClick(event, imageIndex, campaignIndex) {
+        event.preventDefault();
+        event.stopPropagation();
         
+        // Pause slideshow temporarily
+        if (slideshowActive[campaignIndex]) {
+            slideshowActive[campaignIndex] = false;
+            const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
+            if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+            
+            if (slideshowTimers[campaignIndex]) {
+                clearInterval(slideshowTimers[campaignIndex]);
+            }
+            
+            // Resume after 5 seconds
+            setTimeout(() => {
+                if (!slideshowActive[campaignIndex]) {
+                    slideshowActive[campaignIndex] = true;
+                    const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
+                    if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+                    startTimer(campaignIndex);
+                }
+            }, 5000);
+        }
+        
+        // Go to selected slide
+        const container = document.getElementById(`slidesContainer-${campaignIndex}`);
         if (container) {
-            container.addEventListener('scroll', function() {
-                clearTimeout(window.scrollTimeout);
-                window.scrollTimeout = setTimeout(() => {
-                    const newIndex = Math.round(this.scrollTop / this.clientHeight);
-                    
-                    if (newIndex !== currentView && newIndex >= 0 && newIndex < campaignsData.length) {
-                        // Pause audio of previous
-                        if (audioElements[currentView]) {
-                            audioElements[currentView].pause();
-                            updateAudioIndicator(currentView, false);
-                        }
-                        
-                        currentView = newIndex;
-                        closeAllPopups();
-                    }
-                }, 100);
-            });
+            container.style.transform = `translateX(-${imageIndex * 100}%)`;
+            currentSlideIndex[campaignIndex] = imageIndex;
+            updateSlideCounter(campaignIndex);
+            updateIndicators(campaignIndex, imageIndex);
         }
+    }
 
-        // Love
-        function handleLove(event, btn, id, index) {
-            event.stopPropagation();
-            fetch(`/campaign/${id}/toggle-love/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    btn.classList.toggle('loved', data.loved);
-                    btn.querySelector('i').className = data.loved ? 'fas fa-heart' : 'far fa-heart';
-                    const count = document.getElementById(`loveCount-${index}`);
-                    if (count) count.textContent = data.love_count;
-                }
-            });
-        }
-
-        // Follow
-        function handleFollow(event, btn, id, index) {
-            event.stopPropagation();
-            fetch(`/campaign/${id}/toggle-follow/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    btn.classList.toggle('following', data.following);
-                    btn.querySelector('i').className = data.following ? 'fas fa-check' : 'fas fa-plus';
-                    const text = document.getElementById(`followText-${index}`);
-                    if (text) text.textContent = data.following ? 'Following' : 'Follow';
-                    
-                    const supporters = document.getElementById(`statSupporters-${index}`);
-                    if (supporters) supporters.textContent = data.follower_count;
-                }
-            });
-        }
-
-        // Comments
-        let currentCommentId = null;
+    // Handle audio toggle (fixed with Promise)
+    function handleAudioToggle(event, index) {
+        event.stopPropagation();
         
-        function handleComments(event, id, index) {
-            event.stopPropagation();
-            currentCommentId = id;
-            document.getElementById('commentsModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-            loadComments(id);
+        const audio = audioElements[index];
+        if (!audio) return;
+        
+        if (!audio.paused) {
+            audio.pause();
+            updateAudioIndicator(index, false);
+            return;
         }
-
-        function closeCommentsModal() {
-            document.getElementById('commentsModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function loadComments(id) {
-            fetch(`/campaign/${id}/comments/`)
-                .then(r => r.json())
-                .then(data => displayComments(data.comments));
-        }
-
-        function displayComments(comments) {
-            const list = document.getElementById('commentsList');
-            const total = document.getElementById('totalComments');
-            
-            total.textContent = comments.length;
-            
-            if (comments.length === 0) {
-                list.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No comments yet.</div>';
-                return;
+        
+        // Pause others
+        audioElements.forEach((other, i) => {
+            if (i !== index && other && !other.paused) {
+                other.pause();
+                updateAudioIndicator(i, false);
             }
-            
-            let html = '';
-            comments.forEach(c => {
-                html += `
-                    <div class="comment-item">
-                        <img src="${c.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" class="comment-avatar">
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <span class="comment-username">@${c.user.username}</span>
-                                <span class="comment-time">${c.time_ago}</span>
-                            </div>
-                            <div class="comment-text">${c.text}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
+        });
+        
+        // Play with Promise
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => updateAudioIndicator(index, true))
+                .catch(() => updateAudioIndicator(index, false));
         }
+    }
 
-        function postNewComment() {
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            
-            if (!text || !currentCommentId) return;
-            
-            fetch(`/campaign/${currentCommentId}/add-comment/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: text })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = '';
-                    loadComments(currentCommentId);
-                }
-            });
+    function updateAudioIndicator(index, playing) {
+        const indicator = document.getElementById(`audioIndicator-${index}`);
+        if (!indicator) return;
+        
+        if (playing) {
+            indicator.classList.add('playing');
+            indicator.innerHTML = '<i class="fas fa-volume-up"></i>';
+        } else {
+            indicator.classList.remove('playing');
+            indicator.innerHTML = '<i class="fas fa-music"></i>';
         }
+    }
 
-        // Popups
-        function toggleStats(event, index) {
-            event.stopPropagation();
-            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
-            
-            const popup = document.getElementById(`statsPopup-${index}`);
-            popup.classList.toggle('active');
-            document.getElementById('popupBackdrop').classList.toggle('active');
-        }
-
-        function toggleMenu(event, index) {
-            event.stopPropagation();
-            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
-            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
-            
-            const menu = document.getElementById(`menuDropdown-${index}`);
-            menu.classList.toggle('active');
-            document.getElementById('popupBackdrop').classList.toggle('active');
-        }
-
-        function closeAllPopups() {
-            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
-            document.getElementById('commentsModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function handleMoreCaption(event, index) {
-            event.stopPropagation();
-            document.getElementById(`caption-${index}`).classList.toggle('expanded');
-        }
-
-        function handleShare(event, id) {
-            event.stopPropagation();
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Check out this cause',
-                    url: window.location.origin + `/campaign/${id}/`
-                });
-            } else {
-                prompt('Copy link:', window.location.origin + `/campaign/${id}/`);
-            }
-        }
-
-        // Click outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('[id^="statsPopup-"]') && 
-                !e.target.closest('.stats-icon') &&
-                !e.target.closest('[id^="menuDropdown-"]') && 
-                !e.target.closest('.menu-dots') &&
-                !e.target.closest('.comments-modal')) {
+    // Scroll handling
+    const container = document.getElementById('campaignsContainer');
+    let currentView = 0;
+    
+    if (container) {
+        container.addEventListener('scroll', function() {
+            clearTimeout(window.scrollTimeout);
+            window.scrollTimeout = setTimeout(() => {
+                const newIndex = Math.round(this.scrollTop / this.clientHeight);
                 
-                document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
-                document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
-                document.getElementById('popupBackdrop').classList.remove('active');
-            }
-        });
-
-        // Clean up
-        window.addEventListener('beforeunload', () => {
-            slideshowTimers.forEach(t => t && clearInterval(t));
-        });
-
-        // ========== NEW: Intersection Observer for pausing off-screen media ==========
-        function setupIntersectionObservers() {
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        const campaignItem = entry.target;
-                        const index = campaignItem.dataset.campaignIndex;
-                        
-                        if (!entry.isIntersecting) {
-                            // Campaign is not visible - pause its media
-                            if (audioElements[index] && !audioElements[index].paused) {
-                                audioElements[index].pause();
-                                updateAudioIndicator(index, false);
-                            }
-                            
-                            // Pause slideshow
-                            if (slideshowActive[index]) {
-                                slideshowActive[index] = false;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
-                                if (slideshowTimers[index]) {
-                                    clearInterval(slideshowTimers[index]);
-                                }
-                            }
-                        } else {
-                            // Campaign is visible - resume slideshow if it had multiple images
-                            const campaign = campaignsData[index];
-                            if (campaign && campaign.images && campaign.images.length > 1) {
-                                slideshowActive[index] = true;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-                                startTimer(index);
-                            }
-                        }
-                    });
-                }, {
-                    threshold: 0.5 // Trigger when 50% of campaign is visible/hidden
-                });
-
-                // Observe all campaign items
-                document.querySelectorAll('.campaign-item').forEach(item => {
-                    observer.observe(item);
-                });
-            }
-        }
-
-        // ========== NEW: Cursor-based loading (infinite scroll) ==========
-        let isLoading = false;
-        let hasMore = true;
-        let lastCursor = campaignsData.length > 0 ? campaignsData[campaignsData.length - 1].id : null;
-
-        function setupInfiniteScrollObserver() {
-            if ('IntersectionObserver' in window) {
-                const sentinel = document.createElement('div');
-                sentinel.id = 'infinite-scroll-sentinel';
-                sentinel.style.height = '10px';
-                sentinel.style.width = '100%';
-                document.getElementById('campaignsContainer').appendChild(sentinel);
-
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting && !isLoading && hasMore) {
-                        loadMoreCampaigns();
+                if (newIndex !== currentView && newIndex >= 0 && newIndex < campaignsData.length) {
+                    // Pause audio of previous
+                    if (audioElements[currentView]) {
+                        audioElements[currentView].pause();
+                        updateAudioIndicator(currentView, false);
                     }
-                }, {
-                    root: null,
-                    rootMargin: '200px', // Start loading when 200px away
-                    threshold: 0
-                });
+                    
+                    currentView = newIndex;
+                    closeAllPopups();
+                }
+            }, 100);
+        });
+    }
 
-                observer.observe(sentinel);
+    // Love
+    function handleLove(event, btn, id, index) {
+        event.stopPropagation();
+        fetch(`/campaign/${id}/toggle-love/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.classList.toggle('loved', data.loved);
+                btn.querySelector('i').className = data.loved ? 'fas fa-heart' : 'far fa-heart';
+                const count = document.getElementById(`loveCount-${index}`);
+                if (count) count.textContent = data.love_count;
             }
-        }
+        });
+    }
 
-        async function loadMoreCampaigns() {
-            if (isLoading || !hasMore) return;
-            
-            isLoading = true;
-            document.getElementById('loadingSpinner').style.display = 'block';
-            
-            try {
-                const response = await fetch(`/load-more-campaigns/?cursor=${lastCursor}`);
-                const data = await response.json();
+    // Follow
+    function handleFollow(event, btn, id, index) {
+        event.stopPropagation();
+        fetch(`/campaign/${id}/toggle-follow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+            },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                btn.classList.toggle('following', data.following);
+                btn.querySelector('i').className = data.following ? 'fas fa-check' : 'fas fa-plus';
+                const text = document.getElementById(`followText-${index}`);
+                if (text) text.textContent = data.following ? 'Following' : 'Follow';
                 
-                if (data.campaigns && data.campaigns.length > 0) {
-                    appendCampaigns(data.campaigns);
-                    lastCursor = data.next_cursor;
-                    hasMore = data.has_more;
-                } else {
-                    hasMore = false;
-                }
-            } catch (error) {
-                console.error('Failed to load more campaigns:', error);
-                hasMore = false;
-            } finally {
-                isLoading = false;
-                document.getElementById('loadingSpinner').style.display = 'none';
+                const supporters = document.getElementById(`statSupporters-${index}`);
+                if (supporters) supporters.textContent = data.follower_count;
             }
-        }
+        });
+    }
 
-        function appendCampaigns(newCampaigns) {
-            const container = document.getElementById('campaignsContainer');
-            const startIndex = campaignsData.length;
-            
-            // Add to local data
-            campaignsData = [...campaignsData, ...newCampaigns];
-            
-            // Initialize state for new campaigns
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                currentSlideIndex[globalIdx] = 0;
-                slideshowActive[globalIdx] = true;
+    // Comments
+    let currentCommentId = null;
+    
+    function handleComments(event, id, index) {
+        event.stopPropagation();
+        currentCommentId = id;
+        document.getElementById('commentsModal').classList.add('active');
+        document.getElementById('popupBackdrop').classList.add('active');
+        loadComments(id);
+    }
+
+    function closeCommentsModal() {
+        document.getElementById('commentsModal').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    function loadComments(id) {
+        fetch(`/campaign/${id}/comments/`)
+            .then(r => r.json())
+            .then(data => displayComments(data.comments));
+    }
+
+    function displayComments(comments) {
+        const list = document.getElementById('commentsList');
+        const total = document.getElementById('totalComments');
+        
+        total.textContent = comments.length;
+        
+        if (comments.length === 0) {
+            list.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">No comments yet.</div>';
+            return;
+        }
+        
+        let html = '';
+        comments.forEach(c => {
+            html += `
+                <div class="comment-item">
+                    <img src="${c.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" class="comment-avatar">
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <span class="comment-username">@${c.user.username}</span>
+                            <span class="comment-time">${c.time_ago}</span>
+                        </div>
+                        <div class="comment-text">${c.text}</div>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    }
+
+    function postNewComment() {
+        const input = document.getElementById('commentInput');
+        const text = input.value.trim();
+        
+        if (!text || !currentCommentId) return;
+        
+        fetch(`/campaign/${currentCommentId}/add-comment/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text: text })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                input.value = '';
+                loadComments(currentCommentId);
+            }
+        });
+    }
+
+    // Popups
+    function toggleStats(event, index) {
+        event.stopPropagation();
+        document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+        
+        const popup = document.getElementById(`statsPopup-${index}`);
+        popup.classList.toggle('active');
+        document.getElementById('popupBackdrop').classList.toggle('active');
+    }
+
+    function toggleMenu(event, index) {
+        event.stopPropagation();
+        document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+        document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+        
+        const menu = document.getElementById(`menuDropdown-${index}`);
+        menu.classList.toggle('active');
+        document.getElementById('popupBackdrop').classList.toggle('active');
+    }
+
+    function closeAllPopups() {
+        document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+        document.getElementById('commentsModal').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    // ========== FIXED: handleMoreCaption function ==========
+   function handleMoreCaption(event, index) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const captionElement = document.getElementById(`caption-${index}`);
+    const moreLink = event.target;
+    const campaign = campaignsData[index];
+    
+    if (!campaign) return;
+    
+    if (captionElement.classList.contains('expanded')) {
+        captionElement.textContent = campaign.content.length > 20 
+            ? campaign.content.substring(0, 20) + '...' 
+            : campaign.content;
+        captionElement.classList.remove('expanded');
+        moreLink.textContent = 'more';
+    } else {
+        captionElement.textContent = campaign.content;
+        captionElement.classList.add('expanded');
+        moreLink.textContent = 'less';
+    }
+}
+
+    function handleShare(event, id) {
+        event.stopPropagation();
+        if (navigator.share) {
+            navigator.share({
+                title: 'Check out this cause',
+                url: window.location.origin + `/campaign/${id}/`
             });
+        } else {
+            prompt('Copy link:', window.location.origin + `/campaign/${id}/`);
+        }
+    }
+
+    // Click outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[id^="statsPopup-"]') && 
+            !e.target.closest('.stats-icon') &&
+            !e.target.closest('[id^="menuDropdown-"]') && 
+            !e.target.closest('.menu-dots') &&
+            !e.target.closest('.comments-modal')) {
             
-            // Generate HTML for new campaigns
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                const campaignHtml = createCampaignHtml(campaign, globalIdx);
-                container.insertAdjacentHTML('beforeend', campaignHtml);
-            });
-            
-            // Initialize new audio elements
-            document.querySelectorAll('.bg-audio').forEach((audio, i) => {
-                if (i >= audioElements.length) {
-                    audioElements[i] = audio;
-                }
-            });
-            
-            // Start timers for new campaigns with multiple images
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                if (campaign.images && campaign.images.length > 1) {
-                    startTimer(globalIdx);
-                }
-            });
-            
-            // Re-observe new campaign items
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        const campaignItem = entry.target;
-                        const index = campaignItem.dataset.campaignIndex;
+            document.querySelectorAll('[id^="statsPopup-"]').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('[id^="menuDropdown-"]').forEach(m => m.classList.remove('active'));
+            document.getElementById('popupBackdrop').classList.remove('active');
+        }
+    });
+
+    // Clean up
+    window.addEventListener('beforeunload', () => {
+        slideshowTimers.forEach(t => t && clearInterval(t));
+    });
+
+    // ========== NEW: Intersection Observer for pausing off-screen media ==========
+    function setupIntersectionObservers() {
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const campaignItem = entry.target;
+                    const index = campaignItem.dataset.campaignIndex;
+                    
+                    if (!entry.isIntersecting) {
+                        // Campaign is not visible - pause its media
+                        if (audioElements[index] && !audioElements[index].paused) {
+                            audioElements[index].pause();
+                            updateAudioIndicator(index, false);
+                        }
                         
-                        if (!entry.isIntersecting) {
-                            if (audioElements[index] && !audioElements[index].paused) {
-                                audioElements[index].pause();
-                                updateAudioIndicator(index, false);
-                            }
-                            if (slideshowActive[index]) {
-                                slideshowActive[index] = false;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
-                                if (slideshowTimers[index]) {
-                                    clearInterval(slideshowTimers[index]);
-                                }
-                            }
-                        } else {
-                            const campaign = campaignsData[index];
-                            if (campaign && campaign.images && campaign.images.length > 1) {
-                                slideshowActive[index] = true;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-                                startTimer(index);
+                        // Pause slideshow
+                        if (slideshowActive[index]) {
+                            slideshowActive[index] = false;
+                            const btn = document.getElementById(`autoplayBtn-${index}`);
+                            if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+                            if (slideshowTimers[index]) {
+                                clearInterval(slideshowTimers[index]);
                             }
                         }
-                    });
-                }, { threshold: 0.5 });
-                
-                const newItems = document.querySelectorAll(`.campaign-item[data-campaign-index="${startIndex}"]`);
-                newItems.forEach(item => observer.observe(item));
-            }
-        }
+                    } else {
+                        // Campaign is visible - resume slideshow if it had multiple images
+                        const campaign = campaignsData[index];
+                        if (campaign && campaign.images && campaign.images.length > 1) {
+                            slideshowActive[index] = true;
+                            const btn = document.getElementById(`autoplayBtn-${index}`);
+                            if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+                            startTimer(index);
+                        }
+                    }
+                });
+            }, {
+                threshold: 0.5 // Trigger when 50% of campaign is visible/hidden
+            });
 
-        function createCampaignHtml(campaign, index) {
-            // Generate slides HTML
-            let slidesHtml = '';
+            // Observe all campaign items
+            document.querySelectorAll('.campaign-item').forEach(item => {
+                observer.observe(item);
+            });
+        }
+    }
+
+    // ========== NEW: Cursor-based loading (infinite scroll) ==========
+    let isLoading = false;
+    let hasMore = true;
+    let lastCursor = campaignsData.length > 0 ? campaignsData[campaignsData.length - 1].id : null;
+
+    function setupInfiniteScrollObserver() {
+        if ('IntersectionObserver' in window) {
+            const sentinel = document.createElement('div');
+            sentinel.id = 'infinite-scroll-sentinel';
+            sentinel.style.height = '10px';
+            sentinel.style.width = '100%';
+            document.getElementById('campaignsContainer').appendChild(sentinel);
+
+            const observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && !isLoading && hasMore) {
+                    loadMoreCampaigns();
+                }
+            }, {
+                root: null,
+                rootMargin: '200px', // Start loading when 200px away
+                threshold: 0
+            });
+
+            observer.observe(sentinel);
+        }
+    }
+
+    async function loadMoreCampaigns() {
+        if (isLoading || !hasMore) return;
+        
+        isLoading = true;
+        document.getElementById('loadingSpinner').style.display = 'block';
+        
+        try {
+            const response = await fetch(`/load-more-campaigns/?cursor=${lastCursor}`);
+            const data = await response.json();
+            
+            if (data.campaigns && data.campaigns.length > 0) {
+                appendCampaigns(data.campaigns);
+                lastCursor = data.next_cursor;
+                hasMore = data.has_more;
+            } else {
+                hasMore = false;
+            }
+        } catch (error) {
+            console.error('Failed to load more campaigns:', error);
+            hasMore = false;
+        } finally {
+            isLoading = false;
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+    }
+
+    function appendCampaigns(newCampaigns) {
+        const container = document.getElementById('campaignsContainer');
+        const startIndex = campaignsData.length;
+        
+        // Add to local data
+        campaignsData = [...campaignsData, ...newCampaigns];
+        
+        // Initialize state for new campaigns
+        newCampaigns.forEach((campaign, idx) => {
+            const globalIdx = startIndex + idx;
+            currentSlideIndex[globalIdx] = 0;
+            slideshowActive[globalIdx] = true;
+        });
+        
+        // Generate HTML for new campaigns
+        newCampaigns.forEach((campaign, idx) => {
+            const globalIdx = startIndex + idx;
+            const campaignHtml = createCampaignHtml(campaign, globalIdx);
+            container.insertAdjacentHTML('beforeend', campaignHtml);
+        });
+        
+        // Initialize new audio elements
+        document.querySelectorAll('.bg-audio').forEach((audio, i) => {
+            if (i >= audioElements.length) {
+                audioElements[i] = audio;
+            }
+        });
+        
+        // Start timers for new campaigns with multiple images
+        newCampaigns.forEach((campaign, idx) => {
+            const globalIdx = startIndex + idx;
+            if (campaign.images && campaign.images.length > 1) {
+                startTimer(globalIdx);
+            }
+        });
+        
+        // Re-observe new campaign items
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const campaignItem = entry.target;
+                    const index = campaignItem.dataset.campaignIndex;
+                    
+                    if (!entry.isIntersecting) {
+                        if (audioElements[index] && !audioElements[index].paused) {
+                            audioElements[index].pause();
+                            updateAudioIndicator(index, false);
+                        }
+                        if (slideshowActive[index]) {
+                            slideshowActive[index] = false;
+                            const btn = document.getElementById(`autoplayBtn-${index}`);
+                            if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+                            if (slideshowTimers[index]) {
+                                clearInterval(slideshowTimers[index]);
+                            }
+                        }
+                    } else {
+                        const campaign = campaignsData[index];
+                        if (campaign && campaign.images && campaign.images.length > 1) {
+                            slideshowActive[index] = true;
+                            const btn = document.getElementById(`autoplayBtn-${index}`);
+                            if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+                            startTimer(index);
+                        }
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            const newItems = document.querySelectorAll(`.campaign-item[data-campaign-index="${startIndex}"]`);
+            newItems.forEach(item => observer.observe(item));
+        }
+    }
+
+    function createCampaignHtml(campaign, index) {
+        // Generate slides HTML
+        let slidesHtml = '';
+        if (campaign.images && campaign.images.length > 0) {
             campaign.images.forEach(image => {
                 slidesHtml += `
                     <div class="slide-item">
@@ -1816,233 +1836,247 @@
                     </div>
                 `;
             });
-            
-            // Generate indicators if multiple images
-            let indicatorsHtml = '';
-            if (campaign.images.length > 1) {
-                campaign.images.forEach((_, imgIdx) => {
-                    indicatorsHtml += `
-                        <button class="indicator-dot ${imgIdx === 0 ? 'active' : ''}" 
-                                onclick="handleIndicatorClick(event, ${imgIdx}, ${index});"
-                                style="width: 4px; height: 4px;">
-                        </button>
-                    `;
-                });
-            }
-            
-            return `
-                <div class="campaign-item" data-campaign-index="${index}" data-campaign-id="${campaign.id}" data-campaign-cursor="${campaign.id}">
-                    <div class="audio-trigger" onclick="handleAudioToggle(event, ${index})"></div>
-                    
-                    <div class="image-slideshow">
-                        <div class="slides-container" id="slidesContainer-${index}">
-                            ${slidesHtml}
+        } else {
+            slidesHtml += `
+                <div class="slide-item">
+                    <img loading="lazy" src="https://via.placeholder.com/400x800?text=No+Image" alt="No image">
+                </div>
+            `;
+        }
+        
+        // Generate indicators if multiple images
+        let indicatorsHtml = '';
+        if (campaign.images && campaign.images.length > 1) {
+            campaign.images.forEach((_, imgIdx) => {
+                indicatorsHtml += `
+                    <button class="indicator-dot ${imgIdx === 0 ? 'active' : ''}" 
+                            onclick="handleIndicatorClick(event, ${imgIdx}, ${index});"
+                            style="width: 4px; height: 4px;">
+                    </button>
+                `;
+            });
+        }
+        
+        // Process caption
+        const truncatedCaption = campaign.content && campaign.content.length > 50 
+            ? campaign.content.substring(0, 50) + '...' 
+            : (campaign.content || '');
+        const showMoreLink = campaign.content && campaign.content.length > 50;
+        
+        return `
+            <div class="campaign-item" data-campaign-index="${index}" data-campaign-id="${campaign.id}" data-campaign-cursor="${campaign.id}">
+                <div class="audio-trigger" onclick="handleAudioToggle(event, ${index})"></div>
+                
+                <div class="image-slideshow">
+                    <div class="slides-container" id="slidesContainer-${index}">
+                        ${slidesHtml}
+                    </div>
+                </div>
+
+                <div class="campaign-title-overlay">
+                    <h1 class="campaign-title">${escapeHtml(campaign.title || '')}</h1>
+                </div>
+
+                <div class="gradient-top"></div>
+                <div class="gradient-bottom"></div>
+
+                <div class="top-bar">
+                    <div class="left-group">
+                        <div class="mobile-back-arrow" onclick="window.location.href='/'">
+                            <i class="fas fa-arrow-left"></i>
                         </div>
-                    </div>
-
-                    <div class="campaign-title-overlay">
-                        <h1 class="campaign-title">${escapeHtml(campaign.title)}</h1>
-                    </div>
-
-                    <div class="gradient-top"></div>
-                    <div class="gradient-bottom"></div>
-
-                    <div class="top-bar">
-                        <div class="left-group">
-                            <div class="mobile-back-arrow" onclick="window.location.href='/'">
-                                <i class="fas fa-arrow-left"></i>
+                        
+                        <div style="position: relative;">
+                            <div class="stats-icon" onclick="toggleStats(event, ${index})">
+                                <i class="fas fa-chart-bar"></i>
                             </div>
-                            
-                            <div style="position: relative;">
-                                <div class="stats-icon" onclick="toggleStats(event, ${index})">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="stats-popup" id="statsPopup-${index}" onclick="event.stopPropagation()">
-                                    <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
-                                    <div class="stats-grid">
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="statSupporters-${index}">${campaign.stats.follower_count}</span>
-                                            <span class="stat-label">Supporters</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="statRaised-${index}">$${campaign.stats.total_donations || 0}</span>
-                                            <span class="stat-label">Raised</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="statActivities-${index}">${campaign.stats.activity_count || 0}</span>
-                                            <span class="stat-label">Activities</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-value" id="statDaysLeft-${index}">${campaign.stats.days_left || 0}</span>
-                                            <span class="stat-label">Days Left</span>
-                                        </div>
+                            <div class="stats-popup" id="statsPopup-${index}" onclick="event.stopPropagation()">
+                                <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statSupporters-${index}">${campaign.stats?.follower_count || 0}</span>
+                                        <span class="stat-label">Supporters</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statRaised-${index}">$${campaign.stats?.total_donations || 0}</span>
+                                        <span class="stat-label">Raised</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statActivities-${index}">${campaign.stats?.activity_count || 0}</span>
+                                        <span class="stat-label">Activities</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statDaysLeft-${index}">${campaign.stats?.days_left || 0}</span>
+                                        <span class="stat-label">Days Left</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="right-group">
-                            <div class="menu-container">
-                                <div class="menu-dots" onclick="toggleMenu(event, ${index})">
-                                    <i class="fas fa-ellipsis"></i>
-                                </div>
-                                <div class="menu-dropdown" id="menuDropdown-${index}" onclick="event.stopPropagation()">
-                                    <a href="/campaign/${campaign.id}/activities/" class="menu-item">
-                                        <i class="fas fa-tasks"></i> Activities
-                                    </a>
-                                    <a href="/campaign/${campaign.id}/pledgers/" class="menu-item">
-                                        <i class="fas fa-trophy"></i> Top Supporters
-                                    </a>
-                                    <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
-                                        <i class="fas fa-hand-holding-heart"></i> Make a Pledge
-                                    </a>
-                                    <a href="/campaign/${campaign.id}/report/" class="menu-item">
-                                        <i class="fas fa-flag"></i> Report
-                                    </a>
-                                </div>
+                    <div class="right-group">
+                        <div class="menu-container">
+                            <div class="menu-dots" onclick="toggleMenu(event, ${index})">
+                                <i class="fas fa-ellipsis"></i>
+                            </div>
+                            <div class="menu-dropdown" id="menuDropdown-${index}" onclick="event.stopPropagation()">
+                                <a href="/campaign/${campaign.id}/activities/" class="menu-item">
+                                    <i class="fas fa-tasks"></i> Activities
+                                </a>
+                                <a href="/campaign/${campaign.id}/pledgers/" class="menu-item">
+                                    <i class="fas fa-trophy"></i> Top Supporters
+                                </a>
+                                <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
+                                    <i class="fas fa-hand-holding-heart"></i> Make a Pledge
+                                </a>
+                                <a href="/campaign/${campaign.id}/report/" class="menu-item">
+                                    <i class="fas fa-flag"></i> Report
+                                </a>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="audio-indicator" id="audioIndicator-${index}">
-                        <i class="fas fa-music"></i>
+                <div class="audio-indicator" id="audioIndicator-${index}">
+                    <i class="fas fa-music"></i>
+                </div>
+
+                ${campaign.images && campaign.images.length > 1 ? `
+                <div class="slide-controls" id="slideControls-${index}" style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(2px); padding: 4px 10px; border-radius: 20px;">
+                    <div class="slide-indicators" id="slideIndicators-${index}">
+                        ${indicatorsHtml}
                     </div>
+                    <button class="autoplay-btn" id="autoplayBtn-${index}" 
+                            onclick="toggleSlideshow(event, ${index})" 
+                            style="cursor: pointer !important; width: 20px; height: 20px; font-size: 12px; padding-left: 8px; opacity: 0.7;">
+                        <i class="fas fa-pause" style="font-size: 12px;"></i>
+                    </button>
+                </div>
+                ` : ''}
 
-                    ${campaign.images.length > 1 ? `
-                    <div class="slide-controls" id="slideControls-${index}" style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(2px); padding: 4px 10px; border-radius: 20px;">
-                        <div class="slide-indicators" id="slideIndicators-${index}">
-                            ${indicatorsHtml}
-                        </div>
-                        <button class="autoplay-btn" id="autoplayBtn-${index}" 
-                                onclick="toggleSlideshow(event, ${index})" 
-                                style="cursor: pointer !important; width: 20px; height: 20px; font-size: 12px; padding-left: 8px; opacity: 0.7;">
-                            <i class="fas fa-pause" style="font-size: 12px;"></i>
-                        </button>
+                <div class="journey-center-link">
+                    <a href="/campaign/${campaign.id}/activities/" class="journey-link" onclick="event.stopPropagation()">
+                        <i class="fas fa-compass"></i> view journey
+                    </a>
+                </div>
+
+                <div class="action-buttons">
+                    <img src="${campaign.user?.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" 
+                         class="action-profile" 
+                         alt="Profile"
+                         onclick="event.stopPropagation(); window.location.href='/profile/${campaign.user?.username || ''}/'">
+                    
+                    <button class="action-btn ${campaign.user_loved ? 'loved' : ''}" id="loveBtn-${index}" onclick="handleLove(event, this, ${campaign.id}, ${index})">
+                        <i class="${campaign.user_loved ? 'fas' : 'far'} fa-heart"></i>
+                        <span id="loveCount-${index}">${campaign.stats?.love_count || 0}</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="handleComments(event, ${campaign.id}, ${index})">
+                        <i class="far fa-comment"></i>
+                        <span id="commentCount-${index}">${campaign.stats?.comment_count || 0}</span>
+                    </button>
+                    
+                    <button class="action-btn follow-btn ${campaign.user_following ? 'following' : ''}" id="followBtn-${index}" onclick="handleFollow(event, this, ${campaign.id}, ${index})">
+                        <i class="${campaign.user_following ? 'fas fa-check' : 'fas fa-plus'}"></i>
+                        <span id="followText-${index}">${campaign.user_following ? 'Following' : 'Follow'}</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="handleShare(event, ${campaign.id})">
+                        <i class="fas fa-share-alt"></i>
+                        <span></span>
+                    </button>
+                </div>
+
+                <div class="info-panel">
+                    <div class="username-row">
+                        <a href="/profile/${campaign.user?.username || ''}/" class="username" onclick="event.stopPropagation()">@${campaign.user?.username || 'unknown'}</a>
+                        ${campaign.user?.verified ? '<i class="fas fa-check-circle verified"></i>' : ''}
+                        <span class="timestamp">• ${campaign.time_ago || 'recent'}</span>
+                    </div>
+                    
+                    <div class="caption" id="caption-${index}">${truncatedCaption}</div>
+                    ${showMoreLink ? `<span class="more-link" onclick="handleMoreCaption(event, ${index})">more</span>` : ''}
+                    
+                    <div class="meta-row">
+                        <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-${index}">${campaign.location || 'Unknown'}</span></span>
+                        <span><i class="fas fa-calendar"></i> Day <span id="currentDay-${index}">${campaign.stats?.current_day || 1}</span> of <span id="totalDays-${index}">${campaign.stats?.total_days || 30}</span></span>
+                    </div>
+                    
+                    <div class="media-counter">
+                        <i class="fas fa-images"></i>
+                        <span id="mediaCount-${index}">${campaign.images ? campaign.images.length : 0} photo${campaign.images && campaign.images.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    ${campaign.images && campaign.images.length > 1 ? `
+                    <div class="slide-counter" id="slideCounter-${index}">
+                        <i class="fas fa-image"></i>
+                        <span id="currentSlide-${index}">1</span> / <span id="totalSlides-${index}">${campaign.images.length}</span>
                     </div>
                     ` : ''}
-
-                    <div class="journey-center-link">
-                        <a href="/campaign/${campaign.id}/activities/" class="journey-link" onclick="event.stopPropagation()">
-                            <i class="fas fa-compass"></i> view journey
-                        </a>
-                    </div>
-
-                    <div class="action-buttons">
-                        <img src="${campaign.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" 
-                             class="action-profile" 
-                             alt="Profile"
-                             onclick="event.stopPropagation(); window.location.href='/profile/${campaign.user.username}/'">
-                        
-                        <button class="action-btn ${campaign.user_loved ? 'loved' : ''}" id="loveBtn-${index}" onclick="handleLove(event, this, ${campaign.id}, ${index})">
-                            <i class="${campaign.user_loved ? 'fas' : 'far'} fa-heart"></i>
-                            <span id="loveCount-${index}">${campaign.stats.love_count}</span>
-                        </button>
-                        
-                        <button class="action-btn" onclick="handleComments(event, ${campaign.id}, ${index})">
-                            <i class="far fa-comment"></i>
-                            <span id="commentCount-${index}">${campaign.stats.comment_count}</span>
-                        </button>
-                        
-                        <button class="action-btn follow-btn ${campaign.user_following ? 'following' : ''}" id="followBtn-${index}" onclick="handleFollow(event, this, ${campaign.id}, ${index})">
-                            <i class="${campaign.user_following ? 'fas fa-check' : 'fas fa-plus'}"></i>
-                            <span id="followText-${index}">${campaign.user_following ? 'Following' : 'Follow'}</span>
-                        </button>
-                        
-                        <button class="action-btn" onclick="handleShare(event, ${campaign.id})">
-                            <i class="fas fa-share-alt"></i>
-                            <span></span>
-                        </button>
-                    </div>
-
-                    <div class="info-panel">
-                        <div class="username-row">
-                            <a href="/profile/${campaign.user.username}/" class="username" onclick="event.stopPropagation()">@${campaign.user.username}</a>
-                            ${campaign.user.verified ? '<i class="fas fa-check-circle verified"></i>' : ''}
-                            <span class="timestamp">• ${campaign.time_ago}</span>
-                        </div>
-                        
-                        <div class="caption" id="caption-${index}">${escapeHtml(campaign.content)}</div>
-                        <span class="more-link" onclick="handleMoreCaption(event, ${index})">more</span>
-                        
-                        <div class="meta-row">
-                            <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-${index}">${campaign.location}</span></span>
-                            <span><i class="fas fa-calendar"></i> Day <span id="currentDay-${index}">${campaign.stats.current_day}</span> of <span id="totalDays-${index}">${campaign.stats.total_days}</span></span>
-                        </div>
-                        
-                        <div class="media-counter">
-                            <i class="fas fa-images"></i>
-                            <span id="mediaCount-${index}">${campaign.images.length} photo${campaign.images.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        
-                        ${campaign.images.length > 1 ? `
-                        <div class="slide-counter" id="slideCounter-${index}">
-                            <i class="fas fa-image"></i>
-                            <span id="currentSlide-${index}">1</span> / <span id="totalSlides-${index}">${campaign.images.length}</span>
-                        </div>
-                        ` : ''}
-                    </div>
-
-                    <audio class="bg-audio" id="bgAudio-${index}" loop preload="none" src="${campaign.audio_url}"></audio>
                 </div>
-            `;
+
+                <audio class="bg-audio" id="bgAudio-${index}" loop preload="none" src="${campaign.audio_url || ''}"></audio>
+            </div>
+        `;
+    }
+
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+<script type="text/javascript">
+    // Web scrolling functions (your existing code)
+    function scrollToPrevCampaign() {
+        const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
+        const currentScroll = container.scrollTop;
+        const itemHeight = container.clientHeight;
+        const newScroll = currentScroll - itemHeight;
+        
+        if (newScroll >= 0) {
+            container.scrollTo({
+                top: newScroll,
+                behavior: 'smooth'
+            });
         }
+    }
 
-        // Helper function to escape HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+    function scrollToNextCampaign() {
+        const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
+        const currentScroll = container.scrollTop;
+        const itemHeight = container.clientHeight;
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        const newScroll = currentScroll + itemHeight;
+        
+        if (newScroll <= maxScroll) {
+            container.scrollTo({
+                top: newScroll,
+                behavior: 'smooth'
+            });
         }
-    </script>
-
-    <script type="text/javascript">
-        // Web scrolling functions (your existing code)
-function scrollToPrevCampaign() {
-    const container = document.getElementById('campaignsContainer');
-    if (!container) return;
-    
-    const currentScroll = container.scrollTop;
-    const itemHeight = container.clientHeight;
-    const newScroll = currentScroll - itemHeight;
-    
-    if (newScroll >= 0) {
-        container.scrollTo({
-            top: newScroll,
-            behavior: 'smooth'
-        });
     }
-}
 
-function scrollToNextCampaign() {
-    const container = document.getElementById('campaignsContainer');
-    if (!container) return;
-    
-    const currentScroll = container.scrollTop;
-    const itemHeight = container.clientHeight;
-    const maxScroll = container.scrollHeight - container.clientHeight;
-    const newScroll = currentScroll + itemHeight;
-    
-    if (newScroll <= maxScroll) {
-        container.scrollTo({
-            top: newScroll,
-            behavior: 'smooth'
-        });
-    }
-}
-
-// Optional: Keyboard support for web
-document.addEventListener('keydown', function(e) {
-    // Only on desktop
-    if (window.innerWidth <= 768) return;
-    
-    if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        scrollToPrevCampaign();
-    } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        scrollToNextCampaign();
-    }
-});
-    </script>
+    // Optional: Keyboard support for web
+    document.addEventListener('keydown', function(e) {
+        // Only on desktop
+        if (window.innerWidth <= 768) return;
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            scrollToPrevCampaign();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            scrollToNextCampaign();
+        }
+    });
+</script>
 </body>
 </html>
