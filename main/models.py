@@ -136,7 +136,7 @@ from cloudinary.models import CloudinaryField
 
 class Campaign(models.Model):
     user = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='user_campaigns')
-    title = models.CharField(max_length=52)
+    title = models.CharField(max_length=50)
     timestamp = models.DateTimeField(auto_now_add=True)
     journey_start_date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     content = models.TextField(max_length=150)

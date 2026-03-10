@@ -1553,6 +1553,37 @@ def thank_you(request):
     
     return render(request, 'main/thank_you.html')
 
+@login_required
+def load_more_activities(request):
+    """Load more activities for infinite scroll"""
+    campaign_id = request.GET.get('campaign_id')
+    cursor = request.GET.get('cursor')  # Last activity ID
+    
+    activities = Activity.objects.filter(
+        campaign_id=campaign_id,
+        id__lt=cursor  # Get activities older than cursor
+    ).order_by('-timestamp')[:5]  # Load 5 at a time
+    
+    data = [{
+        'id': a.id,
+        'day_number': a.day_number,
+        'content': a.content,
+        'file': a.file.url if a.file else None,
+        'screenshots': [s.image.url for s in a.screenshots.all()],
+        'love_count': a.loves.count(),
+        'comment_count': a.comments.count(),
+        'timestamp': a.timestamp.isoformat(),
+        'time_ago': timesince(a.timestamp),
+    } for a in activities]
+    
+    return JsonResponse({
+        'activities': data,
+        'next_cursor': activities.last().id if activities else None,
+        'has_more': activities.count() == 5,
+    })
+
+
+
 
 @login_required
 def activity_list(request, campaign_id):

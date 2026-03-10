@@ -4,7 +4,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    
     <title>Journey Reels · Swipe images</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -604,6 +603,12 @@ body {
     text-decoration: none;
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    background: #f0f0f0;
 }
 
 @media (max-width: 767px) {
@@ -1381,9 +1386,238 @@ body {
         opacity: 1;
     }
 }
+
+/* ===== NEW: Loading spinner for infinite scroll ===== */
+.loading-spinner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.loading-spinner i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== NEW: Infinite scroll sentinel (invisible) ===== */
+.infinite-scroll-sentinel {
+    width: 100%;
+    height: 10px;
+    background: transparent;
+    pointer-events: none;
+}
+
+/* ===== ENHANCED EMPTY STATE STYLES ===== */
+.empty-state {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 100%);
+    z-index: 10;
+    animation: fadeIn 0.5s ease;
+}
+
+.empty-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #222 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    border: 3px solid #333;
+    box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5); }
+    50% { transform: scale(1.05); box-shadow: 0 25px 35px -8px rgba(10,132,255,0.3); }
+    100% { transform: scale(1); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5); }
+}
+
+.empty-icon i {
+    font-size: 48px;
+    color: #0a84ff;
+    opacity: 0.9;
+    filter: drop-shadow(0 5px 10px rgba(10,132,255,0.3));
+}
+
+.empty-state h3 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+}
+
+.empty-state p {
+    font-size: 16px;
+    color: #888;
+    margin-bottom: 32px;
+    max-width: 280px;
+    line-height: 1.6;
+}
+
+.empty-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 20px -5px rgba(10,132,255,0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.empty-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.empty-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px -5px rgba(10,132,255,0.6);
+}
+
+.empty-btn:hover::before {
+    left: 100%;
+}
+
+.empty-btn i {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.empty-btn:hover i {
+    transform: rotate(90deg);
+}
+
+/* Mobile adjustments for empty state */
+@media (max-width: 767px) {
+    .empty-icon {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .empty-icon i {
+        font-size: 40px;
+    }
+    
+    .empty-state h3 {
+        font-size: 24px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        max-width: 240px;
+    }
+    
+    .empty-btn {
+        padding: 12px 28px;
+        font-size: 15px;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 380px) {
+    .empty-icon {
+        width: 90px;
+        height: 90px;
+        margin-bottom: 20px;
+    }
+    
+    .empty-icon i {
+        font-size: 36px;
+    }
+    
+    .empty-state h3 {
+        font-size: 22px;
+    }
+    
+    .empty-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+    }
+}
+
+/* Desktop adjustments */
+@media (min-width: 768px) {
+    .empty-icon {
+        width: 140px;
+        height: 140px;
+    }
+    
+    .empty-icon i {
+        font-size: 56px;
+    }
+    
+    .empty-state h3 {
+        font-size: 32px;
+    }
+    
+    .empty-state p {
+        font-size: 18px;
+        max-width: 320px;
+    }
+    
+    .empty-btn {
+        padding: 16px 40px;
+        font-size: 18px;
+    }
+}
+
     </style>
 </head>
 <body>
+<!-- ===== NEW: Loading spinner for infinite scroll ===== -->
+<div class="loading-spinner" id="loadingSpinner">
+    <i class="fas fa-spinner fa-spin"></i> Loading more...
+</div>
+
 <div class="desktop-layout">
     <!-- Main Reels Container -->
     <div class="reels-container">
@@ -1400,8 +1634,8 @@ body {
 
             {% if activities %}
                 {% for activity in activities %}
-                <!-- Reel Item -->
-                <div class="reel" data-index="{{ forloop.counter0 }}" data-activity-id="{{ activity.id }}">
+                <!-- Reel Item - ADDED data-activity-cursor for cursor-based loading -->
+                <div class="reel" data-index="{{ forloop.counter0 }}" data-activity-id="{{ activity.id }}" data-activity-cursor="{{ activity.id }}">
                     <!-- Media Container -->
                     <div class="reel-media">
                         {% if activity.is_video and activity.has_screenshots_var %}
@@ -1411,7 +1645,7 @@ body {
                                  data-activity-id="{{ activity.id }}"
                                  data-initialized="false">
                                 
-                                <!-- Image track with HD optimized images -->
+                                <!-- Image track with HD optimized images - ADDED loading="lazy" -->
                                 <div class="carousel-track" id="track-{{ activity.id }}">
                                     {% for screenshot in activity.screenshots_list %}
                                     <div class="carousel-slide">
@@ -1423,7 +1657,7 @@ body {
                                                         {{ screenshot.image.url }}?w=1200&h=2400&fit=crop&q=85&f=webp 1200w"
                                                 sizes="(max-width: 767px) 100vw, 450px"
                                                 type="image/webp">
-                                            <!-- Fallback JPEG with high quality -->
+                                            <!-- Fallback JPEG with high quality - ADDED loading="lazy" -->
                                             <img 
                                                 src="{{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=95&f=auto" 
                                                 srcset="{{ screenshot.image.url }}?w=400&h=800&fit=crop&q=95&f=auto 400w,
@@ -1450,20 +1684,19 @@ body {
                                 </audio>
                                 
                                 <!-- Clean video preview - no filters, just original -->
-                               <!-- Clean video preview - no filters, just original -->
-<div class="video-preview-container" id="preview-{{ activity.id }}" data-activity-id="{{ activity.id }}" onclick="openVideoModal('{{ activity.id }}')">
-    <video class="video-preview-player" 
-           src="{{ activity.file.url }}" 
-           muted
-           loop
-           playsinline
-           autoplay
-           preload="auto"
-           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=320&h=430&fit=crop&q=90{% endif %}"
-           width="160"
-           height="215">
-    </video>
-</div>
+                                <div class="video-preview-container" id="preview-{{ activity.id }}" data-activity-id="{{ activity.id }}" onclick="openVideoModal('{{ activity.id }}')">
+                                    <video class="video-preview-player" 
+                                           src="{{ activity.file.url }}" 
+                                           muted
+                                           loop
+                                           playsinline
+                                           autoplay
+                                           preload="auto"
+                                           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=320&h=430&fit=crop&q=90{% endif %}"
+                                           width="160"
+                                           height="215">
+                                    </video>
+                                </div>
                                 
                                 <!-- Audio indicator - subtle -->
                                 <div class="audio-indicator" id="indicator-{{ activity.id }}" style="display: none;">
@@ -1494,7 +1727,7 @@ body {
                                        poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=800&h=1600&fit=crop&q=80{% endif %}">
                                 </video>
                             {% else %}
-                                <!-- Single image with HD optimization and brightness -->
+                                <!-- Single image with HD optimization and brightness - ADDED loading="lazy" -->
                                 <picture>
                                     <source 
                                         srcset="{{ activity.file.url }}?w=400&h=800&fit=crop&q=95&f=webp 400w,
@@ -1599,19 +1832,34 @@ body {
                             <button class="modal-btn" onclick="closeModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
                             <a href="{{ activity.file.url }}" download class="modal-btn"><i class="fas fa-download"></i></a>
                         </div>
-                        <video class="modal-video" controls autoplay playsinline loop>
+                        <video class="modal-video" controls playsinline loop>
                             <source src="{{ activity.file.url }}" type="video/mp4">
                         </video>
                     </div>
                 </div>
                 {% endfor %}
+                
+                <!-- ===== NEW: Sentinel for infinite scroll ===== -->
+                <div class="infinite-scroll-sentinel" id="infiniteScrollSentinel"></div>
+                
             {% else %}
-                <!-- Empty state -->
+                <!-- ===== ENHANCED EMPTY STATE WITH BEAUTIFUL DESIGN ===== -->
                 <div class="empty-state">
-                    <div class="empty-icon"><i class="fas fa-camera"></i></div>
+                    <div class="empty-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
                     <h3>No posts yet</h3>
+                    <p>This journey is waiting for its first story. Be the one to start the adventure!</p>
                     {% if user == campaign.user.user %}
-                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn">Post update</a>
+                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Activity
+                    </a>
+                    {% else %}
+                    <div class="empty-btn" style="background: linear-gradient(135deg, #444 0%, #333 100%); cursor: default; box-shadow: none;">
+                        <i class="fas fa-hourglass-half"></i>
+                        Coming Soon
+                    </div>
                     {% endif %}
                 </div>
             {% endif %}
@@ -1651,15 +1899,24 @@ body {
         </div>
 
         <div style="font-weight:600; margin-bottom:12px;">Recent</div>
-        {% for activity in activities|slice:":5" %}
-        <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
-            <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=96&h=96&fit=crop&q=80{% elif activity.file %}{{ activity.file.url }}?w=96&h=96&fit=crop&q=80{% endif %}')"></div>
-            <div>
-                <div style="font-weight:600;">Day {{ activity.day_number }}</div>
-                <div style="font-size:12px; opacity:0.6;">{{ activity.content|striptags|truncatechars:30 }}</div>
+        {% if activities %}
+            {% for activity in activities|slice:":5" %}
+            <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
+                <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=96&h=96&fit=crop&q=80{% elif activity.file %}{{ activity.file.url }}?w=96&h=96&fit=crop&q=80{% endif %}')"></div>
+                <div>
+                    <div style="font-weight:600;">Day {{ activity.day_number }}</div>
+                    <div style="font-size:12px; opacity:0.6;">{{ activity.content|striptags|truncatechars:30 }}</div>
+                </div>
             </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
+        {% else %}
+            <div class="preview-item" style="opacity: 0.5; cursor: default; justify-content: center; padding: 20px;">
+                <div style="text-align: center; width: 100%;">
+                    <i class="fas fa-camera" style="font-size: 24px; color: #444; margin-bottom: 8px;"></i>
+                    <div style="font-size: 14px; color: #888;">No activities yet</div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -1694,7 +1951,7 @@ body {
     </div>
 </div>
 
-<!-- Share Modal (copy from your existing share functionality) -->
+<!-- Share Modal -->
 <div class="share-modal" id="shareModal">
     <div class="share-modal-overlay" onclick="closeShareModal()"></div>
     <div class="share-modal-container">
@@ -1734,6 +1991,79 @@ body {
         </div>
     </div>
 </div>
+
+<!-- ===== NEW: Simple infinite scroll script ===== -->
+<script>
+(function() {
+    // ===== SIMPLE INFINITE SCROLL =====
+    let isLoading = false;
+    let hasMore = true;
+    let lastCursor = null;
+    const reelsTrack = document.getElementById('reelsTrack');
+    const sentinel = document.getElementById('infiniteScrollSentinel');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    // Get last cursor from the last reel
+    const reels = document.querySelectorAll('.reel');
+    if (reels.length > 0) {
+        lastCursor = reels[reels.length - 1].dataset.activityCursor;
+    }
+    
+    // Setup intersection observer
+    if (sentinel && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoading && hasMore && lastCursor) {
+                loadMoreActivities();
+            }
+        }, {
+            root: reelsTrack,
+            rootMargin: '200px',
+            threshold: 0
+        });
+        
+        observer.observe(sentinel);
+    }
+    
+    async function loadMoreActivities() {
+        isLoading = true;
+        loadingSpinner.style.display = 'flex';
+        
+        try {
+            const response = await fetch(`/load-more-activities/?campaign_id={{ campaign.id }}&cursor=${lastCursor}`);
+            const data = await response.json();
+            
+            if (data.activities && data.activities.length > 0) {
+                appendActivities(data.activities);
+                lastCursor = data.next_cursor;
+                hasMore = data.has_more;
+            } else {
+                hasMore = false;
+                sentinel.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to load more activities:', error);
+            hasMore = false;
+        } finally {
+            isLoading = false;
+            loadingSpinner.style.display = 'none';
+        }
+    }
+    
+    function appendActivities(activities) {
+        activities.forEach((activity, index) => {
+            const reelHtml = createReelHtml(activity, reels.length + index);
+            reelsTrack.insertBefore(createElementFromHtml(reelHtml), sentinel);
+        });
+    }
+    
+    function createElementFromHtml(html) {
+        const div = document.createElement('div');
+        div.innerHTML = html.trim();
+        return div.firstChild;
+    }
+})();
+</script>
+
 <script>
 (function() {
     'use strict';

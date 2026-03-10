@@ -60,7 +60,6 @@ class UserForm(forms.ModelForm):
             'email': 'Email:'
         }
 
-
 # ============================================================================
 # CAMPAIGN FORMS
 # ============================================================================
@@ -95,7 +94,7 @@ class CampaignForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-input',
-                'placeholder': 'What\'s your campaign about?'
+                'placeholder': 'e.g., 90 Days Discipline (4 words max)'
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-textarea',
@@ -207,19 +206,17 @@ class CampaignForm(forms.ModelForm):
     
     def clean_title(self):
         title = self.cleaned_data.get('title')
+        
         if title:
-            validate_no_long_words(title)
+            word_count = len(title.split())
+            
+            # 4 words max
+            if word_count > 4:
+                raise forms.ValidationError(
+                    f"Title must be 4 words or less. You used {word_count} words."
+                )
+            
         return title
-
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        if content:
-            validate_no_long_words(content)
-        return content
-    
-    def clean_additional_images(self):
-        """Clean additional images if you need validation"""
-        return self.cleaned_data.get('additional_images')
     
     def save(self, commit=True):
         instance = super().save(commit=False)

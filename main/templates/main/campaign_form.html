@@ -468,16 +468,37 @@
             <!-- STEP 1: CORE FORM - Always visible -->
             <div class="core-form">
                 <!-- Title - STEP 3 -->
-                <div class="form-group">
-                    <label class="form-label">Title</label>
-                    <input type="text"
-                           name="title"
-                           class="form-input"
-                           placeholder="What are you trying to change?"
-                           required
-                           value="{{ form.title.value|default:'' }}">
-                </div>
-                
+<!-- Title - STEP 3 -->
+<div class="form-group">
+    <label class="form-label">Title</label>
+    <input type="text"
+           name="title"
+           class="form-input"
+           placeholder="e.g., 90 Days Discipline"
+           required
+           value="{{ form.title.value|default:'' }}">
+    
+    <!-- Clear instruction -->
+    <div style="margin-top: 6px; color: #e67e22; font-size: 0.9rem;">
+        <i class="fas fa-info-circle"></i> Keep it short and clear — 4 words max for reels
+    </div>
+    
+    <!-- Dynamic title examples based on category -->
+    <div style="margin-top: 12px; background: #f0f7ff; padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <i class="fas fa-lightbulb" style="color: #f1c40f; font-size: 1.2rem;"></i>
+            <span style="font-weight: 600; color: #2c3e50;">Need ideas? Try one of these for <span id="selectedCategoryName" style="color: #3498db;">Personal Empowerment</span></span>
+        </div>
+        
+        <div id="categoryExamples" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <!-- Examples will update via JavaScript -->
+        </div>
+        
+        <div style="margin-top: 10px; font-size: 0.85rem; color: #7f8c8d;">
+            <i class="fas fa-mouse-pointer"></i> Click any example to use it
+        </div>
+    </div>
+</div>      
                 <!-- Description - STEP 3 -->
                 <div class="form-group">
                     <label class="form-label">What's going on?</label>
@@ -604,6 +625,121 @@
     </div>
 </div>
 
+
+
+
+<script>
+const categoryExamples = {
+    'Personal Empowerment': [
+        '30 Days to Confidence',
+        'My Morning Routine',
+        'Breaking Bad Habits',
+        'Finding My Purpose'
+    ],
+    'Health & Wellbeing Causes': [
+        '7 Day Detox Journey',
+        'My Weight Loss Journey',
+        'Path to Mental Wellness',
+        'Fitness Challenge Journey'
+    ],
+    'Economic Support & Financial Causes': [
+        'Save 5000 Journey',
+        'Starting My Business',
+        'Road to Financial Freedom',
+        'Becoming Debt Free'
+    ],
+    'Creative & Cultural Causes': [
+        'Daily Painting Journey',
+        'Writing My First Book',
+        'Learning Guitar Journey',
+        'My Studio Journey'
+    ],
+    'Mental Health & Emotional Support': [
+        'Finding Anxiety Relief',
+        'Daily Meditation Path',
+        'Journey to Inner Peace',
+        'My Healing Journey'
+    ],
+    'Career, Work & Opportunity': [
+        'Landing Dream Job',
+        'Learning New Skills',
+        'My Career Change',
+        'Building My Portfolio'
+    ],
+    'Housing, Living & Stability': [
+        'Finding My Apartment',
+        'Buying First Home',
+        'Journey to Rent Assistance',
+        'Moving Out Journey'
+    ],
+    'Community & Social Impact': [
+        'Feeding Neighbors Journey',
+        'Cleaning Our Park',
+        'Helping Local Seniors',
+        'Building Youth Program'
+    ],
+    'Education & Skill Building': [
+        'Learning Python Journey',
+        'Passing My Exam',
+        'Studying Abroad Journey',
+        'Learning New Language'
+    ],
+    'Exploration, Sports & Challenges': [
+        'Running My Marathon',
+        'Climbing the Mountain',
+        'Traveling Asia Journey',
+        'Learning to Surf'
+    ],
+    'Other Causes': [
+        'Making a Difference',
+        'Helping Others Journey',
+        'Starting My Project',
+        'Changing Lives Journey'
+    ]
+};
+
+function updateTitleExamples() {
+    const categorySelect = document.querySelector('select[name="category"]');
+    const categoryNameSpan = document.getElementById('selectedCategoryName');
+    const examplesContainer = document.getElementById('categoryExamples');
+    
+    if (!categorySelect || !categoryNameSpan || !examplesContainer) return;
+    
+    const selectedCategory = categorySelect.value || 'Personal Empowerment';
+    categoryNameSpan.textContent = selectedCategory;
+    
+    const examples = categoryExamples[selectedCategory] || categoryExamples['Personal Empowerment'];
+    
+    examplesContainer.innerHTML = examples.map(example => 
+        `<span onclick="useTitleExample('${example}')" 
+               style="background: white; padding: 8px 15px; border-radius: 30px; 
+                      border: 1px solid #3498db; cursor: pointer; font-size: 0.95rem;
+                      transition: all 0.2s; color: #2c3e50; font-weight: 500;
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+               onmouseover="this.style.background='#3498db'; this.style.color='white'; this.style.borderColor='#3498db';"
+               onmouseout="this.style.background='white'; this.style.color='#2c3e50'; this.style.borderColor='#3498db';">
+            ${example}
+        </span>`
+    ).join('');
+}
+
+function useTitleExample(example) {
+    document.querySelector('input[name="title"]').value = example;
+    // Optional: highlight the field briefly
+    const titleInput = document.querySelector('input[name="title"]');
+    titleInput.style.backgroundColor = '#fff9e6';
+    setTimeout(() => titleInput.style.backgroundColor = '', 500);
+}
+
+// Update when category changes
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.querySelector('select[name="category"]');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', updateTitleExamples);
+        updateTitleExamples(); // Initial update
+    }
+});
+</script>
 <script>
     // STEP 4: Toggle optional section
     document.getElementById('optionalToggle').addEventListener('click', function() {

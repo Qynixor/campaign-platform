@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token }}">
 <style>
+    /* YOUR EXACT CSS - UNCHANGED */
     * {
         margin: 0;
         padding: 0;
@@ -988,14 +989,15 @@
         {% if campaigns %}
             <div class="campaigns-container" id="campaignsContainer">
                 {% for campaign in campaigns %}
-                    <div class="campaign-item" data-campaign-index="{{ forloop.counter0 }}" data-campaign-id="{{ campaign.id }}">
+                    <div class="campaign-item" data-campaign-index="{{ forloop.counter0 }}" data-campaign-id="{{ campaign.id }}" data-campaign-cursor="{{ campaign.id }}">
                         <div class="audio-trigger" onclick="handleAudioToggle(event, {{ forloop.counter0 }})"></div>
                         
                         <div class="image-slideshow">
                             <div class="slides-container" id="slidesContainer-{{ forloop.counter0 }}">
                                 {% for image in campaign.images %}
                                     <div class="slide-item">
-                                        <img src="{{ image }}" alt="{{ campaign.title }}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
+                                        <!-- CHANGE 1: Added loading="lazy" for images -->
+                                        <img loading="lazy" src="{{ image }}" alt="{{ campaign.title }}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
                                     </div>
                                 {% endfor %}
                             </div>
@@ -1190,8 +1192,10 @@
             </div>
         </div>
     </div>
+    
+    <!-- CHANGE 2,3,4: New JavaScript additions (keeping all your existing code) -->
     <script>
-        // ========== SIMPLE, DIRECT APPROACH ==========
+        // ========== YOUR EXISTING CODE - KEPT EXACTLY AS IS ==========
         
         // Parse campaign data
         let campaignsData = [];
@@ -1229,6 +1233,10 @@
             
             // Start all timers
             startAllTimers();
+            
+            // ===== NEW: Setup intersection observers =====
+            setupIntersectionObservers();
+            setupInfiniteScrollObserver();
         });
 
         // Initialize all slides to first position
@@ -1625,10 +1633,370 @@
         window.addEventListener('beforeunload', () => {
             slideshowTimers.forEach(t => t && clearInterval(t));
         });
+
+        // ========== NEW: Intersection Observer for pausing off-screen media ==========
+        function setupIntersectionObservers() {
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const campaignItem = entry.target;
+                        const index = campaignItem.dataset.campaignIndex;
+                        
+                        if (!entry.isIntersecting) {
+                            // Campaign is not visible - pause its media
+                            if (audioElements[index] && !audioElements[index].paused) {
+                                audioElements[index].pause();
+                                updateAudioIndicator(index, false);
+                            }
+                            
+                            // Pause slideshow
+                            if (slideshowActive[index]) {
+                                slideshowActive[index] = false;
+                                const btn = document.getElementById(`autoplayBtn-${index}`);
+                                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+                                if (slideshowTimers[index]) {
+                                    clearInterval(slideshowTimers[index]);
+                                }
+                            }
+                        } else {
+                            // Campaign is visible - resume slideshow if it had multiple images
+                            const campaign = campaignsData[index];
+                            if (campaign && campaign.images && campaign.images.length > 1) {
+                                slideshowActive[index] = true;
+                                const btn = document.getElementById(`autoplayBtn-${index}`);
+                                if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+                                startTimer(index);
+                            }
+                        }
+                    });
+                }, {
+                    threshold: 0.5 // Trigger when 50% of campaign is visible/hidden
+                });
+
+                // Observe all campaign items
+                document.querySelectorAll('.campaign-item').forEach(item => {
+                    observer.observe(item);
+                });
+            }
+        }
+
+        // ========== NEW: Cursor-based loading (infinite scroll) ==========
+        let isLoading = false;
+        let hasMore = true;
+        let lastCursor = campaignsData.length > 0 ? campaignsData[campaignsData.length - 1].id : null;
+
+        function setupInfiniteScrollObserver() {
+            if ('IntersectionObserver' in window) {
+                const sentinel = document.createElement('div');
+                sentinel.id = 'infinite-scroll-sentinel';
+                sentinel.style.height = '10px';
+                sentinel.style.width = '100%';
+                document.getElementById('campaignsContainer').appendChild(sentinel);
+
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && !isLoading && hasMore) {
+                        loadMoreCampaigns();
+                    }
+                }, {
+                    root: null,
+                    rootMargin: '200px', // Start loading when 200px away
+                    threshold: 0
+                });
+
+                observer.observe(sentinel);
+            }
+        }
+
+        async function loadMoreCampaigns() {
+            if (isLoading || !hasMore) return;
+            
+            isLoading = true;
+            document.getElementById('loadingSpinner').style.display = 'block';
+            
+            try {
+                const response = await fetch(`/load-more-campaigns/?cursor=${lastCursor}`);
+                const data = await response.json();
+                
+                if (data.campaigns && data.campaigns.length > 0) {
+                    appendCampaigns(data.campaigns);
+                    lastCursor = data.next_cursor;
+                    hasMore = data.has_more;
+                } else {
+                    hasMore = false;
+                }
+            } catch (error) {
+                console.error('Failed to load more campaigns:', error);
+                hasMore = false;
+            } finally {
+                isLoading = false;
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        function appendCampaigns(newCampaigns) {
+            const container = document.getElementById('campaignsContainer');
+            const startIndex = campaignsData.length;
+            
+            // Add to local data
+            campaignsData = [...campaignsData, ...newCampaigns];
+            
+            // Initialize state for new campaigns
+            newCampaigns.forEach((campaign, idx) => {
+                const globalIdx = startIndex + idx;
+                currentSlideIndex[globalIdx] = 0;
+                slideshowActive[globalIdx] = true;
+            });
+            
+            // Generate HTML for new campaigns
+            newCampaigns.forEach((campaign, idx) => {
+                const globalIdx = startIndex + idx;
+                const campaignHtml = createCampaignHtml(campaign, globalIdx);
+                container.insertAdjacentHTML('beforeend', campaignHtml);
+            });
+            
+            // Initialize new audio elements
+            document.querySelectorAll('.bg-audio').forEach((audio, i) => {
+                if (i >= audioElements.length) {
+                    audioElements[i] = audio;
+                }
+            });
+            
+            // Start timers for new campaigns with multiple images
+            newCampaigns.forEach((campaign, idx) => {
+                const globalIdx = startIndex + idx;
+                if (campaign.images && campaign.images.length > 1) {
+                    startTimer(globalIdx);
+                }
+            });
+            
+            // Re-observe new campaign items
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const campaignItem = entry.target;
+                        const index = campaignItem.dataset.campaignIndex;
+                        
+                        if (!entry.isIntersecting) {
+                            if (audioElements[index] && !audioElements[index].paused) {
+                                audioElements[index].pause();
+                                updateAudioIndicator(index, false);
+                            }
+                            if (slideshowActive[index]) {
+                                slideshowActive[index] = false;
+                                const btn = document.getElementById(`autoplayBtn-${index}`);
+                                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+                                if (slideshowTimers[index]) {
+                                    clearInterval(slideshowTimers[index]);
+                                }
+                            }
+                        } else {
+                            const campaign = campaignsData[index];
+                            if (campaign && campaign.images && campaign.images.length > 1) {
+                                slideshowActive[index] = true;
+                                const btn = document.getElementById(`autoplayBtn-${index}`);
+                                if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+                                startTimer(index);
+                            }
+                        }
+                    });
+                }, { threshold: 0.5 });
+                
+                const newItems = document.querySelectorAll(`.campaign-item[data-campaign-index="${startIndex}"]`);
+                newItems.forEach(item => observer.observe(item));
+            }
+        }
+
+        function createCampaignHtml(campaign, index) {
+            // Generate slides HTML
+            let slidesHtml = '';
+            campaign.images.forEach(image => {
+                slidesHtml += `
+                    <div class="slide-item">
+                        <img loading="lazy" src="${image.url}" alt="${campaign.title}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
+                    </div>
+                `;
+            });
+            
+            // Generate indicators if multiple images
+            let indicatorsHtml = '';
+            if (campaign.images.length > 1) {
+                campaign.images.forEach((_, imgIdx) => {
+                    indicatorsHtml += `
+                        <button class="indicator-dot ${imgIdx === 0 ? 'active' : ''}" 
+                                onclick="handleIndicatorClick(event, ${imgIdx}, ${index});"
+                                style="width: 4px; height: 4px;">
+                        </button>
+                    `;
+                });
+            }
+            
+            return `
+                <div class="campaign-item" data-campaign-index="${index}" data-campaign-id="${campaign.id}" data-campaign-cursor="${campaign.id}">
+                    <div class="audio-trigger" onclick="handleAudioToggle(event, ${index})"></div>
+                    
+                    <div class="image-slideshow">
+                        <div class="slides-container" id="slidesContainer-${index}">
+                            ${slidesHtml}
+                        </div>
+                    </div>
+
+                    <div class="campaign-title-overlay">
+                        <h1 class="campaign-title">${escapeHtml(campaign.title)}</h1>
+                    </div>
+
+                    <div class="gradient-top"></div>
+                    <div class="gradient-bottom"></div>
+
+                    <div class="top-bar">
+                        <div class="left-group">
+                            <div class="mobile-back-arrow" onclick="window.location.href='/'">
+                                <i class="fas fa-arrow-left"></i>
+                            </div>
+                            
+                            <div style="position: relative;">
+                                <div class="stats-icon" onclick="toggleStats(event, ${index})">
+                                    <i class="fas fa-chart-bar"></i>
+                                </div>
+                                <div class="stats-popup" id="statsPopup-${index}" onclick="event.stopPropagation()">
+                                    <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-value" id="statSupporters-${index}">${campaign.stats.follower_count}</span>
+                                            <span class="stat-label">Supporters</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value" id="statRaised-${index}">$${campaign.stats.total_donations || 0}</span>
+                                            <span class="stat-label">Raised</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value" id="statActivities-${index}">${campaign.stats.activity_count || 0}</span>
+                                            <span class="stat-label">Activities</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-value" id="statDaysLeft-${index}">${campaign.stats.days_left || 0}</span>
+                                            <span class="stat-label">Days Left</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="right-group">
+                            <div class="menu-container">
+                                <div class="menu-dots" onclick="toggleMenu(event, ${index})">
+                                    <i class="fas fa-ellipsis"></i>
+                                </div>
+                                <div class="menu-dropdown" id="menuDropdown-${index}" onclick="event.stopPropagation()">
+                                    <a href="/campaign/${campaign.id}/activities/" class="menu-item">
+                                        <i class="fas fa-tasks"></i> Activities
+                                    </a>
+                                    <a href="/campaign/${campaign.id}/pledgers/" class="menu-item">
+                                        <i class="fas fa-trophy"></i> Top Supporters
+                                    </a>
+                                    <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
+                                        <i class="fas fa-hand-holding-heart"></i> Make a Pledge
+                                    </a>
+                                    <a href="/campaign/${campaign.id}/report/" class="menu-item">
+                                        <i class="fas fa-flag"></i> Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="audio-indicator" id="audioIndicator-${index}">
+                        <i class="fas fa-music"></i>
+                    </div>
+
+                    ${campaign.images.length > 1 ? `
+                    <div class="slide-controls" id="slideControls-${index}" style="background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(2px); padding: 4px 10px; border-radius: 20px;">
+                        <div class="slide-indicators" id="slideIndicators-${index}">
+                            ${indicatorsHtml}
+                        </div>
+                        <button class="autoplay-btn" id="autoplayBtn-${index}" 
+                                onclick="toggleSlideshow(event, ${index})" 
+                                style="cursor: pointer !important; width: 20px; height: 20px; font-size: 12px; padding-left: 8px; opacity: 0.7;">
+                            <i class="fas fa-pause" style="font-size: 12px;"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+
+                    <div class="journey-center-link">
+                        <a href="/campaign/${campaign.id}/activities/" class="journey-link" onclick="event.stopPropagation()">
+                            <i class="fas fa-compass"></i> view journey
+                        </a>
+                    </div>
+
+                    <div class="action-buttons">
+                        <img src="${campaign.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" 
+                             class="action-profile" 
+                             alt="Profile"
+                             onclick="event.stopPropagation(); window.location.href='/profile/${campaign.user.username}/'">
+                        
+                        <button class="action-btn ${campaign.user_loved ? 'loved' : ''}" id="loveBtn-${index}" onclick="handleLove(event, this, ${campaign.id}, ${index})">
+                            <i class="${campaign.user_loved ? 'fas' : 'far'} fa-heart"></i>
+                            <span id="loveCount-${index}">${campaign.stats.love_count}</span>
+                        </button>
+                        
+                        <button class="action-btn" onclick="handleComments(event, ${campaign.id}, ${index})">
+                            <i class="far fa-comment"></i>
+                            <span id="commentCount-${index}">${campaign.stats.comment_count}</span>
+                        </button>
+                        
+                        <button class="action-btn follow-btn ${campaign.user_following ? 'following' : ''}" id="followBtn-${index}" onclick="handleFollow(event, this, ${campaign.id}, ${index})">
+                            <i class="${campaign.user_following ? 'fas fa-check' : 'fas fa-plus'}"></i>
+                            <span id="followText-${index}">${campaign.user_following ? 'Following' : 'Follow'}</span>
+                        </button>
+                        
+                        <button class="action-btn" onclick="handleShare(event, ${campaign.id})">
+                            <i class="fas fa-share-alt"></i>
+                            <span></span>
+                        </button>
+                    </div>
+
+                    <div class="info-panel">
+                        <div class="username-row">
+                            <a href="/profile/${campaign.user.username}/" class="username" onclick="event.stopPropagation()">@${campaign.user.username}</a>
+                            ${campaign.user.verified ? '<i class="fas fa-check-circle verified"></i>' : ''}
+                            <span class="timestamp">• ${campaign.time_ago}</span>
+                        </div>
+                        
+                        <div class="caption" id="caption-${index}">${escapeHtml(campaign.content)}</div>
+                        <span class="more-link" onclick="handleMoreCaption(event, ${index})">more</span>
+                        
+                        <div class="meta-row">
+                            <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-${index}">${campaign.location}</span></span>
+                            <span><i class="fas fa-calendar"></i> Day <span id="currentDay-${index}">${campaign.stats.current_day}</span> of <span id="totalDays-${index}">${campaign.stats.total_days}</span></span>
+                        </div>
+                        
+                        <div class="media-counter">
+                            <i class="fas fa-images"></i>
+                            <span id="mediaCount-${index}">${campaign.images.length} photo${campaign.images.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        
+                        ${campaign.images.length > 1 ? `
+                        <div class="slide-counter" id="slideCounter-${index}">
+                            <i class="fas fa-image"></i>
+                            <span id="currentSlide-${index}">1</span> / <span id="totalSlides-${index}">${campaign.images.length}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <audio class="bg-audio" id="bgAudio-${index}" loop preload="none" src="${campaign.audio_url}"></audio>
+                </div>
+            `;
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 
     <script type="text/javascript">
-        // Web scrolling functions
+        // Web scrolling functions (your existing code)
 function scrollToPrevCampaign() {
     const container = document.getElementById('campaignsContainer');
     if (!container) return;
