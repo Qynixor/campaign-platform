@@ -1760,9 +1760,15 @@ body {
 
                     <!-- Action buttons -->
                     <div class="actions">
-                        <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
-                            <img src="{{ campaign.user.image.url }}" class="action-profile" loading="lazy" alt="Profile">
-                        </a>
+                      <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
+    <img src="{{ campaign.user.image.url|cloudinary_optimize_avatar:48 }}" 
+         srcset="{{ campaign.user.image.url|cloudinary_optimize_avatar:96 }} 2x"
+         class="action-profile" 
+         loading="lazy" 
+         alt="Profile"
+         width="48" 
+         height="48">
+</a>
                         
                         <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
                                 onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
@@ -1806,13 +1812,15 @@ body {
                             <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
                                  data-carousel="{{ activity.id }}"
                                  data-index="{{ forloop.counter0 }}">
-                                <img 
-                                    src="{{ screenshot.image.url }}?w=80&h=80&fit=crop&q=85&f=auto" 
-                                    srcset="{{ screenshot.image.url }}?w=80&h=80&fit=crop&q=85&f=auto 1x,
-                                            {{ screenshot.image.url }}?w=160&h=160&fit=crop&q=80&f=auto 2x"
-                                    loading="lazy" 
-                                    alt="thumb"
-                                    style="image-rendering: -webkit-optimize-contrast;">
+                              <img 
+    src="{{ screenshot.image.url|cloudinary_optimize:80 }}" 
+    srcset="{{ screenshot.image.url|cloudinary_optimize:80 }} 1x,
+            {{ screenshot.image.url|cloudinary_optimize:160 }} 2x"
+    loading="lazy" 
+    alt="thumb"
+    width="80"
+    height="80"
+    style="image-rendering: -webkit-optimize-contrast;">
                             </div>
                             {% endfor %}
                         </div>
