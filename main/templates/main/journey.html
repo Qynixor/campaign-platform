@@ -1744,23 +1744,33 @@
             
             currentPopupCampaignId = campaign.id;
             
-            // Populate menu
-            const menuHtml = `
-                <a href="/campaign/${campaign.id}/activities/" class="menu-item">
-                    <i class="fas fa-tasks"></i> Activities
-                </a>
-                <a href="/campaign/${campaign.id}/pledgers/" class="menu-item">
-                    <i class="fas fa-trophy"></i> Top Supporters
-                </a>
-                <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
-                    <i class="fas fa-hand-holding-heart"></i> Make a Pledge
-                </a>
-                <a href="/campaign/${campaign.id}/report/" class="menu-item report">
-                    <i class="fas fa-flag"></i> Report
-                </a>
-            `;
-            
-            document.getElementById('menuPopupContent').innerHTML = menuHtml;
+  // Populate menu (only text changed, URLs remain original)
+// Populate menu with conditional owner-only links
+const menuHtml = `
+    <a href="/campaign/${campaign.id}/activity_list/" class="menu-item">
+        <i class="fas fa-tasks"></i> View Journey
+    </a>
+    <a href="/campaign/${campaign.id}/top-participants/" class="menu-item">
+        <i class="fas fa-trophy"></i> Top Supporters
+    </a>
+    <a href="/campaign/${campaign.id}/donate/" class="menu-item">
+        <i class="fas fa-hand-holding-heart"></i> Donate
+    </a>
+    <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
+        <i class="fas fa-hand-holding-heart"></i> Make a Pledge
+    </a>
+    <a href="/campaign/${campaign.id}/report/" class="menu-item report">
+        <i class="fas fa-flag"></i> Report
+    </a>
+    ${campaign.is_campaign_owner ? `
+    <a href="/recreate-campaign/${campaign.id}/" class="menu-item">
+        <i class="fas fa-edit"></i> Edit
+    </a>
+    <a href="/campaign/delete/${campaign.id}/" class="menu-item delete">
+        <i class="fas fa-trash"></i> Delete
+    </a>
+    ` : ''}
+`;        document.getElementById('menuPopupContent').innerHTML = menuHtml;
             
             // Show popup
             document.getElementById('globalMenuPopup').classList.add('active');

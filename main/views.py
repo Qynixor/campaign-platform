@@ -2468,6 +2468,10 @@ def record_campaign_view(request, campaign_id):
         # Handle logic (e.g., increment views)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
+
 import json
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
@@ -2476,6 +2480,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Sum
 from django.utils import timezone
 from .models import Campaign, Love, CampaignFollow, Comment, Notification
+
 @login_required
 def journey(request):
     """Main journey feed view - displays campaigns in a reel format"""
@@ -2516,10 +2521,13 @@ def journey(request):
         # Check if current user has loved/following this campaign
         user_loved = False
         user_following = False
+        is_campaign_owner = False  # Add this line
         
         if request.user.is_authenticated:
             user_loved = campaign.loves.filter(user=request.user).exists()
             user_following = campaign.is_followed_by(request.user)
+            # Check if current user is the campaign owner
+            is_campaign_owner = request.user == campaign.user.user  # Add this line
         
         # Calculate totals safely
         total_pledges = campaign.pledges.aggregate(total=Sum('amount'))['total'] or 0
@@ -2555,6 +2563,7 @@ def journey(request):
             'category': campaign.category,
             'user_loved': user_loved,
             'user_following': user_following,
+            'is_campaign_owner': is_campaign_owner,  # Add this line to the campaign data
         })
 
     context = {
@@ -2563,6 +2572,13 @@ def journey(request):
     }
     
     return render(request, 'main/journey.html', context)
+
+
+
+
+
+
+
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
