@@ -2476,7 +2476,6 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Sum
 from django.utils import timezone
 from .models import Campaign, Love, CampaignFollow, Comment, Notification
-
 @login_required
 def journey(request):
     """Main journey feed view - displays campaigns in a reel format"""
@@ -2484,7 +2483,7 @@ def journey(request):
     campaigns = Campaign.objects.filter(is_active=True).select_related(
         'user', 'user__user'
     ).prefetch_related(
-        'loves', 'comments', 'followers', 'pledges', 'donations'
+        'loves', 'followers', 'pledges', 'donations'
     ).order_by('-timestamp')
 
     # Prepare campaign data for the template
@@ -2564,9 +2563,76 @@ def journey(request):
     }
     
     return render(request, 'main/journey.html', context)
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+
+@login_required
+def get_campaign_comments_simple(request, campaign_id):
+    """Get comments for a campaign - returns HTML directly"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    comments = campaign.comments.filter(parent_comment=None).select_related(
+        'user', 'user__user'
+    ).order_by('-timestamp')[:50]
+    
+    # Prepare comment data
+    comments_data = []
+    for comment in comments:
+        comments_data.append({
+            'id': comment.id,
+            'user': {
+                'username': comment.user.user.username,
+                'profile_image': comment.user.image.url if comment.user.image else None,
+                'verified': comment.user.profile_verified,
+            },
+            'text': comment.text,
+            'time_ago': get_time_ago(comment.timestamp),
+        })
+    
+    # Render HTML directly
+    html = render_to_string('main/comments_partial.html', {'comments': comments_data})
+    return HttpResponse(html)
+
+@require_POST
+@login_required
+def add_campaign_comment_simple(request, campaign_id):
+    """Add a comment - returns HTML directly"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    text = request.POST.get('text', '').strip()
+    
+    if text:
+        Comment.objects.create(
+            user=request.user.profile,
+            campaign=campaign,
+            text=text
+        )
+    
+    # Return updated comments HTML
+    comments = campaign.comments.filter(parent_comment=None).select_related(
+        'user', 'user__user'
+    ).order_by('-timestamp')[:50]
+    
+    comments_data = []
+    for comment in comments:
+        comments_data.append({
+            'id': comment.id,
+            'user': {
+                'username': comment.user.user.username,
+                'profile_image': comment.user.image.url if comment.user.image else None,
+                'verified': comment.user.profile_verified,
+            },
+            'text': comment.text,
+            'time_ago': get_time_ago(comment.timestamp),
+        })
+    
+    html = render_to_string('main/comments_partial.html', {'comments': comments_data})
+    return HttpResponse(html)
 
 def get_time_ago(timestamp):
     """Helper function to get human readable time ago"""
+    from django.utils import timezone
     now = timezone.now()
     diff = now - timestamp
     
@@ -2635,64 +2701,6 @@ def toggle_campaign_follow(request, campaign_id):
         'success': True,
         'following': following,
         'follower_count': campaign.follower_count
-    })
-
-@login_required
-def get_campaign_comments(request, campaign_id):
-    """Get comments for a campaign"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    comments = campaign.comments.filter(parent_comment=None).select_related(
-        'user', 'user__user'
-    ).prefetch_related('replies').order_by('-timestamp')[:20]
-    
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            'id': comment.id,
-            'user': {
-                'username': comment.user.user.username,
-                'profile_image': comment.user.image.url if comment.user.image else None,
-            },
-            'text': comment.text,
-            'timestamp': comment.timestamp.isoformat(),
-            'time_ago': get_time_ago(comment.timestamp),
-            'like_count': comment.likes.filter(is_like=True).count(),
-            'reply_count': comment.replies.count(),
-        })
-    
-    return JsonResponse({'comments': comments_data})
-
-@require_POST
-@login_required
-def add_campaign_comment(request, campaign_id):
-    """Add a comment to a campaign"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    data = json.loads(request.body)
-    text = data.get('text', '').strip()
-    
-    if not text:
-        return JsonResponse({'success': False, 'error': 'Comment text is required'}, status=400)
-    
-    comment = Comment.objects.create(
-        user=request.user.profile,
-        campaign=campaign,
-        text=text
-    )
-    
-    return JsonResponse({
-        'success': True,
-        'comment': {
-            'id': comment.id,
-            'user': {
-                'username': comment.user.user.username,
-                'profile_image': comment.user.image.url if comment.user.image else None,
-            },
-            'text': comment.text,
-            'timestamp': comment.timestamp.isoformat(),
-            'time_ago': get_time_ago(comment.timestamp),
-            'like_count': 0,
-            'reply_count': 0,
-        }
     })
 
 @login_required

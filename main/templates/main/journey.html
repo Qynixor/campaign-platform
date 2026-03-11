@@ -1300,7 +1300,9 @@
             <h3>Comments (<span id="totalComments">0</span>)</h3>
             <button class="close-comments" onclick="closeCommentsModal()">✕</button>
         </div>
-        <div class="comments-list" id="commentsList"></div>
+        <div class="comments-list" id="commentsList">
+            <!-- Comments will be loaded here -->
+        </div>
         <div class="add-comment">
             <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="500">
             <button onclick="postNewComment()" id="postCommentBtn">Post</button>
@@ -1767,53 +1769,38 @@
             currentPopupCampaignId = null;
         }
 
-        // ========== COMMENT FUNCTIONS ==========
+        // ========== SIMPLE COMMENT FUNCTIONS ==========
         function handleComments(event, id, index) {
             event.stopPropagation();
             currentCommentId = id;
+            
+            // Show loading
+            document.getElementById('commentsList').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
+            document.getElementById('commentInput').value = '';
+            document.getElementById('totalComments').textContent = '...';
+            
+            // Show modal
             document.getElementById('commentsModal').classList.add('active');
             document.getElementById('popupBackdrop').classList.add('active');
-            loadComments(id);
+            
+            // Load comments
+            fetch(`/campaign/${id}/comments-simple/`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('commentsList').innerHTML = html;
+                    // Update comment count
+                    const commentCount = (html.match(/comment-item/g) || []).length;
+                    document.getElementById('totalComments').textContent = commentCount;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('commentsList').innerHTML = '<div style="text-align: center; color: #888; padding: 30px 20px;">Failed to load comments. Please try again.</div>';
+                });
         }
 
         function closeCommentsModal() {
             document.getElementById('commentsModal').classList.remove('active');
             document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function loadComments(id) {
-            fetch(`/campaign/${id}/comments/`)
-                .then(r => r.json())
-                .then(data => displayComments(data.comments));
-        }
-
-        function displayComments(comments) {
-            const list = document.getElementById('commentsList');
-            const total = document.getElementById('totalComments');
-            
-            total.textContent = comments.length;
-            
-            if (comments.length === 0) {
-                list.innerHTML = '<div style="text-align: center; color: #888; padding: 30px 20px;">No comments yet. Be the first to comment!</div>';
-                return;
-            }
-            
-            let html = '';
-            comments.forEach(c => {
-                html += `
-                    <div class="comment-item">
-                        <img src="${c.user.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" class="comment-avatar">
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <span class="comment-username">@${c.user.username}</span>
-                                <span class="comment-time">${c.time_ago}</span>
-                            </div>
-                            <div class="comment-text">${c.text}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
         }
 
         function postNewComment() {
@@ -1822,27 +1809,44 @@
             
             if (!text || !currentCommentId) return;
             
-            fetch(`/campaign/${currentCommentId}/add-comment/`, {
+            // Disable button
+            const postBtn = document.getElementById('postCommentBtn');
+            postBtn.disabled = true;
+            postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('csrfmiddlewaretoken', document.querySelector('meta[name="csrf-token"]').content);
+            
+            // Post comment
+            fetch(`/campaign/${currentCommentId}/add-comment-simple/`, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text: text })
+                body: formData
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = '';
-                    loadComments(currentCommentId);
-                    
-                    // Update comment count in UI
-                    const index = campaignsData.findIndex(c => c.id == currentCommentId);
-                    if (index !== -1) {
-                        const countEl = document.getElementById(`commentCount-${index}`);
-                        if (countEl) countEl.textContent = data.comment_count;
-                    }
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('commentsList').innerHTML = html;
+                input.value = '';
+                
+                // Update comment count
+                const commentCount = (html.match(/comment-item/g) || []).length;
+                document.getElementById('totalComments').textContent = commentCount;
+                
+                // Update comment count in main UI
+                const index = campaignsData.findIndex(c => c.id == currentCommentId);
+                if (index !== -1) {
+                    const countEl = document.getElementById(`commentCount-${index}`);
+                    if (countEl) countEl.textContent = commentCount;
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to post comment. Please try again.');
+            })
+            .finally(() => {
+                postBtn.disabled = false;
+                postBtn.innerHTML = 'Post';
             });
         }
 
@@ -1881,9 +1885,6 @@
                     btn.querySelector('i').className = data.following ? 'fas fa-check' : 'fas fa-plus';
                     const text = document.getElementById(`followText-${index}`);
                     if (text) text.textContent = data.following ? 'Following' : 'Follow';
-                    
-                    const supporters = document.getElementById(`statSupporters-${index}`);
-                    if (supporters) supporters.textContent = data.follower_count;
                 }
             });
         }
@@ -2112,7 +2113,7 @@
                 campaign.images.forEach(image => {
                     slidesHtml += `
                         <div class="slide-item">
-                            <img loading="lazy" src="${image.url}" alt="${campaign.title}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
+                            <img loading="lazy" src="${image.url || image}" alt="${campaign.title}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
                         </div>
                     `;
                 });
