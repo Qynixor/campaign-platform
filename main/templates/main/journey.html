@@ -32,6 +32,7 @@
         --twitter-blue: #1DA1F2;
         --accent-white: #FFFFFF;
         --vh: 1vh;
+        --donate-green: #4CAF50;
     }
 
     .reel-container {
@@ -456,6 +457,11 @@
         color: #ff3b30;
     }
 
+    /* Donate Button Styles */
+    .action-btn.donate-btn i {
+        color: var(--donate-green);
+    }
+
     .info-panel {
         position: absolute;
         bottom: 30px;
@@ -570,6 +576,75 @@
 
     .slide-counter i {
         color: white;
+        font-size: 10px;
+    }
+
+    /* Donation Progress Bar */
+    .donation-progress {
+        margin: 8px 0 4px;
+        padding: 8px 12px;
+        background: rgba(0,0,0,0.3);
+        backdrop-filter: blur(4px);
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+        font-size: 11px;
+        color: #ddd;
+    }
+
+    .progress-header i {
+        color: var(--donate-green);
+        margin-right: 4px;
+    }
+
+    .raised-amount {
+        font-weight: 600;
+        color: var(--donate-green);
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 6px;
+        background: #333;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 6px 0 4px;
+    }
+
+    .progress-fill-donate {
+        height: 100%;
+        background: var(--donate-green);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    .donation-stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10px;
+        color: #aaa;
+        margin-top: 4px;
+    }
+
+    .goal-amount {
+        color: #ddd;
+    }
+
+    .donor-count {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .donor-count i {
+        color: var(--donate-green);
         font-size: 10px;
     }
 
@@ -1154,6 +1229,10 @@
         .gradient-bottom {
             height: 300px;
         }
+        
+        .donation-progress {
+            padding: 4px 8px;
+        }
     }
 
     /* Extra small devices */
@@ -1269,6 +1348,10 @@
         }
         
         .media-stats-row {
+            display: none;
+        }
+        
+        .donation-progress {
             display: none;
         }
     }
@@ -2021,357 +2104,475 @@
         }
     }
 
+    /* Donation Modal */
+    .donation-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000001;
+        width: 90%;
+        max-width: 400px;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: none;
+    }
 
+    .donation-modal.active {
+        display: block;
+    }
+
+    .donation-modal .modal-content {
+        background: #1a1a1a;
+        border-radius: 24px;
+        padding: 24px;
+        position: relative;
+        border: 1px solid #333;
+    }
+
+    .donation-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .donation-header h3 {
+        color: white;
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    .donation-header p {
+        color: #aaa;
+        font-size: 14px;
+    }
+
+    .donation-amounts {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .amount-btn {
+        background: #252525;
+        border: 1px solid #333;
+        border-radius: 30px;
+        padding: 12px 8px;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .amount-btn:hover {
+        background: #333;
+        border-color: var(--donate-green);
+    }
+
+    .amount-btn.selected {
+        background: var(--donate-green);
+        border-color: var(--donate-green);
+    }
+
+    .custom-amount {
+        margin: 16px 0;
+    }
+
+    .custom-amount input {
+        width: 100%;
+        background: #252525;
+        border: 1px solid #333;
+        border-radius: 30px;
+        padding: 14px 18px;
+        color: white;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .custom-amount input:focus {
+        border-color: var(--donate-green);
+    }
+
+    .donate-modal-btn {
+        background: var(--donate-green);
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 16px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        margin: 16px 0;
+        transition: all 0.2s;
+    }
+
+    .donate-modal-btn:hover {
+        background: #45a049;
+        transform: scale(1.02);
+    }
+
+    .donation-footer {
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+        margin-top: 16px;
+    }
+
+    .donation-footer i {
+        color: var(--donate-green);
+    }
 
     /* Premium Stats Section */
-.premium-stats-section {
-    margin-top: 20px;
-    border-top: 1px solid #333;
-    padding-top: 20px;
-}
+    .premium-stats-section {
+        margin-top: 20px;
+        border-top: 1px solid #333;
+        padding-top: 20px;
+    }
 
-.premium-stats-section h4 {
-    color: white;
-    font-size: 16px;
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+    .premium-stats-section h4 {
+        color: white;
+        font-size: 16px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-.chart-container {
-    background: #252525;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-}
+    .chart-container {
+        background: #252525;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
 
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
 
-.chart-title {
-    color: #ddd;
-    font-size: 13px;
-}
+    .chart-title {
+        color: #ddd;
+        font-size: 13px;
+    }
 
-.growth-rate {
-    color: #4CAF50;
-    font-weight: 600;
-    font-size: 14px;
-}
+    .growth-rate {
+        color: #4CAF50;
+        font-weight: 600;
+        font-size: 14px;
+    }
 
-.bar-tooltip {
-    display: none;
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    white-space: nowrap;
-}
+    .bar-tooltip {
+        display: none;
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
 
-.mock-bar:hover .bar-tooltip {
-    display: block;
-}
+    .mock-bar:hover .bar-tooltip {
+        display: block;
+    }
 
-/* Stats Grid Small */
-.stats-grid.small {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 16px 0;
-}
+    /* Stats Grid Small */
+    .stats-grid.small {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 16px 0;
+    }
 
-.stats-grid.small .stat-item {
-    padding: 12px 8px;
-}
+    .stats-grid.small .stat-item {
+        padding: 12px 8px;
+    }
 
-/* Donor Stats */
-.donor-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 16px 0;
-}
+    /* Donor Stats */
+    .donor-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 16px 0;
+    }
 
-.donor-stat-card {
-    background: #252525;
-    border-radius: 12px;
-    padding: 12px 8px;
-    text-align: center;
-    border: 1px solid #333;
-}
+    .donor-stat-card {
+        background: #252525;
+        border-radius: 12px;
+        padding: 12px 8px;
+        text-align: center;
+        border: 1px solid #333;
+    }
 
-.donor-stat-value {
-    display: block;
-    font-size: 20px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 4px;
-}
+    .donor-stat-value {
+        display: block;
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 4px;
+    }
 
-.donor-stat-label {
-    font-size: 11px;
-    color: #aaa;
-}
+    .donor-stat-label {
+        font-size: 11px;
+        color: #aaa;
+    }
 
-/* Donor Brackets */
-.donor-brackets, .top-locations {
-    margin: 16px 0;
-    padding: 16px;
-    background: #252525;
-    border-radius: 12px;
-}
+    /* Donor Brackets */
+    .donor-brackets, .top-locations {
+        margin: 16px 0;
+        padding: 16px;
+        background: #252525;
+        border-radius: 12px;
+    }
 
-.donor-brackets h4, .top-locations h4 {
-    color: white;
-    font-size: 14px;
-    margin-bottom: 12px;
-    font-weight: 600;
-}
+    .donor-brackets h4, .top-locations h4 {
+        color: white;
+        font-size: 14px;
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
 
-.bracket-item, .location-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-    font-size: 13px;
-}
+    .bracket-item, .location-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+        color: #ddd;
+        font-size: 13px;
+    }
 
-.bracket-value, .location-count {
-    color: #1DA1F2;
-    font-weight: 600;
-}
+    .bracket-value, .location-count {
+        color: #1DA1F2;
+        font-weight: 600;
+    }
 
-.location-item i {
-    color: #1DA1F2;
-    margin-right: 6px;
-    font-size: 12px;
-}
+    .location-item i {
+        color: #1DA1F2;
+        margin-right: 6px;
+        font-size: 12px;
+    }
 
-/* Predict Card */
-.predict-card {
-    margin: 16px 0;
-    padding: 16px;
-    background: linear-gradient(135deg, #1a2a3a 0%, #0a1a2a 100%);
-    border-radius: 12px;
-    border: 1px solid #1DA1F2;
-}
+    /* Predict Card */
+    .predict-card {
+        margin: 16px 0;
+        padding: 16px;
+        background: linear-gradient(135deg, #1a2a3a 0%, #0a1a2a 100%);
+        border-radius: 12px;
+        border: 1px solid #1DA1F2;
+    }
 
-.predict-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-}
+    .predict-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+    }
 
-.predict-item:last-child {
-    border-bottom: none;
-}
+    .predict-item:last-child {
+        border-bottom: none;
+    }
 
-.predict-label {
-    color: #aaa;
-    font-size: 13px;
-}
+    .predict-label {
+        color: #aaa;
+        font-size: 13px;
+    }
 
-.predict-value {
-    color: white;
-    font-weight: 600;
-    font-size: 16px;
-}
+    .predict-value {
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
 
-.predict-value.high {
-    color: #4CAF50;
-}
+    .predict-value.high {
+        color: #4CAF50;
+    }
 
-.predict-value.medium {
-    color: #FFD700;
-}
+    .predict-value.medium {
+        color: #FFD700;
+    }
 
-.predict-value.needs-attention {
-    color: #ff4444;
-}
+    .predict-value.needs-attention {
+        color: #ff4444;
+    }
 
-/* Recommendations */
-.recommendations {
-    margin: 16px 0;
-    padding: 16px;
-    background: #252525;
-    border-radius: 12px;
-}
+    /* Recommendations */
+    .recommendations {
+        margin: 16px 0;
+        padding: 16px;
+        background: #252525;
+        border-radius: 12px;
+    }
 
-.recommendations h4 {
-    color: white;
-    font-size: 14px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+    .recommendations h4 {
+        color: white;
+        font-size: 14px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-.recommendations h4 i {
-    color: #FFD700;
-}
+    .recommendations h4 i {
+        color: #FFD700;
+    }
 
-.recommendation-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-    font-size: 13px;
-}
+    .recommendation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+        color: #ddd;
+        font-size: 13px;
+    }
 
-.recommendation-item:last-child {
-    border-bottom: none;
-}
+    .recommendation-item:last-child {
+        border-bottom: none;
+    }
 
-.recommendation-item i {
-    color: #4CAF50;
-    font-size: 14px;
-    margin-top: 2px;
-}
+    .recommendation-item i {
+        color: #4CAF50;
+        font-size: 14px;
+        margin-top: 2px;
+    }
 
-/* Conversion Funnel */
-.conversion-funnel {
-    margin: 16px 0;
-    padding: 16px;
-    background: #252525;
-    border-radius: 12px;
-}
+    /* Conversion Funnel */
+    .conversion-funnel {
+        margin: 16px 0;
+        padding: 16px;
+        background: #252525;
+        border-radius: 12px;
+    }
 
-.conversion-funnel h4 {
-    color: white;
-    font-size: 14px;
-    margin-bottom: 12px;
-}
+    .conversion-funnel h4 {
+        color: white;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
 
-.funnel-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-}
+    .funnel-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+    }
 
-.funnel-item span:first-child {
-    width: 110px;
-    color: #aaa;
-    font-size: 12px;
-}
+    .funnel-item span:first-child {
+        width: 110px;
+        color: #aaa;
+        font-size: 12px;
+    }
 
-.funnel-bar-container {
-    flex: 1;
-    height: 8px;
-    background: #333;
-    border-radius: 4px;
-    overflow: hidden;
-}
+    .funnel-bar-container {
+        flex: 1;
+        height: 8px;
+        background: #333;
+        border-radius: 4px;
+        overflow: hidden;
+    }
 
-.funnel-bar {
-    height: 100%;
-    background: #1DA1F2;
-    border-radius: 4px;
-    transition: width 0.3s;
-}
+    .funnel-bar {
+        height: 100%;
+        background: #1DA1F2;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
 
-.funnel-percent {
-    width: 45px;
-    color: white;
-    font-weight: 600;
-    font-size: 12px;
-}
+    .funnel-percent {
+        width: 45px;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+    }
 
-/* Benchmark Comparison */
-.benchmark-comparison {
-    margin: 16px 0;
-    padding: 16px;
-    background: #252525;
-    border-radius: 12px;
-}
+    /* Benchmark Comparison */
+    .benchmark-comparison {
+        margin: 16px 0;
+        padding: 16px;
+        background: #252525;
+        border-radius: 12px;
+    }
 
-.benchmark-comparison h4 {
-    color: white;
-    font-size: 14px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+    .benchmark-comparison h4 {
+        color: white;
+        font-size: 14px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
 
-.benchmark-comparison h4 i {
-    color: #FFD700;
-}
+    .benchmark-comparison h4 i {
+        color: #FFD700;
+    }
 
-.comparison-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-    font-size: 13px;
-}
+    .comparison-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #333;
+        color: #ddd;
+        font-size: 13px;
+    }
 
-.comparison-item .value {
-    font-weight: 600;
-    color: white;
-}
+    .comparison-item .value {
+        font-weight: 600;
+        color: white;
+    }
 
-.comparison-item .value.avg {
-    color: #888;
-}
+    .comparison-item .value.avg {
+        color: #888;
+    }
 
-.comparison-item .vs {
-    color: #444;
-    font-size: 11px;
-}
+    .comparison-item .vs {
+        color: #444;
+        font-size: 11px;
+    }
 
-.rank-badge {
-    margin-top: 12px;
-    padding: 8px 12px;
-    background: #1a2a3a;
-    border-radius: 20px;
-    color: #1DA1F2;
-    font-size: 13px;
-    text-align: center;
-}
+    .rank-badge {
+        margin-top: 12px;
+        padding: 8px 12px;
+        background: #1a2a3a;
+        border-radius: 20px;
+        color: #1DA1F2;
+        font-size: 13px;
+        text-align: center;
+    }
 
-/* No Data */
-.no-data {
-    color: #666;
-    text-align: center;
-    padding: 16px;
-    font-style: italic;
-}
+    /* No Data */
+    .no-data {
+        color: #666;
+        text-align: center;
+        padding: 16px;
+        font-style: italic;
+    }
 
-/* Premium Header */
-.premium-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 0 8px;
-    color: #FFD700;
-}
+    /* Premium Header */
+    .premium-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 0 8px;
+        color: #FFD700;
+    }
 
-.premium-header i {
-    font-size: 24px;
-}
+    .premium-header i {
+        font-size: 24px;
+    }
 
-.premium-header h3 {
-    color: white;
-    font-size: 18px;
-    margin: 0;
-}
+    .premium-header h3 {
+        color: white;
+        font-size: 18px;
+        margin: 0;
+    }
 </style>
 </head>
 <body>
@@ -2413,6 +2614,38 @@
         <div class="add-comment">
             <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="500">
             <button onclick="postNewComment()" id="postCommentBtn">Post</button>
+        </div>
+    </div>
+
+    <!-- Donation Modal -->
+    <div class="donation-modal" id="donationModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeDonationModal()">✕</button>
+            <div class="donation-header">
+                <h3 id="donationCampaignTitle">Support this Cause</h3>
+                <p id="donationMessage">Make a difference today</p>
+            </div>
+            
+            <div class="donation-amounts">
+                <button class="amount-btn" onclick="selectAmount(5)">$5</button>
+                <button class="amount-btn" onclick="selectAmount(10)">$10</button>
+                <button class="amount-btn" onclick="selectAmount(25)">$25</button>
+                <button class="amount-btn" onclick="selectAmount(50)">$50</button>
+                <button class="amount-btn" onclick="selectAmount(100)">$100</button>
+                <button class="amount-btn" onclick="selectAmount('custom')">Custom</button>
+            </div>
+            
+            <div class="custom-amount" id="customAmountField" style="display: none;">
+                <input type="number" id="customAmount" placeholder="Enter amount ($)" min="1" step="1">
+            </div>
+            
+            <button class="donate-modal-btn" onclick="processDonation()" id="donateNowBtn">
+                <i class="fas fa-hand-holding-heart"></i> Donate Now
+            </button>
+            
+            <div class="donation-footer">
+                <i class="fas fa-lock"></i> Secure payment via PayPal
+            </div>
         </div>
     </div>
 
@@ -2467,8 +2700,8 @@
                             </div>
                         </div>
 
-                        <div class="audio-indicator" id="audioIndicator-{{ forloop.counter0 }}">
-                            <i class="fas fa-music"></i>
+                        <div  id="audioIndicator-{{ forloop.counter0 }}">
+                            
                         </div>
 
                         <div class="journey-center-link">
@@ -2500,6 +2733,11 @@
                             <button class="action-btn follow-btn {% if campaign.user_following %}following{% endif %}" id="followBtn-{{ forloop.counter0 }}" onclick="handleFollow(event, this, {{ campaign.id }}, {{ forloop.counter0 }})">
                                 <i class="{% if campaign.user_following %}fas fa-check{% else %}fas fa-plus{% endif %}"></i>
                                 <span id="followText-{{ forloop.counter0 }}">{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
+                            </button>
+                            
+                            <button class="action-btn donate-btn" onclick="handleDonate(event, {{ campaign.id }}, {{ forloop.counter0 }})">
+                                <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
+                                <span id="donateCount-{{ forloop.counter0 }}">{{ campaign.stats.total_donors|default:0 }}</span>
                             </button>
                             
                             <button class="action-btn" onclick="handleShare(event, {{ campaign.id }})">
@@ -2542,6 +2780,25 @@
                                 </div>
                                 {% endif %}
                             </div>
+                            
+                            <!-- Donation Progress Bar -->
+                            {% if campaign.stats.funding_goal > 0 %}
+                            <div class="donation-progress">
+                                <div class="progress-header">
+                                    <span><i class="fas fa-hand-holding-heart"></i> Raised</span>
+                                    <span class="raised-amount">${{ campaign.stats.total_donations|floatformat:0 }}</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-fill-donate" style="width: {{ campaign.stats.donation_percentage }}%"></div>
+                                </div>
+                                <div class="donation-stats-row">
+                                    <span class="goal-amount">Goal: ${{ campaign.stats.funding_goal|floatformat:0 }}</span>
+                                    <span class="donor-count">
+                                        <i class="fas fa-users"></i> {{ campaign.stats.total_donors|default:0 }} donors
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
                             
                             <div class="meta-row">
                                 <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-{{ forloop.counter0 }}">{{ campaign.location }}</span></span>
@@ -2606,6 +2863,8 @@
         let audioElements = [];
         let currentPopupCampaignId = null;
         let currentCommentId = null;
+        let currentDonationCampaignId = null;
+        let selectedAmount = null;
         
         // Initialize
         campaignsData.forEach((campaign, i) => {
@@ -2804,6 +3063,91 @@
                 indicator.innerHTML = '<i class="fas fa-music"></i>';
             }
         }
+
+        // ========== CATEGORY MESSAGES ==========
+        function getDonationMessage(category) {
+            const messages = {
+                'Health & Wellbeing Causes': 'Support medical treatment and wellness',
+                'Economic Support & Financial Causes': 'Help achieve financial stability',
+                'Housing, Living & Stability': 'Support safe housing',
+                'Community & Social Impact': 'Strengthen our community',
+                'Education & Skill Building': 'Invest in education',
+                'Mental Health & Emotional Support': 'Support mental wellness',
+                'Personal Empowerment': 'Empower personal growth',
+                'Career, Work & Opportunity': 'Create opportunities',
+                'Creative & Cultural Causes': 'Support creativity',
+                'Exploration, Sports & Challenges': 'Fuel adventures',
+                'Other Causes': 'Make a difference'
+            };
+            return messages[category] || 'Support this cause';
+        }
+
+        // ========== DONATION FUNCTIONS ==========
+        function handleDonate(event, campaignId, index) {
+            event.stopPropagation();
+            
+            const campaign = campaignsData[index];
+            if (!campaign) return;
+            
+            currentDonationCampaignId = campaignId;
+            selectedAmount = null;
+            
+            // Reset modal
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+            document.getElementById('customAmountField').style.display = 'none';
+            document.getElementById('customAmount').value = '';
+            
+            // Set campaign title and message
+            document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
+            document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
+            
+            // Show modal
+            document.getElementById('donationModal').classList.add('active');
+            document.getElementById('popupBackdrop').classList.add('active');
+        }
+
+        function selectAmount(amount) {
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
+            
+            if (amount === 'custom') {
+                document.getElementById('customAmountField').style.display = 'block';
+                selectedAmount = null;
+            } else {
+                event.target.classList.add('selected');
+                document.getElementById('customAmountField').style.display = 'none';
+                selectedAmount = amount;
+            }
+        }
+
+        function processDonation() {
+            let finalAmount = selectedAmount;
+            
+            if (!finalAmount) {
+                // Check custom amount
+                const customAmount = document.getElementById('customAmount').value;
+                if (customAmount && customAmount > 0) {
+                    finalAmount = parseFloat(customAmount);
+                } else {
+                    alert('Please select or enter an amount');
+                    return;
+                }
+            }
+            
+            if (!currentDonationCampaignId) {
+                alert('Campaign not found');
+                return;
+            }
+            
+            // Redirect to donation page (you'll need to create this URL)
+            window.location.href = `/campaign/${currentDonationCampaignId}/donate/?amount=${finalAmount}`;
+        }
+
+        function closeDonationModal() {
+            document.getElementById('donationModal').classList.remove('active');
+            document.getElementById('popupBackdrop').classList.remove('active');
+            currentDonationCampaignId = null;
+        }
+
 // ========== ENHANCED STATS POPUP FUNCTIONS ==========
 function openStatsPopup(index) {
     event.stopPropagation();
@@ -3369,8 +3713,10 @@ function getProbabilityClass(probability) {
             document.getElementById('globalStatsPopup').classList.remove('active');
             document.getElementById('globalMenuPopup').classList.remove('active');
             document.getElementById('commentsModal').classList.remove('active');
+            document.getElementById('donationModal').classList.remove('active');
             document.getElementById('popupBackdrop').classList.remove('active');
             currentPopupCampaignId = null;
+            currentDonationCampaignId = null;
         }
 
         // ========== PRICING MODAL FUNCTIONS ==========
@@ -3460,40 +3806,42 @@ function getProbabilityClass(probability) {
         function subscribeYearly() {
             window.location.href = '/subscribe/yearly/';
         }
-function activateOwnerPremium(campaignId) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activating...';
-    btn.disabled = true;
-    
-    fetch(`/campaign/${campaignId}/activate-premium/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+        
+        function activateOwnerPremium(campaignId) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activating...';
+            btn.disabled = true;
+            
+            fetch(`/campaign/${campaignId}/activate-premium/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('✅ Premium activated! Page will reload to show your new stats.');
+                    location.reload();
+                } else {
+                    alert('❌ Failed: ' + data.error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            alert('✅ Premium activated! Page will reload to show your new stats.');
-            location.reload();
-        } else {
-            alert('❌ Failed: ' + data.error);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
+        
         // ========== SIMPLE COMMENT FUNCTIONS ==========
         function handleComments(event, id, index) {
             event.stopPropagation();

@@ -2537,12 +2537,16 @@ def journey(request):
                     'follower_count': campaign.follower_count,
                     'activity_count': campaign.activity_set.count(),
                     'total_pledges': float(total_pledges),
-                    'total_donations': float(total_donations),
-                    'funding_goal': float(campaign.funding_goal) if campaign.funding_goal else 0,
-                    'donation_percentage': campaign.donation_percentage,
+           
                     'days_left': campaign.days_left if campaign.days_left is not None else 0,
                     'current_day': campaign.get_current_day(),
                     'total_days': campaign.duration or 30,
+
+                                # ADD THESE MOCK VALUES FOR TESTING
+            'funding_goal': 5000,  # $5,000 goal
+            'total_donations': 2350,  # $2,350 raised (47%)
+            'donation_percentage': 47,  # 47% progress
+            'total_donors': 128,  # 128 donors
                     
                     # ===== PREMIUM STATS WITH SAFE DEFAULTS =====
                     # These will ONLY be used in the JavaScript when can_view_premium is True
