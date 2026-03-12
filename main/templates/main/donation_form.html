@@ -179,14 +179,14 @@ body {
   border: 1px solid var(--border-color);
   background: var(--card-bg);
   color: var(--text-color);
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: var(--radius);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  flex: 1;
-  min-width: 60px;
-  font-size: 13px;
+  flex: 1 1 calc(33.333% - 8px);
+  min-width: 70px;
+  font-size: 14px;
   position: relative;
   overflow: hidden;
 }
@@ -218,8 +218,31 @@ body {
   opacity: 1;
 }
 
+/* Popular amount highlight */
+.amount-btn.popular {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0, 177, 64, 0.2);
+}
+
+.amount-btn.popular::before {
+  content: '🔥 Most popular';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--primary-color);
+  white-space: nowrap;
+  background: var(--card-bg);
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--primary-color);
+  z-index: 2;
+}
+
 .custom-amount-container {
-  margin: 16px 0;
+  margin: 20px 0 16px;
   position: relative;
 }
 
@@ -242,7 +265,7 @@ body {
   align-items: center;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 12px 14px;
   flex: 1;
   transition: all 0.2s;
   background: var(--card-bg);
@@ -257,13 +280,13 @@ body {
   margin-right: 6px;
   color: var(--secondary-text);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .amount-input-container input {
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
   width: 100%;
   background: transparent;
   color: var(--text-color);
@@ -273,6 +296,7 @@ body {
 .currency-label {
   font-size: 12px;
   color: var(--secondary-text);
+  margin-left: 4px;
 }
 
 .payment-options {
@@ -284,17 +308,17 @@ body {
 .donate-btn {
   flex: 1;
   border: none;
-  padding: 12px 16px;
+  padding: 14px 16px;
   color: white;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 15px;
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   position: relative;
   overflow: hidden;
 }
@@ -382,6 +406,25 @@ body {
   animation: progressAnimation 1.2s ease-out;
 }
 
+/* Quick tip section */
+.quick-tip {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--highlight-bg);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--primary-color);
+  font-size: 12px;
+  color: var(--secondary-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-tip i {
+  color: var(--primary-color);
+  font-size: 14px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .gofundme-style-container {
@@ -409,9 +452,15 @@ body {
   }
   
   .amount-btn {
-    min-width: 55px;
-    padding: 6px 10px;
-    font-size: 12px;
+    flex: 1 1 calc(50% - 8px);
+    min-width: 70px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .amount-btn.popular::before {
+    font-size: 8px;
+    top: -18px;
   }
   
   .trust-indicators {
@@ -458,18 +507,21 @@ body.dark-mode .amount-input-container {
   background: #252525;
   border-color: #444;
 }
+
+body.dark-mode .quick-tip {
+  background: #1a2e3b;
+}
 </style>
 
 <div class="gofundme-style-container">
     <div class="donation-card">
      <div class="sub">
-    <i class="fas fa-hand-holding-heart"></i>
-    <div>
-        <h2>Donate</h2>
-        <p>Support this cause by making a secure donation</p>
+        <i class="fas fa-hand-holding-heart"></i>
+        <div>
+            <h2>Make a Donation</h2>
+            <p>Support "{{ campaign.title }}" with a secure donation</p>
+        </div>
     </div>
-</div>
-
 
         <!-- Header -->
         <div class="campaign-header">
@@ -488,49 +540,82 @@ body.dark-mode .amount-input-container {
             </div>
         </div>
 
+        <!-- Quick tip based on campaign category -->
+      <!-- Quick tip based on campaign category -->
+<div class="quick-tip">
+    <i class="fas fa-lightbulb"></i>
+    <span>
+        {% if campaign.category == 'Health & Wellbeing Causes' %}
+            Your donation helps with medical treatment and wellness
+        {% elif campaign.category == 'Economic Support & Financial Causes' %}
+            Your support helps achieve financial stability
+        {% elif campaign.category == 'Education & Skill Building' %}
+            You're investing in education and future opportunities
+        {% elif campaign.category == 'Community & Social Impact' %}
+            Your gift strengthens our community
+        {% elif campaign.category == 'Mental Health & Emotional Support' %}
+            You're supporting mental wellness
+        {% elif campaign.category == 'Personal Empowerment' %}
+            You're empowering personal growth
+        {% elif campaign.category == 'Career, Work & Opportunity' %}
+            You're creating opportunities
+        {% elif campaign.category == 'Creative & Cultural Causes' %}
+            You're supporting creativity
+        {% elif campaign.category == 'Exploration, Sports & Challenges' %}
+            You're fueling adventures
+        {% elif campaign.category == 'Religious & Spiritual Causes' %}  <!-- NEW -->
+            You're supporting faith, hope, and community
+        {% elif campaign.category == 'Other Causes' %}
+            Every donation makes a difference, no matter the size
+        {% else %}
+            Every donation makes a difference, no matter the size
+        {% endif %}
+    </span>
+</div>
         <div class="donation-content">
-         <!-- donation_form.html -->
-<form id="donationForm" method="POST" action="{% url 'create_donation' campaign.id %}">
-    {% csrf_token %}
+            <!-- donation_form.html -->
+            <form id="donationForm" method="POST" action="{% url 'create_donation' campaign.id %}">
+                {% csrf_token %}
 
-    <!-- Predefined amount buttons -->
-    <div class="amount-options">
-        <button type="button" class="amount-btn" data-amount="25"><span>$25</span></button>
-        <button type="button" class="amount-btn" data-amount="50"><span>$50</span></button>
-        <button type="button" class="amount-btn active" data-amount="100"><span>$100</span></button>
-        <button type="button" class="amount-btn" data-amount="250"><span>$250</span></button>
-    </div>
+                <!-- Predefined amount buttons - Updated with more reasonable amounts -->
+                <div class="amount-options">
+                    <button type="button" class="amount-btn" data-amount="5"><span>$5</span></button>
+                    <button type="button" class="amount-btn" data-amount="10"><span>$10</span></button>
+                    <button type="button" class="amount-btn popular active" data-amount="25"><span>$25</span></button>
+                    <button type="button" class="amount-btn" data-amount="50"><span>$50</span></button>
+                    <button type="button" class="amount-btn" data-amount="100"><span>$100</span></button>
+                </div>
 
-    <!-- Custom amount -->
-    <div class="custom-amount-container">
-        <label class="custom-amount-label">Or enter custom amount</label>
-        <div class="amount-input-wrapper">
-            <div class="amount-input-container">
-                <span class="currency-symbol">$</span>
-                <input type="number" name="amount" id="id_amount" value="100" step="0.01" min="1" required>
-            </div>
-        </div>
-    </div>
+                <!-- Custom amount -->
+                <div class="custom-amount-container">
+                    <label class="custom-amount-label">Or enter custom amount</label>
+                    <div class="amount-input-wrapper">
+                        <div class="amount-input-container">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" name="amount" id="id_amount" value="25" step="0.01" min="1" required>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Payment buttons -->
-    <div class="payment-options">
-        <button type="submit" class="donate-btn">
-            <i class="fab fa-paypal"></i> Donate with PayPal
-        </button>
-    </div>
-</form>
+                <!-- Payment buttons -->
+                <div class="payment-options">
+                    <button type="submit" class="donate-btn">
+                        <i class="fab fa-paypal"></i> Donate with PayPal
+                    </button>
+                </div>
+            </form>
 
             <div class="security-note">
                 <i class="fas fa-lock"></i>
-                <span>Secure and encrypted</span>
+                <span>Secure and encrypted payment via PayPal</span>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="trust-indicators">
-            <div class="trust-item"><i class="fas fa-check-circle"></i> Verified</div>
-            <div class="trust-item"><i class="fas fa-medal"></i> Top rated</div>
-            <div class="trust-item"><i class="fas fa-shield-alt"></i> Secure</div>
+            <div class="trust-item"><i class="fas fa-check-circle"></i> Verified Campaign</div>
+            <div class="trust-item"><i class="fas fa-medal"></i> Top Rated</div>
+            <div class="trust-item"><i class="fas fa-shield-alt"></i> 100% Secure</div>
         </div>
     </div>
 </div>
@@ -540,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const amountButtons = document.querySelectorAll('.amount-btn');
     const amountInput = document.querySelector('input[name="amount"]');
     
-    // Set initial value based on active button
+    // Set initial value based on active button ($25 is active by default)
     let activeButton = document.querySelector('.amount-btn.active');
     if (activeButton) {
         amountInput.value = activeButton.getAttribute('data-amount');
@@ -557,6 +642,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update the input value
             amountInput.value = this.getAttribute('data-amount');
+            
+            // Optional: Add a little haptic feedback (if supported)
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(10);
+            }
         });
     });
     
@@ -577,6 +667,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // If no button matches the input value, ensure all are inactive
         if (!matched) {
             amountButtons.forEach(button => button.classList.remove('active'));
+        }
+    });
+
+    // Form validation before submit
+    const form = document.getElementById('donationForm');
+    form.addEventListener('submit', function(e) {
+        const amount = parseFloat(amountInput.value);
+        if (isNaN(amount) || amount < 1) {
+            e.preventDefault();
+            alert('Please enter a valid donation amount (minimum $1)');
+            amountInput.focus();
         }
     });
 });

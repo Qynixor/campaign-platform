@@ -171,6 +171,7 @@ class Campaign(models.Model):
     
     is_active = models.BooleanField(default=True)
     premium_activated = models.BooleanField(default=False, help_text="Whether premium stats have been activated for this campaign")   
+    
     CATEGORY_CHOICES = (
         ('Personal Empowerment', 'Personal Empowerment'),
         ('Health & Wellbeing Causes', 'Health & Wellbeing Causes'),
@@ -182,6 +183,7 @@ class Campaign(models.Model):
         ('Community & Social Impact', 'Community & Social Impact'),
         ('Education & Skill Building', 'Education & Skill Building'),
         ('Exploration, Sports & Challenges', 'Exploration, Sports & Challenges'),
+        ('Religious & Spiritual Causes', 'Religious & Spiritual Causes'),  # NEW CATEGORY
         ('Other Causes', 'Other Causes'),
     )
 
@@ -198,6 +200,7 @@ class Campaign(models.Model):
         'Community & Social Impact': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
         'Education & Skill Building': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201304/education_wi2ywe.mp3',
         'Exploration, Sports & Challenges': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201367/Sustainable_llqh66.mp3',
+        'Religious & Spiritual Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201319/peace_lgzimr.mp3',  # Peaceful audio for religious causes
         'Other Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
     }
 
@@ -1223,6 +1226,22 @@ class Campaign(models.Model):
                     'Engage supporters with live updates or check-ins.',
                     'Share lessons learned and motivation.',
                     'Celebrate achievements with the community.'
+                ]
+            },
+            # NEW: Religious & Spiritual Causes
+            'Religious & Spiritual Causes': {
+                'Goals': [
+                    'Support religious institutions, missions, and spiritual outreach programs.',
+                    'Fund community worship spaces, events, and religious education.',
+                    'Help spread faith, provide spiritual guidance, and support religious communities.'
+                ],
+                'Activities': [
+                    'Share updates on religious events, services, and community gatherings.',
+                    'Document mission trips, outreach programs, and charitable work.',
+                    'Post inspirational messages, sermons, or spiritual reflections.',
+                    'Show progress on building or renovating worship spaces.',
+                    'Highlight stories of faith, hope, and community support.',
+                    'Organize fundraising for religious holidays, festivals, or special events.'
                 ]
             },
             'Other Causes': {

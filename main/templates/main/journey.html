@@ -2618,37 +2618,27 @@
     </div>
 
     <!-- Donation Modal -->
-    <div class="donation-modal" id="donationModal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeDonationModal()">✕</button>
-            <div class="donation-header">
-                <h3 id="donationCampaignTitle">Support this Cause</h3>
-                <p id="donationMessage">Make a difference today</p>
-            </div>
-            
-            <div class="donation-amounts">
-                <button class="amount-btn" onclick="selectAmount(5)">$5</button>
-                <button class="amount-btn" onclick="selectAmount(10)">$10</button>
-                <button class="amount-btn" onclick="selectAmount(25)">$25</button>
-                <button class="amount-btn" onclick="selectAmount(50)">$50</button>
-                <button class="amount-btn" onclick="selectAmount(100)">$100</button>
-                <button class="amount-btn" onclick="selectAmount('custom')">Custom</button>
-            </div>
-            
-            <div class="custom-amount" id="customAmountField" style="display: none;">
-                <input type="number" id="customAmount" placeholder="Enter amount ($)" min="1" step="1">
-            </div>
-            
-            <button class="donate-modal-btn" onclick="processDonation()" id="donateNowBtn">
-                <i class="fas fa-hand-holding-heart"></i> Donate Now
-            </button>
-            
-            <div class="donation-footer">
-                <i class="fas fa-lock"></i> Secure payment via PayPal
-            </div>
+
+<div class="donation-modal" id="donationModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeDonationModal()">✕</button>
+        <div class="donation-header">
+            <h3 id="donationCampaignTitle">Support this Cause</h3>
+            <p id="donationMessage">Make a difference today</p>
+        </div>
+        
+        <!-- REMOVE the amount selection section completely -->
+        
+        <!-- Just one button to proceed -->
+        <button class="donate-modal-btn" onclick="proceedToDonation()" id="proceedToDonateBtn">
+            <i class="fas fa-hand-holding-heart"></i> Continue to Donation
+        </button>
+        
+        <div class="donation-footer">
+            <i class="fas fa-lock"></i> Secure donation via PayPal
         </div>
     </div>
-
+</div>
     <div class="reel-container">
         <div class="loading-spinner" id="loadingSpinner">
             <i class="fas fa-spinner fa-spin"></i>
@@ -3067,87 +3057,84 @@
         // ========== CATEGORY MESSAGES ==========
         function getDonationMessage(category) {
             const messages = {
-                'Health & Wellbeing Causes': 'Support medical treatment and wellness',
-                'Economic Support & Financial Causes': 'Help achieve financial stability',
-                'Housing, Living & Stability': 'Support safe housing',
-                'Community & Social Impact': 'Strengthen our community',
-                'Education & Skill Building': 'Invest in education',
-                'Mental Health & Emotional Support': 'Support mental wellness',
-                'Personal Empowerment': 'Empower personal growth',
-                'Career, Work & Opportunity': 'Create opportunities',
-                'Creative & Cultural Causes': 'Support creativity',
-                'Exploration, Sports & Challenges': 'Fuel adventures',
-                'Other Causes': 'Make a difference'
+                      'Health & Wellbeing Causes': 'Support medical treatment and wellness',
+        'Economic Support & Financial Causes': 'Help achieve financial stability',
+        'Housing, Living & Stability': 'Support safe housing',
+        'Community & Social Impact': 'Strengthen our community',
+        'Education & Skill Building': 'Invest in education',
+        'Mental Health & Emotional Support': 'Support mental wellness',
+        'Personal Empowerment': 'Empower personal growth',
+        'Career, Work & Opportunity': 'Create opportunities',
+        'Creative & Cultural Causes': 'Support creativity',
+        'Exploration, Sports & Challenges': 'Fuel adventures',
+        'Religious & Spiritual Causes': 'Support faith and community',  // NEW
+        'Other Causes': 'Make a difference'
             };
             return messages[category] || 'Support this cause';
         }
+// ========== DONATION FUNCTIONS ==========
+// DO NOT redeclare currentDonationCampaignId here - it's already declared at the top
 
-        // ========== DONATION FUNCTIONS ==========
-        function handleDonate(event, campaignId, index) {
-            event.stopPropagation();
-            
-            const campaign = campaignsData[index];
-            if (!campaign) return;
-            
-            currentDonationCampaignId = campaignId;
-            selectedAmount = null;
-            
-            // Reset modal
-            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-            document.getElementById('customAmountField').style.display = 'none';
-            document.getElementById('customAmount').value = '';
-            
-            // Set campaign title and message
-            document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
-            document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
-            
-            // Show modal
-            document.getElementById('donationModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-        }
+function handleDonate(event, campaignId, index) {
+    event.stopPropagation();
+    
+    const campaign = campaignsData[index];
+    if (!campaign) return;
+    
+    // Store the campaign ID (using existing variable)
+    currentDonationCampaignId = campaignId;
+    
+    // Also store in a data attribute as backup
+    const modal = document.getElementById('donationModal');
+    modal.setAttribute('data-campaign-id', campaignId);
+    modal.setAttribute('data-campaign-index', index);
+    
+    // Set campaign title and inspirational message
+    document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
+    document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
+    
+    // Show the inspirational modal WITHOUT amount selection
+    document.getElementById('donationModal').classList.add('active');
+    document.getElementById('popupBackdrop').classList.add('active');
+    
+    console.log('Donation modal opened for campaign:', campaignId);
+}
 
-        function selectAmount(amount) {
-            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('selected'));
-            
-            if (amount === 'custom') {
-                document.getElementById('customAmountField').style.display = 'block';
-                selectedAmount = null;
-            } else {
-                event.target.classList.add('selected');
-                document.getElementById('customAmountField').style.display = 'none';
-                selectedAmount = amount;
-            }
-        }
+function proceedToDonation() {
+    // Try to get campaign ID from multiple sources
+    let campaignId = currentDonationCampaignId;
+    
+    // If not found, try from modal data attribute
+    if (!campaignId || campaignId === 'null') {
+        const modal = document.getElementById('donationModal');
+        campaignId = modal.getAttribute('data-campaign-id');
+    }
+    
+    // Final check
+    if (!campaignId || campaignId === 'null') {
+        console.error('No campaign ID found');
+        alert('Error: Campaign not found. Please try again.');
+        closeDonationModal();
+        return;
+    }
+    
+    console.log('Redirecting to campaign:', campaignId);
+    
+    // Close the modal
+    closeDonationModal();
+    
+    // Redirect to the donation page
+    window.location.href = `/campaign/${campaignId}/donate/`;
+}
 
-        function processDonation() {
-            let finalAmount = selectedAmount;
-            
-            if (!finalAmount) {
-                // Check custom amount
-                const customAmount = document.getElementById('customAmount').value;
-                if (customAmount && customAmount > 0) {
-                    finalAmount = parseFloat(customAmount);
-                } else {
-                    alert('Please select or enter an amount');
-                    return;
-                }
-            }
-            
-            if (!currentDonationCampaignId) {
-                alert('Campaign not found');
-                return;
-            }
-            
-            // Redirect to donation page (you'll need to create this URL)
-            window.location.href = `/campaign/${currentDonationCampaignId}/donate/?amount=${finalAmount}`;
-        }
-
-        function closeDonationModal() {
-            document.getElementById('donationModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-            currentDonationCampaignId = null;
-        }
-
+function closeDonationModal() {
+    document.getElementById('donationModal').classList.remove('active');
+    document.getElementById('popupBackdrop').classList.remove('active');
+    // Don't clear immediately - give time for redirect
+    setTimeout(() => {
+        currentDonationCampaignId = null;
+    }, 100);
+}
 // ========== ENHANCED STATS POPUP FUNCTIONS ==========
 function openStatsPopup(index) {
     event.stopPropagation();
