@@ -2470,8 +2470,6 @@ def record_campaign_view(request, campaign_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-
-
 import json
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
@@ -2480,103 +2478,273 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Sum
 from django.utils import timezone
 from .models import Campaign, Love, CampaignFollow, Comment, Notification
-
 @login_required
 def journey(request):
     """Main journey feed view - displays campaigns in a reel format"""
-    # Get all active campaigns
-    campaigns = Campaign.objects.filter(is_active=True).select_related(
-        'user', 'user__user'
-    ).prefetch_related(
-        'loves', 'followers', 'pledges', 'donations'
-    ).order_by('-timestamp')
+    try:
+        # Get all active campaigns
+        campaigns = Campaign.objects.filter(is_active=True).select_related(
+            'user', 'user__user'
+        ).prefetch_related(
+            'loves', 'followers', 'pledges', 'donations', 'comments', 'activity_set'
+        ).order_by('-timestamp')
 
-    # Prepare campaign data for the template
-    campaign_data = []
-    for campaign in campaigns:
-        # Get campaign images (poster + additional images)
-        images = []
-        if campaign.poster:
-            images.append(campaign.poster.url)
+        campaign_data = []
         
-        # Parse additional images from JSON field
-        if campaign.additional_images:
+        for campaign in campaigns:
             try:
-                if isinstance(campaign.additional_images, list):
-                    images.extend(campaign.additional_images)
-                elif isinstance(campaign.additional_images, str):
-                    additional = json.loads(campaign.additional_images)
-                    if isinstance(additional, list):
-                        images.extend(additional)
-            except:
-                pass
+                # ===== BASIC INFO (SAME AS YOUR WORKING VIEW) =====
+                images = []
+                if campaign.poster:
+                    images.append(campaign.poster.url)
+                
+                if campaign.additional_images:
+                    try:
+                        if isinstance(campaign.additional_images, list):
+                            images.extend(campaign.additional_images)
+                        elif isinstance(campaign.additional_images, str):
+                            additional = json.loads(campaign.additional_images)
+                            if isinstance(additional, list):
+                                images.extend(additional)
+                    except:
+                        pass
+                
+                # Audio URL
+                audio_url = None
+                if campaign.audio:
+                    audio_url = campaign.audio.url
+                else:
+                    audio_url = campaign.get_default_audio()
+                
+                # User interaction flags
+                user_loved = False
+                user_following = False
+                is_campaign_owner = False
+                
+                if request.user.is_authenticated:
+                    user_loved = campaign.loves.filter(user=request.user).exists()
+                    user_following = campaign.is_followed_by(request.user)
+                    is_campaign_owner = request.user == campaign.user.user
+                
+                # Calculate totals safely
+                total_pledges = campaign.pledges.aggregate(total=Sum('amount'))['total'] or 0
+                total_donations = campaign.donations.filter(fulfilled=True).aggregate(total=Sum('amount'))['total'] or 0
+                
+                # ===== BASIC STATS (YOUR WORKING STRUCTURE) =====
+                stats = {
+                    'love_count': campaign.love_count,
+                    'comment_count': campaign.comments.count(),
+                    'follower_count': campaign.follower_count,
+                    'activity_count': campaign.activity_set.count(),
+                    'total_pledges': float(total_pledges),
+                    'total_donations': float(total_donations),
+                    'funding_goal': float(campaign.funding_goal) if campaign.funding_goal else 0,
+                    'donation_percentage': campaign.donation_percentage,
+                    'days_left': campaign.days_left if campaign.days_left is not None else 0,
+                    'current_day': campaign.get_current_day(),
+                    'total_days': campaign.duration or 30,
+                    
+                    # ===== PREMIUM STATS WITH SAFE DEFAULTS =====
+                    # These will ONLY be used in the JavaScript when can_view_premium is True
+                    'avg_donation': 0,
+                    'total_donors': 0,
+                    'total_pledgers': 0,
+                    'new_followers_7d': 0,
+                    'new_followers_30d': 0,
+                    'follower_growth': 0,
+                    'activity_completion': 0,
+                    'engagement_score': 0,
+                    'donation_conversion': 0,
+                    'repeat_donors': 0,
+                    'follower_chart': [],
+                    'donor_demographics': {'locations': {}, 'brackets': {}, 'repeat_donors': 0},
+                    'predictive': {
+                        'projected_final': 0,
+                        'success_probability': 'N/A',
+                        'recommendations': ['Keep up the great work!'],
+                        'estimated_completion_date': 'N/A'
+                    },
+                    'benchmarks': None,
+                    'conversion_funnel': {
+                        'view_to_follower': 0,
+                        'follower_to_pledger': 0,
+                        'pledger_to_donor': 0
+                    }
+                }
+                
+                # ===== CHECK IF USER CAN VIEW PREMIUM =====
+                can_view_premium = False
+                
+                # Campaign owner gets premium stats automatically
+                if is_campaign_owner:
+                    # Check if premium is activated for this campaign
+                    try:
+                        if campaign.premium_activated:
+                            can_view_premium = True
+                    except:
+                        pass
+                
+                # OR if user has purchased premium (add your logic here)
+                # elif request.user.has_active_subscription:
+                #     can_view_premium = True
+                
+                # ===== ONLY CALCULATE PREMIUM STATS IF NEEDED =====
+                if can_view_premium:
+                    try:
+                        # Follower stats
+                        from django.utils import timezone
+                        from datetime import timedelta
+                        
+                        seven_days_ago = timezone.now() - timedelta(days=7)
+                        thirty_days_ago = timezone.now() - timedelta(days=30)
+                        
+                        stats['new_followers_7d'] = campaign.campaign_follows.filter(
+                            followed_at__gte=seven_days_ago
+                        ).count()
+                        
+                        stats['new_followers_30d'] = campaign.campaign_follows.filter(
+                            followed_at__gte=thirty_days_ago
+                        ).count()
+                        
+                        if stats['follower_count'] > 0:
+                            stats['follower_growth'] = round(
+                                (stats['new_followers_7d'] / stats['follower_count']) * 100, 1
+                            )
+                        
+                        # Donor stats
+                        donors_qs = campaign.donations.filter(fulfilled=True)
+                        stats['total_donors'] = donors_qs.values('user').distinct().count()
+                        
+                        donations_sum = donors_qs.aggregate(total=Sum('amount'))['total'] or 0
+                        if stats['total_donors'] > 0:
+                            stats['avg_donation'] = round(donations_sum / stats['total_donors'], 2)
+                        
+                        # Pledgers
+                        stats['total_pledgers'] = campaign.pledges.values('user').distinct().count()
+                        
+                        # Activity completion
+                        if campaign.duration and campaign.duration > 0:
+                            stats['activity_completion'] = round(
+                                (stats['activity_count'] / campaign.duration) * 100, 1
+                            )
+                        
+                        # Engagement score
+                        if stats['follower_count'] > 0:
+                            love_ratio = stats['love_count'] / stats['follower_count']
+                            comment_ratio = stats['comment_count'] / stats['follower_count']
+                            stats['engagement_score'] = min(
+                                round((love_ratio * 40) + (comment_ratio * 30) + 30), 100
+                            )
+                        
+                        # Donation conversion
+                        if stats['follower_count'] > 0 and stats['total_donors'] > 0:
+                            stats['donation_conversion'] = round(
+                                (stats['total_donors'] / stats['follower_count']) * 100, 1
+                            )
+                        
+                    except Exception as e:
+                        print(f"Error calculating premium stats for campaign {campaign.id}: {e}")
+                        # Keep the default values, don't let this crash
+
+                # ===== ADD CAMPAIGN DATA =====
+                campaign_data.append({
+                    'id': campaign.id,
+                    'title': campaign.title,
+                    'content': campaign.content,
+                    'images': images[:5],
+                    'audio_url': audio_url,
+                    'user': {
+                        'username': campaign.user.user.username,
+                        'profile_image': campaign.user.image.url if campaign.user.image else None,
+                        'verified': campaign.user.profile_verified,
+                    },
+                    'stats': stats,
+                    'location': campaign.user.location or 'Unknown',
+                    'timestamp': campaign.timestamp.isoformat(),
+                    'time_ago': get_time_ago(campaign.timestamp),
+                    'category': campaign.category,
+                    'user_loved': user_loved,
+                    'user_following': user_following,
+                    'is_campaign_owner': is_campaign_owner,
+                    'can_view_premium': can_view_premium,  # This controls the UI
+                })
+                
+            except Exception as e:
+                print(f"Error processing campaign {campaign.id}: {e}")
+                continue
+
+        # ===== JSON SERIALIZATION =====
+        context = {
+            'campaigns': campaign_data,
+            'campaigns_json': json.dumps(campaign_data, default=str),
+        }
         
-        # Get audio URL
-        audio_url = None
-        if campaign.audio:
-            audio_url = campaign.audio.url
-        else:
-            audio_url = campaign.get_default_audio()
+        return render(request, 'main/journey.html', context)
         
-        # Check if current user has loved/following this campaign
-        user_loved = False
-        user_following = False
-        is_campaign_owner = False  # Add this line
-        
-        if request.user.is_authenticated:
-            user_loved = campaign.loves.filter(user=request.user).exists()
-            user_following = campaign.is_followed_by(request.user)
-            # Check if current user is the campaign owner
-            is_campaign_owner = request.user == campaign.user.user  # Add this line
-        
-        # Calculate totals safely
-        total_pledges = campaign.pledges.aggregate(total=Sum('amount'))['total'] or 0
-        total_donations = campaign.donations.filter(fulfilled=True).aggregate(total=Sum('amount'))['total'] or 0
-        
-        campaign_data.append({
-            'id': campaign.id,
-            'title': campaign.title,
-            'content': campaign.content,
-            'images': images,
-            'audio_url': audio_url,
-            'user': {
-                'username': campaign.user.user.username,
-                'profile_image': campaign.user.image.url if campaign.user.image else None,
-                'verified': campaign.user.profile_verified,
-            },
-            'stats': {
-                'love_count': campaign.love_count,
-                'comment_count': campaign.comments.count(),
-                'follower_count': campaign.follower_count,
-                'activity_count': campaign.activity_set.count(),
-                'total_pledges': float(total_pledges),
-                'total_donations': float(total_donations),
-                'funding_goal': float(campaign.funding_goal) if campaign.funding_goal else 0,
-                'donation_percentage': campaign.donation_percentage,
-                'days_left': campaign.days_left if campaign.days_left is not None else 0,
-                'current_day': campaign.get_current_day(),
-                'total_days': campaign.duration or 30,
-            },
-            'location': campaign.user.location or 'Unknown',
-            'timestamp': campaign.timestamp.isoformat(),
-            'time_ago': get_time_ago(campaign.timestamp),
-            'category': campaign.category,
-            'user_loved': user_loved,
-            'user_following': user_following,
-            'is_campaign_owner': is_campaign_owner,  # Add this line to the campaign data
+    except Exception as e:
+        print(f"Critical error: {e}")
+        # Return empty but safe context
+        return render(request, 'main/journey.html', {
+            'campaigns': [],
+            'campaigns_json': '[]',
         })
+ 
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
-    context = {
-        'campaigns': campaign_data,
-        'campaigns_json': json.dumps(campaign_data, default=str),
-    }
-    
-    return render(request, 'main/journey.html', context)
+@login_required
+@require_POST
+def activate_premium(request, campaign_id):
+    """Activate premium stats for a campaign"""
+    try:
+        campaign = Campaign.objects.get(id=campaign_id)
+        
+        # Check if user is the owner
+        if request.user != campaign.user.user:
+            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+        
+        # Activate premium
+        campaign.premium_activated = True
+        campaign.save()
+        
+        return JsonResponse({'success': True})
+        
+    except Campaign.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Campaign not found'}, status=404)
 
 
 
 
 
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+
+@login_required
+@require_POST
+def activate_owner_premium(request, campaign_id):
+    """Activate free premium for campaign owners (temporary promotion)"""
+    try:
+        campaign = Campaign.objects.get(id=campaign_id)
+        
+        # Verify the user is the campaign owner
+        if request.user != campaign.user.user:
+            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+        
+        # Here you would typically create a PremiumSubscription or set a flag
+        # For now, we'll just return success and let the frontend reload
+        
+        # You could store this in session or create a temporary record
+        request.session[f'premium_activated_{campaign_id}'] = True
+        
+        return JsonResponse({'success': True})
+        
+    except Campaign.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Campaign not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 from django.http import HttpResponse

@@ -107,8 +107,8 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('campaign/<int:campaign_id>/activity/create/', views.create_activity, name='create_activity'),
     path('campaign/<int:campaign_id>/activity_list/', views.activity_list, name='activity_list'),
     path('campaign/<int:campaign_id>/comments/', views.campaign_comments, name='campaign_comments'),
-
-
+path('campaign/<int:campaign_id>/activate-owner-premium/', views.activate_owner_premium, name='activate_owner_premium'),
+path('campaign/<int:campaign_id>/activate-premium/', views.activate_premium, name='activate_premium'),
     path('record_campaign_view/<int:campaign_id>/', views.record_campaign_view, name='record_campaign_view'),
 # marketing 
     path('blog/', views.blog_list, name='blog_list'),

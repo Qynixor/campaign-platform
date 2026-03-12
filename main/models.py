@@ -14,7 +14,9 @@ from django.dispatch import receiver
 from tinymce.models import HTMLField
 from django.db.models.signals import m2m_changed
 from django.urls import reverse
-
+from django.db import models, transaction
+from django.db.models import Q, Sum, Avg, Count
+from django.db.models.functions import TruncDate  # Add this line
 from django.core.cache import cache
 
 # Add these imports at the top
@@ -133,6 +135,22 @@ from django.core.files.base import ContentFile
 import cloudinary
 import cloudinary.uploader
 from cloudinary.models import CloudinaryField
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.urls import reverse
+from django.core.exceptions import ValidationError
+from datetime import timedelta
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db.models import Q, Avg, Count, Sum
+from django.db.models.functions import TruncDate
+import json
+import requests
+from django.core.files.base import ContentFile
+import cloudinary
+import cloudinary.uploader
+from cloudinary.models import CloudinaryField
 
 class Campaign(models.Model):
     user = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='user_campaigns')
@@ -152,7 +170,7 @@ class Campaign(models.Model):
     )
     
     is_active = models.BooleanField(default=True)
-   
+    premium_activated = models.BooleanField(default=False, help_text="Whether premium stats have been activated for this campaign")   
     CATEGORY_CHOICES = (
         ('Personal Empowerment', 'Personal Empowerment'),
         ('Health & Wellbeing Causes', 'Health & Wellbeing Causes'),
@@ -242,205 +260,266 @@ class Campaign(models.Model):
     # ==================== FUNDING PROPERTIES ====================
     @property
     def total_pledges(self):
-        return self.pledge_set.aggregate(total=models.Sum('amount'))['total'] or 0
+        try:
+            return self.pledge_set.aggregate(total=models.Sum('amount'))['total'] or 0
+        except:
+            return 0
     
     @property
     def total_donations(self):
-        return self.donations.filter(fulfilled=True).aggregate(
-            total=models.Sum('amount')
-        )['total'] or 0
+        try:
+            return self.donations.filter(fulfilled=True).aggregate(
+                total=models.Sum('amount')
+            )['total'] or 0
+        except:
+            return 0
     
     @property
     def donation_percentage(self):
-        if self.funding_goal == 0:
+        try:
+            if self.funding_goal == 0:
+                return 0
+            return round((self.total_donations / self.funding_goal) * 100, 2)
+        except:
             return 0
-        return round((self.total_donations / self.funding_goal) * 100, 2)
 
     @property
     def donation_remaining(self):
-        return max(self.funding_goal - self.total_donations, 0)
+        try:
+            return max(self.funding_goal - self.total_donations, 0)
+        except:
+            return 0
 
     @property
     def love_count(self):
-        return self.loves.count()
+        try:
+            return self.loves.count()
+        except:
+            return 0
+    
     @property
     def is_changemaker(self):
-        """
-        Check if campaign owner qualifies as a changemaker
-        Returns False for now (placeholder)
-        """
         return False
 
     # ==================== TIME/DURATION PROPERTIES ====================
     @property
     def is_outdated(self):
-        if self.end_date is None:
+        try:
+            if self.end_date is None:
+                return False
+            return timezone.now() > self.end_date
+        except:
             return False
-        return timezone.now() > self.end_date
     
     @property
     def days_left(self):
-        if self.end_date is None:
-            return None
-        
-        remaining = self.end_date - timezone.now()
-        
-        if remaining.total_seconds() <= 0:
-            return 0
+        try:
+            if self.end_date is None:
+                return None
             
-        if self.duration_unit == 'minutes':
-            return max(int(remaining.total_seconds() // 60), 0)
-        else:
-            return max(remaining.days, 0)
+            remaining = self.end_date - timezone.now()
+            
+            if remaining.total_seconds() <= 0:
+                return 0
+                
+            if self.duration_unit == 'minutes':
+                return max(int(remaining.total_seconds() // 60), 0)
+            else:
+                return max(remaining.days, 0)
+        except:
+            return 0
 
     @property
     def elapsed_time(self):
-        start_date = self.journey_start_date or self.timestamp
-        elapsed = timezone.now() - start_date
-        return elapsed
+        try:
+            start_date = self.journey_start_date or self.timestamp
+            elapsed = timezone.now() - start_date
+            return elapsed
+        except:
+            return timedelta(0)
     
     @property
     def remaining_percentage(self):
-        if not self.duration or not self.duration_unit or not self.end_date:
+        try:
+            if not self.duration or not self.duration_unit or not self.end_date:
+                return 100
+            
+            total_duration = None
+            if self.duration_unit == 'minutes':
+                total_duration = timedelta(minutes=self.duration)
+            else:
+                total_duration = timedelta(days=self.duration)
+            
+            start_date = self.journey_start_date or self.timestamp
+            elapsed = timezone.now() - start_date
+            remaining = max(total_duration - elapsed, timedelta(0))
+            
+            if total_duration.total_seconds() == 0:
+                return 0
+            
+            percentage = (remaining.total_seconds() / total_duration.total_seconds()) * 100
+            return max(0, min(100, percentage))
+        except:
             return 100
-        
-        total_duration = None
-        if self.duration_unit == 'minutes':
-            total_duration = timedelta(minutes=self.duration)
-        else:
-            total_duration = timedelta(days=self.duration)
-        
-        start_date = self.journey_start_date or self.timestamp
-        elapsed = timezone.now() - start_date
-        remaining = max(total_duration - elapsed, timedelta(0))
-        
-        if total_duration.total_seconds() == 0:
-            return 0
-        
-        percentage = (remaining.total_seconds() / total_duration.total_seconds()) * 100
-        return max(0, min(100, percentage))
 
     # ==================== FIXED DAY TRACKING METHODS ====================
     def get_current_day(self):
-        start_date = self.journey_start_date or self.timestamp
-        
-        if not start_date:
+        try:
+            start_date = self.journey_start_date or self.timestamp
+            
+            if not start_date:
+                return 1
+            
+            if self.is_outdated and self.duration:
+                return self.duration
+            
+            now = timezone.now()
+            time_since_start = now - start_date
+            
+            if self.duration_unit == 'minutes':
+                minutes_since = int(time_since_start.total_seconds() / 60)
+                current_day = minutes_since + 1
+            else:
+                days_since = time_since_start.days
+                current_day = days_since + 1
+            
+            if self.duration and current_day > self.duration:
+                return self.duration
+            
+            return current_day
+        except:
             return 1
-        
-        if self.is_outdated and self.duration:
-            return self.duration
-        
-        now = timezone.now()
-        time_since_start = now - start_date
-        
-        if self.duration_unit == 'minutes':
-            minutes_since = int(time_since_start.total_seconds() / 60)
-            current_day = minutes_since + 1
-        else:
-            days_since = time_since_start.days
-            current_day = days_since + 1
-        
-        if self.duration and current_day > self.duration:
-            return self.duration
-        
-        return current_day
 
     def is_day_locked(self, day_number):
-        current_day = self.get_current_day()
-        return day_number > current_day
+        try:
+            current_day = self.get_current_day()
+            return day_number > current_day
+        except:
+            return True
 
     def get_day_unlock_date(self, day_number):
-        start_date = self.journey_start_date or self.timestamp
-        
-        if day_number <= 1:
-            return start_date
-        
-        if self.duration_unit == 'minutes':
-            unlock_time = start_date + timedelta(minutes=day_number - 1)
-        else:
-            unlock_time = start_date + timedelta(days=day_number - 1)
-        
-        return unlock_time
+        try:
+            start_date = self.journey_start_date or self.timestamp
+            
+            if day_number <= 1:
+                return start_date
+            
+            if self.duration_unit == 'minutes':
+                unlock_time = start_date + timedelta(minutes=day_number - 1)
+            else:
+                unlock_time = start_date + timedelta(days=day_number - 1)
+            
+            return unlock_time
+        except:
+            return timezone.now()
 
     def get_day_status(self, day_number):
-        now = timezone.now()
-        current_day = self.get_current_day()
-        
-        if day_number < current_day:
-            return {
-                'status': 'completed',
-                'can_upload': False,
-                'message': f'Day {day_number} completed',
-                'unlock_date': None,
-                'unlock_date_formatted': None,
-                'hours_remaining': 0,
-                'days_remaining': 0,
-            }
-        
-        elif day_number == current_day:
-            return {
-                'status': 'available',
-                'can_upload': True,
-                'message': f'Day {day_number} is available now',
-                'unlock_date': None,
-                'unlock_date_formatted': None,
-                'hours_remaining': 0,
-                'days_remaining': 0,
-            }
-        
-        else:
-            unlock_date = self.get_day_unlock_date(day_number)
-            time_until_unlock = unlock_date - now
+        try:
+            now = timezone.now()
+            current_day = self.get_current_day()
             
-            days_remaining = time_until_unlock.days
-            hours_remaining = int(time_until_unlock.total_seconds() / 3600)
-            minutes_remaining = int(time_until_unlock.total_seconds() / 60)
+            if day_number < current_day:
+                return {
+                    'status': 'completed',
+                    'can_upload': False,
+                    'message': f'Day {day_number} completed',
+                    'unlock_date': None,
+                    'unlock_date_formatted': None,
+                    'hours_remaining': 0,
+                    'days_remaining': 0,
+                }
             
-            if days_remaining > 0:
-                message = f'Day {day_number} unlocks in {days_remaining} day{"s" if days_remaining != 1 else ""}'
-            elif hours_remaining > 0:
-                message = f'Day {day_number} unlocks in {hours_remaining} hour{"s" if hours_remaining != 1 else ""}'
+            elif day_number == current_day:
+                return {
+                    'status': 'available',
+                    'can_upload': True,
+                    'message': f'Day {day_number} is available now',
+                    'unlock_date': None,
+                    'unlock_date_formatted': None,
+                    'hours_remaining': 0,
+                    'days_remaining': 0,
+                }
+            
             else:
-                message = f'Day {day_number} unlocks in {minutes_remaining} minute{"s" if minutes_remaining != 1 else ""}'
-            
+                unlock_date = self.get_day_unlock_date(day_number)
+                time_until_unlock = unlock_date - now
+                
+                days_remaining = time_until_unlock.days
+                hours_remaining = int(time_until_unlock.total_seconds() / 3600)
+                minutes_remaining = int(time_until_unlock.total_seconds() / 60)
+                
+                if days_remaining > 0:
+                    message = f'Day {day_number} unlocks in {days_remaining} day{"s" if days_remaining != 1 else ""}'
+                elif hours_remaining > 0:
+                    message = f'Day {day_number} unlocks in {hours_remaining} hour{"s" if hours_remaining != 1 else ""}'
+                else:
+                    message = f'Day {day_number} unlocks in {minutes_remaining} minute{"s" if minutes_remaining != 1 else ""}'
+                
+                return {
+                    'status': 'locked',
+                    'can_upload': False,
+                    'message': message,
+                    'unlock_date': unlock_date,
+                    'unlock_date_formatted': unlock_date.strftime('%b %d, %Y at %I:%M %p') if unlock_date else None,
+                    'days_remaining': days_remaining,
+                    'hours_remaining': hours_remaining,
+                    'minutes_remaining': minutes_remaining,
+                }
+        except Exception as e:
             return {
-                'status': 'locked',
+                'status': 'error',
                 'can_upload': False,
-                'message': message,
-                'unlock_date': unlock_date,
-                'unlock_date_formatted': unlock_date.strftime('%b %d, %Y at %I:%M %p'),
-                'days_remaining': days_remaining,
-                'hours_remaining': hours_remaining,
-                'minutes_remaining': minutes_remaining,
+                'message': 'Error loading day status',
+                'unlock_date': None,
+                'unlock_date_formatted': None,
+                'hours_remaining': 0,
+                'days_remaining': 0,
             }
 
     def get_day_range(self, max_days=None):
-        if max_days:
-            return range(1, max_days + 1)
-        elif self.duration:
-            return range(1, self.duration + 1)
-        else:
+        try:
+            if max_days:
+                return range(1, max_days + 1)
+            elif self.duration:
+                return range(1, self.duration + 1)
+            else:
+                return range(1, 8)
+        except:
             return range(1, 8)
 
     def get_completed_days_count(self):
-        return self.activity_set.count()
+        try:
+            if hasattr(self, 'activity_set'):
+                return self.activity_set.count()
+            return 0
+        except:
+            return 0
 
     def get_remaining_days_count(self):
-        if not self.duration:
+        try:
+            if not self.duration:
+                return 0
+            completed = self.get_completed_days_count()
+            return max(0, self.duration - completed)
+        except:
             return 0
-        completed = self.get_completed_days_count()
-        return max(0, self.duration - completed)
 
     # Campaign follower methods
     @property
     def follower_count(self):
-        return self.followers.count()
+        try:
+            return self.followers.count()
+        except:
+            return 0
     
     def is_followed_by(self, user):
         """Check if a user follows this campaign"""
-        if not user or not user.is_authenticated:
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            return self.followers.filter(id=user.id).exists()
+        except:
             return False
-        return self.followers.filter(id=user.id).exists()
 
     # ==================== FIXED SAVE METHOD ====================
     def save(self, *args, **kwargs):
@@ -456,12 +535,6 @@ class Campaign(models.Model):
                 self.original_duration = self.duration
                 self.original_duration_unit = self.duration_unit
                 self.duration_last_updated = self.journey_start_date or self.timestamp
-                
-                # Set default audio if not provided
-                if not self.audio and self.category:
-                    default_audio_url = self.get_default_audio()
-                    # You might want to handle this differently based on your Cloudinary setup
-                    # self.audio = default_audio_url
             
             # Calculate end date if duration exists
             if self.duration and self.duration_unit:
@@ -478,44 +551,548 @@ class Campaign(models.Model):
             print(f"Error saving campaign: {str(e)}")
             import traceback
             traceback.print_exc()
-            raise e  # Re-raise to see the error in admin
+            raise e
 
     def calculate_end_date(self):
-        if not self.duration or not self.duration_unit:
+        try:
+            if not self.duration or not self.duration_unit:
+                return None
+            
+            base_time = self.journey_start_date or self.timestamp
+            
+            if self.duration_unit == 'minutes':
+                return base_time + timedelta(minutes=self.duration)
+            else:
+                return base_time + timedelta(days=self.duration)
+        except:
             return None
-        
-        base_time = self.journey_start_date or self.timestamp
-        
-        if self.duration_unit == 'minutes':
-            return base_time + timedelta(minutes=self.duration)
-        else:
-            return base_time + timedelta(days=self.duration)
 
-    # These methods were referenced but not defined - adding them
     def notify_visible_to_followers(self):
-        # This method was in your original code but referenced removed fields
         pass
 
     def award_changemaker_status(self):
-        # This method was in your original code
-        from .models import ChangemakerAward  # Import here to avoid circular imports
-        
-        if not ChangemakerAward.objects.filter(user=self.user, campaign=self).exists():
-            changemaker_campaigns = Campaign.objects.filter(user=self.user, activity__isnull=False).distinct()
-            campaign_count = changemaker_campaigns.count()
-            if campaign_count >= 3:
-                award_type = 'Gold'
-            elif campaign_count >= 2:
-                award_type = 'Silver'
-            else:
-                award_type = 'Bronze'
+        try:
+            from .models import ChangemakerAward
+            
+            if not ChangemakerAward.objects.filter(user=self.user, campaign=self).exists():
+                changemaker_campaigns = Campaign.objects.filter(user=self.user, activity__isnull=False).distinct()
+                campaign_count = changemaker_campaigns.count()
+                if campaign_count >= 3:
+                    award_type = 'Gold'
+                elif campaign_count >= 2:
+                    award_type = 'Silver'
+                else:
+                    award_type = 'Bronze'
 
-            ChangemakerAward.objects.create(
-                user=self.user,
-                campaign=self,
-                award=award_type,
-                timestamp=timezone.now()
-            )
+                ChangemakerAward.objects.create(
+                    user=self.user,
+                    campaign=self,
+                    award=award_type,
+                    timestamp=timezone.now()
+                )
+        except:
+            pass
+
+    # ==================== ENHANCED STATS METHODS (SAFE VERSION) ====================
+    
+    def get_avg_daily_views(self):
+        """Calculate average daily views"""
+        return 0
+    
+    def get_new_followers_last_7_days(self):
+        """Count new followers in the last 7 days"""
+        try:
+            seven_days_ago = timezone.now() - timedelta(days=7)
+            if hasattr(self, 'campaign_follows'):
+                return self.campaign_follows.filter(
+                    followed_at__gte=seven_days_ago
+                ).count()
+            return 0
+        except:
+            return 0
+    
+    def get_new_followers_last_30_days(self):
+        """Count new followers in the last 30 days"""
+        try:
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+            if hasattr(self, 'campaign_follows'):
+                return self.campaign_follows.filter(
+                    followed_at__gte=thirty_days_ago
+                ).count()
+            return 0
+        except:
+            return 0
+    
+    def get_follower_growth_rate(self):
+        """Calculate follower growth rate (percentage)"""
+        try:
+            total = self.follower_count
+            if total == 0:
+                return 0
+            
+            new_7d = self.get_new_followers_last_7_days()
+            return round((new_7d / total) * 100, 1)
+        except:
+            return 0
+    
+    def get_avg_donation(self):
+        """Calculate average donation amount"""
+        try:
+            if hasattr(self, 'donations'):
+                donations = self.donations.filter(fulfilled=True)
+                avg = donations.aggregate(avg=Avg('amount'))['avg']
+                return float(avg) if avg else 0
+            return 0
+        except:
+            return 0
+    
+    def get_total_donors(self):
+        """Count unique donors"""
+        try:
+            if hasattr(self, 'donations'):
+                return self.donations.filter(fulfilled=True).values('user').distinct().count()
+            return 0
+        except:
+            return 0
+    
+    def get_total_pledgers(self):
+        """Count unique pledgers"""
+        try:
+            if hasattr(self, 'pledges'):
+                return self.pledges.values('user').distinct().count()
+            return 0
+        except:
+            return 0
+    
+    def get_donation_conversion_rate(self):
+        """Percentage of followers who donated"""
+        try:
+            followers = self.follower_count
+            if followers == 0:
+                return 0
+            
+            donors = self.get_total_donors()
+            return round((donors / followers) * 100, 1)
+        except:
+            return 0
+    
+    def get_activity_completion_rate(self):
+        """Percentage of days completed vs total duration"""
+        try:
+            if not self.duration or self.duration == 0:
+                return 0
+            
+            if not hasattr(self, 'activity_set'):
+                return 0
+                
+            completed = self.activity_set.count()
+            if completed == 0:
+                return 0
+                
+            return round((completed / self.duration) * 100, 1)
+        except:
+            return 0
+    
+    def get_engagement_score(self):
+        """Calculate overall engagement score (0-100)"""
+        try:
+            score = 0
+            follower_count = self.follower_count
+            
+            if follower_count == 0:
+                return 0
+            
+            # Love engagement (40% of score)
+            love_ratio = self.love_count / follower_count
+            score += min(love_ratio * 40, 40)
+            
+            # Comment engagement (30% of score)
+            try:
+                if hasattr(self, 'comments'):
+                    comment_count = self.comments.count()
+                    if comment_count > 0:
+                        comment_ratio = comment_count / follower_count
+                        score += min(comment_ratio * 30, 30)
+            except:
+                pass
+            
+            # Activity consistency (30% of score)
+            completion_rate = self.get_activity_completion_rate()
+            if completion_rate > 0:
+                score += (completion_rate / 100) * 30
+            
+            return min(round(score), 100)
+        except:
+            return 0
+    
+    def get_category_ranking(self):
+        """Get campaign's ranking in its category"""
+        try:
+            return {
+                'rank': 'N/A',
+                'total': Campaign.objects.filter(category=self.category).count(),
+                'percentile': 'N/A'
+            }
+        except:
+            return {
+                'rank': 'N/A',
+                'total': 0,
+                'percentile': 'N/A'
+            }
+    
+    def get_daily_stats(self, days=7):
+        """Get daily stats for charts"""
+        try:
+            from django.db.models import Count, Sum
+            from django.db.models.functions import TruncDate
+            
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=days)
+            
+            result = {
+                'followers': [],
+                'donations': [],
+            }
+            
+            if hasattr(self, 'campaign_follows'):
+                daily_followers = self.campaign_follows.filter(
+                    followed_at__gte=start_date
+                ).annotate(
+                    date=TruncDate('followed_at')
+                ).values('date').annotate(
+                    count=Count('id')
+                ).order_by('date')
+                result['followers'] = list(daily_followers)
+            
+            if hasattr(self, 'donations'):
+                daily_donations = self.donations.filter(
+                    fulfilled=True,
+                    timestamp__gte=start_date
+                ).annotate(
+                    date=TruncDate('timestamp')
+                ).values('date').annotate(
+                    total=Sum('amount'),
+                    count=Count('id')
+                ).order_by('date')
+                result['donations'] = list(daily_donations)
+            
+            return result
+        except:
+            return {'followers': [], 'donations': []}
+   
+    # ==================== PREMIUM STATS METHODS ====================
+    
+    def can_view_premium_stats(self, user):
+        """Check if user can view premium stats for this campaign"""
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            
+            # Campaign owner always gets premium stats for their own campaigns
+            if hasattr(self, 'user') and hasattr(self.user, 'user'):
+                if user == self.user.user:
+                    return True
+            
+            # Check if user has active premium subscription
+            if hasattr(user, 'premium_subscriptions'):
+                active_sub = user.premium_subscriptions.filter(
+                    Q(status='active') | Q(status='trial'),
+                    Q(end_date__isnull=True) | Q(end_date__gt=timezone.now())
+                ).first()
+                if active_sub:
+                    return True
+            
+            # Check if user purchased this specific campaign's stats
+            if hasattr(self, 'premium_access'):
+                if self.premium_access.filter(
+                    purchased_by=user,
+                    expiry_date__gt=timezone.now()
+                ).exists():
+                    return True
+            
+            return False
+        except:
+            return False
+    
+    def get_follower_growth_chart(self, days=30):
+        """Daily follower growth data for charts"""
+        try:
+            from django.db.models import Count
+            from django.db.models.functions import TruncDate
+            
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=days)
+            
+            if not hasattr(self, 'campaign_follows'):
+                return []
+            
+            daily_data = self.campaign_follows.filter(
+                followed_at__gte=start_date
+            ).annotate(
+                date=TruncDate('followed_at')
+            ).values('date').annotate(
+                new_followers=Count('id')
+            ).order_by('date')
+            
+            # Create complete date range with zeros
+            date_range = []
+            current = start_date.date()
+            while current <= end_date.date():
+                date_range.append({
+                    'date': current.strftime('%Y-%m-%d'),
+                    'new_followers': 0,
+                    'cumulative': 0
+                })
+                current += timedelta(days=1)
+            
+            # Fill in actual data
+            cumulative = 0
+            if hasattr(self, 'campaign_follows'):
+                cumulative = self.campaign_follows.filter(followed_at__lt=start_date).count()
+            
+            for i, day in enumerate(date_range):
+                for data in daily_data:
+                    if data['date'] and data['date'].strftime('%Y-%m-%d') == day['date']:
+                        day['new_followers'] = data['new_followers']
+                        break
+                cumulative += day['new_followers']
+                day['cumulative'] = cumulative
+            
+            return date_range
+        except Exception as e:
+            print(f"Error in follower growth chart: {e}")
+            return []
+    
+    def get_donor_demographics(self):
+        """Geographic and demographic breakdown of donors"""
+        try:
+            if not hasattr(self, 'donations'):
+                return {
+                    'locations': {},
+                    'brackets': {},
+                    'total_donors': 0,
+                    'repeat_donors': 0
+                }
+            
+            donors = self.donations.filter(fulfilled=True).select_related('user__profile')
+            
+            # Geographic distribution
+            locations = {}
+            for donation in donors:
+                try:
+                    if hasattr(donation.user, 'profile') and hasattr(donation.user.profile, 'location'):
+                        location = donation.user.profile.location or 'Unknown'
+                    else:
+                        location = 'Unknown'
+                    locations[location] = locations.get(location, 0) + 1
+                except:
+                    locations['Unknown'] = locations.get('Unknown', 0) + 1
+            
+            # Donation size brackets
+            brackets = {
+                'under_10': 0,
+                '10_50': 0,
+                '50_100': 0,
+                '100_500': 0,
+                'over_500': 0
+            }
+            
+            for donation in donors:
+                try:
+                    amount = float(donation.amount)
+                    if amount < 10:
+                        brackets['under_10'] += 1
+                    elif amount < 50:
+                        brackets['10_50'] += 1
+                    elif amount < 100:
+                        brackets['50_100'] += 1
+                    elif amount < 500:
+                        brackets['100_500'] += 1
+                    else:
+                        brackets['over_500'] += 1
+                except:
+                    brackets['over_500'] += 1
+            
+            # Return top locations
+            top_locations = dict(sorted(locations.items(), key=lambda x: x[1], reverse=True)[:10])
+            
+            return {
+                'locations': top_locations,
+                'brackets': brackets,
+                'total_donors': donors.count(),
+                'repeat_donors': 0
+            }
+        except Exception as e:
+            print(f"Error in donor demographics: {e}")
+            return {
+                'locations': {},
+                'brackets': {},
+                'total_donors': 0,
+                'repeat_donors': 0
+            }
+    
+    def get_conversion_funnel(self):
+        """Viewers → Followers → Pledgers → Donors"""
+        try:
+            total_views = 0
+            if hasattr(self, 'views'):
+                total_views = self.views.count()
+            
+            funnel = {
+                'views': total_views,
+                'followers': self.follower_count,
+                'pledgers': 0,
+                'donors': 0,
+                'view_to_follower': 0,
+                'follower_to_pledger': 0,
+                'pledger_to_donor': 0
+            }
+            
+            if hasattr(self, 'pledges'):
+                funnel['pledgers'] = self.pledges.values('user').distinct().count()
+            
+            if hasattr(self, 'donations'):
+                funnel['donors'] = self.donations.filter(fulfilled=True).values('user').distinct().count()
+            
+            # Calculate conversion rates
+            if funnel['views'] > 0:
+                funnel['view_to_follower'] = round((funnel['followers'] / funnel['views']) * 100, 1)
+            
+            if funnel['followers'] > 0:
+                funnel['follower_to_pledger'] = round((funnel['pledgers'] / funnel['followers']) * 100, 1)
+            
+            if funnel['pledgers'] > 0:
+                funnel['pledger_to_donor'] = round((funnel['donors'] / funnel['pledgers']) * 100, 1)
+            
+            return funnel
+        except Exception as e:
+            print(f"Error in conversion funnel: {e}")
+            return {
+                'views': 0,
+                'followers': 0,
+                'pledgers': 0,
+                'donors': 0,
+                'view_to_follower': 0,
+                'follower_to_pledger': 0,
+                'pledger_to_donor': 0
+            }
+    
+    def get_predictive_insights(self):
+        """AI-powered predictions and recommendations"""
+        try:
+            # Calculate current trajectory
+            days_elapsed = self.get_current_day() - 1
+            if days_elapsed > 0:
+                daily_avg = self.total_donations / days_elapsed
+                projected = daily_avg * (self.duration or 30)
+            else:
+                projected = 0
+            
+            # Success probability based on historical data
+            probability = 'N/A'
+            if self.funding_goal and self.funding_goal > 0:
+                progress_rate = self.donation_percentage / 100
+                days_remaining = self.days_left or 0
+                
+                if days_elapsed < 7:
+                    probability = 'estimating...'
+                elif progress_rate >= 0.7 and days_remaining > 0:
+                    probability = 'High'
+                elif progress_rate >= 0.4 and days_remaining > days_elapsed:
+                    probability = 'Medium'
+                else:
+                    probability = 'Needs attention'
+            
+            # Recommendations
+            recommendations = []
+            
+            if self.follower_count > 0 and self.get_donation_conversion_rate() < 5:
+                recommendations.append("Share your campaign story more - your conversion rate is below average")
+            
+            if self.days_left and self.days_left < 7 and self.donation_percentage < 50:
+                recommendations.append("Last week push! Consider reaching out to your followers directly")
+            
+            if self.get_activity_completion_rate() < 50:
+                recommendations.append("You're behind on daily activities - consistent updates increase donations by 40%")
+            
+            if not recommendations:
+                recommendations.append("You're on track! Keep up the great work")
+            
+            estimated_date = 'N/A'
+            if self.timestamp and self.duration:
+                estimated_date = (self.timestamp + timedelta(days=self.duration or 30)).strftime('%b %d, %Y')
+            
+            return {
+                'projected_final': round(projected, 2),
+                'success_probability': probability,
+                'recommendations': recommendations,
+                'estimated_completion_date': estimated_date
+            }
+        except Exception as e:
+            print(f"Error in predictive insights: {e}")
+            return {
+                'projected_final': 0,
+                'success_probability': 'N/A',
+                'recommendations': ['Stay active and engage with your followers!'],
+                'estimated_completion_date': 'N/A'
+            }
+    
+    def get_category_benchmarks(self):
+        """Compare this campaign to others in same category"""
+        try:
+            category_campaigns = Campaign.objects.filter(
+                category=self.category,
+                is_active=True
+            ).exclude(id=self.id)
+            
+            if not category_campaigns.exists():
+                return None
+            
+            # Average stats for category
+            avg_followers = category_campaigns.aggregate(
+                avg=Avg('follower_count')
+            )['avg'] or 0
+            
+            avg_donations = 0
+            for campaign in category_campaigns:
+                avg_donations += campaign.total_donations
+            avg_donations = avg_donations / category_campaigns.count() if category_campaigns.count() > 0 else 0
+            
+            avg_activities = 0
+            for campaign in category_campaigns:
+                if hasattr(campaign, 'activity_set'):
+                    avg_activities += campaign.activity_set.count()
+            avg_activities = avg_activities / category_campaigns.count() if category_campaigns.count() > 0 else 0
+            
+            # Percentile rankings (simplified)
+            def calculate_percentile(value, values_list):
+                if not values_list or value == 0:
+                    return 100
+                better_than = sum(1 for v in values_list if v <= value)
+                return round((better_than / len(values_list)) * 100)
+            
+            follower_values = [c.follower_count for c in category_campaigns]
+            donation_values = [c.total_donations for c in category_campaigns]
+            activity_values = [c.activity_set.count() if hasattr(c, 'activity_set') else 0 for c in category_campaigns]
+            
+            return {
+                'category': self.category,
+                'total_in_category': category_campaigns.count(),
+                'averages': {
+                    'followers': round(avg_followers, 1),
+                    'donations': round(avg_donations, 2),
+                    'activities': round(avg_activities, 1),
+                },
+                'your_rank': {
+                    'followers': f"Top {calculate_percentile(self.follower_count, follower_values)}%",
+                    'donations': f"Top {calculate_percentile(self.total_donations, donation_values)}%",
+                    'activities': f"Top {calculate_percentile(self.get_activity_completion_rate(), activity_values)}%",
+                }
+            }
+        except Exception as e:
+            print(f"Error in category benchmarks: {e}")
+            return None
+
     def get_goals_and_activities(self):
         goals_activities = {
             'Personal Empowerment': {
@@ -1545,6 +2122,111 @@ class FAQ(models.Model):
 # These models are already implemented and working:
 # - Donation, Pledge, CampaignProduct, Transaction, Cart, CartItem
 # ============================================================================
+
+# Add to your models.py
+
+class PremiumSubscription(models.Model):
+    """Tracks premium subscriptions for users"""
+    PLAN_CHOICES = (
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+        ('lifetime', 'Lifetime'),
+    )
+    
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+        ('trial', 'Trial'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='premium_subscriptions')
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
+    
+    # Payment info
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    paypal_agreement_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Dates
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    trial_end_date = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    
+    # Features
+    can_view_advanced_stats = models.BooleanField(default=True)
+    can_export_data = models.BooleanField(default=False)
+    can_compare_campaigns = models.BooleanField(default=False)
+    can_access_predictive = models.BooleanField(default=False)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['end_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.plan} ({self.status})"
+    
+    @property
+    def is_active(self):
+        if self.status == 'active' or self.status == 'trial':
+            if self.end_date and self.end_date < timezone.now():
+                return False
+            return True
+        return False
+    
+    @property
+    def days_remaining(self):
+        if not self.end_date:
+            return None
+        remaining = self.end_date - timezone.now()
+        return max(0, remaining.days)
+
+
+class CampaignPremiumAccess(models.Model):
+    """One-time purchases for individual campaign stats"""
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='premium_access')
+    purchased_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchased_campaign_stats')
+    purchase_date = models.DateTimeField(auto_now_add=True)
+    expiry_date = models.DateTimeField(null=True, blank=True)  # Null = lifetime
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Payment info
+    stripe_payment_intent = models.CharField(max_length=255, blank=True, null=True)
+    paypal_transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.purchased_by.username} - {self.campaign.title}"
+    
+    @property
+    def is_valid(self):
+        if not self.expiry_date:
+            return True
+        return self.expiry_date > timezone.now()
+
+
+class StatViewLog(models.Model):
+    """Track which premium stats are viewed (for analytics)"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
+    stat_type = models.CharField(max_length=50)  # 'follower_chart', 'donor_demographics', etc.
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    was_premium = models.BooleanField(default=False)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', 'stat_type']),
+        ]
+
+
+
+
+
+
+
 
 from django.db import models
 from django.contrib.auth import get_user_model
