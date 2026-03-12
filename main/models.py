@@ -1850,6 +1850,13 @@ class ActivityCommentLike(models.Model):
         return f"{self.user.username} likes {self.comment}"
 
 
+
+
+
+
+
+
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.CharField(max_length=255)
@@ -2141,6 +2148,54 @@ class FAQ(models.Model):
 # These models are already implemented and working:
 # - Donation, Pledge, CampaignProduct, Transaction, Cart, CartItem
 # ============================================================================
+
+
+# models.py - Add this after your Activity model
+
+class PostJourneyProduct(models.Model):
+    """Products creators can sell after journey completes"""
+    
+    PRODUCT_TYPES = (
+        ('blueprint', 'Blueprint PDF'),
+        ('behind_scenes', 'Behind the Scenes Video'),
+        ('coaching', 'One-on-One Coaching'),
+        ('bundle', 'Complete Bundle'),
+    )
+    
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='post_journey_products')
+    product_type = models.CharField(max_length=20, choices=PRODUCT_TYPES)
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    
+    # For blueprint (PDF)
+    pdf_file = CloudinaryField('pdf', folder='post_journey_pdfs', null=True, blank=True, resource_type='raw')
+    
+    # For behind scenes (video)
+    video_file = CloudinaryField('video', folder='post_journey_videos', null=True, blank=True, resource_type='video')
+    
+    # For coaching
+    coaching_calendar_link = models.URLField(blank=True, help_text="Google Calendar or Calendly link")
+    coaching_duration = models.IntegerField(default=60, help_text="Minutes per session")
+    
+    # For bundle (combines multiple)
+    bundle_products = models.ManyToManyField('self', blank=True, symmetrical=False, 
+                                             help_text="Products included in bundle")
+    
+    # Stats
+    sold_count = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.campaign.title} - {self.get_product_type_display()}"
+
+
+
+
+
+
+
 
 # Add to your models.py
 

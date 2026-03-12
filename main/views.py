@@ -1684,6 +1684,23 @@ def activity_list(request, campaign_id):
 
     categories = Campaign.objects.values_list('category', flat=True).distinct()
 
+    # ===== NEW: Check if journey is completed =====
+    from django.utils import timezone
+    
+    # Check if journey is completed (today > end_date)
+    journey_completed = True
+    post_products = []
+    
+    if campaign.end_date and timezone.now().date() > campaign.end_date.date():
+        journey_completed = True
+        # Get any products creator has added
+        post_products = campaign.post_journey_products.filter(is_active=True)
+    
+    # Also check if all days are completed
+    elif campaign.duration and activities.count() >= campaign.duration:
+        journey_completed = True
+        post_products = campaign.post_journey_products.filter(is_active=True)
+    
     # Add video-specific context
     context = {
       
@@ -1694,7 +1711,8 @@ def activity_list(request, campaign_id):
         'activity_count': activity_count,
         'progress_percentage': progress_percentage,
         'unread_notifications': unread_notifications,
-     
+            'journey_completed': journey_completed,
+        'post_products': post_products,
       
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
@@ -3920,24 +3938,67 @@ def profile_edit(request, username):
     return render(request, 'main/edit_profile.html', context)
 
 
-
-
-
 @login_required
 def profile_view(request, username):
-    # Get the User object, not Profile
+    # Get the User object
     user_obj = get_object_or_404(User, username=username)
     
     # Get the user's profile
     user_profile = get_object_or_404(Profile, user=user_obj)
     
+    # ===== FIXED: Get ALL campaigns (no public/private filter) =====
+    user_campaigns = user_profile.user_campaigns.filter(is_active=True).order_by('-timestamp')
+    user_campaigns_count = user_campaigns.count()
     
-    # Get public campaigns (user_profile is already a Profile object)
-    public_campaigns = user_profile.user_campaigns.filter().order_by('-timestamp')
-    public_campaigns_count = public_campaigns.count()
+    # ===== COMPLETED JOURNEYS (for Store Manager) =====
+    from django.utils import timezone
+    
+    completed_journeys = []
+    for campaign in user_campaigns:
+        # Check if journey is completed
+        is_completed = False
+        if campaign.end_date and timezone.now().date() > campaign.end_date.date():
+            is_completed = True
+        elif campaign.duration and campaign.activity_set.count() >= campaign.duration:
+            is_completed = True
+            
+        if is_completed:
+            # Get activity count
+            activity_count = campaign.activity_set.count()
+            
+            # Mock products for now (you'll replace with real Product model later)
+            products = []
+            # Example products - remove when you have real data
+            if campaign.id % 3 == 0:  # Just for demo
+                products = [
+                    {'id': 1, 'type': 'blueprint', 'name': 'The Blueprint', 'price': 9.99, 'sold': 12},
+                    {'id': 2, 'type': 'video', 'name': 'Behind the Scenes', 'price': 19.99, 'sold': 8},
+                ]
+            
+            completed_journeys.append({
+                'id': campaign.id,
+                'title': campaign.title,
+                'end_date': campaign.end_date or campaign.timestamp,
+                'follower_count': campaign.follower_count,
+                'activity_count': activity_count,
+                'products': products,
+            })
+    
+    completed_journeys_count = len(completed_journeys)
+    
+    # ===== EARNINGS DATA (mock for now) =====
+    total_revenue = 1240.50
+    your_earnings = total_revenue * 0.7  # 70%
+    total_sales = 45
+    
+    recent_sales = [
+        {'product_name': 'The Blueprint', 'journey_title': '30 Days to Fitness', 'amount': 9.99, 'date': timezone.now() - timedelta(hours=2)},
+        {'product_name': 'Behind the Scenes', 'journey_title': 'Learn Python', 'amount': 19.99, 'date': timezone.now() - timedelta(days=1)},
+        {'product_name': 'Coaching Session', 'journey_title': '30 Days to Fitness', 'amount': 49.99, 'date': timezone.now() - timedelta(days=2)},
+    ]
     
     # Rest of your code remains the same...
-    changemaker_campaigns = [campaign for campaign in public_campaigns if campaign.is_changemaker]
+    changemaker_campaigns = [campaign for campaign in user_campaigns if campaign.is_changemaker]
     
     # Determine the most appropriate campaign
     most_appropriate_campaign = None
@@ -3956,15 +4017,16 @@ def profile_view(request, username):
     user_profile.last_campaign_check = timezone.now()
     user_profile.save()
     
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter() \
+    # 🔥 Trending campaigns
+    trending_campaigns = Campaign.objects.filter(is_active=True) \
         .annotate(love_count_annotated=Count('loves')) \
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
 
     # Top Contributors logic
-    engaged_users = set()
-  
+    from itertools import chain
+    from collections import defaultdict
+    
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
     comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
     view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
@@ -3997,24 +4059,25 @@ def profile_view(request, username):
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
 
-    # ✅ IMPORTANT: Make sure you're passing the right objects
     context = {
-        'user_profile': user_profile,  # Profile object
-        'user_obj': user_obj,          # User object (optional, for clarity)
-       
-        'public_campaigns': public_campaigns,
-        'public_campaigns_count': public_campaigns_count,
+        'user_profile': user_profile,
+        'user_obj': user_obj,
+        'user_campaigns': user_campaigns,  # FIXED: renamed from public_campaigns
+        'user_campaigns_count': user_campaigns_count,  # FIXED: renamed
         'changemaker_category': category_display,
-       
         'unread_notifications': unread_notifications,
-      
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
+        # NEW: Store Manager data
+        'completed_journeys': completed_journeys,
+        'completed_journeys_count': completed_journeys_count,
+        'total_revenue': total_revenue,
+        'your_earnings': your_earnings,
+        'total_sales': total_sales,
+        'recent_sales': recent_sales,
     }
     
     return render(request, 'main/user_profile.html', context)
-
-
 
 
 
