@@ -2497,15 +2497,28 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 from .models import Campaign, Love, CampaignFollow, Comment, Notification
 @login_required
-def journey(request):
+def journey(request, campaign_id=None):
     """Main journey feed view - displays campaigns in a reel format"""
     try:
-        # Get all active campaigns
-        campaigns = Campaign.objects.filter(is_active=True).select_related(
+        # Base queryset - only active campaigns
+        campaigns_query = Campaign.objects.filter(is_active=True).select_related(
             'user', 'user__user'
         ).prefetch_related(
             'loves', 'followers', 'pledges', 'donations', 'comments', 'activity_set'
-        ).order_by('-timestamp')
+        )
+        
+        # If campaign_id is provided, filter to that specific campaign
+        if campaign_id:
+            campaigns_query = campaigns_query.filter(id=campaign_id)
+            # If no campaign found, 404
+            if not campaigns_query.exists():
+                from django.http import Http404
+                raise Http404("Campaign not found")
+        else:
+            # For main feed, order by timestamp
+            campaigns_query = campaigns_query.order_by('-timestamp')
+        
+        campaigns = campaigns_query
 
         campaign_data = []
         
@@ -2561,11 +2574,8 @@ def journey(request):
                     'days_left': campaign.days_left if campaign.days_left is not None else 0,
                     'current_day': campaign.get_current_day(),
                     'total_days': campaign.duration or 30,
-
-                    
                     
                     # ===== PREMIUM STATS WITH SAFE DEFAULTS =====
-                    # These will ONLY be used in the JavaScript when can_view_premium is True
                     'avg_donation': 0,
                     'total_donors': 0,
                     'total_pledgers': 0,
@@ -2597,7 +2607,6 @@ def journey(request):
                 
                 # Campaign owner gets premium stats automatically
                 if is_campaign_owner:
-                    # Check if premium is activated for this campaign
                     try:
                         if campaign.premium_activated:
                             can_view_premium = True
@@ -2697,6 +2706,8 @@ def journey(request):
         context = {
             'campaigns': campaign_data,
             'campaigns_json': json.dumps(campaign_data, default=str),
+            'is_single_campaign': campaign_id is not None,  # Flag for template
+            'campaign_id': campaign_id,  # Pass the ID for template use
         }
         
         return render(request, 'main/journey.html', context)
@@ -2707,7 +2718,21 @@ def journey(request):
         return render(request, 'main/journey.html', {
             'campaigns': [],
             'campaigns_json': '[]',
+            'is_single_campaign': False,
         })
+
+# Helper function for time ago (add this if you don't have it)
+def get_time_ago(timestamp):
+    from django.utils.timesince import timesince
+    from django.utils import timezone
+    try:
+        time_diff = timesince(timestamp, timezone.now())
+        parts = time_diff.split(', ')
+        if len(parts) > 1:
+            return parts[0] + ' ago'
+        return time_diff + ' ago'
+    except:
+        return 'recently'
  
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST

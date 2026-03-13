@@ -81,206 +81,214 @@ import json
 import time
 from collections import defaultdict
 from itertools import chain
+from django.shortcuts import render
+from django.db.models import Count, Sum, Q, Avg
+from django.utils import timezone
+from datetime import timedelta
+from django.shortcuts import render
+from django.db.models import Count, Sum, Q, Avg
+from django.utils import timezone
+from datetime import timedelta
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 def index(request):
     """
-    Homepage view (clean + safe version)
+    Homepage/Discover view showing campaigns in various sections
     """
-
-    # Ensure database connection
     try:
-        connection.close_if_unusable_or_obsolete()
-        connection.ensure_connection()
-    except:
-        pass
-
-    user_profile = None
-    unread_notifications = []
-    unread_messages_count = 0
-    show_login_button = not request.user.is_authenticated
-
-    category_filter = request.GET.get('category', '')
-
-    # -------------------------
-    # AUTHENTICATED USER DATA
-    # -------------------------
-
-    if request.user.is_authenticated:
-        try:
-            with transaction.atomic():
-                user_profile = get_object_or_404(Profile, user=request.user)
-
-                user_profile.last_campaign_check = timezone.now()
-                user_profile.save()
-
-                unread_notifications = list(
-                    Notification.objects.filter(
-                        user=request.user,
-                        viewed=False
-                    )
-                )
-
-        except OperationalError as e:
-            print(f"Database error in authenticated section: {e}")
-
-    # -------------------------
-    # CAMPAIGNS
-    # -------------------------
-
-    campaigns = []
-    trending_campaigns = []
-
-    try:
-
-        connection.close_if_unusable_or_obsolete()
-
-        for attempt in range(3):
-            try:
-
-                campaigns_query = Campaign.objects.all()
-
-                if category_filter:
-                    campaigns_query = campaigns_query.filter(
-                        category=category_filter
-                    )
-
-                campaigns = list(
-
-                    campaigns_query
-                    .select_related('user')
-                    .prefetch_related('tags')
-                    .annotate(love_count_annotated=Count('loves'))
-                    .filter(love_count_annotated__gte=1)
-                    .order_by('-love_count_annotated')[:50]
-
-                )
-
-                break
-
-            except OperationalError:
-
-                if attempt < 2:
-                    print(f"Retrying campaigns query {attempt+2}/3")
-                    connection.close()
-                    time.sleep(1)
-                else:
-                    raise
-
-        # -------------------------
-        # TRENDING CAMPAIGNS
-        # -------------------------
-
-        for attempt in range(3):
-            try:
-
-                trending_query = Campaign.objects.annotate(
-                    love_count_annotated=Count('loves')
-                ).filter(
-                    love_count_annotated__gte=1
-                )
-
-                if category_filter:
-                    trending_query = trending_query.filter(
-                        category=category_filter
-                    )
-
-                trending_campaigns = list(
-                    trending_query.order_by('-love_count_annotated')[:10]
-                )
-
-                break
-
-            except OperationalError:
-
-                if attempt < 2:
-                    print(f"Retrying trending query {attempt+2}/3")
-                    connection.close()
-                    time.sleep(1)
-                else:
-                    raise
-
-    except OperationalError as e:
-
-        print(f"Database error loading campaigns: {e}")
-
+        # Base queryset - only active campaigns
+        base_campaigns = Campaign.objects.filter(is_active=True).select_related('user__user')
+        
+        # Get all campaign categories for filter chips
+        campaign_categories = Campaign.CATEGORY_CHOICES
+        
+        # ========== TRENDING CAMPAIGNS ==========
+        # Trending based on engagement (loves + followers)
+        trending_campaigns = base_campaigns.annotate(
+            love_count_total=Count('loves', distinct=True),
+            follower_count_total=Count('followers', distinct=True),
+        ).order_by('-love_count_total', '-follower_count_total', '-timestamp')[:15]
+        
+        # ========== SUGGESTED CAMPAIGNS ==========
+        # Personalized suggestions based on user's interests
+        suggested_campaigns = base_campaigns
+        
+        if request.user.is_authenticated:
+            # Exclude campaigns the user already follows/loves
+            excluded_campaigns = Campaign.objects.filter(
+                Q(followers=request.user) | 
+                Q(loves__user=request.user)
+            ).values_list('id', flat=True)
+            
+            # Get categories the user has interacted with
+            user_categories = Campaign.objects.filter(
+                Q(loves__user=request.user) |
+                Q(followers=request.user)
+            ).values_list('category', flat=True).distinct()
+            
+            if user_categories:
+                # Prioritize campaigns from categories the user likes
+                suggested_campaigns = base_campaigns.filter(
+                    category__in=user_categories
+                ).exclude(id__in=excluded_campaigns)
+            else:
+                # If no interaction history, show recent campaigns
+                suggested_campaigns = base_campaigns.exclude(
+                    id__in=excluded_campaigns
+                ).order_by('-timestamp')
+            
+            suggested_campaigns = suggested_campaigns.annotate(
+                relevance_score=Count('loves') + Count('followers') * 2
+            ).order_by('-relevance_score', '-timestamp')[:15]
+        else:
+            # For non-authenticated users, show recently active campaigns
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+            suggested_campaigns = base_campaigns.filter(
+                activity__timestamp__gte=thirty_days_ago
+            ).distinct().order_by('-timestamp')[:15]
+        
+        # ========== NEW CAMPAIGNS ==========
+        # Latest campaigns created in the last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        new_campaigns = base_campaigns.filter(
+            timestamp__gte=thirty_days_ago
+        ).order_by('-timestamp')[:15]
+        
+        # ========== POPULAR BY CATEGORY ==========
+        # Top campaigns in each category
+        category_popular = {}
+        for category_value, category_label in campaign_categories:
+            category_campaigns = base_campaigns.filter(
+                category=category_value
+            ).annotate(
+                engagement_score=Count('loves', distinct=True) + 
+                                 (Count('followers', distinct=True) * 2)
+            ).order_by('-engagement_score', '-timestamp')[:8]
+            
+            if category_campaigns.exists():
+                category_popular[category_value] = category_campaigns
+        
+        # ========== CONTEXT FOR TEMPLATE ==========
         context = {
-            'campaigns': [],
-            'trending_campaigns': [],
-            'user_profile': user_profile,
-            'unread_notifications': unread_notifications,
-            'unread_messages_count': unread_messages_count,
-            'show_login_button': show_login_button,
-            'selected_category': category_filter,
-            'top_contributors': [],
-            'campaign_tags_json': "{}",
-            'error_message': "Temporary connection issue. Please refresh."
+            # Category choices for filter chips
+            'campaign_categories': campaign_categories,
+            
+            # Main sections
+            'trending_campaigns': trending_campaigns,
+            'suggested_campaigns': suggested_campaigns,
+            'new_campaigns': new_campaigns,
+            
+            # Popular campaigns by category
+            'category_popular': category_popular,
+            
+            # Stats
+            'total_campaigns': base_campaigns.count(),
+            'total_active_changemakers': Campaign.objects.values('user').distinct().count(),
         }
-
+        
         return render(request, 'accounts/index.html', context)
-
-    # -------------------------
-    # TOP CONTRIBUTORS
-    # -------------------------
-
-    top_contributors = []
-
-    try:
-
-        contributor_data = (
-            Profile.objects
-            .annotate(
-                campaign_count=Count('user__love')
-            )
-            .order_by('-campaign_count')[:5]
-        )
-
-        top_contributors = contributor_data
-
+    
     except Exception as e:
-        print(f"Contributor error: {e}")
+        logger.error(f"Error in index view: {str(e)}", exc_info=True)
+        # Return a basic context even if there's an error
+        context = {
+            'campaign_categories': Campaign.CATEGORY_CHOICES,
+            'trending_campaigns': [],
+            'suggested_campaigns': [],
+            'new_campaigns': [],
+            'category_popular': {},
+            'total_campaigns': 0,
+            'total_active_changemakers': 0,
+            'error_message': "Unable to load campaigns at this time."
+        }
+        return render(request, 'accounts/index.html', context)
+# Optional helper functions for more sophisticated suggestions
 
-    # -------------------------
-    # CAMPAIGN TAGS JSON
-    # -------------------------
+def get_user_interests(user):
+    """
+    Analyze user's interests based on their interactions
+    """
+    if not user.is_authenticated:
+        return {}
+    
+    # Get categories from campaigns they've loved
+    loved_categories = Campaign.objects.filter(
+        loves__user=user
+    ).values('category').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Get categories from campaigns they follow
+    followed_categories = Campaign.objects.filter(
+        followers=user
+    ).values('category').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Get categories from campaigns they've commented on
+    commented_categories = Campaign.objects.filter(
+        comments__user__user=user
+    ).values('category').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Combine and weight interests
+    interests = {}
+    
+    for item in loved_categories:
+        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 3)
+    
+    for item in followed_categories:
+        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 2)
+    
+    for item in commented_categories:
+        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 1)
+    
+    return dict(sorted(interests.items(), key=lambda x: x[1], reverse=True))
 
-    campaign_tags_dict = {}
 
-    for camp in campaigns:
+def get_trending_campaigns(days=7, limit=15):
+    """
+    Get campaigns that are trending based on recent engagement
+    """
+    since_date = timezone.now() - timedelta(days=days)
+    
+    return Campaign.objects.filter(
+        is_active=True
+    ).annotate(
+        recent_loves=Count('loves', filter=Q(loves__timestamp__gte=since_date), distinct=True),
+        recent_follows=Count('followers', filter=Q(campaign_follows__followed_at__gte=since_date), distinct=True),
+        recent_activities=Count('activity', filter=Q(activity__timestamp__gte=since_date), distinct=True),
+        trending_score=(
+            Count('loves', filter=Q(loves__timestamp__gte=since_date), distinct=True) * 3 +
+            Count('followers', filter=Q(campaign_follows__followed_at__gte=since_date), distinct=True) * 2 +
+            Count('activity', filter=Q(activity__timestamp__gte=since_date), distinct=True) * 4
+        )
+    ).order_by('-trending_score')[:limit]
 
-        try:
-            campaign_tags_dict[str(camp.id)] = list(
-                camp.tags.values_list('name', flat=True)
-            )
-        except:
-            campaign_tags_dict[str(camp.id)] = []
 
-    campaign_tags_json = json.dumps(campaign_tags_dict)
-
-    # -------------------------
-    # CONTEXT
-    # -------------------------
-
-    context = {
-
-        'campaigns': campaigns,
-        'trending_campaigns': trending_campaigns,
-
-        'campaign_tags_json': campaign_tags_json,
-
-        'user_profile': user_profile,
-        'unread_notifications': unread_notifications,
-        'unread_messages_count': unread_messages_count,
-
-        'show_login_button': show_login_button,
-
-        'selected_category': category_filter,
-
-        'top_contributors': top_contributors,
-
-    }
-
-    return render(request, 'accounts/index.html', context)
+def get_category_recommendations(user, category, limit=8):
+    """
+    Get recommendations for a specific category
+    """
+    base_qs = Campaign.objects.filter(
+        is_active=True,
+        category=category
+    )
+    
+    if user.is_authenticated:
+        # Exclude campaigns user has already interacted with
+        base_qs = base_qs.exclude(
+            Q(followers=user) | 
+            Q(loves__user=user)
+        )
+    
+    return base_qs.annotate(
+        popularity=Count('loves', distinct=True) + Count('followers', distinct=True)
+    ).order_by('-popularity', '-timestamp')[:limit]
 
 
 def home(request):

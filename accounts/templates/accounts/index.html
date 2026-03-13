@@ -697,7 +697,6 @@
     {% endif %}
   });
 </script>
-
 <div class="discover-wrapper">
 
   <!-- tiny header with compass -->
@@ -706,121 +705,76 @@
     <i class="fas fa-compass"></i>
   </div>
 
-  <!-- category filter chips (mock) -->
+  <!-- category filter chips (dynamic from actual categories) -->
   <div class="chip-scroll">
-    <span class="chip-item active"><i class="fas fa-fire"></i> Trending</span>
-    <span class="chip-item"><i class="fas fa-hand-holding-heart"></i> Empowerment</span>
-    <span class="chip-item"><i class="fas fa-heartbeat"></i> Health</span>
-    <span class="chip-item"><i class="fas fa-coins"></i> Economic</span>
-    <span class="chip-item"><i class="fas fa-palette"></i> Creative</span>
-    <span class="chip-item"><i class="fas fa-brain"></i> Mental</span>
-    <span class="chip-item"><i class="fas fa-briefcase"></i> Career</span>
-    <span class="chip-item"><i class="fas fa-home"></i> Housing</span>
-    <span class="chip-item"><i class="fas fa-users"></i> Community</span>
-    <span class="chip-item"><i class="fas fa-graduation-cap"></i> Education</span>
-    <span class="chip-item"><i class="fas fa-tree"></i> Environment</span>
-    <span class="chip-item"><i class="fas fa-dog"></i> Animals</span>
+    <span class="chip-item active" data-category="all"><i class="fas fa-fire"></i> All</span>
+    {% for category_value, category_label in campaign_categories %}
+    <span class="chip-item" data-category="{{ category_value|slugify }}">
+      <i class="fas 
+        {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
+        {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
+        {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
+        {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
+        {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
+        {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
+        {% elif category_value == 'Housing, Living & Stability' %}fa-home
+        {% elif category_value == 'Community & Social Impact' %}fa-users
+        {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
+        {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
+        {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
+        {% else %}fa-tag{% endif %}">
+      </i> {{ category_label }}
+    </span>
+    {% endfor %}
   </div>
 
   <!-- ========== TRENDING SECTION ========== -->
   <div class="section-head">
     <h3><i class="fas fa-chart-line" style="color:#1DA1F2;"></i> Trending now</h3>
     <span class="pill-link">
-
-    <a href="{% url 'trending_causes' %}">  see all → </a></span>
+        <a href="{% url 'trending_causes' %}">see all →</a>
+    </span>
   </div>
-  <!-- Scroll hint - subtle indicator -->
   <div class="scroll-hint">
     <span>scroll for more</span>
     <i class="fas fa-arrow-right"></i>
   </div>
-  <!-- Horizontal scrollable row -->
   <div class="card-row">
-    <!-- card 1 -->
+    {% for campaign in trending_campaigns %}
+      {% if campaign.id %}
+      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
+          <div class="explore-card" data-category="{{ campaign.category|slugify }}">
+              <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
+                  <span class="cat-badge"><i class="fas fa-tag"></i> {{ campaign.get_category_display|truncatechars:15 }}</span>
+              </div>
+              <div class="card-body">
+                  <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
+                  <div class="card-author">
+                      <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
+                      <span>@{{ campaign.user.user.username }}</span>
+                  </div>
+                  <div class="card-stats">
+                      <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+                      <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+                  </div>
+              </div>
+          </div>
+      </a>
+      {% endif %}
+    {% empty %}
     <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-hand-holding-heart"></i> Empowerment</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Women in tech: mentorship fund</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop" alt="">
-          <span>@nadia_k</span>
+        <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
+            <span class="cat-badge">No campaigns yet</span>
         </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 3.4k</span>
-          <span><i class="fas fa-users"></i> 128</span>
+        <div class="card-body">
+            <div class="card-title">Be the first to start a cause</div>
+            <div class="card-stats">
+                <span><i class="fas fa-heart"></i> 0</span>
+                <span><i class="fas fa-users"></i> 0</span>
+            </div>
         </div>
-      </div>
     </div>
-    <!-- card 2 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #1e4b3c, #76a68b), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-seedling"></i> Community</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">clean water for rural schools</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=50&h=50&fit=crop" alt="">
-          <span>@sarah.j</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 1.2k</span>
-          <span><i class="fas fa-users"></i> 89</span>
-        </div>
-      </div>
-    </div>
-    <!-- card 3 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #7f4f24, #cb9e7c), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-music"></i> Creative</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">indigenous artist residency</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop" alt="">
-          <span>@maya_r</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 2.1k</span>
-          <span><i class="fas fa-users"></i> 204</span>
-        </div>
-      </div>
-    </div>
-    <!-- card 4 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #2d2d72, #7f92cf), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-brain"></i> Mental health</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">free therapy for teens</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1633332751192-710dc8c580cb?w=50&h=50&fit=crop" alt="">
-          <span>@dr.adams</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 4.2k</span>
-          <span><i class="fas fa-users"></i> 512</span>
-        </div>
-      </div>
-    </div>
-    <!-- card 5 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #a44242, #d98585), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-heartbeat"></i> Health</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">medical supplies for clinic</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop" alt="">
-          <span>@dr.james</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 5.1k</span>
-          <span><i class="fas fa-users"></i> 623</span>
-        </div>
-      </div>
-    </div>
+    {% endfor %}
   </div>
   
   <div class="section-divider"></div>
@@ -835,95 +789,41 @@
     <i class="fas fa-arrow-right"></i>
   </div>
   <div class="card-row">
-    <!-- suggested 1 -->
+    {% for campaign in suggested_campaigns %}
+      {% if campaign.id %}
+      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
+        <div class="explore-card" data-category="{{ campaign.category|slugify }}">
+          <div class="card-media" style="background-image: linear-gradient(145deg, #784b2e, #ca9e7c), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
+            <span class="cat-badge"><i class="fas fa-tag"></i> {{ campaign.get_category_display|truncatechars:15 }}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
+            <div class="card-author">
+              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
+              <span>@{{ campaign.user.user.username }}</span>
+            </div>
+            <div class="card-stats">
+              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+              <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+    {% empty %}
     <div class="explore-card">
       <div class="card-media" style="background-image: linear-gradient(145deg, #784b2e, #ca9e7c), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-graduation-cap"></i> Education</span>
+        <span class="cat-badge">Personalized picks</span>
       </div>
       <div class="card-body">
-        <div class="card-title">scholarships for first‑gen students</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop" alt="">
-          <span>@carlos_m</span>
-        </div>
+        <div class="card-title">Follow more causes to get suggestions</div>
         <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 890</span>
-          <span><i class="fas fa-users"></i> 56</span>
+          <span><i class="fas fa-heart"></i> 0</span>
+          <span><i class="fas fa-users"></i> 0</span>
         </div>
       </div>
     </div>
-    <!-- suggested 2 with tribe avatar stack -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #236b5e, #65b891), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-leaf"></i> Enviro</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">reforest local parks</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=50&h=50&fit=crop" alt="">
-          <span>@tree.team</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:4px; margin:5px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1633332751192-710dc8c580cb?w=50&h=50&fit=crop">
-          <span style="font-size:10px; color:#1DA1F2;">+12 tribe</span>
-        </div>
-        <div class="card-stats" style="border:none; padding-top:0;">
-          <span><i class="fas fa-heart"></i> 1.8k</span>
-        </div>
-      </div>
-    </div>
-    <!-- suggested 3 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #823b7c, #c87eb3), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-palette"></i> Cultural</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">revive native language classes</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=50&h=50&fit=crop" alt="">
-          <span>@awe_k</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 2.3k</span>
-          <span><i class="fas fa-users"></i> 162</span>
-        </div>
-      </div>
-    </div>
-    <!-- suggested 4 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #2c6e49, #72b78b), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-briefcase"></i> Career</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">job training for veterans</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1633332751192-710dc8c580cb?w=50&h=50&fit=crop" alt="">
-          <span>@veterans.help</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 1.2k</span>
-          <span><i class="fas fa-users"></i> 94</span>
-        </div>
-      </div>
-    </div>
-    <!-- suggested 5 -->
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #a45234, #e39b7a), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge"><i class="fas fa-home"></i> Housing</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">affordable housing initiative</div>
-        <div class="card-author">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop" alt="">
-          <span>@habitat.team</span>
-        </div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 3.7k</span>
-          <span><i class="fas fa-users"></i> 421</span>
-        </div>
-      </div>
-    </div>
+    {% endfor %}
   </div>
   
   <div class="section-divider"></div>
@@ -938,87 +838,129 @@
     <i class="fas fa-arrow-right"></i>
   </div>
   <div class="card-row">
-    <!-- wide 1 -->
+    {% for campaign in new_campaigns %}
+      {% if campaign.id %}
+      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="wide-card-link" style="text-decoration: none;">
+        <div class="wide-card" data-category="{{ campaign.category|slugify }}">
+          <div class="wide-img" style="background-image: linear-gradient(145deg, #13548b, #5790c9), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}'); background-blend-mode: overlay;"></div>
+          <div class="wide-content">
+            <div class="card-title">{{ campaign.title|truncatechars:25 }}</div>
+            <div class="card-author" style="margin:4px 0;">
+              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop{% endif %}" alt="">
+              <span>@{{ campaign.user.user.username }}</span>
+            </div>
+            <div class="card-stats" style="border:none; padding:0;">
+              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+              <span><i class="fas fa-hourglass-start"></i> {{ campaign.timestamp|timesince }} ago</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+    {% empty %}
     <div class="wide-card">
       <div class="wide-img" style="background-image: linear-gradient(145deg, #13548b, #5790c9), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
       <div class="wide-content">
-        <div class="card-title">coding classes for girls</div>
-        <div class="card-author" style="margin:4px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop" alt="">
-          <span>@fatima_z</span>
-        </div>
+        <div class="card-title">Start your campaign today</div>
         <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 215</span>
-          <span><i class="fas fa-hourglass-start"></i> 2h</span>
+          <span><i class="fas fa-heart"></i> 0</span>
+          <span><i class="fas fa-hourglass-start"></i> Just now</span>
         </div>
       </div>
     </div>
-    <!-- wide 2 -->
-    <div class="wide-card">
-      <div class="wide-img" style="background-image: linear-gradient(145deg, #2c6e49, #72b78b), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
-      <div class="wide-content">
-        <div class="card-title">community garden startup</div>
-        <div class="card-author" style="margin:4px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop" alt="">
-          <span>@leo_m</span>
-        </div>
-        <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 89</span>
-          <span><i class="fas fa-hourglass-start"></i> 5h</span>
-        </div>
-      </div>
-    </div>
-    <!-- wide 3 -->
-    <div class="wide-card">
-      <div class="wide-img" style="background-image: linear-gradient(145deg, #a45234, #e39b7a), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
-      <div class="wide-content">
-        <div class="card-title">sports equipment for youth</div>
-        <div class="card-author" style="margin:4px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1633332751192-710dc8c580cb?w=50&h=50&fit=crop" alt="">
-          <span>@coach.t</span>
-        </div>
-        <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 334</span>
-          <span><i class="fas fa-hourglass-start"></i> 1d</span>
-        </div>
-      </div>
-    </div>
-    <!-- wide 4 -->
-    <div class="wide-card">
-      <div class="wide-img" style="background-image: linear-gradient(145deg, #823b7c, #c87eb3), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
-      <div class="wide-content">
-        <div class="card-title">art therapy workshop</div>
-        <div class="card-author" style="margin:4px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=50&h=50&fit=crop" alt="">
-          <span>@art.heals</span>
-        </div>
-        <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 156</span>
-          <span><i class="fas fa-hourglass-start"></i> 8h</span>
-        </div>
-      </div>
-    </div>
-    <!-- wide 5 -->
-    <div class="wide-card">
-      <div class="wide-img" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
-      <div class="wide-content">
-        <div class="card-title">digital literacy for seniors</div>
-        <div class="card-author" style="margin:4px 0;">
-          <img class="author-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop" alt="">
-          <span>@tech.seniors</span>
-        </div>
-        <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 412</span>
-          <span><i class="fas fa-hourglass-start"></i> 12h</span>
-        </div>
-      </div>
-    </div>
+    {% endfor %}
   </div>
+
+  <!-- ========== POPULAR BY CATEGORY ========== -->
+  {% for category_value, category_label in campaign_categories %}
+  {% with category_campaigns=category_popular|get_item:category_value %}
+  {% if category_campaigns %}
+  <div class="section-divider"></div>
+  <div class="section-head">
+    <h3><i class="fas 
+      {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
+      {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
+      {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
+      {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
+      {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
+      {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
+      {% elif category_value == 'Housing, Living & Stability' %}fa-home
+      {% elif category_value == 'Community & Social Impact' %}fa-users
+      {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
+      {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
+      {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
+      {% else %}fa-tag{% endif %}" style="color:#1DA1F2;"></i> {{ category_label }}</h3>
+   
+  </div>
+  <div class="scroll-hint">
+    <span>scroll for more</span>
+    <i class="fas fa-arrow-right"></i>
+  </div>
+  <div class="card-row">
+    {% for campaign in category_campaigns|slice:":5" %}
+      {% if campaign.id %}
+      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
+        <div class="explore-card" data-category="{{ campaign.category|slugify }}">
+          <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
+            <span class="cat-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
+            <div class="card-author">
+              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
+              <span>@{{ campaign.user.user.username }}</span>
+            </div>
+            <div class="card-stats">
+              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+              <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+  {% endfor %}
 
   <!-- subtle hint that it's a demo -->
   <div style="padding: 40px 18px 20px; text-align: center; font-size: 12px; color: #aaa; border-top: 1px solid #eee; margin-top: 20px;">
-    <i class="fas fa-compass" style="margin-right: 6px;"></i> discover · each section scrolls horizontally · demo template
+    <i class="fas fa-compass" style="margin-right: 6px;"></i> discover · {{ total_campaigns }} active causes · updated in real-time
   </div>
 </div>
+
+<script>
+  // Category filter functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const chips = document.querySelectorAll('.chip-item');
+    const cards = document.querySelectorAll('.explore-card, .wide-card');
+    
+    chips.forEach(chip => {
+      chip.addEventListener('click', function(e) {
+        {% if user.is_authenticated %}
+        // Update active state
+        chips.forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        
+        const selectedCategory = this.dataset.category;
+        
+        // Filter cards
+        cards.forEach(card => {
+          if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        {% else %}
+        // Show login modal for unauthenticated users
+        e.preventDefault();
+        showLoginModal();
+        {% endif %}
+      });
+    });
+  });
+</script>
 
 {% endblock %}

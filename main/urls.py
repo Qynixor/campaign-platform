@@ -198,11 +198,13 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
 # Add these to your urlpatterns
 # In your urls.py, add these:
      path('journey/', views.journey, name='journey'),
+         path('journey/<int:campaign_id>/', views.journey, name='campaign_journey'),  # Add this line
     path('campaign/<int:campaign_id>/toggle-love/', views.toggle_campaign_love, name='toggle_campaign_love'),
     path('campaign/<int:campaign_id>/toggle-follow/', views.toggle_campaign_follow, name='toggle_campaign_follow'),
      path('campaign/<int:campaign_id>/comments-simple/', views.get_campaign_comments_simple, name='get_campaign_comments_simple'),
     path('campaign/<int:campaign_id>/add-comment-simple/', views.add_campaign_comment_simple, name='add_campaign_comment_simple'),
     path('campaign/<int:campaign_id>/stats/', views.get_campaign_stats, name='get_campaign_stats'),
+    
 ]
 
 

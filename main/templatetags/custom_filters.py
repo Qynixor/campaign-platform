@@ -3,6 +3,9 @@ import re
 from django import template
 from django.db.models import Sum
 from django.forms import BoundField
+from django.template.defaultfilters import stringfilter
+from django.utils.timesince import timesince
+from django.utils import timezone
 
 register = template.Library()
 
@@ -57,6 +60,30 @@ def subtract(value, arg):
 
 
 # ============================================================================
+# K-FORMAT FILTER (YOUR MAIN FILTER)
+# ============================================================================
+
+@register.filter
+def k_format(value):
+    """
+    Convert numbers to K format (1000 -> 1K, 1500 -> 1.5K)
+    Usage: {{ value|k_format }}
+    """
+    try:
+        value = float(value)
+        if value >= 1000000:
+            return f"{value/1000000:.1f}M".replace('.0M', 'M')
+        elif value >= 1000:
+            return f"{value/1000:.1f}K".replace('.0K', 'K')
+        elif value.is_integer():
+            return str(int(value))
+        else:
+            return f"{value:.1f}"
+    except (ValueError, TypeError):
+        return "0"
+
+
+# ============================================================================
 # DICTIONARY/OBJECT FILTERS
 # ============================================================================
 
@@ -91,6 +118,56 @@ def digits_only(value):
         return re.sub(r'[^0-9]', '', str(value))
     except (TypeError, re.error):
         return value
+
+
+@register.filter
+def truncatechars(text, length):
+    """
+    Truncate text to a certain number of characters
+    Usage: {{ text|truncatechars:50 }}
+    """
+    try:
+        if len(text) > length:
+            return text[:length] + '...'
+        return text
+    except (TypeError, ValueError):
+        return text
+
+
+# ============================================================================
+# TIME FORMATTING FILTERS
+# ============================================================================
+
+@register.filter
+def timesince_short(date):
+    """
+    Show timesince in a shorter format
+    Usage: {{ date|timesince_short }}
+    """
+    try:
+        if not date:
+            return ''
+        
+        delta = timezone.now() - date
+        
+        if delta.days > 365:
+            years = delta.days // 365
+            return f"{years}y"
+        elif delta.days > 30:
+            months = delta.days // 30
+            return f"{months}mo"
+        elif delta.days > 0:
+            return f"{delta.days}d"
+        elif delta.seconds > 3600:
+            hours = delta.seconds // 3600
+            return f"{hours}h"
+        elif delta.seconds > 60:
+            minutes = delta.seconds // 60
+            return f"{minutes}m"
+        else:
+            return "now"
+    except (AttributeError, TypeError):
+        return ""
 
 
 # ============================================================================
