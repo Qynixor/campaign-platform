@@ -204,7 +204,10 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
      path('campaign/<int:campaign_id>/comments-simple/', views.get_campaign_comments_simple, name='get_campaign_comments_simple'),
     path('campaign/<int:campaign_id>/add-comment-simple/', views.add_campaign_comment_simple, name='add_campaign_comment_simple'),
     path('campaign/<int:campaign_id>/stats/', views.get_campaign_stats, name='get_campaign_stats'),
-    
+        path('track-watch/', views.track_watch_time, name='track_watch'),
+    path('campaign/<int:campaign_id>/save/', views.toggle_save_campaign, name='toggle_save'),
+    path('campaign/<int:campaign_id>/share/', views.track_share, name='track_share'),
+    path('api/rising-campaigns/', views.get_rising_campaigns, name='rising_campaigns'),
 ]
 
 

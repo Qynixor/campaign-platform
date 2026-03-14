@@ -2134,7 +2134,58 @@ class FAQ(models.Model):
 
 
 
+# Add these models to your models.py file
 
+class CampaignWatchTime(models.Model):
+    """Track how long users watch each campaign"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='watch_times')
+    session_id = models.CharField(max_length=100, blank=True)  # For anonymous users
+    watch_time_seconds = models.FloatField(default=0)  # Total seconds watched
+    completed = models.BooleanField(default=False)  # Did they watch the whole journey?
+    last_updated = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', '-watch_time_seconds']),
+            models.Index(fields=['user', 'campaign']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user or 'Anonymous'} watched {self.campaign.title} for {self.watch_time_seconds}s"
+
+
+class CampaignSave(models.Model):
+    """Track users who save/bookmark campaigns"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='saves')
+    saved_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'campaign')
+        indexes = [
+            models.Index(fields=['campaign', '-saved_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} saved {self.campaign.title}"
+
+
+class CampaignShare(models.Model):
+    """Track how many times campaigns are shared"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='shares')
+    shared_at = models.DateTimeField(auto_now_add=True)
+    platform = models.CharField(max_length=50, blank=True)  # twitter, facebook, copy link, etc.
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', '-shared_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user or 'Anonymous'} shared {self.campaign.title}"
 
 
 

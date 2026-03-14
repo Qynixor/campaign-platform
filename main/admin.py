@@ -18,6 +18,23 @@ from .models import (
 )
 
 
+from .models import CampaignFollow
+
+@admin.register(CampaignFollow)
+class CampaignFollowAdmin(admin.ModelAdmin):
+    """Simple admin for Campaign Follows"""
+    
+    # What to display in the list view
+    list_display = ['user', 'campaign', 'followed_at']
+    
+    # Add filters
+    list_filter = ['followed_at']
+    
+    # Add search
+    search_fields = ['user__username', 'campaign__title']
+    
+    # Default ordering
+    ordering = ['-followed_at']
 # ============================================================================
 # PROFILE ADMIN
 # ============================================================================

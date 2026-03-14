@@ -33,6 +33,7 @@
         --accent-white: #FFFFFF;
         --vh: 1vh;
         --donate-green: #4CAF50;
+        --save-yellow: #FFD700;
     }
 
     .reel-container {
@@ -439,6 +440,7 @@
         object-fit: cover;
         cursor: pointer;
         transition: transform 0.2s ease;
+        margin-bottom: 8px;
     }
 
     .action-profile:active {
@@ -457,7 +459,14 @@
         color: #ff3b30;
     }
 
-    /* Donate Button Styles */
+    .action-btn.save-btn i {
+        color: white;
+    }
+
+    .action-btn.save-btn.saved i {
+        color: var(--save-yellow);
+    }
+
     .action-btn.donate-btn i {
         color: var(--donate-green);
     }
@@ -2618,27 +2627,25 @@
     </div>
 
     <!-- Donation Modal -->
-
-<div class="donation-modal" id="donationModal">
-    <div class="modal-content">
-        <button class="close-modal" onclick="closeDonationModal()">✕</button>
-        <div class="donation-header">
-            <h3 id="donationCampaignTitle">Support this Cause</h3>
-            <p id="donationMessage">Make a difference today</p>
-        </div>
-        
-        <!-- REMOVE the amount selection section completely -->
-        
-        <!-- Just one button to proceed -->
-        <button class="donate-modal-btn" onclick="proceedToDonation()" id="proceedToDonateBtn">
-            <i class="fas fa-hand-holding-heart"></i> Continue to Donation
-        </button>
-        
-        <div class="donation-footer">
-            <i class="fas fa-lock"></i> Secure donation via PayPal
+    <div class="donation-modal" id="donationModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeDonationModal()">✕</button>
+            <div class="donation-header">
+                <h3 id="donationCampaignTitle">Support this Cause</h3>
+                <p id="donationMessage">Make a difference today</p>
+            </div>
+            
+            <!-- Just one button to proceed -->
+            <button class="donate-modal-btn" onclick="proceedToDonation()" id="proceedToDonateBtn">
+                <i class="fas fa-hand-holding-heart"></i> Continue to Donation
+            </button>
+            
+            <div class="donation-footer">
+                <i class="fas fa-lock"></i> Secure donation via PayPal
+            </div>
         </div>
     </div>
-</div>
+    
     <div class="reel-container">
         <div class="loading-spinner" id="loadingSpinner">
             <i class="fas fa-spinner fa-spin"></i>
@@ -2690,8 +2697,8 @@
                             </div>
                         </div>
 
-                        <div  id="audioIndicator-{{ forloop.counter0 }}">
-                            
+                        <div class="audio-indicator" id="audioIndicator-{{ forloop.counter0 }}">
+                            <i class="fas fa-music"></i>
                         </div>
 
                         <div class="journey-center-link">
@@ -2701,14 +2708,14 @@
                         </div>
 
                         <div class="action-buttons">
-                          <img src="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:48 }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
-     srcset="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:96 }} 2x{% endif %}"
-     class="action-profile" 
-     alt="Profile"
-     loading="lazy"
-     width="48" 
-     height="48"
-     onclick="event.stopPropagation(); window.location.href='{% url 'profile_view' username=campaign.user.username %}'">
+                            <img src="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:48 }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
+                                 srcset="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:96 }} 2x{% endif %}"
+                                 class="action-profile" 
+                                 alt="Profile"
+                                 loading="lazy"
+                                 width="48" 
+                                 height="48"
+                                 onclick="event.stopPropagation(); window.location.href='{% url 'profile_view' username=campaign.user.username %}'">
                             
                             <button class="action-btn {% if campaign.user_loved %}loved{% endif %}" id="loveBtn-{{ forloop.counter0 }}" onclick="handleLove(event, this, {{ campaign.id }}, {{ forloop.counter0 }})">
                                 <i class="{% if campaign.user_loved %}fas{% else %}far{% endif %} fa-heart"></i>
@@ -2723,6 +2730,11 @@
                             <button class="action-btn follow-btn {% if campaign.user_following %}following{% endif %}" id="followBtn-{{ forloop.counter0 }}" onclick="handleFollow(event, this, {{ campaign.id }}, {{ forloop.counter0 }})">
                                 <i class="{% if campaign.user_following %}fas fa-check{% else %}fas fa-plus{% endif %}"></i>
                                 <span id="followText-{{ forloop.counter0 }}">{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
+                            </button>
+                            
+                            <button class="action-btn save-btn" id="saveBtn-{{ forloop.counter0 }}" onclick="toggleSave(event, {{ campaign.id }}, {{ forloop.counter0 }})">
+                                <i class="far fa-bookmark"></i>
+                                <span id="saveCount-{{ forloop.counter0 }}">{{ campaign.stats.save_count|default:0 }}</span>
                             </button>
                             
                             <button class="action-btn donate-btn" onclick="handleDonate(event, {{ campaign.id }}, {{ forloop.counter0 }})">
@@ -3057,603 +3069,603 @@
         // ========== CATEGORY MESSAGES ==========
         function getDonationMessage(category) {
             const messages = {
-                      'Health & Wellbeing Causes': 'Support medical treatment and wellness',
-        'Economic Support & Financial Causes': 'Help achieve financial stability',
-        'Housing, Living & Stability': 'Support safe housing',
-        'Community & Social Impact': 'Strengthen our community',
-        'Education & Skill Building': 'Invest in education',
-        'Mental Health & Emotional Support': 'Support mental wellness',
-        'Personal Empowerment': 'Empower personal growth',
-        'Career, Work & Opportunity': 'Create opportunities',
-        'Creative & Cultural Causes': 'Support creativity',
-        'Exploration, Sports & Challenges': 'Fuel adventures',
-        'Religious & Spiritual Causes': 'Support faith and community',  // NEW
-        'Other Causes': 'Make a difference'
+                'Health & Wellbeing Causes': 'Support medical treatment and wellness',
+                'Economic Support & Financial Causes': 'Help achieve financial stability',
+                'Housing, Living & Stability': 'Support safe housing',
+                'Community & Social Impact': 'Strengthen our community',
+                'Education & Skill Building': 'Invest in education',
+                'Mental Health & Emotional Support': 'Support mental wellness',
+                'Personal Empowerment': 'Empower personal growth',
+                'Career, Work & Opportunity': 'Create opportunities',
+                'Creative & Cultural Causes': 'Support creativity',
+                'Exploration, Sports & Challenges': 'Fuel adventures',
+                'Religious & Spiritual Causes': 'Support faith and community',
+                'Other Causes': 'Make a difference'
             };
             return messages[category] || 'Support this cause';
         }
-// ========== DONATION FUNCTIONS ==========
-// DO NOT redeclare currentDonationCampaignId here - it's already declared at the top
 
-function handleDonate(event, campaignId, index) {
-    event.stopPropagation();
-    
-    const campaign = campaignsData[index];
-    if (!campaign) return;
-    
-    // Store the campaign ID (using existing variable)
-    currentDonationCampaignId = campaignId;
-    
-    // Also store in a data attribute as backup
-    const modal = document.getElementById('donationModal');
-    modal.setAttribute('data-campaign-id', campaignId);
-    modal.setAttribute('data-campaign-index', index);
-    
-    // Set campaign title and inspirational message
-    document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
-    document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
-    
-    // Show the inspirational modal WITHOUT amount selection
-    document.getElementById('donationModal').classList.add('active');
-    document.getElementById('popupBackdrop').classList.add('active');
-    
-    console.log('Donation modal opened for campaign:', campaignId);
-}
-
-function proceedToDonation() {
-    // Try to get campaign ID from multiple sources
-    let campaignId = currentDonationCampaignId;
-    
-    // If not found, try from modal data attribute
-    if (!campaignId || campaignId === 'null') {
-        const modal = document.getElementById('donationModal');
-        campaignId = modal.getAttribute('data-campaign-id');
-    }
-    
-    // Final check
-    if (!campaignId || campaignId === 'null') {
-        console.error('No campaign ID found');
-        alert('Error: Campaign not found. Please try again.');
-        closeDonationModal();
-        return;
-    }
-    
-    console.log('Redirecting to campaign:', campaignId);
-    
-    // Close the modal
-    closeDonationModal();
-    
-    // Redirect to the donation page
-    window.location.href = `/campaign/${campaignId}/donate/`;
-}
-
-function closeDonationModal() {
-    document.getElementById('donationModal').classList.remove('active');
-    document.getElementById('popupBackdrop').classList.remove('active');
-    // Don't clear immediately - give time for redirect
-    setTimeout(() => {
-        currentDonationCampaignId = null;
-    }, 100);
-}
-// ========== ENHANCED STATS POPUP FUNCTIONS ==========
-function openStatsPopup(index) {
-    event.stopPropagation();
-    const campaign = campaignsData[index];
-    if (!campaign) return;
-    
-    currentPopupCampaignId = campaign.id;
-    
-    // Create tabbed interface
-    const statsHtml = `
-        <div class="stats-tabs">
-            <button class="tab-btn active" onclick="switchStatsTab(event, 'basic', ${index})">Overview</button>
-            ${campaign.can_view_premium ? `
-                <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'growth', ${index})">
-                    <i class="fas fa-chart-line"></i> Growth
-                </button>
-                <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'donors', ${index})">
-                    <i class="fas fa-users"></i> Donors
-                </button>
-                <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'predict', ${index})">
-                    <i class="fas fa-brain"></i> Predict
-                </button>
-            ` : ''}
-        </div>
-        <div id="statsTabContent">
-            ${getBasicStatsHTML(campaign, index)}
-        </div>
-    `;
-    
-    document.getElementById('statsPopupContent').innerHTML = statsHtml;
-    document.getElementById('globalStatsPopup').classList.add('active');
-    document.getElementById('popupBackdrop').classList.add('active');
-}
-
-function switchStatsTab(event, tab, index) {
-    // Update active tab
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    const campaign = campaignsData[index];
-    if (!campaign) return;
-    
-    let content = '';
-    switch(tab) {
-        case 'basic':
-            content = getBasicStatsHTML(campaign, index);
-            break;
-        case 'growth':
-            content = getGrowthStatsHTML(campaign);
-            break;
-        case 'donors':
-            content = getDonorStatsHTML(campaign);
-            break;
-        case 'predict':
-            content = getPredictStatsHTML(campaign);
-            break;
-    }
-    
-    document.getElementById('statsTabContent').innerHTML = content;
-}
-
-function getBasicStatsHTML(campaign, index) {
-    const stats = campaign.stats || {};
-    const isOwner = campaign.is_campaign_owner;
-    const canViewPremium = campaign.can_view_premium;
-    
-    // Calculate growth trend indicator
-    const growthTrend = stats.new_followers_7d > 0 ? 'positive' : (stats.new_followers_7d < 0 ? 'negative' : '');
-    const growthIcon = stats.new_followers_7d > 0 ? '↑' : (stats.new_followers_7d < 0 ? '↓' : '→');
-    
-    return `
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="stat-value">${stats.follower_count || 0}</span>
-                <span class="stat-label">Supporters</span>
-                ${stats.new_followers_7d ? 
-                    `<span class="stat-trend ${growthTrend}">${growthIcon} ${Math.abs(stats.new_followers_7d)} this week</span>` : ''}
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">$${stats.total_donations || 0}</span>
-                <span class="stat-label">Raised</span>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${stats.donation_percentage || 0}%"></div>
-                </div>
-                <span class="stat-detail">of $${stats.funding_goal || 0}</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.activity_count || 0}</span>
-                <span class="stat-label">Activities</span>
-                <span class="stat-detail">${stats.activity_completion || 0}% complete</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.days_left || 0}</span>
-                <span class="stat-label">Days Left</span>
-                <span class="stat-detail">Day ${stats.current_day || 1} of ${stats.total_days || 30}</span>
-            </div>
-        </div>
-        
-        <div class="quick-insights">
-            <h4><i class="fas fa-chart-line"></i> Quick Insights</h4>
-            <div class="insight-row">
-                <i class="fas fa-hand-holding-heart"></i>
-                <span>Avg donation: <strong>$${stats.avg_donation || 0}</strong> (${stats.total_donors || 0} donors)</span>
-            </div>
-            <div class="insight-row">
-                <i class="fas fa-users"></i>
-                <span>${stats.total_pledgers || 0} people have pledged</span>
-            </div>
-            <div class="insight-row">
-                <i class="fas fa-chart-line"></i>
-                <span>Engagement score: <strong>${stats.engagement_score || 0}/100</strong></span>
-            </div>
-            <div class="insight-row">
-                <i class="fas fa-percent"></i>
-                <span>${stats.donation_conversion || 0}% of supporters donated</span>
-            </div>
-        </div>
-        
-        ${canViewPremium ? getPremiumStatsHTML(campaign) : ''}
-        
-        ${!canViewPremium && !isOwner ? `
-            <div class="premium-teaser">
-                <i class="fas fa-crown"></i>
-                <h4>Unlock Premium Analytics</h4>
-                <p>Get detailed growth charts, donor demographics, and AI-powered predictions</p>
-                <div class="premium-features">
-                    <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
-                    <div class="feature"><i class="fas fa-globe"></i> Donor locations</div>
-                    <div class="feature"><i class="fas fa-brain"></i> Success predictions</div>
-                </div>
-                <button class="upgrade-btn" onclick="showPricingModal(${campaign.id})">
-                    <i class="fas fa-crown"></i> Unlock Premium
-                </button>
-                <p class="teaser-small">From $4.99/month or $9.99 one-time for this campaign</p>
-            </div>
-        ` : ''}
-        
-        ${!canViewPremium && isOwner ? `
-            <div class="premium-teaser owner-teaser">
-                <i class="fas fa-star"></i>
-                <h4>You're Missing Out!</h4>
-                <p>Premium stats are <strong>FREE</strong> for campaign owners during launch</p>
-                <div class="premium-features">
-                    <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
-                    <div class="feature"><i class="fas fa-globe"></i> Donor demographics</div>
-                    <div class="feature"><i class="fas fa-brain"></i> AI predictions</div>
-                    <div class="feature"><i class="fas fa-trophy"></i> Category benchmarks</div>
-                </div>
-                <button class="upgrade-btn" onclick="activateOwnerPremium(${campaign.id})">
-                    <i class="fas fa-gift"></i> Activate Free Premium
-                </button>
-                <p class="teaser-small">Limited time offer - expires in 30 days</p>
-            </div>
-        ` : ''}
-    `;
-}
-
-function getPremiumStatsHTML(campaign) {
-    const stats = campaign.stats || {};
-    const predictive = stats.predictive || {};
-    const demographics = stats.donor_demographics || {};
-    
-    return `
-        <div class="premium-stats-section">
-            <h4><i class="fas fa-crown" style="color: #FFD700;"></i> Premium Analytics</h4>
+        // ========== DONATION FUNCTIONS ==========
+        function handleDonate(event, campaignId, index) {
+            event.stopPropagation();
             
-            <!-- Follower Growth Chart -->
-            <div class="chart-container">
-                <div class="chart-header">
-                    <span class="chart-title"><i class="fas fa-chart-line"></i> Follower Growth (30 days)</span>
-                    <span class="growth-rate">+${stats.follower_growth || 0}%</span>
+            const campaign = campaignsData[index];
+            if (!campaign) return;
+            
+            // Store the campaign ID
+            currentDonationCampaignId = campaignId;
+            
+            // Also store in a data attribute as backup
+            const modal = document.getElementById('donationModal');
+            modal.setAttribute('data-campaign-id', campaignId);
+            modal.setAttribute('data-campaign-index', index);
+            
+            // Set campaign title and inspirational message
+            document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
+            document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
+            
+            // Show the inspirational modal
+            document.getElementById('donationModal').classList.add('active');
+            document.getElementById('popupBackdrop').classList.add('active');
+            
+            console.log('Donation modal opened for campaign:', campaignId);
+        }
+
+        function proceedToDonation() {
+            // Try to get campaign ID from multiple sources
+            let campaignId = currentDonationCampaignId;
+            
+            // If not found, try from modal data attribute
+            if (!campaignId || campaignId === 'null') {
+                const modal = document.getElementById('donationModal');
+                campaignId = modal.getAttribute('data-campaign-id');
+            }
+            
+            // Final check
+            if (!campaignId || campaignId === 'null') {
+                console.error('No campaign ID found');
+                alert('Error: Campaign not found. Please try again.');
+                closeDonationModal();
+                return;
+            }
+            
+            console.log('Redirecting to campaign:', campaignId);
+            
+            // Close the modal
+            closeDonationModal();
+            
+            // Redirect to the donation page
+            window.location.href = `/campaign/${campaignId}/donate/`;
+        }
+
+        function closeDonationModal() {
+            document.getElementById('donationModal').classList.remove('active');
+            document.getElementById('popupBackdrop').classList.remove('active');
+            // Don't clear immediately - give time for redirect
+            setTimeout(() => {
+                currentDonationCampaignId = null;
+            }, 100);
+        }
+
+        // ========== ENHANCED STATS POPUP FUNCTIONS ==========
+        function openStatsPopup(index) {
+            event.stopPropagation();
+            const campaign = campaignsData[index];
+            if (!campaign) return;
+            
+            currentPopupCampaignId = campaign.id;
+            
+            // Create tabbed interface
+            const statsHtml = `
+                <div class="stats-tabs">
+                    <button class="tab-btn active" onclick="switchStatsTab(event, 'basic', ${index})">Overview</button>
+                    ${campaign.can_view_premium ? `
+                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'growth', ${index})">
+                            <i class="fas fa-chart-line"></i> Growth
+                        </button>
+                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'donors', ${index})">
+                            <i class="fas fa-users"></i> Donors
+                        </button>
+                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'predict', ${index})">
+                            <i class="fas fa-brain"></i> Predict
+                        </button>
+                    ` : ''}
                 </div>
-                <div class="chart-placeholder" id="followerChart-${campaign.id}">
-                    <div class="bar-chart">
-                        ${generateDynamicBars(stats.follower_chart || [])}
+                <div id="statsTabContent">
+                    ${getBasicStatsHTML(campaign, index)}
+                </div>
+            `;
+            
+            document.getElementById('statsPopupContent').innerHTML = statsHtml;
+            document.getElementById('globalStatsPopup').classList.add('active');
+            document.getElementById('popupBackdrop').classList.add('active');
+        }
+
+        function switchStatsTab(event, tab, index) {
+            // Update active tab
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const campaign = campaignsData[index];
+            if (!campaign) return;
+            
+            let content = '';
+            switch(tab) {
+                case 'basic':
+                    content = getBasicStatsHTML(campaign, index);
+                    break;
+                case 'growth':
+                    content = getGrowthStatsHTML(campaign);
+                    break;
+                case 'donors':
+                    content = getDonorStatsHTML(campaign);
+                    break;
+                case 'predict':
+                    content = getPredictStatsHTML(campaign);
+                    break;
+            }
+            
+            document.getElementById('statsTabContent').innerHTML = content;
+        }
+
+        function getBasicStatsHTML(campaign, index) {
+            const stats = campaign.stats || {};
+            const isOwner = campaign.is_campaign_owner;
+            const canViewPremium = campaign.can_view_premium;
+            
+            // Calculate growth trend indicator
+            const growthTrend = stats.new_followers_7d > 0 ? 'positive' : (stats.new_followers_7d < 0 ? 'negative' : '');
+            const growthIcon = stats.new_followers_7d > 0 ? '↑' : (stats.new_followers_7d < 0 ? '↓' : '→');
+            
+            return `
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.follower_count || 0}</span>
+                        <span class="stat-label">Supporters</span>
+                        ${stats.new_followers_7d ? 
+                            `<span class="stat-trend ${growthTrend}">${growthIcon} ${Math.abs(stats.new_followers_7d)} this week</span>` : ''}
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">$${stats.total_donations || 0}</span>
+                        <span class="stat-label">Raised</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${stats.donation_percentage || 0}%"></div>
+                        </div>
+                        <span class="stat-detail">of $${stats.funding_goal || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.activity_count || 0}</span>
+                        <span class="stat-label">Activities</span>
+                        <span class="stat-detail">${stats.activity_completion || 0}% complete</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.days_left || 0}</span>
+                        <span class="stat-label">Days Left</span>
+                        <span class="stat-detail">Day ${stats.current_day || 1} of ${stats.total_days || 30}</span>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Donor Stats Grid -->
-            <div class="donor-stats-grid">
-                <div class="donor-stat-card">
-                    <span class="donor-stat-value">${stats.total_donors || 0}</span>
-                    <span class="donor-stat-label">Total Donors</span>
+                
+                <div class="quick-insights">
+                    <h4><i class="fas fa-chart-line"></i> Quick Insights</h4>
+                    <div class="insight-row">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        <span>Avg donation: <strong>$${stats.avg_donation || 0}</strong> (${stats.total_donors || 0} donors)</span>
+                    </div>
+                    <div class="insight-row">
+                        <i class="fas fa-users"></i>
+                        <span>${stats.total_pledgers || 0} people have pledged</span>
+                    </div>
+                    <div class="insight-row">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Engagement score: <strong>${stats.engagement_score || 0}/100</strong></span>
+                    </div>
+                    <div class="insight-row">
+                        <i class="fas fa-percent"></i>
+                        <span>${stats.donation_conversion || 0}% of supporters donated</span>
+                    </div>
                 </div>
-                <div class="donor-stat-card">
-                    <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
-                    <span class="donor-stat-label">Repeat Donors</span>
-                </div>
-                <div class="donor-stat-card">
-                    <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
-                    <span class="donor-stat-label">Avg Donation</span>
-                </div>
-            </div>
-            
-            <!-- Donation Brackets -->
-            <div class="donor-brackets">
-                <h4>Donation Size Breakdown</h4>
-                ${generateDonationBracketsHTML(demographics.brackets)}
-            </div>
-            
-            <!-- Top Locations -->
-            <div class="top-locations">
-                <h4><i class="fas fa-map-marker-alt"></i> Top Donor Locations</h4>
-                ${generateLocationsHTML(demographics.locations)}
-            </div>
-            
-            <!-- AI Predictions -->
-            <div class="predict-card">
-                <h4><i class="fas fa-brain"></i> AI Predictions</h4>
-                <div class="predict-item">
-                    <span class="predict-label">Projected final</span>
-                    <span class="predict-value">$${predictive.projected_final || 0}</span>
-                </div>
-                <div class="predict-item">
-                    <span class="predict-label">Success probability</span>
-                    <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
-                </div>
-                <div class="predict-item">
-                    <span class="predict-label">Est. completion</span>
-                    <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
-                </div>
-            </div>
-            
-            <!-- Recommendations -->
-            <div class="recommendations">
-                <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
-                ${generateRecommendationsHTML(predictive.recommendations)}
-            </div>
-            
-            <!-- Conversion Funnel -->
-            <div class="conversion-funnel">
-                <h4>Conversion Funnel</h4>
-                ${generateFunnelHTML(stats.conversion_funnel)}
-            </div>
-            
-            <!-- Category Benchmark -->
-            ${generateBenchmarkHTML(stats.benchmarks)}
-        </div>
-    `;
-}
-
-function getGrowthStatsHTML(campaign) {
-    const stats = campaign.stats || {};
-    const benchmarks = stats.benchmarks || {};
-    
-    return `
-        <div class="premium-header">
-            <i class="fas fa-crown"></i>
-            <h3>Follower Growth (30 days)</h3>
-        </div>
-        
-        <div class="chart-container">
-            <div class="chart-placeholder">
-                <div class="bar-chart">
-                    ${generateDynamicBars(stats.follower_chart || [])}
-                </div>
-            </div>
-        </div>
-        
-        <div class="stats-grid small">
-            <div class="stat-item">
-                <span class="stat-value">${stats.follower_growth || 0}%</span>
-                <span class="stat-label">Growth Rate</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.new_followers_7d || 0}</span>
-                <span class="stat-label">New (7d)</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${stats.new_followers_30d || 0}</span>
-                <span class="stat-label">New (30d)</span>
-            </div>
-        </div>
-        
-        <div class="benchmark-comparison">
-            <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
-            <div class="comparison-item">
-                <span>Your followers</span>
-                <span class="value">${stats.follower_count || 0}</span>
-                <span class="vs">vs</span>
-                <span class="value avg">${benchmarks.avg_followers || 0}</span>
-            </div>
-            <div class="comparison-item">
-                <span>Your growth</span>
-                <span class="value">${stats.follower_growth || 0}%</span>
-                <span class="vs">vs</span>
-                <span class="value avg">${benchmarks.avg_growth || 5}%</span>
-            </div>
-            <div class="rank-badge">
-                ${benchmarks.rank_text || 'Not enough data for comparison yet'}
-            </div>
-        </div>
-    `;
-}
-
-function getDonorStatsHTML(campaign) {
-    const stats = campaign.stats || {};
-    const demographics = stats.donor_demographics || {};
-    
-    return `
-        <div class="premium-header">
-            <i class="fas fa-crown"></i>
-            <h3>Donor Insights</h3>
-        </div>
-        
-        <div class="donor-stats-grid">
-            <div class="donor-stat-card">
-                <span class="donor-stat-value">${stats.total_donors || 0}</span>
-                <span class="donor-stat-label">Total Donors</span>
-            </div>
-            <div class="donor-stat-card">
-                <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
-                <span class="donor-stat-label">Repeat Donors</span>
-            </div>
-            <div class="donor-stat-card">
-                <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
-                <span class="donor-stat-label">Avg Donation</span>
-            </div>
-        </div>
-        
-        <div class="donor-brackets">
-            <h4>Donation Size</h4>
-            ${generateDonationBracketsHTML(demographics.brackets)}
-        </div>
-        
-        <div class="top-locations">
-            <h4>Top Locations</h4>
-            ${generateLocationsHTML(demographics.locations)}
-        </div>
-    `;
-}
-
-function getPredictStatsHTML(campaign) {
-    const stats = campaign.stats || {};
-    const predictive = stats.predictive || {};
-    
-    return `
-        <div class="premium-header">
-            <i class="fas fa-crown"></i>
-            <h3>AI Predictions</h3>
-        </div>
-        
-        <div class="predict-card">
-            <div class="predict-item">
-                <span class="predict-label">Projected final</span>
-                <span class="predict-value">$${predictive.projected_final || 0}</span>
-            </div>
-            <div class="predict-item">
-                <span class="predict-label">Success probability</span>
-                <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
-            </div>
-            <div class="predict-item">
-                <span class="predict-label">Est. completion</span>
-                <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
-            </div>
-        </div>
-        
-        <div class="recommendations">
-            <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
-            ${generateRecommendationsHTML(predictive.recommendations)}
-        </div>
-        
-        <div class="conversion-funnel">
-            <h4>Conversion Funnel</h4>
-            ${generateFunnelHTML(stats.conversion_funnel)}
-        </div>
-    `;
-}
-
-// ========== PREMIUM STATS HELPER FUNCTIONS ==========
-
-function generateDynamicBars(chartData) {
-    if (!chartData || chartData.length === 0) {
-        // Generate mock data if no real data
-        let bars = '';
-        for (let i = 0; i < 12; i++) {
-            const height = 30 + Math.floor(Math.random() * 60);
-            bars += `<div class="mock-bar" style="height: ${height}px;"></div>`;
+                
+                ${canViewPremium ? getPremiumStatsHTML(campaign) : ''}
+                
+                ${!canViewPremium && !isOwner ? `
+                    <div class="premium-teaser">
+                        <i class="fas fa-crown"></i>
+                        <h4>Unlock Premium Analytics</h4>
+                        <p>Get detailed growth charts, donor demographics, and AI-powered predictions</p>
+                        <div class="premium-features">
+                            <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
+                            <div class="feature"><i class="fas fa-globe"></i> Donor locations</div>
+                            <div class="feature"><i class="fas fa-brain"></i> Success predictions</div>
+                        </div>
+                        <button class="upgrade-btn" onclick="showPricingModal(${campaign.id})">
+                            <i class="fas fa-crown"></i> Unlock Premium
+                        </button>
+                        <p class="teaser-small">From $4.99/month or $9.99 one-time for this campaign</p>
+                    </div>
+                ` : ''}
+                
+                ${!canViewPremium && isOwner ? `
+                    <div class="premium-teaser owner-teaser">
+                        <i class="fas fa-star"></i>
+                        <h4>You're Missing Out!</h4>
+                        <p>Premium stats are <strong>FREE</strong> for campaign owners during launch</p>
+                        <div class="premium-features">
+                            <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
+                            <div class="feature"><i class="fas fa-globe"></i> Donor demographics</div>
+                            <div class="feature"><i class="fas fa-brain"></i> AI predictions</div>
+                            <div class="feature"><i class="fas fa-trophy"></i> Category benchmarks</div>
+                        </div>
+                        <button class="upgrade-btn" onclick="activateOwnerPremium(${campaign.id})">
+                            <i class="fas fa-gift"></i> Activate Free Premium
+                        </button>
+                        <p class="teaser-small">Limited time offer - expires in 30 days</p>
+                    </div>
+                ` : ''}
+            `;
         }
-        return bars;
-    }
-    
-    // Use real data to generate bars
-    const maxValue = Math.max(...chartData.map(d => d.new_followers || 0));
-    return chartData.map(day => {
-        const height = maxValue > 0 ? (day.new_followers / maxValue) * 100 : 30;
-        return `
-            <div class="mock-bar" style="height: ${height}px;" title="${day.date}: ${day.new_followers} new followers">
-                <span class="bar-tooltip">${day.new_followers}</span>
-            </div>
-        `;
-    }).join('');
-}
 
-function generateDonationBracketsHTML(brackets) {
-    if (!brackets || Object.keys(brackets).length === 0) {
-        return '<p class="no-data">No donation data yet</p>';
-    }
-    
-    return `
-        <div class="bracket-item">
-            <span>Under $10</span>
-            <span class="bracket-value">${brackets.under_10 || 0} donors</span>
-        </div>
-        <div class="bracket-item">
-            <span>$10 - $50</span>
-            <span class="bracket-value">${brackets['10_50'] || 0} donors</span>
-        </div>
-        <div class="bracket-item">
-            <span>$50 - $100</span>
-            <span class="bracket-value">${brackets['50_100'] || 0} donors</span>
-        </div>
-        <div class="bracket-item">
-            <span>$100 - $500</span>
-            <span class="bracket-value">${brackets['100_500'] || 0} donors</span>
-        </div>
-        <div class="bracket-item">
-            <span>Over $500</span>
-            <span class="bracket-value">${brackets.over_500 || 0} donors</span>
-        </div>
-    `;
-}
+        function getPremiumStatsHTML(campaign) {
+            const stats = campaign.stats || {};
+            const predictive = stats.predictive || {};
+            const demographics = stats.donor_demographics || {};
+            
+            return `
+                <div class="premium-stats-section">
+                    <h4><i class="fas fa-crown" style="color: #FFD700;"></i> Premium Analytics</h4>
+                    
+                    <!-- Follower Growth Chart -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <span class="chart-title"><i class="fas fa-chart-line"></i> Follower Growth (30 days)</span>
+                            <span class="growth-rate">+${stats.follower_growth || 0}%</span>
+                        </div>
+                        <div class="chart-placeholder" id="followerChart-${campaign.id}">
+                            <div class="bar-chart">
+                                ${generateDynamicBars(stats.follower_chart || [])}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Donor Stats Grid -->
+                    <div class="donor-stats-grid">
+                        <div class="donor-stat-card">
+                            <span class="donor-stat-value">${stats.total_donors || 0}</span>
+                            <span class="donor-stat-label">Total Donors</span>
+                        </div>
+                        <div class="donor-stat-card">
+                            <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
+                            <span class="donor-stat-label">Repeat Donors</span>
+                        </div>
+                        <div class="donor-stat-card">
+                            <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
+                            <span class="donor-stat-label">Avg Donation</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Donation Brackets -->
+                    <div class="donor-brackets">
+                        <h4>Donation Size Breakdown</h4>
+                        ${generateDonationBracketsHTML(demographics.brackets)}
+                    </div>
+                    
+                    <!-- Top Locations -->
+                    <div class="top-locations">
+                        <h4><i class="fas fa-map-marker-alt"></i> Top Donor Locations</h4>
+                        ${generateLocationsHTML(demographics.locations)}
+                    </div>
+                    
+                    <!-- AI Predictions -->
+                    <div class="predict-card">
+                        <h4><i class="fas fa-brain"></i> AI Predictions</h4>
+                        <div class="predict-item">
+                            <span class="predict-label">Projected final</span>
+                            <span class="predict-value">$${predictive.projected_final || 0}</span>
+                        </div>
+                        <div class="predict-item">
+                            <span class="predict-label">Success probability</span>
+                            <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
+                        </div>
+                        <div class="predict-item">
+                            <span class="predict-label">Est. completion</span>
+                            <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendations -->
+                    <div class="recommendations">
+                        <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                        ${generateRecommendationsHTML(predictive.recommendations)}
+                    </div>
+                    
+                    <!-- Conversion Funnel -->
+                    <div class="conversion-funnel">
+                        <h4>Conversion Funnel</h4>
+                        ${generateFunnelHTML(stats.conversion_funnel)}
+                    </div>
+                    
+                    <!-- Category Benchmark -->
+                    ${generateBenchmarkHTML(stats.benchmarks)}
+                </div>
+            `;
+        }
 
-function generateLocationsHTML(locations) {
-    if (!locations || Object.keys(locations).length === 0) {
-        return '<p class="no-data">No location data yet</p>';
-    }
-    
-    return Object.entries(locations).slice(0, 5).map(([loc, count]) => `
-        <div class="location-item">
-            <span><i class="fas fa-map-marker-alt"></i> ${loc}</span>
-            <span class="location-count">${count} donor${count !== 1 ? 's' : ''}</span>
-        </div>
-    `).join('');
-}
+        function getGrowthStatsHTML(campaign) {
+            const stats = campaign.stats || {};
+            const benchmarks = stats.benchmarks || {};
+            
+            return `
+                <div class="premium-header">
+                    <i class="fas fa-crown"></i>
+                    <h3>Follower Growth (30 days)</h3>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-placeholder">
+                        <div class="bar-chart">
+                            ${generateDynamicBars(stats.follower_chart || [])}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid small">
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.follower_growth || 0}%</span>
+                        <span class="stat-label">Growth Rate</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.new_followers_7d || 0}</span>
+                        <span class="stat-label">New (7d)</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${stats.new_followers_30d || 0}</span>
+                        <span class="stat-label">New (30d)</span>
+                    </div>
+                </div>
+                
+                <div class="benchmark-comparison">
+                    <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
+                    <div class="comparison-item">
+                        <span>Your followers</span>
+                        <span class="value">${stats.follower_count || 0}</span>
+                        <span class="vs">vs</span>
+                        <span class="value avg">${benchmarks.avg_followers || 0}</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Your growth</span>
+                        <span class="value">${stats.follower_growth || 0}%</span>
+                        <span class="vs">vs</span>
+                        <span class="value avg">${benchmarks.avg_growth || 5}%</span>
+                    </div>
+                    <div class="rank-badge">
+                        ${benchmarks.rank_text || 'Not enough data for comparison yet'}
+                    </div>
+                </div>
+            `;
+        }
 
-function generateRecommendationsHTML(recommendations) {
-    if (!recommendations || recommendations.length === 0) {
-        recommendations = ['You\'re on track! Keep up the great work'];
-    }
-    
-    return recommendations.map(rec => `
-        <div class="recommendation-item">
-            <i class="fas fa-check-circle"></i>
-            <span>${rec}</span>
-        </div>
-    `).join('');
-}
+        function getDonorStatsHTML(campaign) {
+            const stats = campaign.stats || {};
+            const demographics = stats.donor_demographics || {};
+            
+            return `
+                <div class="premium-header">
+                    <i class="fas fa-crown"></i>
+                    <h3>Donor Insights</h3>
+                </div>
+                
+                <div class="donor-stats-grid">
+                    <div class="donor-stat-card">
+                        <span class="donor-stat-value">${stats.total_donors || 0}</span>
+                        <span class="donor-stat-label">Total Donors</span>
+                    </div>
+                    <div class="donor-stat-card">
+                        <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
+                        <span class="donor-stat-label">Repeat Donors</span>
+                    </div>
+                    <div class="donor-stat-card">
+                        <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
+                        <span class="donor-stat-label">Avg Donation</span>
+                    </div>
+                </div>
+                
+                <div class="donor-brackets">
+                    <h4>Donation Size</h4>
+                    ${generateDonationBracketsHTML(demographics.brackets)}
+                </div>
+                
+                <div class="top-locations">
+                    <h4>Top Locations</h4>
+                    ${generateLocationsHTML(demographics.locations)}
+                </div>
+            `;
+        }
 
-function generateFunnelHTML(funnel) {
-    if (!funnel) {
-        funnel = {
-            view_to_follower: 0,
-            follower_to_pledger: 0,
-            pledger_to_donor: 0
-        };
-    }
-    
-    return `
-        <div class="funnel-item">
-            <span>Views → Followers</span>
-            <div class="funnel-bar-container">
-                <div class="funnel-bar" style="width: ${funnel.view_to_follower || 0}%"></div>
-            </div>
-            <span class="funnel-percent">${funnel.view_to_follower || 0}%</span>
-        </div>
-        <div class="funnel-item">
-            <span>Followers → Pledgers</span>
-            <div class="funnel-bar-container">
-                <div class="funnel-bar" style="width: ${funnel.follower_to_pledger || 0}%"></div>
-            </div>
-            <span class="funnel-percent">${funnel.follower_to_pledger || 0}%</span>
-        </div>
-        <div class="funnel-item">
-            <span>Pledgers → Donors</span>
-            <div class="funnel-bar-container">
-                <div class="funnel-bar" style="width: ${funnel.pledger_to_donor || 0}%"></div>
-            </div>
-            <span class="funnel-percent">${funnel.pledger_to_donor || 0}%</span>
-        </div>
-    `;
-}
+        function getPredictStatsHTML(campaign) {
+            const stats = campaign.stats || {};
+            const predictive = stats.predictive || {};
+            
+            return `
+                <div class="premium-header">
+                    <i class="fas fa-crown"></i>
+                    <h3>AI Predictions</h3>
+                </div>
+                
+                <div class="predict-card">
+                    <div class="predict-item">
+                        <span class="predict-label">Projected final</span>
+                        <span class="predict-value">$${predictive.projected_final || 0}</span>
+                    </div>
+                    <div class="predict-item">
+                        <span class="predict-label">Success probability</span>
+                        <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
+                    </div>
+                    <div class="predict-item">
+                        <span class="predict-label">Est. completion</span>
+                        <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
+                    </div>
+                </div>
+                
+                <div class="recommendations">
+                    <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
+                    ${generateRecommendationsHTML(predictive.recommendations)}
+                </div>
+                
+                <div class="conversion-funnel">
+                    <h4>Conversion Funnel</h4>
+                    ${generateFunnelHTML(stats.conversion_funnel)}
+                </div>
+            `;
+        }
 
-function generateBenchmarkHTML(benchmarks) {
-    if (!benchmarks) {
-        return '';
-    }
-    
-    return `
-        <div class="benchmark-comparison">
-            <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
-            <div class="comparison-item">
-                <span>Your followers</span>
-                <span class="value">${benchmarks.your_followers || 0}</span>
-                <span class="vs">vs</span>
-                <span class="value avg">${benchmarks.avg_followers || 0}</span>
-            </div>
-            <div class="comparison-item">
-                <span>Your growth</span>
-                <span class="value">${benchmarks.your_growth || 0}%</span>
-                <span class="vs">vs</span>
-                <span class="value avg">${benchmarks.avg_growth || 5}%</span>
-            </div>
-            <div class="rank-badge">
-                ${benchmarks.rank_text || 'Not enough data for comparison yet'}
-            </div>
-        </div>
-    `;
-}
+        // ========== PREMIUM STATS HELPER FUNCTIONS ==========
 
-function getProbabilityClass(probability) {
-    if (!probability) return '';
-    probability = probability.toLowerCase();
-    if (probability.includes('high')) return 'high';
-    if (probability.includes('medium')) return 'medium';
-    if (probability.includes('attention')) return 'needs-attention';
-    return '';
-}
+        function generateDynamicBars(chartData) {
+            if (!chartData || chartData.length === 0) {
+                // Generate mock data if no real data
+                let bars = '';
+                for (let i = 0; i < 12; i++) {
+                    const height = 30 + Math.floor(Math.random() * 60);
+                    bars += `<div class="mock-bar" style="height: ${height}px;"></div>`;
+                }
+                return bars;
+            }
+            
+            // Use real data to generate bars
+            const maxValue = Math.max(...chartData.map(d => d.new_followers || 0));
+            return chartData.map(day => {
+                const height = maxValue > 0 ? (day.new_followers / maxValue) * 100 : 30;
+                return `
+                    <div class="mock-bar" style="height: ${height}px;" title="${day.date}: ${day.new_followers} new followers">
+                        <span class="bar-tooltip">${day.new_followers}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function generateDonationBracketsHTML(brackets) {
+            if (!brackets || Object.keys(brackets).length === 0) {
+                return '<p class="no-data">No donation data yet</p>';
+            }
+            
+            return `
+                <div class="bracket-item">
+                    <span>Under $10</span>
+                    <span class="bracket-value">${brackets.under_10 || 0} donors</span>
+                </div>
+                <div class="bracket-item">
+                    <span>$10 - $50</span>
+                    <span class="bracket-value">${brackets['10_50'] || 0} donors</span>
+                </div>
+                <div class="bracket-item">
+                    <span>$50 - $100</span>
+                    <span class="bracket-value">${brackets['50_100'] || 0} donors</span>
+                </div>
+                <div class="bracket-item">
+                    <span>$100 - $500</span>
+                    <span class="bracket-value">${brackets['100_500'] || 0} donors</span>
+                </div>
+                <div class="bracket-item">
+                    <span>Over $500</span>
+                    <span class="bracket-value">${brackets.over_500 || 0} donors</span>
+                </div>
+            `;
+        }
+
+        function generateLocationsHTML(locations) {
+            if (!locations || Object.keys(locations).length === 0) {
+                return '<p class="no-data">No location data yet</p>';
+            }
+            
+            return Object.entries(locations).slice(0, 5).map(([loc, count]) => `
+                <div class="location-item">
+                    <span><i class="fas fa-map-marker-alt"></i> ${loc}</span>
+                    <span class="location-count">${count} donor${count !== 1 ? 's' : ''}</span>
+                </div>
+            `).join('');
+        }
+
+        function generateRecommendationsHTML(recommendations) {
+            if (!recommendations || recommendations.length === 0) {
+                recommendations = ['You\'re on track! Keep up the great work'];
+            }
+            
+            return recommendations.map(rec => `
+                <div class="recommendation-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>${rec}</span>
+                </div>
+            `).join('');
+        }
+
+        function generateFunnelHTML(funnel) {
+            if (!funnel) {
+                funnel = {
+                    view_to_follower: 0,
+                    follower_to_pledger: 0,
+                    pledger_to_donor: 0
+                };
+            }
+            
+            return `
+                <div class="funnel-item">
+                    <span>Views → Followers</span>
+                    <div class="funnel-bar-container">
+                        <div class="funnel-bar" style="width: ${funnel.view_to_follower || 0}%"></div>
+                    </div>
+                    <span class="funnel-percent">${funnel.view_to_follower || 0}%</span>
+                </div>
+                <div class="funnel-item">
+                    <span>Followers → Pledgers</span>
+                    <div class="funnel-bar-container">
+                        <div class="funnel-bar" style="width: ${funnel.follower_to_pledger || 0}%"></div>
+                    </div>
+                    <span class="funnel-percent">${funnel.follower_to_pledger || 0}%</span>
+                </div>
+                <div class="funnel-item">
+                    <span>Pledgers → Donors</span>
+                    <div class="funnel-bar-container">
+                        <div class="funnel-bar" style="width: ${funnel.pledger_to_donor || 0}%"></div>
+                    </div>
+                    <span class="funnel-percent">${funnel.pledger_to_donor || 0}%</span>
+                </div>
+            `;
+        }
+
+        function generateBenchmarkHTML(benchmarks) {
+            if (!benchmarks) {
+                return '';
+            }
+            
+            return `
+                <div class="benchmark-comparison">
+                    <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
+                    <div class="comparison-item">
+                        <span>Your followers</span>
+                        <span class="value">${benchmarks.your_followers || 0}</span>
+                        <span class="vs">vs</span>
+                        <span class="value avg">${benchmarks.avg_followers || 0}</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Your growth</span>
+                        <span class="value">${benchmarks.your_growth || 0}%</span>
+                        <span class="vs">vs</span>
+                        <span class="value avg">${benchmarks.avg_growth || 5}%</span>
+                    </div>
+                    <div class="rank-badge">
+                        ${benchmarks.rank_text || 'Not enough data for comparison yet'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getProbabilityClass(probability) {
+            if (!probability) return '';
+            probability = probability.toLowerCase();
+            if (probability.includes('high')) return 'high';
+            if (probability.includes('medium')) return 'medium';
+            if (probability.includes('attention')) return 'needs-attention';
+            return '';
+        }
 
         function openMenuPopup(index) {
             event.stopPropagation();
@@ -3974,13 +3986,17 @@ function getProbabilityClass(probability) {
 
         function handleShare(event, id) {
             event.stopPropagation();
+            
+            // Track the share
+            trackShare(event, id, 'share');
+            
             if (navigator.share) {
                 navigator.share({
                     title: 'Check out this cause',
-                    url: window.location.origin + `/campaign/${id}/`
+                    url: window.location.origin + `/journey/${id}/`
                 });
             } else {
-                prompt('Copy link:', window.location.origin + `/campaign/${id}/`);
+                prompt('Copy link:', window.location.origin + `/journey/${id}/`);
             }
         }
 
@@ -4272,6 +4288,16 @@ function getProbabilityClass(probability) {
                             <span id="followText-${index}">${campaign.user_following ? 'Following' : 'Follow'}</span>
                         </button>
                         
+                        <button class="action-btn save-btn" id="saveBtn-${index}" onclick="toggleSave(event, ${campaign.id}, ${index})">
+                            <i class="far fa-bookmark"></i>
+                            <span id="saveCount-${index}">${campaign.stats?.save_count || 0}</span>
+                        </button>
+                        
+                        <button class="action-btn donate-btn" onclick="handleDonate(event, ${campaign.id}, ${index})">
+                            <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
+                            <span id="donateCount-${index}">${campaign.stats?.total_donors || 0}</span>
+                        </button>
+                        
                         <button class="action-btn" onclick="handleShare(event, ${campaign.id})">
                             <i class="fas fa-share-alt"></i>
                             <span></span>
@@ -4353,6 +4379,152 @@ function getProbabilityClass(probability) {
         window.addEventListener('beforeunload', () => {
             slideshowTimers.forEach(t => t && clearInterval(t));
         });
+    </script>
+
+    <script>
+        // ========== WATCH TIME TRACKING ==========
+        let watchStartTime = Date.now();
+        let watchTimer = null;
+        let currentCampaignId = null;
+        let watchTracked = false;
+
+        // Get current campaign ID from the active campaign
+        function getCurrentCampaignId() {
+            const activeCampaign = document.querySelector('.campaign-item.active');
+            if (activeCampaign) {
+                return activeCampaign.dataset.campaignId;
+            }
+            return null;
+        }
+
+        // Start tracking when user views a campaign
+        function startWatchTracking(campaignId) {
+            if (!campaignId) return;
+            
+            // Stop previous tracking
+            stopWatchTracking();
+            
+            currentCampaignId = campaignId;
+            watchStartTime = Date.now();
+            watchTracked = false;
+            
+            // Send updates every 5 seconds
+            watchTimer = setInterval(() => {
+                const watchTime = (Date.now() - watchStartTime) / 1000; // in seconds
+                if (watchTime >= 5 && !watchTracked) { // Track after 5 seconds minimum
+                    sendWatchTime(currentCampaignId, watchTime, false);
+                    watchTracked = true;
+                }
+            }, 5000);
+        }
+
+        // Stop tracking
+        function stopWatchTracking() {
+            if (watchTimer) {
+                clearInterval(watchTimer);
+                watchTimer = null;
+            }
+        }
+
+        // Send watch time to server
+        function sendWatchTime(campaignId, watchTime, completed) {
+            fetch('/track-watch/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({
+                    campaign_id: campaignId,
+                    watch_time: watchTime,
+                    completed: completed
+                })
+            }).catch(error => console.error('Watch time error:', error));
+        }
+
+        // Track when user leaves
+        window.addEventListener('beforeunload', function() {
+            if (currentCampaignId) {
+                const watchTime = (Date.now() - watchStartTime) / 1000;
+                if (watchTime >= 5) {
+                    sendWatchTime(currentCampaignId, watchTime, false);
+                }
+            }
+        });
+
+        // Update your scroll observer to start/stop tracking
+        document.addEventListener('DOMContentLoaded', function() {
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Campaign is now visible
+                            const campaignId = entry.target.dataset.campaignId;
+                            startWatchTracking(campaignId);
+                            
+                            // Mark as active
+                            document.querySelectorAll('.campaign-item').forEach(item => {
+                                item.classList.remove('active');
+                            });
+                            entry.target.classList.add('active');
+                        }
+                    });
+                }, {
+                    threshold: 0.7 // 70% visible
+                });
+
+                document.querySelectorAll('.campaign-item').forEach(item => {
+                    observer.observe(item);
+                });
+            }
+        });
+
+        // ========== SAVE/BOOKMARK FUNCTIONALITY ==========
+        function toggleSave(event, campaignId, index) {
+            event.stopPropagation();
+            
+            fetch(`/campaign/${campaignId}/save/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const saveBtn = document.getElementById(`saveBtn-${index}`);
+                    if (saveBtn) {
+                        if (data.saved) {
+                            saveBtn.innerHTML = '<i class="fas fa-bookmark"></i>';
+                            saveBtn.classList.add('saved');
+                        } else {
+                            saveBtn.innerHTML = '<i class="far fa-bookmark"></i>';
+                            saveBtn.classList.remove('saved');
+                        }
+                    }
+                    
+                    // Update save count
+                    const countEl = document.getElementById(`saveCount-${index}`);
+                    if (countEl) {
+                        countEl.textContent = data.save_count;
+                    }
+                }
+            });
+        }
+
+        // ========== SHARE TRACKING ==========
+        function trackShare(event, campaignId, platform) {
+            event.stopPropagation();
+            
+            fetch(`/campaign/${campaignId}/share/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ platform: platform })
+            }).catch(error => console.error('Share tracking error:', error));
+        }
     </script>
 </body>
 </html>

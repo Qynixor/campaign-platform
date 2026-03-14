@@ -93,6 +93,9 @@ from datetime import timedelta
 import logging
 
 logger = logging.getLogger(__name__)
+from django.db.models import Count, Q, Sum, F
+from django.db.models.functions import ExtractDay
+from datetime import timedelta
 
 def index(request):
     """
@@ -110,7 +113,84 @@ def index(request):
         trending_campaigns = base_campaigns.annotate(
             love_count_total=Count('loves', distinct=True),
             follower_count_total=Count('followers', distinct=True),
+            # Calculate trending score for display
+            trending_score=(
+                Count('loves', distinct=True) * 2 +
+                Count('followers', distinct=True) * 3
+            )
         ).order_by('-love_count_total', '-follower_count_total', '-timestamp')[:15]
+        
+        # ========== RISING STARS ==========
+        # New creators gaining traction (campaigns less than 14 days old with good growth)
+        fourteen_days_ago = timezone.now() - timedelta(days=14)
+        rising_campaigns = base_campaigns.filter(
+            timestamp__gte=fourteen_days_ago,
+            followers__isnull=False
+        ).annotate(
+            love_count_total=Count('loves', distinct=True),
+            follower_count_total=Count('followers', distinct=True),
+            # Calculate growth rate (followers per day)
+            days_old=ExtractDay(timezone.now() - F('timestamp')),
+            growth_rate=Count('followers', distinct=True) * 100 / 
+                       (ExtractDay(timezone.now() - F('timestamp')) + 1)
+        ).filter(
+            follower_count_total__gte=2  # At least 2 followers to be "rising"
+        ).order_by('-growth_rate', '-timestamp')[:15]
+        
+        # ========== FASTEST GROWING ==========
+        # Campaigns with biggest momentum (highest follower growth in last 7 days)
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        fastest_growing_campaigns = base_campaigns.annotate(
+            recent_followers=Count(
+                'campaign_follows',
+                filter=Q(campaign_follows__followed_at__gte=seven_days_ago),
+                distinct=True
+            ),
+            follower_growth=Count(
+                'campaign_follows',
+                filter=Q(campaign_follows__followed_at__gte=seven_days_ago),
+                distinct=True
+            ) * 100 / (Count('followers', distinct=True) + 1)
+        ).filter(
+            recent_followers__gte=1
+        ).order_by('-recent_followers', '-timestamp')[:15]
+        
+        # ========== MOST COMPLETED ==========
+        # Journeys people actually finish (highest completion rate)
+        most_completed_campaigns = base_campaigns.annotate(
+            total_watch_count=Count('watch_times', distinct=True),
+            completed_count=Count(
+                'watch_times',
+                filter=Q(watch_times__completed=True),
+                distinct=True
+            ),
+            completion_rate=Count(
+                'watch_times',
+                filter=Q(watch_times__completed=True),
+                distinct=True
+            ) * 100 / (Count('watch_times', distinct=True) + 1)
+        ).filter(
+            total_watch_count__gte=5  # At least 5 views to calculate meaningful rate
+        ).order_by('-completion_rate', '-timestamp')[:15]
+        
+        # ========== MOST WATCHED ==========
+        # High watch time (highest average watch time)
+        most_watched_campaigns = base_campaigns.annotate(
+            total_watch_time=Sum('watch_times__watch_time_seconds'),
+            watch_count=Count('watch_times', distinct=True),
+            avg_watch_time=Sum('watch_times__watch_time_seconds') / 
+                          (Count('watch_times', distinct=True) + 1)
+        ).filter(
+            watch_count__gte=3  # At least 3 views
+        ).order_by('-avg_watch_time', '-timestamp')[:15]
+        
+        # ========== MOST SAVED ==========
+        # Bookmarked for later (highest save count)
+        most_saved_campaigns = base_campaigns.annotate(
+            save_count=Count('saves', distinct=True)
+        ).filter(
+            save_count__gte=1
+        ).order_by('-save_count', '-timestamp')[:15]
         
         # ========== SUGGESTED CAMPAIGNS ==========
         # Personalized suggestions based on user's interests
@@ -176,12 +256,17 @@ def index(request):
             # Category choices for filter chips
             'campaign_categories': campaign_categories,
             
-            # Main sections
+            # New discovery sections
             'trending_campaigns': trending_campaigns,
+            'rising_campaigns': rising_campaigns,
+            'fastest_growing_campaigns': fastest_growing_campaigns,
+            'most_completed_campaigns': most_completed_campaigns,
+            'most_watched_campaigns': most_watched_campaigns,
+            'most_saved_campaigns': most_saved_campaigns,
+            
+            # Original sections
             'suggested_campaigns': suggested_campaigns,
             'new_campaigns': new_campaigns,
-            
-            # Popular campaigns by category
             'category_popular': category_popular,
             
             # Stats
@@ -197,6 +282,11 @@ def index(request):
         context = {
             'campaign_categories': Campaign.CATEGORY_CHOICES,
             'trending_campaigns': [],
+            'rising_campaigns': [],
+            'fastest_growing_campaigns': [],
+            'most_completed_campaigns': [],
+            'most_watched_campaigns': [],
+            'most_saved_campaigns': [],
             'suggested_campaigns': [],
             'new_campaigns': [],
             'category_popular': {},
@@ -205,6 +295,210 @@ def index(request):
             'error_message': "Unable to load campaigns at this time."
         }
         return render(request, 'accounts/index.html', context)
+
+
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from django.db.models import Count, Q, Sum, F
+from django.db.models.functions import ExtractDay
+from datetime import timedelta
+
+# ===== LAZY-LOADED SECTION VIEWS =====
+
+def section_trending(request):
+    """Return HTML for trending section"""
+    campaigns = Campaign.objects.filter(is_active=True).annotate(
+        love_count_total=Count('loves', distinct=True),
+        follower_count_total=Count('followers', distinct=True),
+        trending_score=(
+            Count('loves', distinct=True) * 2 +
+            Count('followers', distinct=True) * 3
+        )
+    ).order_by('-love_count_total', '-follower_count_total', '-timestamp')[:8]
+    
+    html = render_to_string('sections/trending_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_rising(request):
+    """Return HTML for rising stars section"""
+    fourteen_days_ago = timezone.now() - timedelta(days=14)
+    
+    campaigns = Campaign.objects.filter(
+        is_active=True,
+        timestamp__gte=fourteen_days_ago
+    ).annotate(
+        love_count_total=Count('loves', distinct=True),
+        follower_count_total=Count('followers', distinct=True),
+        days_old=ExtractDay(timezone.now() - F('timestamp')),
+        growth_rate=Count('followers', distinct=True) * 100 / 
+                   (ExtractDay(timezone.now() - F('timestamp')) + 1)
+    ).filter(
+        follower_count_total__gte=2
+    ).order_by('-growth_rate', '-timestamp')[:8]
+    
+    html = render_to_string('sections/rising_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_fastest(request):
+    """Return HTML for fastest growing section"""
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    
+    campaigns = Campaign.objects.filter(is_active=True).annotate(
+        recent_followers=Count(
+            'campaign_follows',
+            filter=Q(campaign_follows__followed_at__gte=seven_days_ago),
+            distinct=True
+        ),
+        follower_growth=Count(
+            'campaign_follows',
+            filter=Q(campaign_follows__followed_at__gte=seven_days_ago),
+            distinct=True
+        ) * 100 / (Count('followers', distinct=True) + 1)
+    ).filter(
+        recent_followers__gte=1
+    ).order_by('-recent_followers', '-timestamp')[:8]
+    
+    html = render_to_string('sections/fastest_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_most_completed(request):
+    """Return HTML for most completed section"""
+    campaigns = Campaign.objects.filter(is_active=True).annotate(
+        total_watch_count=Count('watch_times', distinct=True),
+        completed_count=Count(
+            'watch_times',
+            filter=Q(watch_times__completed=True),
+            distinct=True
+        ),
+        completion_rate=Count(
+            'watch_times',
+            filter=Q(watch_times__completed=True),
+            distinct=True
+        ) * 100 / (Count('watch_times', distinct=True) + 1)
+    ).filter(
+        total_watch_count__gte=5
+    ).order_by('-completion_rate', '-timestamp')[:8]
+    
+    html = render_to_string('sections/completed_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_most_watched(request):
+    """Return HTML for most watched section"""
+    campaigns = Campaign.objects.filter(is_active=True).annotate(
+        total_watch_time=Sum('watch_times__watch_time_seconds'),
+        watch_count=Count('watch_times', distinct=True),
+        avg_watch_time=Sum('watch_times__watch_time_seconds') / 
+                      (Count('watch_times', distinct=True) + 1)
+    ).filter(
+        watch_count__gte=3
+    ).order_by('-avg_watch_time', '-timestamp')[:8]
+    
+    html = render_to_string('sections/watched_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_most_saved(request):
+    """Return HTML for most saved section"""
+    campaigns = Campaign.objects.filter(is_active=True).annotate(
+        save_count=Count('saves', distinct=True)
+    ).filter(
+        save_count__gte=1
+    ).order_by('-save_count', '-timestamp')[:8]
+    
+    html = render_to_string('sections/saved_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_suggested(request):
+    """Return HTML for suggested section"""
+    base_campaigns = Campaign.objects.filter(is_active=True)
+    
+    if request.user.is_authenticated:
+        excluded_campaigns = Campaign.objects.filter(
+            Q(followers=request.user) | 
+            Q(loves__user=request.user)
+        ).values_list('id', flat=True)
+        
+        user_categories = Campaign.objects.filter(
+            Q(loves__user=request.user) |
+            Q(followers=request.user)
+        ).values_list('category', flat=True).distinct()
+        
+        if user_categories:
+            campaigns = base_campaigns.filter(
+                category__in=user_categories
+            ).exclude(id__in=excluded_campaigns)
+        else:
+            campaigns = base_campaigns.exclude(id__in=excluded_campaigns).order_by('-timestamp')
+        
+        campaigns = campaigns.annotate(
+            relevance_score=Count('loves') + Count('followers') * 2
+        ).order_by('-relevance_score', '-timestamp')[:8]
+    else:
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        campaigns = base_campaigns.filter(
+            activity__timestamp__gte=thirty_days_ago
+        ).distinct().order_by('-timestamp')[:8]
+    
+    html = render_to_string('sections/suggested_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_new_causes(request):
+    """Return HTML for new causes section"""
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    campaigns = Campaign.objects.filter(
+        is_active=True,
+        timestamp__gte=thirty_days_ago
+    ).order_by('-timestamp')[:8]
+    
+    html = render_to_string('sections/new_section.html', {
+        'campaigns': campaigns
+    }, request=request)
+    
+    return HttpResponse(html)
+
+def section_category(request, category):
+    """Return HTML for category section"""
+    campaigns = Campaign.objects.filter(
+        is_active=True,
+        category=category
+    ).annotate(
+        engagement_score=Count('loves', distinct=True) + 
+                         (Count('followers', distinct=True) * 2)
+    ).order_by('-engagement_score', '-timestamp')[:5]
+    
+    category_label = dict(Campaign.CATEGORY_CHOICES).get(category, category)
+    
+    html = render_to_string('sections/category_section.html', {
+        'campaigns': campaigns,
+        'category_value': category,
+        'category_label': category_label
+    }, request=request)
+    
+    return HttpResponse(html)
+
+
+
 # Optional helper functions for more sophisticated suggestions
 
 def get_user_interests(user):

@@ -2514,12 +2514,25 @@ def journey(request, campaign_id=None):
             if not campaigns_query.exists():
                 from django.http import Http404
                 raise Http404("Campaign not found")
+            campaigns = campaigns_query
         else:
-            # For main feed, order by timestamp
-            campaigns_query = campaigns_query.order_by('-timestamp')
+            # ===== FOLLOWED CAMPAIGNS FIRST =====
+            if request.user.is_authenticated:
+                # Get IDs of campaigns this user follows
+                followed_campaign_ids = list(CampaignFollow.objects.filter(
+                    user=request.user
+                ).values_list('campaign_id', flat=True))
+                
+                # Split into followed and not followed
+                followed_campaigns = campaigns_query.filter(id__in=followed_campaign_ids)
+                other_campaigns = campaigns_query.exclude(id__in=followed_campaign_ids).order_by('-timestamp')
+                
+                # Combine: followed first, then others
+                campaigns = list(followed_campaigns) + list(other_campaigns)
+            else:
+                # For non-authenticated users, show all by timestamp
+                campaigns = campaigns_query.order_by('-timestamp')
         
-        campaigns = campaigns_query
-
         campaign_data = []
         
         for campaign in campaigns:
@@ -2613,10 +2626,6 @@ def journey(request, campaign_id=None):
                     except:
                         pass
                 
-                # OR if user has purchased premium (add your logic here)
-                # elif request.user.has_active_subscription:
-                #     can_view_premium = True
-                
                 # ===== ONLY CALCULATE PREMIUM STATS IF NEEDED =====
                 if can_view_premium:
                     try:
@@ -2674,6 +2683,24 @@ def journey(request, campaign_id=None):
                     except Exception as e:
                         print(f"Error calculating premium stats for campaign {campaign.id}: {e}")
                         # Keep the default values, don't let this crash
+                
+                # ===== ADD ENGAGEMENT TRACKING STATS =====
+                try:
+                    stats['watch_time'] = getattr(campaign, 'total_watch_time', 0)
+                    stats['avg_watch_time'] = getattr(campaign, 'avg_watch_time', 0)
+                    stats['completion_rate'] = getattr(campaign, 'completion_rate', 0)
+                    stats['save_count'] = getattr(campaign, 'save_count', 0)
+                    stats['share_count'] = getattr(campaign, 'share_count', 0)
+                    
+                    if 'engagement_score' not in stats or stats['engagement_score'] == 0:
+                        stats['engagement_score'] = getattr(campaign, 'get_engagement_score', lambda: 0)()
+                except Exception as e:
+                    print(f"Error adding engagement stats: {e}")
+                    stats['watch_time'] = 0
+                    stats['avg_watch_time'] = 0
+                    stats['completion_rate'] = 0
+                    stats['save_count'] = 0
+                    stats['share_count'] = 0
 
                 # ===== ADD CAMPAIGN DATA =====
                 campaign_data.append({
@@ -2695,7 +2722,7 @@ def journey(request, campaign_id=None):
                     'user_loved': user_loved,
                     'user_following': user_following,
                     'is_campaign_owner': is_campaign_owner,
-                    'can_view_premium': can_view_premium,  # This controls the UI
+                    'can_view_premium': can_view_premium,
                 })
                 
             except Exception as e:
@@ -2706,34 +2733,132 @@ def journey(request, campaign_id=None):
         context = {
             'campaigns': campaign_data,
             'campaigns_json': json.dumps(campaign_data, default=str),
-            'is_single_campaign': campaign_id is not None,  # Flag for template
-            'campaign_id': campaign_id,  # Pass the ID for template use
+            'is_single_campaign': campaign_id is not None,
+            'campaign_id': campaign_id,
         }
         
         return render(request, 'main/journey.html', context)
         
     except Exception as e:
         print(f"Critical error: {e}")
-        # Return empty but safe context
         return render(request, 'main/journey.html', {
             'campaigns': [],
             'campaigns_json': '[]',
             'is_single_campaign': False,
         })
 
-# Helper function for time ago (add this if you don't have it)
-def get_time_ago(timestamp):
-    from django.utils.timesince import timesince
-    from django.utils import timezone
+# Add these to your views.py
+
+@login_required
+@require_POST
+def track_watch_time(request):
+    """Track watch time for a campaign"""
     try:
-        time_diff = timesince(timestamp, timezone.now())
-        parts = time_diff.split(', ')
-        if len(parts) > 1:
-            return parts[0] + ' ago'
-        return time_diff + ' ago'
-    except:
-        return 'recently'
- 
+        data = json.loads(request.body)
+        campaign_id = data.get('campaign_id')
+        watch_time = data.get('watch_time', 0)  # in seconds
+        completed = data.get('completed', False)
+        
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        # Get or create watch time record
+        watch_record, created = CampaignWatchTime.objects.get_or_create(
+            user=request.user if request.user.is_authenticated else None,
+            campaign=campaign,
+            defaults={'watch_time_seconds': watch_time, 'completed': completed}
+        )
+        
+        if not created:
+            # Update existing record
+            watch_record.watch_time_seconds = watch_time
+            if completed:
+                watch_record.completed = True
+            watch_record.save()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def toggle_save_campaign(request, campaign_id):
+    """Save or unsave a campaign"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        # Check if already saved
+        saved = CampaignSave.objects.filter(user=request.user, campaign=campaign).first()
+        
+        if saved:
+            saved.delete()
+            saved_status = False
+        else:
+            CampaignSave.objects.create(user=request.user, campaign=campaign)
+            saved_status = True
+        
+        return JsonResponse({
+            'success': True,
+            'saved': saved_status,
+            'save_count': campaign.save_count
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def track_share(request, campaign_id):
+    """Track when a campaign is shared"""
+    try:
+        data = json.loads(request.body)
+        platform = data.get('platform', '')
+        
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        CampaignShare.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            campaign=campaign,
+            platform=platform
+        )
+        
+        return JsonResponse({'success': True, 'share_count': campaign.share_count})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def get_rising_campaigns(request):
+    """API endpoint for rising campaigns (high growth rate)"""
+    try:
+        seven_days_ago = timezone.now() - timedelta(days=7)
+        
+        campaigns = Campaign.objects.filter(
+            is_active=True,
+            timestamp__gte=seven_days_ago
+        ).annotate(
+            growth_score=(
+                Count('followers', filter=Q(campaign_follows__followed_at__gte=seven_days_ago)) * 3 +
+                Count('loves', filter=Q(loves__timestamp__gte=seven_days_ago)) * 2 +
+                Count('saves', filter=Q(saves__saved_at__gte=seven_days_ago)) * 4
+            )
+        ).order_by('-growth_score')[:20]
+        
+        # Format for response
+        data = [{
+            'id': c.id,
+            'title': c.title,
+            'follower_count': c.follower_count,
+            'love_count': c.love_count,
+            'save_count': c.save_count,
+            'growth_score': c.growth_score
+        } for c in campaigns]
+        
+        return JsonResponse({'success': True, 'campaigns': data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required

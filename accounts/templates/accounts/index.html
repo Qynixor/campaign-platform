@@ -6,422 +6,1777 @@
 {% block content %}
 
 <!-- ============================================ -->
-<!-- LOGIN PROMPT MODAL (shown when user not authenticated) -->
+<!-- LOGIN PROMPT MODAL (Enhanced) -->
 <!-- ============================================ -->
 <div id="loginPromptModal" class="login-modal-overlay" style="display: none;">
     <div class="login-modal-container">
         <div class="login-modal-header">
-            <h3>
-                <i class="fas fa-compass" style="color: #1DA1F2;"></i>
-                Join the Discovery
-            </h3>
-            <button class="login-modal-close" onclick="closeLoginModal()">
-                <i class="fas fa-times"></i>
-            </button>
+            <h3><i class="fas fa-compass" style="color: #1DA1F2;"></i> Join the Journey</h3>
+            <button class="login-modal-close" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
         </div>
-        
         <div class="login-modal-body">
-            <div class="login-modal-icon">
-                <i class="fas fa-hand-sparkles" style="font-size: 48px; color: #1DA1F2;"></i>
-            </div>
-            <h4>Ready to explore?</h4>
-            <p>Sign in to discover causes, support campaigns, and connect with changemakers around the world.</p>
-            
+            <div class="login-modal-icon"><i class="fas fa-road" style="font-size: 48px; color: #1DA1F2;"></i></div>
+            <h4>Ready to start your journey?</h4>
+            <p>Sign in to discover causes, support journeys, and connect with changemakers around the world.</p>
             <div class="login-modal-features">
-                <div class="feature-item">
-                    <i class="fas fa-heart" style="color: #ff6b6b;"></i>
-                    <span>Support causes you care about</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-users" style="color: #1DA1F2;"></i>
-                    <span>Join communities and tribes</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-bell" style="color: #f9ca24;"></i>
-                    <span>Get personalized recommendations</span>
-                </div>
+                <div class="feature-item"><i class="fas fa-heart" style="color: #ff6b6b;"></i><span>Support causes you care about</span></div>
+                <div class="feature-item"><i class="fas fa-users" style="color: #1DA1F2;"></i><span>Join communities and tribes</span></div>
+                <div class="feature-item"><i class="fas fa-bell" style="color: #f9ca24;"></i><span>Get personalized journey recommendations</span></div>
             </div>
         </div>
-
         <div class="login-modal-footer">
-            <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-login">
-                <i class="fas fa-sign-in-alt"></i> Log In
-            </a>
-            <a href="{% url 'account_signup' %}?next={{ request.path }}" class="btn-signup">
-                <i class="fas fa-user-plus"></i> Create Account
-            </a>
-            <button class="btn-browse" onclick="closeLoginModal()">
-                Continue Browsing
-            </button>
+            <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn-login"><i class="fas fa-sign-in-alt"></i> Log In</a>
+            <a href="{% url 'account_signup' %}?next={{ request.path }}" class="btn-signup"><i class="fas fa-user-plus"></i> Create Account</a>
+            <button class="btn-browse" onclick="closeLoginModal()">Continue Browsing</button>
         </div>
-        
-        <p class="login-modal-guest-note">
-            <i class="fas fa-hat-cowboy"></i> 
-            Browsing as guest — some features are limited
-        </p>
+        <p class="login-modal-guest-note"><i class="fas fa-hat-cowboy"></i> Browsing as guest — some features are limited</p>
     </div>
 </div>
 
-<!-- ============================================ -->
-<!-- DISCOVER / EXPLORE PAGE – horizontal scroll sections -->
-<!-- ============================================ -->
-
 <style>
-  /* Main container - allows vertical scrolling */
-  .discover-wrapper {
-    max-width: 100%;
-    margin: 0 auto;
-    background: transparent;
-    height: 100%;
-    overflow-y: auto;
-    padding-bottom: 60px;
-    scroll-behavior: smooth;
+  /* ===== RESET & BASE - Scoped to avoid conflicts ===== */
+  .discover-page * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* subtle header */
-  .discover-header-compact {
-    padding: 16px 18px 8px;
+  .discover-page {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #ffffff;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  .dark-mode .discover-page {
+    background: #121212;
+  }
+
+  /* ===== MAIN CONTAINER ===== */
+  .discover-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,0,0,0.02);
+    width: 100%;
+  }
+
+  .dark-mode .discover-wrapper {
+    background: #121212;
+  }
+
+  /* ===== HEADER - ELEGANT STICKY ===== */
+  .discover-header {
+    padding: 24px 24px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
+    border-bottom: 1px solid #eaeef2;
     position: sticky;
     top: 0;
-    background: inherit;
-    z-index: 10;
-    backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 100;
+    width: 100%;
   }
-  .discover-header-compact h2 {
-    font-size: 24px;
-    font-weight: 700;
-    background: linear-gradient(145deg, #1b2b4e, #1DA1F2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  
+  .discover-header h1 {
+    font-size: 28px;
+    font-weight: 600;
     letter-spacing: -0.3px;
+    color: #1a2634;
     margin: 0;
   }
-  .discover-header-compact i {
+  
+  .discover-header h1 i {
     color: #1DA1F2;
-    font-size: 22px;
-    opacity: 0.8;
+    margin-right: 8px;
+    font-size: 24px;
   }
 
-  /* category chips – horizontally scrollable */
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .search-btn {
+    background: #f5f7fa;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4a5a6e;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .search-btn:hover {
+    background: #e9ecf0;
+    color: #1DA1F2;
+  }
+
+  /* ===== CATEGORY FILTER - HORIZONTAL SCROLL ===== */
+  .category-section {
+    padding: 16px 24px 12px;
+    position: sticky;
+    top: 80px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 99;
+    border-bottom: 1px solid #eaeef2;
+    width: 100%;
+  }
+
+  .category-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #7a8a9a;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
   .chip-scroll {
     overflow-x: auto;
-    white-space: nowrap;
-    padding: 12px 18px 8px;
-    scrollbar-width: thin;
-    display: flex;
-    gap: 10px;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 8px;
+    margin-bottom: -8px;
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    scroll-snap-type: x mandatory;
   }
+  
   .chip-scroll::-webkit-scrollbar {
-    height: 4px;
+    height: 3px;
+    display: block;
   }
+  
   .chip-scroll::-webkit-scrollbar-track {
     background: #f0f0f0;
     border-radius: 10px;
   }
+  
   .chip-scroll::-webkit-scrollbar-thumb {
     background: #1DA1F2;
     border-radius: 10px;
   }
-  .chip-scroll::-webkit-scrollbar-thumb:hover {
-    background: #0d8bd9;
-  }
-  .chip-scroll::-webkit-scrollbar { display: none; } /* Hide scrollbar but keep functionality */
+
   .chip-item {
     display: inline-flex;
-    padding: 8px 20px;
-    background: #f0f3f8;
-    border-radius: 40px;
-    font-size: 14px;
+    align-items: center;
+    padding: 6px 14px;
+    background: #f5f7fa;
+    border-radius: 30px;
+    font-size: 13px;
     font-weight: 500;
-    color: #1e2b3a;
-    border: 1px solid transparent;
-    transition: 0.2s;
+    color: #2c3e50;
+    border: 1px solid #eaeef2;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
     cursor: pointer;
     white-space: nowrap;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
   }
-  .chip-item i { margin-right: 6px; color: #1DA1F2; }
+  
+  .chip-item i { 
+    margin-right: 6px; 
+    font-size: 12px;
+    color: #1DA1F2;
+    opacity: 0.8;
+  }
+  
+  .chip-item:hover {
+    background: #ffffff;
+    border-color: #1DA1F2;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29,161,242,0.1);
+  }
+  
   .chip-item.active {
     background: #1DA1F2;
     color: white;
+    border-color: #1DA1F2;
   }
-  .chip-item.active i { color: white; }
+  
+  .chip-item.active i {
+    color: white;
+    opacity: 1;
+  }
 
-  /* section headings - sticky within each section */
-  .section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 8px 18px;
-    margin: 16px 0 8px;
-    position: sticky;
-    top: 70px; /* Adjust based on header height */
-    background: inherit;
-    z-index: 5;
-    backdrop-filter: blur(4px);
-    border-bottom: 1px solid rgba(0,0,0,0.03);
-  }
-  .section-head h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111;
+  /* ===== SECTION HEADERS ===== */
+  .section-header {
+    padding: 32px 24px 16px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    background: #ffffff;
+    border-bottom: 1px solid #eaeef2;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2634;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 0;
   }
-  .section-head .pill-link {
-    font-size: 14px;
-    font-weight: 600;
+
+  .section-header h2 i {
     color: #1DA1F2;
-    background: #e8f0fe;
-    padding: 4px 14px;
-    border-radius: 40px;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-  .section-head .pill-link:hover {
-    background: #d4e3fd;
+    font-size: 20px;
   }
 
-  /* horizontal scroll carousel - EACH SECTION HAS ITS OWN */
-  .card-row {
+  .section-badge {
+    padding: 4px 12px;
+    background: #f5f7fa;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #5a6a7a;
+    border: 1px solid #eaeef2;
+  }
+
+  /* Scroll indicator - just an arrow icon */
+  .scroll-indicator {
     display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    padding: 4px 18px 20px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: #1DA1F2 #f0f0f0;
+    align-items: center;
+    color: #1DA1F2;
+    font-size: 14px;
+    animation: scrollHint 1.5s infinite;
   }
   
-  /* Custom scrollbar for webkit browsers */
-  .card-row::-webkit-scrollbar {
-    height: 6px;
+  @keyframes scrollHint {
+    0% { transform: translateX(0); opacity: 0.5; }
+    50% { transform: translateX(4px); opacity: 1; }
+    100% { transform: translateX(0); opacity: 0.5; }
   }
   
-  .card-row::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 10px;
-    margin: 0 18px;
-  }
-  
-  .card-row::-webkit-scrollbar-thumb {
-    background: #1DA1F2;
-    border-radius: 10px;
-  }
-  
-  .card-row::-webkit-scrollbar-thumb:hover {
-    background: #0d8bd9;
+  /* Hide scroll indicator on desktop (where there's no overflow) */
+  @media screen and (min-width: 769px) {
+    .scroll-indicator {
+      display: none;
+    }
   }
 
-  /* card base */
-  .explore-card {
-    flex: 0 0 180px;
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #f0f0f0;
-    overflow: hidden;
-    scroll-snap-align: start;
-    transition: transform 0.15s, box-shadow 0.15s;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.02);
+  /* ===== GRID LAYOUT - Desktop ===== */
+  .content-grid {
+    padding: 16px 24px;
   }
-  .explore-card:hover { 
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+  /* Desktop - Grid layout */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+    margin-bottom: 8px;
+  }
+
+  .card-grid.wide-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  /* ===== JOURNEY CARDS ===== */
+  .journey-card {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #eaeef2;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    text-decoration: none;
+    display: block;
+    height: 100%;
+    cursor: pointer;
+    max-width: 100%;
+  }
+  
+  .journey-card:hover {
+    transform: translateY(-6px);
+    border-color: #d0d9e2;
+    box-shadow: 0 20px 30px -10px rgba(0,0,0,0.1);
   }
 
   .card-media {
-    height: 120px;
+    height: 160px;
     background-size: cover;
     background-position: center;
     position: relative;
-    display: flex;
-    align-items: flex-end;
-    padding: 8px;
+    background-color: #f5f7fa;
+    overflow: hidden;
   }
-  .cat-badge {
-    background: rgba(0,0,0,0.6);
+
+  .card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s;
+    max-width: 100%;
+  }
+  
+  .journey-card:hover .card-media img {
+    transform: scale(1.05);
+  }
+
+  .journey-badge {
+    background: rgba(255,255,255,0.95);
     backdrop-filter: blur(4px);
-    color: white;
+    color: #1a2634;
     font-size: 11px;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 30px;
-    letter-spacing: 0.3px;
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.3);
   }
-  .card-body {
-    padding: 14px 12px 16px;
+
+  .card-content {
+    padding: 18px 16px 16px;
   }
-  .card-title {
-    font-weight: 700;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #0b1a2a;
-    margin-bottom: 6px;
+
+  .journey-title {
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.4;
+    color: #1a2634;
+    margin-bottom: 10px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    min-height: 48px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
-  .card-author {
+
+  .journey-creator {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #5e6f7e;
-    margin: 8px 0 6px;
+    gap: 10px;
+    font-size: 13px;
+    color: #6a7a8a;
+    margin: 12px 0 10px;
   }
-  .author-avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #cbd5e0;
-    object-fit: cover;
-  }
-  .card-stats {
-    display: flex;
-    gap: 14px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #2d3e50;
-    border-top: 1px solid #f0f4f9;
-    padding-top: 8px;
-    margin-top: 6px;
-  }
-  .card-stats i { color: #1DA1F2; margin-right: 3px; }
 
-  /* wide card for new causes */
-  .wide-card {
-    flex: 0 0 260px;
-    display: flex;
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #edf2f7;
-    overflow: hidden;
+  .creator-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 28px;
+    background: #eaeef2;
+    object-fit: cover;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
+
+  .journey-metrics {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a5a6e;
+    border-top: 1px solid #eaeef2;
+    padding-top: 14px;
+    margin-top: 10px;
+  }
+  
+  .journey-metrics i { 
+    color: #1DA1F2; 
+    margin-right: 6px;
+    font-size: 13px;
+  }
+
+  .metric-item {
+    display: flex;
+    align-items: center;
+  }
+
+  /* ===== WIDE CARDS ===== */
+  .wide-journey-card {
+    display: flex;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #eaeef2;
+    overflow: hidden;
+    min-height: 140px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    height: 100%;
+    cursor: pointer;
+    max-width: 100%;
+  }
+  
+  .wide-journey-card:hover {
+    transform: translateY(-4px);
+    border-color: #d0d9e2;
+    box-shadow: 0 15px 25px -8px rgba(0,0,0,0.08);
+  }
+  
   .wide-img {
-    width: 90px;
+    width: 140px;
     background-size: cover;
     background-position: center;
     flex-shrink: 0;
-  }
-  .wide-content {
-    padding: 14px 12px;
-    flex: 1;
-  }
-  .wide-content .card-title { font-size: 15px; }
-
-  /* Scroll hint indicators */
-  .scroll-hint {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 18px 8px;
-    font-size: 11px;
-    color: #888;
-    gap: 4px;
-  }
-  .scroll-hint i {
-    color: #1DA1F2;
-    animation: bounceRight 1.5s infinite;
+    background-color: #f5f7fa;
   }
   
-  @keyframes bounceRight {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(4px); }
+  .wide-content {
+    padding: 18px 16px;
+    flex: 1;
   }
 
-  /* subtle divider between sections */
-  .section-divider {
+  /* ===== FEATURED SECTION ===== */
+  .featured-section {
+    padding: 0 24px;
+    margin: 24px 0;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+  }
+
+  .featured-card {
+    background: #ffffff;
+    border-radius: 28px;
+    border: 1px solid #eaeef2;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+  }
+  
+  .featured-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 36px -12px rgba(29,161,242,0.15);
+  }
+
+  .featured-media {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+  }
+
+  .featured-content {
+    padding: 24px;
+  }
+
+  .featured-category {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1DA1F2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  .featured-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a2634;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .featured-creator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #6a7a8a;
+  }
+
+  /* ===== TRENDING NOW ===== */
+  .trending-strip {
+    background: #f8fafc;
+    border-radius: 40px;
+    padding: 8px 16px;
+    margin: 16px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #eaeef2;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scroll-snap-type: x mandatory;
+  }
+
+  .trending-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ff4757;
+    background: rgba(255,71,87,0.1);
+    padding: 5px 15px;
+    border-radius: 30px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .trending-items {
+    display: flex;
+    gap: 20px;
+    padding: 5px 0;
+    flex-wrap: nowrap;
+  }
+
+  .trending-item {
+    font-size: 14px;
+    color: #4a5a6e;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+  
+  .trending-item i {
+    color: #1DA1F2;
+    font-size: 12px;
+  }
+
+  /* ===== DIVIDER ===== */
+  .divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.05), transparent);
-    margin: 8px 18px;
+    background: linear-gradient(90deg, transparent, #eaeef2, transparent);
+    margin: 16px 24px;
   }
 
-  /* LOGIN MODAL STYLES */
+  /* ===== LOADING & EMPTY STATES ===== */
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: #9a9a9a;
+    background: #fafbfc;
+    border-radius: 32px;
+    margin: 24px;
+  }
+
+  .empty-state i {
+    font-size: 48px;
+    color: #d0d9e2;
+    margin-bottom: 16px;
+  }
+
+  .loading-spinner {
+    text-align: center;
+    padding: 40px;
+    color: #8a9aa8;
+    display: none;
+  }
+  
+  .loading-spinner.active {
+    display: block;
+  }
+  
+  .loading-spinner i {
+    font-size: 28px;
+    color: #1DA1F2;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  #scroll-sentinel {
+    height: 10px;
+    width: 100%;
+  }
+
+  /* ===== HIDDEN CLASS ===== */
+  .journey-card.hidden,
+  .wide-journey-card.hidden {
+    display: none !important;
+  }
+
+  /* ===== DARK MODE STYLES ===== */
+  .dark-mode .discover-header {
+    background: rgba(18,18,18,0.92);
+    border-bottom-color: #2a2a2a;
+  }
+  
+  .dark-mode .discover-header h1 {
+    color: #ffffff;
+  }
+  
+  .dark-mode .category-section {
+    background: rgba(18,18,18,0.92);
+    border-bottom-color: #2a2a2a;
+  }
+  
+  .dark-mode .category-label {
+    color: #aaaaaa;
+  }
+  
+  .dark-mode .chip-scroll::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+  
+  .dark-mode .chip-item {
+    background: #1e1e1e;
+    border-color: #333333;
+    color: #e0e0e0;
+  }
+  
+  .dark-mode .chip-item i {
+    color: #64b5f6;
+  }
+  
+  .dark-mode .chip-item.active {
+    background: #1DA1F2;
+    color: white;
+  }
+  
+  .dark-mode .chip-item.active i {
+    color: white;
+  }
+  
+  .dark-mode .section-header {
+    background: #121212;
+    border-bottom-color: #2a2a2a;
+  }
+  
+  .dark-mode .section-header h2 {
+    color: #ffffff;
+  }
+  
+  .dark-mode .section-badge {
+    background: #1e1e1e;
+    border-color: #333333;
+    color: #bbbbbb;
+  }
+  
+  .dark-mode .journey-card,
+  .dark-mode .wide-journey-card,
+  .dark-mode .featured-card {
+    background: #1e1e1e;
+    border-color: #333333;
+  }
+  
+  .dark-mode .card-content,
+  .dark-mode .wide-content,
+  .dark-mode .featured-content {
+    background: #1e1e1e;
+  }
+  
+  .dark-mode .journey-title,
+  .dark-mode .featured-title {
+    color: #ffffff;
+  }
+  
+  .dark-mode .journey-creator,
+  .dark-mode .featured-creator {
+    color: #bbbbbb;
+  }
+  
+  .dark-mode .journey-metrics {
+    color: #bbbbbb;
+    border-top-color: #333333;
+  }
+  
+  .dark-mode .journey-metrics i {
+    color: #64b5f6;
+  }
+  
+  .dark-mode .trending-strip {
+    background: #1a1a1a;
+    border-color: #333333;
+  }
+  
+  .dark-mode .trending-item {
+    color: #cccccc;
+  }
+  
+  .dark-mode .empty-state {
+    background: #1a1a1a;
+    color: #888888;
+  }
+  
+  .dark-mode .empty-state i {
+    color: #444444;
+  }
+  
+  .dark-mode .divider {
+    background: linear-gradient(90deg, transparent, #333333, transparent);
+  }
+  
+  .dark-mode .search-btn {
+    background: #1e1e1e;
+    color: #bbbbbb;
+  }
+  
+  .dark-mode .search-btn:hover {
+    background: #2a2a2a;
+  }
+  
+  .dark-mode .scroll-indicator {
+    color: #64b5f6;
+  }
+
+  /* ===== MOBILE OPTIMIZATIONS - HORIZONTAL SCROLL FOR ALL SECTIONS ===== */
+  @media screen and (max-width: 768px) {
+    .discover-header {
+      padding: 16px 16px;
+    }
+    
+    .discover-header h1 {
+      font-size: 22px;
+    }
+    
+    .discover-header h1 i {
+      font-size: 20px;
+    }
+    
+    .category-section {
+      padding: 12px 16px 10px;
+      top: 64px;
+    }
+    
+    .chip-scroll {
+      padding-bottom: 10px;
+      margin-bottom: -5px;
+      gap: 6px;
+    }
+    
+    .chip-item {
+      padding: 8px 14px;
+      font-size: 13px;
+      min-height: 38px;
+    }
+    
+    .chip-item i {
+      margin-right: 6px;
+      font-size: 12px;
+    }
+    
+    .chip-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .section-header {
+      padding: 20px 16px 12px;
+    }
+    
+    .section-header h2 {
+      font-size: 18px;
+    }
+    
+    .content-grid {
+      padding: 12px 16px;
+      overflow-x: hidden;
+    }
+    
+    /* ===== HORIZONTAL SCROLL FOR CARD GRIDS ===== */
+    .card-grid {
+      display: flex !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      gap: 16px !important;
+      padding-bottom: 16px !important;
+      margin-bottom: -8px !important;
+      scroll-snap-type: x mandatory !important;
+      grid-template-columns: none !important;
+      flex-wrap: nowrap !important;
+    }
+    
+    .card-grid .journey-card {
+      flex: 0 0 280px !important;
+      scroll-snap-align: start !important;
+      margin-bottom: 0 !important;
+      min-width: 280px !important;
+    }
+    
+    /* Wide cards in horizontal scroll */
+    .card-grid.wide-grid {
+      display: flex !important;
+    }
+    
+    .card-grid.wide-grid .wide-journey-card {
+      flex: 0 0 320px !important;
+      scroll-snap-align: start !important;
+      min-width: 320px !important;
+    }
+    
+    /* Featured section - keep as grid (stacks vertically) */
+    .featured-section {
+      padding: 0 16px;
+      margin: 16px 0;
+    }
+    
+    .featured-grid {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+      display: grid !important;
+    }
+    
+    .featured-media {
+      height: 180px;
+    }
+    
+    .featured-content {
+      padding: 18px;
+    }
+    
+    .featured-title {
+      font-size: 20px;
+    }
+    
+    /* Trending strip */
+    .trending-strip {
+      margin: 16px 16px 20px;
+      padding: 6px 12px;
+      gap: 12px;
+    }
+    
+    .trending-label {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    
+    .trending-items {
+      gap: 15px;
+    }
+    
+    .trending-item {
+      font-size: 13px;
+    }
+    
+    /* Two column layout - keep as grid */
+    .two-col-grid {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 16px !important;
+      padding: 0 16px !important;
+    }
+    
+    /* Scrollbar styling for all horizontal scroll areas */
+    .card-grid::-webkit-scrollbar,
+    .chip-scroll::-webkit-scrollbar,
+    .trending-strip::-webkit-scrollbar {
+      height: 4px;
+      display: block;
+    }
+    
+    .card-grid::-webkit-scrollbar-track,
+    .chip-scroll::-webkit-scrollbar-track,
+    .trending-strip::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+    
+    .card-grid::-webkit-scrollbar-thumb,
+    .chip-scroll::-webkit-scrollbar-thumb,
+    .trending-strip::-webkit-scrollbar-thumb {
+      background: #1DA1F2;
+      border-radius: 10px;
+    }
+    
+    /* Dark mode scrollbar */
+    .dark-mode .card-grid::-webkit-scrollbar-track,
+    .dark-mode .chip-scroll::-webkit-scrollbar-track,
+    .dark-mode .trending-strip::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+  }
+  
+  /* Extra small devices */
+  @media screen and (max-width: 480px) {
+    .discover-header h1 {
+      font-size: 20px;
+    }
+    
+    .category-section {
+      top: 60px;
+    }
+    
+    .chip-item {
+      padding: 6px 12px;
+      font-size: 12px;
+      min-height: 34px;
+    }
+    
+    .chip-item i {
+      font-size: 11px;
+      margin-right: 4px;
+    }
+    
+    .card-grid .journey-card {
+      flex: 0 0 260px !important;
+      min-width: 260px !important;
+    }
+    
+    .card-grid.wide-grid .wide-journey-card {
+      flex: 0 0 280px !important;
+      min-width: 280px !important;
+    }
+    
+    .wide-img {
+      width: 80px;
+    }
+    
+    .wide-content {
+      padding: 12px 10px;
+    }
+    
+    .trending-strip {
+      padding: 6px 10px;
+    }
+    
+    .trending-item {
+      font-size: 12px;
+    }
+    
+    .chip-scroll {
+      margin-left: -16px;
+      margin-right: -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+      width: calc(100% + 32px);
+    }
+    
+    /* Adjust card grids to full width */
+    .card-grid {
+      margin-left: -16px;
+      margin-right: -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+      width: calc(100% + 32px);
+    }
+  }
+  
+  /* iPhone SE and very small devices */
+  @media screen and (max-width: 375px) {
+    .card-grid .journey-card {
+      flex: 0 0 240px !important;
+      min-width: 240px !important;
+    }
+    
+    .card-media {
+      height: 140px;
+    }
+  }
+</style>
+
+<script>
+  // ===== LOGIN MODAL =====
+  function showLoginModal() {
+    const modal = document.getElementById('loginPromptModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  
+  function closeLoginModal() {
+    const modal = document.getElementById('loginPromptModal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+  }
+  
+  window.onclick = function(event) {
+    const modal = document.getElementById('loginPromptModal');
+    if (modal && event.target === modal) {
+      closeLoginModal();
+    }
+  };
+  
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      closeLoginModal();
+    }
+  });
+
+  // ===== CATEGORY FILTER =====
+  document.addEventListener('DOMContentLoaded', function() {
+    const chips = document.querySelectorAll('.chip-item');
+    const cards = document.querySelectorAll('.journey-card, .wide-journey-card');
+    
+    if (chips.length > 0) {
+      chips.forEach(chip => {
+        chip.addEventListener('click', function(e) {
+          {% if user.is_authenticated %}
+          // Remove active class from all chips
+          chips.forEach(c => c.classList.remove('active'));
+          // Add active class to clicked chip
+          this.classList.add('active');
+          
+          const selectedCategory = this.dataset.category;
+          
+          // Filter cards
+          cards.forEach(card => {
+            if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
+              card.classList.remove('hidden');
+            } else {
+              card.classList.add('hidden');
+            }
+          });
+          
+          // Update scroll indicators after filtering
+          setTimeout(updateScrollIndicators, 100);
+          {% else %}
+          e.preventDefault();
+          showLoginModal();
+          {% endif %}
+        });
+      });
+    }
+    
+    // ===== UNAUTHENTICATED USER HANDLING =====
+    {% if not user.is_authenticated %}
+    const clickableElements = document.querySelectorAll('.journey-card, .wide-journey-card, .chip-item, .featured-card, .search-btn');
+    clickableElements.forEach(el => {
+      if (el) {
+        el.addEventListener('click', function(e) {
+          // Don't block modal close button or login/signup links
+          if (e.target.closest('.login-modal-close') || 
+              e.target.closest('.btn-login') || 
+              e.target.closest('.btn-signup') ||
+              e.target.closest('.btn-browse')) {
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+          showLoginModal();
+        });
+      }
+    });
+    {% else %}
+    // For authenticated users, handle card clicks - Add your navigation here
+    const allCards = document.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
+    allCards.forEach(card => {
+      card.addEventListener('click', function(e) {
+        // Add your navigation logic here
+        // Example: window.location.href = `/campaign/${this.dataset.campaignId}/`;
+      });
+    });
+    
+    // Handle search button - Add your search functionality here
+    const searchBtn = document.querySelector('.search-btn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function() {
+        // Add your search logic here
+        // Example: window.location.href = '/search/';
+      });
+    }
+    {% endif %}
+    
+    // ===== ENSURE HORIZONTAL SCROLL ON MOBILE =====
+    const chipScroll = document.querySelector('.chip-scroll');
+    if (chipScroll) {
+      chipScroll.addEventListener('touchstart', function() {
+        // Just to ensure touch events are captured
+      }, {passive: true});
+    }
+    
+    // ===== LAZY LOADING SENTINEL =====
+    const sentinel = document.getElementById('scroll-sentinel');
+    if (sentinel) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            // Load more content here if needed
+          }
+        });
+      });
+      observer.observe(sentinel);
+    }
+    
+    // ===== DYNAMIC SCROLL INDICATOR (just arrow icon) =====
+    function updateScrollIndicators() {
+      const grids = document.querySelectorAll('.card-grid');
+      grids.forEach(grid => {
+        const parentSection = grid.closest('.content-grid');
+        if (parentSection) {
+          const header = parentSection.previousElementSibling;
+          if (header && header.classList.contains('section-header')) {
+            let indicator = header.querySelector('.scroll-indicator');
+            
+            // Check if grid has overflow
+            const hasOverflow = grid.scrollWidth > grid.clientWidth + 10; // +10 for tolerance
+            
+            if (hasOverflow) {
+              if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.className = 'scroll-indicator';
+                indicator.innerHTML = '<i class="fas fa-arrow-right"></i>';
+                header.appendChild(indicator);
+              }
+            } else {
+              if (indicator) {
+                indicator.remove();
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Run on load and resize
+    setTimeout(updateScrollIndicators, 200);
+    window.addEventListener('resize', updateScrollIndicators);
+    
+    // Also run after any filtering that might change visible cards
+    const observer = new MutationObserver(updateScrollIndicators);
+    document.querySelectorAll('.card-grid').forEach(grid => {
+      observer.observe(grid, { childList: true, subtree: true });
+    });
+  });
+</script>
+
+<!-- ===== MAIN DISCOVER PAGE CONTENT ===== -->
+<div class="discover-page">
+  <div class="discover-wrapper">
+    
+    <!-- Header -->
+    <div class="discover-header">
+      <h1>
+        <i class="fas fa-compass"></i>
+        discover
+      </h1>
+      <div class="header-actions">
+        <button class="search-btn">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Category filters - Horizontal scroll -->
+    {% if campaign_categories %}
+    <div class="category-section">
+      <div class="category-label">BROWSE BY CATEGORY</div>
+      <div class="chip-scroll">
+        <span class="chip-item active" data-category="all"><i class="fas fa-compass"></i> All</span>
+        {% for category_value, category_label in campaign_categories %}
+        <span class="chip-item" data-category="{{ category_value|slugify }}">
+          <i class="fas 
+            {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
+            {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
+            {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
+            {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
+            {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
+            {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
+            {% elif category_value == 'Housing, Living & Stability' %}fa-home
+            {% elif category_value == 'Community & Social Impact' %}fa-users
+            {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
+            {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
+            {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
+            {% else %}fa-tag{% endif %}"></i>
+          {{ category_label }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== FEATURED SECTION (Grid - stacks on mobile) ===== -->
+    {% if trending_campaigns.0 %}
+    <div class="featured-section">
+      <div class="featured-grid">
+        <!-- Main featured -->
+        <div class="featured-card" data-category="{{ trending_campaigns.0.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ trending_campaigns.0.id }}"{% endif %}>
+          <div class="featured-media">
+            <img src="{% if trending_campaigns.0.poster %}{{ trending_campaigns.0.poster.url|cloudinary_cover:'800,400' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=400&fit=crop{% endif %}" 
+                 srcset="{% if trending_campaigns.0.poster %}{{ trending_campaigns.0.poster.url|cloudinary_cover:'1600,800' }} 2x{% endif %}"
+                 alt="{{ trending_campaigns.0.title }}" 
+                 loading="lazy"
+                 style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div class="featured-content">
+            <div class="featured-category">{{ trending_campaigns.0.get_category_display }}</div>
+            <div class="featured-title">{{ trending_campaigns.0.title|truncatechars:50 }}</div>
+            <div class="featured-creator">
+              <img class="creator-avatar" 
+                   src="{% if trending_campaigns.0.user.avatar %}{{ trending_campaigns.0.user.avatar.url|cloudinary_optimize_avatar:56 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=56&h=56&fit=crop{% endif %}" 
+                   srcset="{% if trending_campaigns.0.user.avatar %}{{ trending_campaigns.0.user.avatar.url|cloudinary_optimize_avatar:112 }} 2x{% endif %}"
+                   alt="@{{ trending_campaigns.0.user.user.username }}" 
+                   loading="lazy">
+              <span>@{{ trending_campaigns.0.user.user.username }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Secondary featured -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          {% for campaign in trending_campaigns|slice:"1:3" %}
+          {% if campaign.id %}
+          <div class="featured-card" style="display: flex; height: auto;" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="wide-img" style="width: 100px; height: 100px; background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}');"></div>
+            <div class="wide-content" style="padding: 16px;">
+              <div class="journey-title" style="font-size: 15px; min-height: auto;">{{ campaign.title|truncatechars:25 }}</div>
+              <div class="journey-creator" style="margin: 4px 0;">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:24 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:48 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy"
+                     style="width: 24px; height: 24px;">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics" style="border: none; padding: 0; margin: 8px 0 0;">
+                <span><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== TRENDING JOURNEYS (Horizontal scroll on mobile) ===== -->
+    {% if trending_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-fire" style="color:#ff4757;"></i> 
+        Trending now
+        <span class="section-badge">🔥 Hot</span>
+      </h2>
+      <!-- Scroll indicator arrow will be added dynamically by JavaScript if overflow exists -->
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid">
+        {% for campaign in trending_campaigns|slice:":8" %}
+          {% if campaign.id %}
+          <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="card-media">
+              <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                   srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                   alt="{{ campaign.title }}" 
+                   loading="lazy">
+              <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+            </div>
+            <div class="card-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+              <div class="journey-creator">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics">
+                <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span class="metric-item"><i class="fas fa-users"></i> {{ campaign.follower_count_total|default:0|k_format }}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== RISING STARS (Horizontal scroll on mobile) ===== -->
+    {% if rising_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-rocket" style="color:#1DA1F2;"></i> 
+        Rising stars
+        <span class="section-badge">🚀 New creators</span>
+      </h2>
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid">
+        {% for campaign in rising_campaigns|slice:":6" %}
+          {% if campaign.id %}
+          <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="card-media">
+              <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop{% endif %}" 
+                   srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                   alt="{{ campaign.title }}" 
+                   loading="lazy">
+              <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+            </div>
+            <div class="card-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+              <div class="journey-creator">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics">
+                <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span class="metric-item"><i class="fas fa-clock"></i> {{ campaign.timestamp|timesince }} ago</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== FASTEST GROWING + MOST COMPLETED (Grid - stays as grid) ===== -->
+    {% if fastest_growing_campaigns or most_completed_campaigns %}
+    <div class="two-col-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 0 24px;">
+      <!-- Fastest growing -->
+      {% if fastest_growing_campaigns %}
+      <div>
+        <div class="section-header" style="padding: 16px 0;">
+          <h2>
+            <i class="fas fa-chart-line" style="color:#ffa502;"></i> 
+            Fastest growing
+          </h2>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for campaign in fastest_growing_campaigns|slice:":4" %}
+            {% if campaign.id %}
+            <div class="wide-journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+              <div class="wide-img" style="background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=200&h=200&fit=crop{% endif %}');"></div>
+              <div class="wide-content">
+                <div class="journey-title" style="font-size: 15px;">{{ campaign.title|truncatechars:30 }}</div>
+                <div class="journey-creator" style="margin: 4px 0;">
+                  <img class="creator-avatar" 
+                       src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:24 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
+                       srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:48 }} 2x{% endif %}"
+                       alt="@{{ campaign.user.user.username }}" 
+                       loading="lazy"
+                       style="width: 24px; height: 24px;">
+                  <span>@{{ campaign.user.user.username }}</span>
+                </div>
+                <div class="journey-metrics" style="border: none; padding: 0; margin-top: 8px;">
+                  <span><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                  <span><i class="fas fa-bolt"></i> +{{ campaign.follower_growth|floatformat:0|default:24 }}%</span>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      
+      <!-- Most completed -->
+      {% if most_completed_campaigns %}
+      <div>
+        <div class="section-header" style="padding: 16px 0;">
+          <h2>
+            <i class="fas fa-flag-checkered" style="color:#26de81;"></i> 
+            Most completed
+          </h2>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          {% for campaign in most_completed_campaigns|slice:":4" %}
+            {% if campaign.id %}
+            <div class="wide-journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+              <div class="wide-img" style="background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=200&h=200&fit=crop{% endif %}');"></div>
+              <div class="wide-content">
+                <div class="journey-title" style="font-size: 15px;">{{ campaign.title|truncatechars:30 }}</div>
+                <div class="journey-creator" style="margin: 4px 0;">
+                  <img class="creator-avatar" 
+                       src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:24 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
+                       srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:48 }} 2x{% endif %}"
+                       alt="@{{ campaign.user.user.username }}" 
+                       loading="lazy"
+                       style="width: 24px; height: 24px;">
+                  <span>@{{ campaign.user.user.username }}</span>
+                </div>
+                <div class="journey-metrics" style="border: none; padding: 0; margin-top: 8px;">
+                  <span><i class="fas fa-check-circle"></i> {{ campaign.completed_count|default:128|k_format }} completed</span>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== MOST WATCHED (Horizontal scroll on mobile) ===== -->
+    {% if most_watched_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-clock" style="color:#1DA1F2;"></i> 
+        Most watched
+        <span class="section-badge">🎥 High engagement</span>
+      </h2>
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid">
+        {% for campaign in most_watched_campaigns|slice:":6" %}
+          {% if campaign.id %}
+          <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="card-media">
+              <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                   srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                   alt="{{ campaign.title }}" 
+                   loading="lazy">
+              <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+            </div>
+            <div class="card-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+              <div class="journey-creator">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics">
+                <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span class="metric-item"><i class="fas fa-clock"></i> {{ campaign.avg_watch_time|default:0|floatformat:0 }}s avg</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== MOST SAVED (Horizontal scroll on mobile) ===== -->
+    {% if most_saved_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-bookmark" style="color:#1DA1F2;"></i> 
+        Most saved
+        <span class="section-badge">📌 Bookmarked</span>
+      </h2>
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid">
+        {% for campaign in most_saved_campaigns|slice:":6" %}
+          {% if campaign.id %}
+          <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="card-media">
+              <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                   srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                   alt="{{ campaign.title }}" 
+                   loading="lazy">
+              <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+            </div>
+            <div class="card-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+              <div class="journey-creator">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics">
+                <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span class="metric-item"><i class="fas fa-bookmark"></i> {{ campaign.save_count|default:0|k_format }}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== SUGGESTED FOR YOU (Horizontal scroll on mobile) ===== -->
+    {% if suggested_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-magic" style="color:#1DA1F2;"></i> 
+        {% if user.is_authenticated %}Suggested for you{% else %}Recommended journeys{% endif %}
+      </h2>
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid">
+        {% for campaign in suggested_campaigns|slice:":4" %}
+          {% if campaign.id %}
+          <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="card-media">
+              <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop{% endif %}" 
+                   srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                   alt="{{ campaign.title }}" 
+                   loading="lazy">
+              <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+            </div>
+            <div class="card-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+              <div class="journey-creator">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics">
+                <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span class="metric-item"><i class="fas fa-eye"></i> {{ campaign.watch_count|default:0|k_format }}</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== NEW JOURNEYS (Horizontal scroll on mobile) ===== -->
+    {% if new_campaigns %}
+    <div class="section-header">
+      <h2>
+        <i class="fas fa-sparkles" style="color:#1DA1F2;"></i> 
+        Fresh journeys
+        <span class="section-badge">🆕 Just added</span>
+      </h2>
+    </div>
+    
+    <div class="content-grid">
+      <div class="card-grid wide-grid">
+        {% for campaign in new_campaigns|slice:":6" %}
+          {% if campaign.id %}
+          <div class="wide-journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+            <div class="wide-img" style="background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}');"></div>
+            <div class="wide-content">
+              <div class="journey-title">{{ campaign.title|truncatechars:30 }}</div>
+              <div class="journey-creator" style="margin:4px 0;">
+                <img class="creator-avatar" 
+                     src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:24 }}{% else %}https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=24&h=24&fit=crop{% endif %}" 
+                     srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:48 }} 2x{% endif %}"
+                     alt="@{{ campaign.user.user.username }}" 
+                     loading="lazy"
+                     style="width: 24px; height: 24px;">
+                <span>@{{ campaign.user.user.username }}</span>
+              </div>
+              <div class="journey-metrics" style="border:none; padding:0; margin-top: 8px;">
+                <span><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                <span><i class="fas fa-hourglass-start"></i> {{ campaign.timestamp|timesince }} ago</span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    {% endif %}
+
+    <!-- ===== POPULAR BY CATEGORY (Horizontal scroll on mobile) ===== -->
+    {% if category_popular %}
+      {% for category_value, category_campaigns in category_popular.items %}
+        {% if category_campaigns %}
+        <div class="section-header">
+          <h2>
+            <i class="fas 
+              {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
+              {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
+              {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
+              {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
+              {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
+              {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
+              {% elif category_value == 'Housing, Living & Stability' %}fa-home
+              {% elif category_value == 'Community & Social Impact' %}fa-users
+              {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
+              {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
+              {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
+              {% else %}fa-tag{% endif %}"></i> 
+            Popular in {{ category_campaigns.0.get_category_display }}
+          </h2>
+        </div>
+        
+        <div class="content-grid">
+          <div class="card-grid">
+            {% for campaign in category_campaigns|slice:":4" %}
+              {% if campaign.id %}
+              <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+                <div class="card-media">
+                  <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                       srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                       alt="{{ campaign.title }}" 
+                       loading="lazy">
+                  <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+                </div>
+                <div class="card-content">
+                  <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+                  <div class="journey-creator">
+                    <img class="creator-avatar" 
+                         src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:28 }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                         srcset="{% if campaign.user.avatar %}{{ campaign.user.avatar.url|cloudinary_optimize_avatar:56 }} 2x{% endif %}"
+                         alt="@{{ campaign.user.user.username }}" 
+                         loading="lazy">
+                    <span>@{{ campaign.user.user.username }}</span>
+                  </div>
+                  <div class="journey-metrics">
+                    <span><i class="fas fa-heart"></i> {{ campaign.love_count_total|default:0|k_format }}</span>
+                    <span><i class="fas fa-users"></i> {{ campaign.follower_count_total|default:0|k_format }}</span>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <!-- Error message if no campaigns -->
+    {% if not trending_campaigns and not rising_campaigns and not new_campaigns %}
+    <div class="empty-state">
+      <i class="fas fa-compass"></i>
+      <h3>No journeys found</h3>
+      <p>Check back soon for new adventures and causes to support.</p>
+      {% if error_message %}
+      <p style="font-size: 14px; color: #ff4757; margin-top: 10px;">{{ error_message }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div style="padding: 60px 24px 30px; text-align: center;">
+      <div style="font-size: 12px; color: #aab8c5; letter-spacing: 0.5px;">
+        <i class="fas fa-compass" style="margin-right: 6px;"></i> 
+        discover · {{ total_campaigns|default:0 }} journeys · {{ total_active_changemakers|default:0 }} changemakers
+      </div>
+    </div>
+    
+    <!-- Loading sentinel -->
+    <div id="scroll-sentinel"></div>
+    <div class="loading-spinner" id="loading-spinner">
+      <i class="fas fa-circle-notch"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOGIN MODAL STYLES ===== -->
+<style>
   .login-modal-overlay {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    display: none;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
-    animation: fadeIn 0.3s ease;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
   
   .login-modal-container {
     background: white;
     border-radius: 32px;
+    max-width: 420px;
     width: 90%;
-    max-width: 400px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.4s ease;
-    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+    animation: modalSlideUp 0.3s ease;
   }
   
-  @keyframes slideUp {
-    from { 
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to { 
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .dark-mode .login-modal-container {
+    background: #1e1e1e;
+    color: white;
   }
   
   .login-modal-header {
-    padding: 24px 24px 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eaeef2;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .dark-mode .login-modal-header {
+    border-bottom-color: #333;
   }
   
   .login-modal-header h3 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0;
-    background: linear-gradient(145deg, #1b2b4e, #1DA1F2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2634;
+  }
+  
+  .dark-mode .login-modal-header h3 {
+    color: white;
   }
   
   .login-modal-close {
     background: none;
     border: none;
     font-size: 24px;
-    color: #999;
     cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 50%;
-    transition: all 0.2s;
+    color: #7a8a9a;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40px;
   }
   
   .login-modal-close:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: #f5f7fa;
+  }
+  
+  .dark-mode .login-modal-close {
+    color: #aaa;
   }
   
   .login-modal-body {
-    padding: 24px;
+    padding: 32px 24px;
     text-align: center;
   }
   
@@ -431,23 +1786,35 @@
   
   .login-modal-body h4 {
     font-size: 24px;
-    font-weight: 700;
-    color: #1b2b4e;
-    margin: 0 0 12px;
+    font-weight: 600;
+    color: #1a2634;
+    margin-bottom: 12px;
+  }
+  
+  .dark-mode .login-modal-body h4 {
+    color: white;
   }
   
   .login-modal-body p {
-    color: #666;
-    line-height: 1.6;
+    color: #6a7a8a;
     margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  
+  .dark-mode .login-modal-body p {
+    color: #aaa;
   }
   
   .login-modal-features {
     text-align: left;
-    background: #f8f9fa;
+    background: #f8fafc;
     border-radius: 20px;
     padding: 16px;
-    margin: 20px 0;
+    margin-top: 20px;
+  }
+  
+  .dark-mode .login-modal-features {
+    background: #2a2a2a;
   }
   
   .feature-item {
@@ -455,7 +1822,11 @@
     align-items: center;
     gap: 12px;
     padding: 8px 0;
-    color: #444;
+    color: #4a5a6e;
+  }
+  
+  .dark-mode .feature-item {
+    color: #ccc;
   }
   
   .feature-item i {
@@ -470,497 +1841,71 @@
     gap: 12px;
   }
   
+  .btn-login, .btn-signup, .btn-browse {
+    padding: 14px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 16px;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+  }
+  
   .btn-login {
     background: #1DA1F2;
     color: white;
-    border: none;
-    padding: 14px;
-    border-radius: 40px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-    text-decoration: none;
-    text-align: center;
   }
   
   .btn-login:hover {
-    background: #0d8bd9;
+    background: #1a8cd8;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(29, 161, 242, 0.3);
   }
   
   .btn-signup {
-    background: white;
+    background: #ffffff;
     color: #1DA1F2;
     border: 2px solid #1DA1F2;
-    padding: 14px;
-    border-radius: 40px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-    text-decoration: none;
-    text-align: center;
   }
   
   .btn-signup:hover {
-    background: #e8f0fe;
+    background: #f0f7fe;
     transform: translateY(-2px);
   }
   
   .btn-browse {
-    background: none;
-    color: #999;
-    border: none;
-    padding: 12px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: 0.2s;
-    text-decoration: underline;
+    background: transparent;
+    color: #7a8a9a;
+    border: 1px solid #eaeef2;
+  }
+  
+  .dark-mode .btn-browse {
+    color: #aaa;
+    border-color: #333;
   }
   
   .btn-browse:hover {
-    color: #666;
+    background: #f5f7fa;
   }
   
   .login-modal-guest-note {
     text-align: center;
     padding: 0 24px 24px;
-    color: #999;
     font-size: 13px;
-    border-top: 1px solid #f0f0f0;
-    margin: 0;
-    padding-top: 20px;
+    color: #8a9aa8;
   }
   
-  .login-modal-guest-note i {
-    color: #1DA1F2;
-  }
-  
-  /* Dark mode support */
-  .dark-mode .login-modal-container {
-    background: #1e1e1e;
-  }
-  
-  .dark-mode .login-modal-header {
-    border-bottom-color: #333;
-  }
-  
-  .dark-mode .login-modal-body h4 {
-    color: #f0f0f0;
-  }
-  
-  .dark-mode .login-modal-body p {
-    color: #b0b0b0;
-  }
-  
-  .dark-mode .login-modal-features {
-    background: #2a2a2a;
-  }
-  
-  .dark-mode .feature-item {
-    color: #e0e0e0;
-  }
-  
-  .dark-mode .btn-signup {
-    background: #2a2a2a;
-    color: #1DA1F2;
-    border-color: #1DA1F2;
-  }
-  
-  .dark-mode .btn-signup:hover {
-    background: #333;
-  }
-  
-  .dark-mode .login-modal-guest-note {
-    color: #666;
-    border-top-color: #333;
-  }
-  
-  /* Add a subtle lock overlay on cards for unauthenticated users */
-  {% if not user.is_authenticated %}
-  .explore-card, .wide-card {
-    position: relative;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .explore-card:hover, .wide-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  }
-  
-  .explore-card:active, .wide-card:active {
-    transform: scale(0.98);
-  }
-  {% endif %}
-
-  /* dark mode adjustments (inherit from base) */
-  .dark-mode .discover-header-compact {
-    border-bottom-color: rgba(255,255,255,0.05);
-  }
-  .dark-mode .explore-card,
-  .dark-mode .wide-card {
-    background: #1e1e1e;
-    border-color: #333;
-  }
-  .dark-mode .card-title { color: #f0f0f0; }
-  .dark-mode .card-author { color: #b0b0b0; }
-  .dark-mode .card-stats { color: #b0b0b0; border-top-color: #333; }
-  .dark-mode .section-head h3 { color: #f0f0f0; }
-  .dark-mode .chip-item {
-    background: #2a2a2a;
-    color: #e0e0e0;
-  }
-  .dark-mode .chip-item i { color: #64b5f6; }
-  .dark-mode .chip-item.active {
-    background: #1DA1F2;
-    color: white;
-  }
-  .dark-mode .chip-item.active i { color: white; }
-  .dark-mode .pill-link {
-    background: #2a2a2a;
-    color: #64b5f6;
-  }
-  .dark-mode .card-row::-webkit-scrollbar-track {
-    background: #333;
-  }
-  .dark-mode .section-head {
-    border-bottom-color: rgba(255,255,255,0.03);
-  }
-  .dark-mode .section-divider {
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  @keyframes modalSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>
-
-<script>
-  // Function to show login modal
-  function showLoginModal() {
-    document.getElementById('loginPromptModal').style.display = 'flex';
-    // Prevent body scrolling when modal is open
-    document.body.style.overflow = 'hidden';
-  }
-  
-  // Function to close login modal
-  function closeLoginModal() {
-    document.getElementById('loginPromptModal').style.display = 'none';
-    // Re-enable body scrolling
-    document.body.style.overflow = 'auto';
-  }
-  
-  // Close modal when clicking outside
-  window.onclick = function(event) {
-    const modal = document.getElementById('loginPromptModal');
-    if (event.target === modal) {
-      closeLoginModal();
-    }
-  }
-  
-  // Handle ESC key
-  document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-      closeLoginModal();
-    }
-  });
-  
-  // Initialize when page loads
-  document.addEventListener('DOMContentLoaded', function() {
-    {% if not user.is_authenticated %}
-      // Add click handlers to all cards for unauthenticated users
-      const cards = document.querySelectorAll('.explore-card, .wide-card, .chip-item, .pill-link');
-      cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          showLoginModal();
-        });
-      });
-      
-      // Also block any links that might be inside cards
-      const cardLinks = document.querySelectorAll('.explore-card a, .wide-card a');
-      cardLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          showLoginModal();
-        });
-      });
-      
-      // Show modal after 15 seconds of browsing (optional - uncomment if desired)
-      // setTimeout(function() {
-      //   // Only show if not already showing
-      //   if (document.getElementById('loginPromptModal').style.display !== 'flex') {
-      //     showLoginModal();
-      //   }
-      // }, 15000); // 15 seconds
-    {% endif %}
-  });
-</script>
-<div class="discover-wrapper">
-
-  <!-- tiny header with compass -->
-  <div class="discover-header-compact">
-    <h2>discover</h2>
-    <i class="fas fa-compass"></i>
-  </div>
-
-  <!-- category filter chips (dynamic from actual categories) -->
-  <div class="chip-scroll">
-    <span class="chip-item active" data-category="all"><i class="fas fa-fire"></i> All</span>
-    {% for category_value, category_label in campaign_categories %}
-    <span class="chip-item" data-category="{{ category_value|slugify }}">
-      <i class="fas 
-        {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
-        {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
-        {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
-        {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
-        {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
-        {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
-        {% elif category_value == 'Housing, Living & Stability' %}fa-home
-        {% elif category_value == 'Community & Social Impact' %}fa-users
-        {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
-        {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
-        {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
-        {% else %}fa-tag{% endif %}">
-      </i> {{ category_label }}
-    </span>
-    {% endfor %}
-  </div>
-
-  <!-- ========== TRENDING SECTION ========== -->
-  <div class="section-head">
-    <h3><i class="fas fa-chart-line" style="color:#1DA1F2;"></i> Trending now</h3>
-    <span class="pill-link">
-        <a href="{% url 'trending_causes' %}">see all →</a>
-    </span>
-  </div>
-  <div class="scroll-hint">
-    <span>scroll for more</span>
-    <i class="fas fa-arrow-right"></i>
-  </div>
-  <div class="card-row">
-    {% for campaign in trending_campaigns %}
-      {% if campaign.id %}
-      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
-          <div class="explore-card" data-category="{{ campaign.category|slugify }}">
-              <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
-                  <span class="cat-badge"><i class="fas fa-tag"></i> {{ campaign.get_category_display|truncatechars:15 }}</span>
-              </div>
-              <div class="card-body">
-                  <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
-                  <div class="card-author">
-                      <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
-                      <span>@{{ campaign.user.user.username }}</span>
-                  </div>
-                  <div class="card-stats">
-                      <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
-                      <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
-                  </div>
-              </div>
-          </div>
-      </a>
-      {% endif %}
-    {% empty %}
-    <div class="explore-card">
-        <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-            <span class="cat-badge">No campaigns yet</span>
-        </div>
-        <div class="card-body">
-            <div class="card-title">Be the first to start a cause</div>
-            <div class="card-stats">
-                <span><i class="fas fa-heart"></i> 0</span>
-                <span><i class="fas fa-users"></i> 0</span>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-  </div>
-  
-  <div class="section-divider"></div>
-
-  <!-- ========== SUGGESTED SECTION ========== -->
-  <div class="section-head">
-    <h3><i class="fas fa-magic" style="color:#1DA1F2;"></i> suggested for you</h3>
-    <span class="pill-link">refresh ↻</span>
-  </div>
-  <div class="scroll-hint">
-    <span>scroll for more</span>
-    <i class="fas fa-arrow-right"></i>
-  </div>
-  <div class="card-row">
-    {% for campaign in suggested_campaigns %}
-      {% if campaign.id %}
-      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
-        <div class="explore-card" data-category="{{ campaign.category|slugify }}">
-          <div class="card-media" style="background-image: linear-gradient(145deg, #784b2e, #ca9e7c), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
-            <span class="cat-badge"><i class="fas fa-tag"></i> {{ campaign.get_category_display|truncatechars:15 }}</span>
-          </div>
-          <div class="card-body">
-            <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
-            <div class="card-author">
-              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
-              <span>@{{ campaign.user.user.username }}</span>
-            </div>
-            <div class="card-stats">
-              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
-              <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
-            </div>
-          </div>
-        </div>
-      </a>
-      {% endif %}
-    {% empty %}
-    <div class="explore-card">
-      <div class="card-media" style="background-image: linear-gradient(145deg, #784b2e, #ca9e7c), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=400&h=250&fit=crop'); background-blend-mode: overlay;">
-        <span class="cat-badge">Personalized picks</span>
-      </div>
-      <div class="card-body">
-        <div class="card-title">Follow more causes to get suggestions</div>
-        <div class="card-stats">
-          <span><i class="fas fa-heart"></i> 0</span>
-          <span><i class="fas fa-users"></i> 0</span>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  
-  <div class="section-divider"></div>
-
-  <!-- ========== NEW CAUSES SECTION (wide cards) ========== -->
-  <div class="section-head">
-    <h3><i class="fas fa-sparkles" style="color:#1DA1F2;"></i> new causes</h3>
-    <span class="pill-link">latest →</span>
-  </div>
-  <div class="scroll-hint">
-    <span>scroll for more</span>
-    <i class="fas fa-arrow-right"></i>
-  </div>
-  <div class="card-row">
-    {% for campaign in new_campaigns %}
-      {% if campaign.id %}
-      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="wide-card-link" style="text-decoration: none;">
-        <div class="wide-card" data-category="{{ campaign.category|slugify }}">
-          <div class="wide-img" style="background-image: linear-gradient(145deg, #13548b, #5790c9), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}'); background-blend-mode: overlay;"></div>
-          <div class="wide-content">
-            <div class="card-title">{{ campaign.title|truncatechars:25 }}</div>
-            <div class="card-author" style="margin:4px 0;">
-              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=50&h=50&fit=crop{% endif %}" alt="">
-              <span>@{{ campaign.user.user.username }}</span>
-            </div>
-            <div class="card-stats" style="border:none; padding:0;">
-              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
-              <span><i class="fas fa-hourglass-start"></i> {{ campaign.timestamp|timesince }} ago</span>
-            </div>
-          </div>
-        </div>
-      </a>
-      {% endif %}
-    {% empty %}
-    <div class="wide-card">
-      <div class="wide-img" style="background-image: linear-gradient(145deg, #13548b, #5790c9), url('https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop'); background-blend-mode: overlay;"></div>
-      <div class="wide-content">
-        <div class="card-title">Start your campaign today</div>
-        <div class="card-stats" style="border:none; padding:0;">
-          <span><i class="fas fa-heart"></i> 0</span>
-          <span><i class="fas fa-hourglass-start"></i> Just now</span>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- ========== POPULAR BY CATEGORY ========== -->
-  {% for category_value, category_label in campaign_categories %}
-  {% with category_campaigns=category_popular|get_item:category_value %}
-  {% if category_campaigns %}
-  <div class="section-divider"></div>
-  <div class="section-head">
-    <h3><i class="fas 
-      {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
-      {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
-      {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
-      {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
-      {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
-      {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
-      {% elif category_value == 'Housing, Living & Stability' %}fa-home
-      {% elif category_value == 'Community & Social Impact' %}fa-users
-      {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
-      {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
-      {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
-      {% else %}fa-tag{% endif %}" style="color:#1DA1F2;"></i> {{ category_label }}</h3>
-   
-  </div>
-  <div class="scroll-hint">
-    <span>scroll for more</span>
-    <i class="fas fa-arrow-right"></i>
-  </div>
-  <div class="card-row">
-    {% for campaign in category_campaigns|slice:":5" %}
-      {% if campaign.id %}
-      <a href="{% url 'campaign_journey' campaign_id=campaign.id %}" class="explore-card-link" style="text-decoration: none;">
-        <div class="explore-card" data-category="{{ campaign.category|slugify }}">
-          <div class="card-media" style="background-image: linear-gradient(145deg, #1b2b4e, #4b7aa1), url('{% if campaign.poster %}{{ campaign.poster.url }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}'); background-blend-mode: overlay;">
-            <span class="cat-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
-          </div>
-          <div class="card-body">
-            <div class="card-title">{{ campaign.title|truncatechars:30 }}</div>
-            <div class="card-author">
-              <img class="author-avatar" src="{% if campaign.user.avatar %}{{ campaign.user.avatar.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=50&h=50&fit=crop{% endif %}" alt="">
-              <span>@{{ campaign.user.user.username }}</span>
-            </div>
-            <div class="card-stats">
-              <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
-              <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
-            </div>
-          </div>
-        </div>
-      </a>
-      {% endif %}
-    {% endfor %}
-  </div>
-  {% endif %}
-  {% endwith %}
-  {% endfor %}
-
-  <!-- subtle hint that it's a demo -->
-  <div style="padding: 40px 18px 20px; text-align: center; font-size: 12px; color: #aaa; border-top: 1px solid #eee; margin-top: 20px;">
-    <i class="fas fa-compass" style="margin-right: 6px;"></i> discover · {{ total_campaigns }} active causes · updated in real-time
-  </div>
-</div>
-
-<script>
-  // Category filter functionality
-  document.addEventListener('DOMContentLoaded', function() {
-    const chips = document.querySelectorAll('.chip-item');
-    const cards = document.querySelectorAll('.explore-card, .wide-card');
-    
-    chips.forEach(chip => {
-      chip.addEventListener('click', function(e) {
-        {% if user.is_authenticated %}
-        // Update active state
-        chips.forEach(c => c.classList.remove('active'));
-        this.classList.add('active');
-        
-        const selectedCategory = this.dataset.category;
-        
-        // Filter cards
-        cards.forEach(card => {
-          if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
-            card.style.display = 'block';
-          } else {
-            card.style.display = 'none';
-          }
-        });
-        {% else %}
-        // Show login modal for unauthenticated users
-        e.preventDefault();
-        showLoginModal();
-        {% endif %}
-      });
-    });
-  });
-</script>
 
 {% endblock %}
