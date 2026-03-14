@@ -225,7 +225,13 @@ def user_in_tribe(campaign, user):
         return campaign.has_user_joined_tribe(user.profile)
     except AttributeError:
         return False
-
+# In your templatetags/custom_filters.py
+@register.filter
+def cloudinary_optimize_avatar(url, size):
+    """Optimize Cloudinary URL for avatar"""
+    if 'cloudinary' in url:
+        return url.replace('/upload/', f'/upload/w_{size},h_{size},c_fill/')
+    return url
 
 # ============================================================================
 # CLOUDINARY IMAGE OPTIMIZATION FILTERS

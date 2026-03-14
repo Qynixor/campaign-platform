@@ -3073,6 +3073,36 @@ def get_campaign_stats(request, campaign_id):
         'current_day': campaign.get_current_day(),
     })
 
+# Add this to your views.py
+def load_more_activities(request):
+    """Load more activities for infinite scroll"""
+    campaign_id = request.GET.get('campaign_id')
+    cursor = request.GET.get('cursor')
+    
+    activities = Activity.objects.filter(
+        campaign_id=campaign_id,
+        id__lt=cursor
+    ).order_by('-id')[:10]
+    
+    # Prepare activities data
+    activities_data = []
+    for activity in activities:
+        activities_data.append({
+            'id': activity.id,
+            'content': activity.content,
+            'day_number': activity.day_number,
+            'file_url': activity.file.url if activity.file else None,
+            'screenshots': [s.image.url for s in activity.video_screenshots.all()],
+            'love_count': activity.loves.count(),
+            'comment_count': activity.comments.count(),
+        })
+    
+    return JsonResponse({
+        'activities': activities_data,
+        'next_cursor': activities.last().id if activities.exists() else None,
+        'has_more': activities.count() == 10
+    })
+
 
 
 def face(request):

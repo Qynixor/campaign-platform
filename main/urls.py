@@ -208,6 +208,7 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
     path('campaign/<int:campaign_id>/save/', views.toggle_save_campaign, name='toggle_save'),
     path('campaign/<int:campaign_id>/share/', views.track_share, name='track_share'),
     path('api/rising-campaigns/', views.get_rising_campaigns, name='rising_campaigns'),
+    path('load-more-activities/', views.load_more_activities, name='load_more_activities'),
 ]
 
 
