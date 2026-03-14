@@ -16,5 +16,8 @@ urlpatterns = [
     path('section/suggested/', views.section_suggested, name='section_suggested'),
     path('section/new/', views.section_new_causes, name='section_new_causes'),
     path('section/category/<str:category>/', views.section_category, name='section_category'),
+
+
+    
 ]
 

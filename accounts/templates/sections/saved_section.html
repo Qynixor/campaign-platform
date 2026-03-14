@@ -1,0 +1,44 @@
+
+{% load custom_filters %}
+<div class="section-header">
+  <h2>
+    <i class="fas fa-bookmark" style="color:#1DA1F2;"></i> 
+    Most saved
+    <span class="section-badge">📌 Bookmarked</span>
+  </h2>
+</div>
+
+<div class="content-grid">
+  <div class="card-grid">
+    {% for campaign in campaigns %}
+      {% if campaign.id %}
+      <div class="journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+        <div class="card-media">
+          <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+               srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+               alt="{{ campaign.title }}" 
+               loading="lazy">
+          <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+        </div>
+        <div class="card-content">
+          <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+          <div class="journey-creator">
+            <img class="creator-avatar" 
+                 src="{% if campaign.user.image %}{{ campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                 srcset="{% if campaign.user.image %}{{ campaign.user.image.url }} 2x{% endif %}"
+                 alt="@{{ campaign.user.user.username }}" 
+                 loading="lazy">
+            <span>@{{ campaign.user.user.username }}</span>
+          </div>
+          <div class="journey-metrics">
+            <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+            <span class="metric-item"><i class="fas fa-bookmark"></i> {{ campaign.saves.count|default:0|k_format }}</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="divider"></div>

@@ -1,0 +1,36 @@
+{% load custom_filters %}
+
+<div class="section-header">
+  <h2>
+    <i class="fas fa-flag-checkered" style="color:#26de81;"></i> 
+    Most completed
+  </h2>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 0 24px;">
+  {% for campaign in campaigns %}
+    {% if campaign.id %}
+    <div class="wide-journey-card" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+      <div class="wide-img" style="background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1488521787991-56cbf2c6d5e7?w=200&h=200&fit=crop{% endif %}');"></div>
+      <div class="wide-content">
+        <div class="journey-title" style="font-size: 15px;">{{ campaign.title|truncatechars:30 }}</div>
+        <div class="journey-creator" style="margin: 4px 0;">
+          <img class="creator-avatar" 
+               src="{% if campaign.user.image %}{{ campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
+               srcset="{% if campaign.user.image %}{{ campaign.user.image.url }} 2x{% endif %}"
+               alt="@{{ campaign.user.user.username }}" 
+               loading="lazy"
+               style="width: 24px; height: 24px;">
+          <span>@{{ campaign.user.user.username }}</span>
+        </div>
+        <div class="journey-metrics" style="border: none; padding: 0; margin-top: 8px;">
+          <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+          <span><i class="fas fa-check-circle"></i> {{ campaign.get_completed_days_count|default:0|k_format }} days</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<div class="divider"></div>
