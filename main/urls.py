@@ -205,9 +205,8 @@ path('campaign/<int:campaign_id>/get-comments/', views.get_comments, name='get_c
 path('campaign/<int:campaign_id>/post-comment/', views.post_comment, name='post_comment'),
 path('campaign/<int:campaign_id>/get-stats/', views.get_stats, name='get_stats'),
 path('campaign/<int:campaign_id>/get-menu/', views.get_menu, name='get_menu'),
-
-# Clone URL
 path('journey/<int:original_id>/clone/', views.clone_journey, name='clone_journey'),
+
 ]
 
 

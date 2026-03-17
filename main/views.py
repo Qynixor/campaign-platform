@@ -2760,7 +2760,6 @@ def get_menu(request, campaign_id):
 # ============================================================================
 # CLONE JOURNEY
 # ============================================================================
-
 @login_required
 @require_POST
 def clone_journey(request, original_id):
@@ -2768,6 +2767,7 @@ def clone_journey(request, original_id):
     try:
         original = get_object_or_404(Campaign, id=original_id)
         
+        # Check if user has profile
         if not hasattr(request.user, 'profile'):
             return JsonResponse({'error': 'User profile not found'}, status=400)
         
@@ -2781,11 +2781,14 @@ def clone_journey(request, original_id):
             return JsonResponse({
                 'success': True,
                 'already_exists': True,
-                'redirect_url': f'/campaign/{existing.id}/activities/'
+                'redirect_url': f'/campaign/{existing.id}/activity_list/'
             })
         
         # Get creator username
-        creator_username = original.get_username()
+        try:
+            creator_username = original.user.user.username if original.user and original.user.user else "someone"
+        except:
+            creator_username = "someone"
         
         # Create new campaign
         new_campaign = Campaign.objects.create(
@@ -2797,28 +2800,35 @@ def clone_journey(request, original_id):
             duration_unit=original.duration_unit,
             template=original,
             is_active=True,
-            is_template=False,
         )
         
-        # Copy activities
+        # Copy activities - Using correct field names from your model
         for act in original.activity_set.all():
-            Activity.objects.create(
+            # Create activity with the correct fields
+            activity = Activity.objects.create(
                 campaign=new_campaign,
-                day_number=act.day_number,
-                title=act.title,
-                description="",
+                day_number=act.day_number,  # Make sure this field exists in your Activity model
+                content=act.content,  # This exists in your model
+                # Don't copy the file - each user should upload their own
+                # file=None,  # Don't copy files
                 is_active=True,
             )
+            
+            # Note: We're NOT copying the file field because:
+            # 1. Files might be large
+            # 2. Each user should upload their own content
+            # 3. Copyright/ownership reasons
         
         return JsonResponse({
             'success': True,
-            'redirect_url': f'/campaign/{new_campaign.id}/activities/'
+            'redirect_url': f'/campaign/{new_campaign.id}/activity_list/'
         })
         
     except Exception as e:
+        print(f"ERROR in clone_journey: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
-
-
 
 
 def face(request):
@@ -3834,6 +3844,7 @@ def profile_edit(request, username):
     return render(request, 'main/edit_profile.html', context)
 
 
+
 @login_required
 def profile_view(request, username):
     # Get the User object
@@ -3848,6 +3859,7 @@ def profile_view(request, username):
     
     # ===== COMPLETED JOURNEYS (for Store Manager) =====
     from django.utils import timezone
+    from datetime import timedelta
     
     completed_journeys = []
     for campaign in user_campaigns:
@@ -3893,21 +3905,8 @@ def profile_view(request, username):
         {'product_name': 'Coaching Session', 'journey_title': '30 Days to Fitness', 'amount': 49.99, 'date': timezone.now() - timedelta(days=2)},
     ]
     
-    # Rest of your code remains the same...
-    changemaker_campaigns = [campaign for campaign in user_campaigns if campaign.is_changemaker]
+    # REMOVED ALL CHANGEMAKER CODE - including the filter and most_appropriate_campaign logic
     
-    # Determine the most appropriate campaign
-    most_appropriate_campaign = None
-    if changemaker_campaigns:
-        first_campaign = min(changemaker_campaigns, key=lambda campaign: campaign.timestamp)
-        most_impactful_campaign = max(changemaker_campaigns, key=lambda campaign: campaign.love_count)
-        
-        if most_impactful_campaign.love_count == first_campaign.love_count:
-            most_appropriate_campaign = max(changemaker_campaigns, key=lambda campaign: campaign.timestamp)
-        else:
-            most_appropriate_campaign = most_impactful_campaign
-    
-    category_display = most_appropriate_campaign.get_category_display() if most_appropriate_campaign else None
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
     
     user_profile.last_campaign_check = timezone.now()
@@ -3954,17 +3953,19 @@ def profile_view(request, username):
 
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
+    
     # Get cloned journeys (where template is not null)
     cloned_journeys = user_profile.user_campaigns.filter(
         template__isnull=False,
         is_active=True
     ).order_by('-timestamp')
+    
     context = {
         'user_profile': user_profile,
         'user_obj': user_obj,
         'user_campaigns': user_campaigns,  # FIXED: renamed from public_campaigns
         'user_campaigns_count': user_campaigns_count,  # FIXED: renamed
-        'changemaker_category': category_display,
+        'changemaker_category': None,  # Set to None since we removed changemaker logic
         'unread_notifications': unread_notifications,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
@@ -3980,12 +3981,6 @@ def profile_view(request, username):
     }
     
     return render(request, 'main/user_profile.html', context)
-
-
-
-
-
-
 
 
 

@@ -736,6 +736,38 @@
                 display: none;
             }
         }
+
+        /* Add these styles to your journey.html CSS if they're missing */
+.campaign-title-overlay {
+    position: absolute;
+    top: 26%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 30;
+    text-align: center;
+    pointer-events: none;
+    width: 90%;
+    max-width: 350px;
+    padding-right: 80px;
+    box-sizing: border-box;
+}
+
+.campaign-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    margin-bottom: 12px;
+    letter-spacing: -0.2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
     </style>
 </head>
 <body>
@@ -1240,6 +1272,69 @@
                 document.getElementById('loadingSpinner').classList.remove('active');
             });
         }
+
+        // ========== START JOURNEY FUNCTION ==========
+window.startThisJourney = function(originalId, btn) {
+    // Prevent any event bubbling
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    // Save original button text
+    const originalText = btn.innerHTML;
+    
+    // Show loading state
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.disabled = true;
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    
+    // Make the request
+    fetch(`/journey/${originalId}/clone/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            if (data.already_exists) {
+                // Campaign already cloned
+                if (confirm('You already started this journey! Would you like to continue where you left off?')) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Reset button
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } else {
+                // Success - redirect to new campaign
+                window.location.href = data.redirect_url;
+            }
+        } else {
+            // Show error
+            alert('Error: ' + (data.error || 'Something went wrong'));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+};
     </script>
 </body>
 </html>

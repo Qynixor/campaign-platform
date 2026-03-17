@@ -1,78 +1,39 @@
-{% if not campaign.is_template %}
+<!-- Remove the is_template condition or replace with something else -->
+<!-- If you want to show the button for all campaigns, use this: -->
+
 <div style="padding: 12px 24px; background: #2a2a2a; margin-bottom: 8px; border-radius: 8px; text-align: center;">
     <div style="color: #4CAF50; font-size: 18px; font-weight: 700;">{{ clone_count }}+</div>
     <div style="color: #aaa; font-size: 12px;">people started this journey</div>
 </div>
 
-<button class="menu-item" 
-        style="background: #4CAF50; color: white;"
-        onclick="startThisJourney({{ campaign.id }}, this)">
+<button class="menu-item start-journey-btn" 
+        style="width: 100%; background: #4CAF50; color: white; border: none; cursor: pointer;"
+        onclick="event.preventDefault(); event.stopPropagation(); startThisJourney({{ campaign.id }}, this)">
     <i class="fas fa-rocket"></i> Start This Journey
 </button>
-{% endif %}
 
-<a href="/campaign/{{ campaign.id }}/activities/" class="menu-item">
+<!-- Rest of your menu items -->
+<a href="/campaign/{{ campaign.id }}/activity_list/" class="menu-item" onclick="event.stopPropagation();">
     <i class="fas fa-tasks"></i> View Journey
 </a>
 
-<a href="/campaign/{{ campaign.id }}/top-participants/" class="menu-item">
+<a href="/campaign/{{ campaign.id }}/top-participants/" class="menu-item" onclick="event.stopPropagation();">
     <i class="fas fa-trophy"></i> Top Supporters
 </a>
 
-<a href="/campaign/{{ campaign.id }}/donate/" class="menu-item">
+<a href="/campaign/{{ campaign.id }}/donate/" class="menu-item" onclick="event.stopPropagation();">
     <i class="fas fa-hand-holding-heart"></i> Donate
 </a>
 
-<a href="/campaign/{{ campaign.id }}/report/" class="menu-item report">
+<a href="/campaign/{{ campaign.id }}/report/" class="menu-item report" onclick="event.stopPropagation();">
     <i class="fas fa-flag"></i> Report
 </a>
 
 {% if is_owner %}
-<a href="/recreate-campaign/{{ campaign.id }}/" class="menu-item">
+<a href="/recreate-campaign/{{ campaign.id }}/" class="menu-item" onclick="event.stopPropagation();">
     <i class="fas fa-edit"></i> Edit
 </a>
-<a href="/campaign/delete/{{ campaign.id }}/" class="menu-item report">
+<a href="/campaign/delete/{{ campaign.id }}/" class="menu-item report" onclick="event.stopPropagation();">
     <i class="fas fa-trash"></i> Delete
 </a>
 {% endif %}
-
-<script>
-function startThisJourney(originalId, btn) {
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-    btn.disabled = true;
-    
-    fetch(`/journey/${originalId}/clone/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.already_exists) {
-                if (confirm('You already started this journey! Continue where you left off?')) {
-                    window.location.href = data.redirect_url;
-                } else {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            } else {
-                window.location.href = data.redirect_url;
-            }
-        } else {
-            alert('Error: ' + (data.error || 'Something went wrong'));
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Network error. Please try again.');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
-</script>

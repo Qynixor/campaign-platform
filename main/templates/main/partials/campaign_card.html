@@ -18,6 +18,12 @@
     <div class="gradient-top"></div>
     <div class="gradient-bottom"></div>
 
+<!-- ===== ADD THIS TITLE OVERLAY SECTION ===== -->
+<div class="campaign-title-overlay">
+    <h1 class="campaign-title">{{ campaign.title }}</h1>
+</div>
+<!-- ===== END TITLE OVERLAY ===== -->
+
     <!-- Top Bar -->
     <div class="top-bar">
         <div class="left-group">
@@ -32,9 +38,9 @@
 
     <!-- Journey Link -->
     <div class="journey-center-link">
-        <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="journey-link" onclick="event.stopPropagation()">
-            <i class="fas fa-compass"></i> view journey
-        </a>
+      <a href="/campaign/{{ campaign.id }}/activity_list/" class="journey-link" onclick="event.stopPropagation()">
+    <i class="fas fa-compass"></i> view journey
+</a>
     </div>
 
     <!-- Action Buttons -->
@@ -172,30 +178,54 @@
         {% endif %}
     </div>
 
-    <!-- Audio Element -->
-    <audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
+   <!-- Audio Element -->
+<audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
 
-    <script>
-        // Audio handling for this specific campaign
-        (function() {
-            const audio = document.getElementById('bgAudio-{{ campaign.id }}');
-            const trigger = document.querySelector('#campaign-{{ campaign.id }} .audio-trigger');
+<script>
+(function() {
+    // Get elements for THIS specific campaign only
+    const campaignId = {{ campaign.id }};
+    const audio = document.getElementById(`bgAudio-${campaignId}`);
+    const trigger = document.querySelector(`#campaign-${campaignId} .audio-trigger`);
+    
+    if (!audio || !trigger) return;
+    
+    // Simple toggle function
+    function toggleAudio(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (audio.paused) {
+            // Pause ALL other audio first
+            document.querySelectorAll('.bg-audio').forEach(otherAudio => {
+                if (!otherAudio.paused && otherAudio !== audio) {
+                    otherAudio.pause();
+                }
+            });
             
-            if (audio && trigger) {
-                trigger.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    if (audio.paused) {
-                        // Pause all other audio
-                        document.querySelectorAll('.bg-audio').forEach(a => {
-                            if (!a.paused && a !== audio) a.pause();
-                        });
-                        audio.play().catch(() => {});
-                    } else {
-                        audio.pause();
-                    }
-                });
+            // Play this audio
+            audio.play().catch(err => {
+                console.log('Audio play failed:', err);
+            });
+        } else {
+            audio.pause();
+        }
+    }
+    
+    // Add click listener
+    trigger.addEventListener('click', toggleAudio);
+    
+    // Pause when campaign scrolls out of view
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting && !audio.paused) {
+                audio.pause();
             }
-        })();
-    </script>
+        });
+    }, { threshold: 0.1 });
+    
+    observer.observe(document.getElementById(`campaign-${campaignId}`));
+    
+})();
+</script>
 </div>
