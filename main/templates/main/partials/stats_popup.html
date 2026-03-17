@@ -12,7 +12,32 @@
         <span class="stat-label">Comments</span>
     </div>
     <div class="stat-item">
+        <span class="stat-value">{{ campaign.get_save_count }}</span>
+        <span class="stat-label">Saves</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-value">{{ campaign.get_donor_count }}</span>
+        <span class="stat-label">Donors</span>
+    </div>
+    <div class="stat-item">
         <span class="stat-value">Day {{ campaign.get_current_day_display.current }}</span>
         <span class="stat-label">of {{ campaign.get_current_day_display.total }}</span>
     </div>
 </div>
+
+{% if campaign.funding_goal and campaign.funding_goal > 0 %}
+<div style="margin-top: 20px; padding: 16px; background: #252525; border-radius: 16px; border: 1px solid #333;">
+    <h4 style="margin-bottom: 12px; color: white;">Funding Progress</h4>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: #4CAF50; font-weight: 600;">${{ campaign.total_donations|floatformat:0 }}</span>
+        <span style="color: #aaa;">of ${{ campaign.funding_goal|floatformat:0 }}</span>
+    </div>
+    <div style="width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden;">
+        <div style="height: 100%; background: #4CAF50; width: {{ campaign.donation_percentage }}%;"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #aaa; font-size: 12px;">
+        <span>{{ campaign.donation_percentage }}% funded</span>
+        <span>${{ campaign.donation_remaining|floatformat:0 }} to go</span>
+    </div>
+</div>
+{% endif %}

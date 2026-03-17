@@ -2499,31 +2499,24 @@ from django.views.decorators.http import require_POST
 from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
 from django.template.loader import render_to_string
-from django.core.cache import cache
 
 from .models import (
     Campaign, Love, CampaignFollow, Comment, 
-    CampaignWatchTime, CampaignSave, CampaignShare, Activity, Profile
+    CampaignSave, Activity
 )
-from django.contrib.auth.models import User
 
 # ============================================================================
-# JOURNEY FEED VIEW - HTMX VERSION
+# JOURNEY FEED VIEW
 # ============================================================================
 
 @login_required
 def journey(request, campaign_id=None):
     """Journey feed - shows followed campaigns first, then all campaigns"""
     try:
-        print("\n" + "="*50)
-        print("JOURNEY VIEW - HTMX VERSION")
-        
         # Base queryset - only active campaigns
         campaigns_query = Campaign.objects.filter(is_active=True).select_related(
             'user', 'user__user'
         )
-        
-        print(f"Total active campaigns: {campaigns_query.count()}")
         
         # If specific campaign requested
         if campaign_id:
@@ -2542,9 +2535,6 @@ def journey(request, campaign_id=None):
                 user=request.user
             ).values_list('campaign_id', flat=True))
             
-            print(f"Followed IDs: {followed_ids}")
-            print(f"Saved IDs: {saved_ids}")
-            
             # Followed campaigns first, then all others
             followed = campaigns_query.filter(id__in=followed_ids)
             others = campaigns_query.exclude(id__in=followed_ids).order_by('-timestamp')
@@ -2552,41 +2542,35 @@ def journey(request, campaign_id=None):
             # Combine lists
             campaigns = list(followed) + list(others)
         
-        print(f"Total campaigns to display: {len(campaigns)}")
-        
         # Add user-specific flags to each campaign
+        campaign_list = []
         for campaign in campaigns:
+            # Create a copy with additional attributes
             campaign.user_loved = campaign.loves.filter(user=request.user).exists()
-            campaign.user_following = campaign.id in followed_ids
-            campaign.user_saved = campaign.id in saved_ids
-            campaign.user = campaign.user  # Ensure user is accessible
-            
-            # Print first few for debugging
-            if campaigns.index(campaign) < 5:
-                print(f"  Campaign: {campaign.title}, Loved: {campaign.user_loved}, Following: {campaign.user_following}, Saved: {campaign.user_saved}")
+            campaign.user_following = campaign.id in followed_ids if not campaign_id else False
+            campaign.user_saved = campaign.id in saved_ids if not campaign_id else False
+            campaign_list.append(campaign)
         
         # Check if this is an HTMX request for loading more
         if request.headers.get('HX-Request') and request.GET.get('load-more'):
             offset = int(request.GET.get('offset', 0))
-            limit = 5  # Load 5 at a time
+            limit = 5
             
-            if offset < len(campaigns):
-                next_batch = campaigns[offset:offset + limit]
-                print(f"HTMX: Loading next batch of {len(next_batch)} campaigns")
-                return render(request, 'main/partials/campaign_cards.html', {
+            if offset < len(campaign_list):
+                next_batch = campaign_list[offset:offset + limit]
+                html = render_to_string('main/partials/campaign_cards.html', {
                     'campaigns': next_batch,
                     'offset': offset + len(next_batch),
-                    'total_campaigns': len(campaigns)
+                    'total_campaigns': len(campaign_list)
                 })
+                return HttpResponse(html)
             else:
-                print("HTMX: No more campaigns")
-                return HttpResponse('')  # No more campaigns
+                return HttpResponse('')
         
         # Full page load - initial 20 campaigns
-        print(f"Full page load: Sending {min(20, len(campaigns))} campaigns")
         return render(request, 'main/journey.html', {
-            'campaigns': campaigns[:20],
-            'total_campaigns': len(campaigns),
+            'campaigns': campaign_list[:20],
+            'total_campaigns': len(campaign_list),
             'is_single_campaign': campaign_id is not None,
         })
         
@@ -2604,168 +2588,210 @@ def journey(request, campaign_id=None):
 
 
 # ============================================================================
-# HTMX INTERACTION VIEWS
+# INTERACTION VIEWS
 # ============================================================================
 
 @login_required
 @require_POST
-def htmx_toggle_love(request, campaign_id):
-    """Toggle love - returns updated love button HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
-    love, created = Love.objects.get_or_create(
-        user=request.user,
-        campaign=campaign
-    )
-    
-    if not created:
-        love.delete()
-        loved = False
-    else:
-        loved = True
-    
-    return render(request, 'main/partials/love_button.html', {
-        'campaign': campaign,
-        'user_loved': loved,
-        'love_count': campaign.loves.count()
-    })
+def toggle_love(request, campaign_id):
+    """Toggle love on a campaign"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        love = Love.objects.filter(user=request.user, campaign=campaign).first()
+        
+        if love:
+            love.delete()
+            loved = False
+        else:
+            Love.objects.create(user=request.user, campaign=campaign)
+            loved = True
+        
+        return JsonResponse({
+            'success': True,
+            'loved': loved,
+            'love_count': campaign.loves.count(),
+            'button_html': render_to_string('main/partials/love_button.html', {
+                'campaign': campaign,
+                'user_loved': loved,
+                'love_count': campaign.loves.count()
+            })
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
 @require_POST
-def htmx_toggle_follow(request, campaign_id):
-    """Toggle follow - returns updated follow button HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
-    follow, created = CampaignFollow.objects.get_or_create(
-        user=request.user,
-        campaign=campaign
-    )
-    
-    if not created:
-        follow.delete()
-        following = False
-    else:
-        following = True
-    
-    return render(request, 'main/partials/follow_button.html', {
-        'campaign': campaign,
-        'user_following': following,
-        'follower_count': campaign.followers.count()
-    })
+def toggle_follow(request, campaign_id):
+    """Toggle follow on a campaign"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        follow = CampaignFollow.objects.filter(user=request.user, campaign=campaign).first()
+        
+        if follow:
+            follow.delete()
+            following = False
+        else:
+            CampaignFollow.objects.create(user=request.user, campaign=campaign)
+            following = True
+        
+        return JsonResponse({
+            'success': True,
+            'following': following,
+            'follower_count': campaign.followers.count(),
+            'button_html': render_to_string('main/partials/follow_button.html', {
+                'campaign': campaign,
+                'user_following': following,
+                'follower_count': campaign.followers.count()
+            })
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
 @require_POST
-def htmx_toggle_save(request, campaign_id):
-    """Toggle save - returns updated save button HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
-    saved = CampaignSave.objects.filter(user=request.user, campaign=campaign).first()
-    
-    if saved:
-        saved.delete()
-        is_saved = False
-    else:
-        CampaignSave.objects.create(user=request.user, campaign=campaign)
-        is_saved = True
-    
-    return render(request, 'main/partials/save_button.html', {
-        'campaign': campaign,
-        'saved': is_saved,
-        'save_count': CampaignSave.objects.filter(campaign=campaign).count()
-    })
+def toggle_save(request, campaign_id):
+    """Toggle save on a campaign"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        saved = CampaignSave.objects.filter(user=request.user, campaign=campaign).first()
+        
+        if saved:
+            saved.delete()
+            is_saved = False
+        else:
+            CampaignSave.objects.create(user=request.user, campaign=campaign)
+            is_saved = True
+        
+        return JsonResponse({
+            'success': True,
+            'saved': is_saved,
+            'save_count': CampaignSave.objects.filter(campaign=campaign).count(),
+            'button_html': render_to_string('main/partials/save_button.html', {
+                'campaign': campaign,
+                'saved': is_saved,
+                'save_count': CampaignSave.objects.filter(campaign=campaign).count()
+            })
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required
-def htmx_get_comments(request, campaign_id):
-    """Get comments HTML partial"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    comments = campaign.comments.filter(parent_comment=None).select_related(
-        'user', 'user__user'
-    ).order_by('-timestamp')[:50]
-    
-    return render(request, 'main/partials/comments_list.html', {
-        'comments': comments,
-        'campaign': campaign
-    })
+def get_comments(request, campaign_id):
+    """Get comments HTML"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        comments = campaign.comments.filter(parent_comment=None).select_related(
+            'user', 'user__user'
+        ).order_by('-timestamp')[:50]
+        
+        html = render_to_string('main/partials/comments_list.html', {
+            'comments': comments,
+            'campaign': campaign
+        })
+        
+        return HttpResponse(html)
+    except Exception as e:
+        return HttpResponse(f'<div class="error">Error loading comments: {str(e)}</div>')
 
 
 @login_required
 @require_POST
-def htmx_post_comment(request, campaign_id):
-    """Post comment and return updated comments HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    text = request.POST.get('text', '').strip()
-    
-    if text and hasattr(request.user, 'profile'):
-        Comment.objects.create(
-            user=request.user.profile,
-            campaign=campaign,
-            text=text
-        )
-    
-    # Return updated comments
-    return htmx_get_comments(request, campaign_id)
+def post_comment(request, campaign_id):
+    """Post a comment"""
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        text = request.POST.get('text', '').strip()
+        
+        if text and hasattr(request.user, 'profile'):
+            Comment.objects.create(
+                user=request.user.profile,
+                campaign=campaign,
+                text=text
+            )
+        
+        # Return updated comments
+        return get_comments(request, campaign_id)
+    except Exception as e:
+        return HttpResponse(f'<div class="error">Error posting comment: {str(e)}</div>')
 
 
 @login_required
-def htmx_get_stats(request, campaign_id):
+def get_stats(request, campaign_id):
     """Get stats popup HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
-    return render(request, 'main/partials/stats_popup.html', {
-        'campaign': campaign
-    })
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        html = render_to_string('main/partials/stats_popup.html', {
+            'campaign': campaign
+        })
+        
+        return HttpResponse(html)
+    except Exception as e:
+        return HttpResponse(f'<div class="error">Error loading stats: {str(e)}</div>')
 
 
 @login_required
-def htmx_get_menu(request, campaign_id):
+def get_menu(request, campaign_id):
     """Get menu popup HTML"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    
-    is_owner = (request.user == campaign.user.user) if campaign.user and campaign.user.user else False
-    clone_count = Campaign.objects.filter(template=campaign).count()
-    
-    return render(request, 'main/partials/menu_popup.html', {
-        'campaign': campaign,
-        'is_owner': is_owner,
-        'clone_count': clone_count
-    })
+    try:
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        is_owner = (request.user == campaign.user.user) if campaign.user and campaign.user.user else False
+        clone_count = Campaign.objects.filter(template=campaign).count()
+        
+        html = render_to_string('main/partials/menu_popup.html', {
+            'campaign': campaign,
+            'is_owner': is_owner,
+            'clone_count': clone_count,
+            'campaign_id': campaign_id
+        })
+        
+        return HttpResponse(html)
+    except Exception as e:
+        return HttpResponse(f'<div class="error">Error loading menu: {str(e)}</div>')
 
 
 # ============================================================================
-# CLONE JOURNEY FUNCTIONALITY
+# CLONE JOURNEY
 # ============================================================================
 
 @login_required
 @require_POST
-def clone_journey_simple(request, original_id):
-    """Clone journey - returns HTML response"""
+def clone_journey(request, original_id):
+    """Clone a journey"""
     try:
         original = get_object_or_404(Campaign, id=original_id)
         
         if not hasattr(request.user, 'profile'):
-            return render(request, 'main/partials/clone_error.html', {
-                'error': 'User profile not found'
-            }, status=400)
+            return JsonResponse({'error': 'User profile not found'}, status=400)
         
+        # Check if user already cloned this
         existing = Campaign.objects.filter(
             user=request.user.profile,
             template=original
         ).first()
         
         if existing:
-            return render(request, 'main/partials/clone_result.html', {
+            return JsonResponse({
+                'success': True,
                 'already_exists': True,
                 'redirect_url': f'/campaign/{existing.id}/activities/'
             })
+        
+        # Get creator username
+        creator_username = original.get_username()
         
         # Create new campaign
         new_campaign = Campaign.objects.create(
             user=request.user.profile,
             title=f"My {original.title}",
-            content=f"Following {original.user.user.username if original.user and original.user.user else 'someone'}'s journey",
+            content=f"Following {creator_username}'s journey",
             category=original.category,
             duration=original.duration,
             duration_unit=original.duration_unit,
@@ -2784,15 +2810,13 @@ def clone_journey_simple(request, original_id):
                 is_active=True,
             )
         
-        return render(request, 'main/partials/clone_result.html', {
+        return JsonResponse({
             'success': True,
             'redirect_url': f'/campaign/{new_campaign.id}/activities/'
         })
         
     except Exception as e:
-        return render(request, 'main/partials/clone_error.html', {
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 

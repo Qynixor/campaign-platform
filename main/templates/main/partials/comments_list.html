@@ -1,43 +1,33 @@
-<div class="comments-list" id="comments-list">
+<div id="commentsList">
     {% for comment in comments %}
     <div class="comment-item" id="comment-{{ comment.id }}">
         <img src="{% if comment.user.image %}{{ comment.user.image.url }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
              class="comment-avatar" 
-             alt="{{ comment.user.user.username }}">
+             alt="{{ comment.user.user.username }}"
+             onerror="this.src='https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'">
         <div class="comment-content">
             <div class="comment-header">
-                <a href="{% url 'profile_view' username=comment.user.user.username %}" class="comment-username">@{{ comment.user.user.username }}</a>
-                <span class="comment-time">{{ comment.time_ago }}</span>
+                <a href="{% url 'profile_view' username=comment.user.user.username %}" class="comment-username">
+                    @{{ comment.user.user.username }}
+                </a>
+                <span class="comment-time">{{ comment.timestamp|timesince }} ago</span>
             </div>
             <div class="comment-text">{{ comment.text }}</div>
         </div>
     </div>
     {% empty %}
-    <div style="text-align: center; color: #888; padding: 30px 20px;">
-        No comments yet. Be the first to comment!
+    <div style="text-align: center; color: #888; padding: 40px 20px;">
+        <i class="far fa-comment-dots" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+        <p>No comments yet. Be the first to comment!</p>
     </div>
     {% endfor %}
 </div>
 
-<!-- Comment form -->
 <div class="add-comment">
     <input type="text" 
-           name="text" 
-           id="comment-input-{{ campaign.id }}"
+           id="commentInput" 
            placeholder="Add a comment..." 
            maxlength="500"
-           hx-trigger="keydown[key=='Enter'&&!shiftKey]"
-           hx-post="{% url 'htmx_post_comment' campaign.id %}"
-           hx-target="#comments-list"
-           hx-swap="outerHTML"
-           hx-include="[name='text']"
-           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    <button type="button"
-            hx-post="{% url 'htmx_post_comment' campaign.id %}"
-            hx-target="#comments-list"
-            hx-swap="outerHTML"
-            hx-include="[name='text']"
-            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-        Post
-    </button>
+           onkeydown="if(event.key=='Enter' && !event.shiftKey) { event.preventDefault(); postComment(); }">
+    <button id="postCommentBtn" onclick="postComment()">Post</button>
 </div>

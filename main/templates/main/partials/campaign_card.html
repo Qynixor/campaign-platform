@@ -1,177 +1,144 @@
-{% load custom_filters %}
+{% load static %}
 <div class="campaign-item" id="campaign-{{ campaign.id }}" data-campaign-id="{{ campaign.id }}">
-    <!-- Audio trigger -->
-    <div class="audio-trigger"></div>
+    <!-- Audio trigger (click anywhere on image to toggle audio) -->
+    <div class="audio-trigger" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer;"></div>
     
-    <!-- Image slideshow -->
+    <!-- Image Slideshow -->
     <div class="image-slideshow">
         <div class="slides-container" id="slidesContainer-{{ campaign.id }}">
             {% for image in campaign.get_images %}
                 <div class="slide-item">
-                    <img loading="lazy" src="{{ image }}" alt="{{ campaign.title }}" onerror="this.src='https://via.placeholder.com/400x800?text=No+Image'">
+                    <img src="{{ image }}" alt="{{ campaign.title }}" loading="lazy">
                 </div>
             {% endfor %}
         </div>
-    </div>
-
-    <!-- Title overlay -->
-    <div class="campaign-title-overlay">
-        <h1 class="campaign-title">{{ campaign.title }}</h1>
     </div>
 
     <!-- Gradients -->
     <div class="gradient-top"></div>
     <div class="gradient-bottom"></div>
 
-    <!-- Top bar -->
+    <!-- Top Bar -->
     <div class="top-bar">
         <div class="left-group">
-            <div class="mobile-back-arrow" onclick="window.location.href='/'">
+            <div class="back-arrow" onclick="window.location.href='/'">
                 <i class="fas fa-arrow-left"></i>
             </div>
-            <div>
-                <div class="stats-icon" 
-                     hx-get="{% url 'htmx_get_stats' campaign.id %}"
-                     hx-target="#stats-popup-container"
-                     hx-trigger="click"
-                     hx-swap="innerHTML"
-                     onclick="document.getElementById('popupBackdrop').classList.add('active')">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
+            <div class="stats-icon" onclick="openStatsPopup({{ campaign.id }})">
+                <i class="fas fa-chart-bar"></i>
             </div>
         </div>
     </div>
 
-    <!-- Journey link -->
+    <!-- Journey Link -->
     <div class="journey-center-link">
         <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="journey-link" onclick="event.stopPropagation()">
             <i class="fas fa-compass"></i> view journey
         </a>
     </div>
 
-    <!-- Action buttons -->
+    <!-- Action Buttons -->
     <div class="action-buttons">
-        <!-- Profile image -->
+        <!-- Profile Image -->
         <img src="{{ campaign.get_profile_image }}" 
              class="action-profile" 
-             alt="Profile"
-             onclick="event.stopPropagation(); window.location.href='{% url 'profile_view' username=campaign.get_username %}'">
-        
-        <!-- Love button -->
-        <div id="love-container-{{ campaign.id }}">
-            <button class="action-btn {% if campaign.user_loved %}loved{% endif %}" 
-                    hx-post="{% url 'htmx_toggle_love' campaign.id %}"
-                    hx-target="#love-container-{{ campaign.id }}"
-                    hx-swap="outerHTML"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-                <i class="{% if campaign.user_loved %}fas{% else %}far{% endif %} fa-heart"></i>
-                <span>{{ campaign.get_love_count }}</span>
-            </button>
-        </div>
-        
-        <!-- Comment button -->
-        <button class="action-btn" 
-                hx-get="{% url 'htmx_get_comments' campaign.id %}"
-                hx-target="#comments-modal-content"
-                hx-trigger="click"
-                hx-swap="innerHTML"
-                onclick="document.getElementById('commentsModal').classList.add('active'); document.getElementById('popupBackdrop').classList.add('active')">
+             alt="{{ campaign.get_username }}"
+             onclick="event.stopPropagation(); window.location.href='{% url 'profile_view' username=campaign.get_username %}'"
+             onerror="this.src='https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'">
+
+        <!-- Love Button -->
+        <button class="action-btn {% if campaign.user_loved %}loved{% endif %}" 
+                onclick="toggleLove({{ campaign.id }}, this)"
+                id="love-btn-{{ campaign.id }}">
+            <i class="{% if campaign.user_loved %}fas{% else %}far{% endif %} fa-heart"></i>
+            <span>{{ campaign.get_love_count }}</span>
+        </button>
+
+        <!-- Comment Button -->
+        <button class="action-btn" onclick="openComments({{ campaign.id }})">
             <i class="far fa-comment"></i>
             <span>{{ campaign.get_comment_count }}</span>
         </button>
-        
-        <!-- Follow button -->
-        <div id="follow-container-{{ campaign.id }}">
-            <button class="action-btn follow-btn {% if campaign.user_following %}following{% endif %}"
-                    hx-post="{% url 'htmx_toggle_follow' campaign.id %}"
-                    hx-target="#follow-container-{{ campaign.id }}"
-                    hx-swap="outerHTML"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-                <i class="fas {% if campaign.user_following %}fa-check{% else %}fa-plus{% endif %}"></i>
-                <span>{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
-            </button>
-        </div>
-        
-        <!-- Save button -->
-        <div id="save-container-{{ campaign.id }}">
-            <button class="action-btn save-btn {% if campaign.user_saved %}saved{% endif %}"
-                    hx-post="{% url 'htmx_toggle_save' campaign.id %}"
-                    hx-target="#save-container-{{ campaign.id }}"
-                    hx-swap="outerHTML"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-                <i class="{% if campaign.user_saved %}fas{% else %}far{% endif %} fa-bookmark"></i>
-                <span>{{ campaign.get_save_count }}</span>
-            </button>
-        </div>
-        
-        <!-- Donate button -->
-        <button class="action-btn donate-btn" 
-                onclick="openDonationModal({{ campaign.id }}, '{{ campaign.title|escapejs }}')">
+
+        <!-- Follow Button -->
+        <button class="action-btn {% if campaign.user_following %}following{% endif %}" 
+                onclick="toggleFollow({{ campaign.id }}, this)"
+                id="follow-btn-{{ campaign.id }}">
+            <i class="fas {% if campaign.user_following %}fa-check{% else %}fa-plus{% endif %}"></i>
+            <span>{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
+        </button>
+
+        <!-- Save Button -->
+        <button class="action-btn {% if campaign.user_saved %}saved{% endif %}" 
+                onclick="toggleSave({{ campaign.id }}, this)"
+                id="save-btn-{{ campaign.id }}">
+            <i class="{% if campaign.user_saved %}fas{% else %}far{% endif %} fa-bookmark"></i>
+            <span>{{ campaign.get_save_count }}</span>
+        </button>
+
+        <!-- Donate Button -->
+        <button class="action-btn" onclick="openDonationModal({{ campaign.id }}, '{{ campaign.title|escapejs }}')">
             <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
             <span>{{ campaign.get_donor_count }}</span>
         </button>
-        
-        <!-- Share button -->
-        <button class="action-btn" onclick="handleShare(event, {{ campaign.id }})">
+
+        <!-- Share Button -->
+        <button class="action-btn" onclick="handleShare({{ campaign.id }})">
             <i class="fas fa-share-alt"></i>
             <span></span>
         </button>
-        
-        <!-- Menu button -->
-        <button class="action-btn menu-btn"
-                hx-get="{% url 'htmx_get_menu' campaign.id %}"
-                hx-target="#menu-popup-content"
-                hx-trigger="click"
-                hx-swap="innerHTML"
-                onclick="document.getElementById('globalMenuPopup').classList.add('active'); document.getElementById('popupBackdrop').classList.add('active')">
+
+        <!-- Menu Button -->
+        <button class="action-btn" onclick="openMenuPopup({{ campaign.id }})">
             <i class="fas fa-ellipsis-h"></i>
             <span></span>
         </button>
     </div>
 
-    <!-- Info panel -->
+    <!-- Info Panel -->
     <div class="info-panel">
         <div class="username-row">
-            <a href="{% url 'profile_view' username=campaign.get_username %}" class="username" onclick="event.stopPropagation()">@{{ campaign.get_username }}</a>
-            {% if campaign.user.verified %}
-                <i class="fas fa-check-circle verified" style="color: #1DA1F2;"></i>
+            <a href="{% url 'profile_view' username=campaign.get_username %}" class="username" onclick="event.stopPropagation()">
+                @{{ campaign.get_username }}
+            </a>
+            {% if campaign.is_verified %}
+                <i class="fas fa-check-circle verified"></i>
             {% endif %}
             <span class="timestamp">• {{ campaign.time_ago }}</span>
         </div>
-        
-        <div class="caption {% if campaign.content|length > 35 %}has-more{% endif %}" id="caption-{{ campaign.id }}">
-            {{ campaign.content|truncatechars:35 }}
+
+        <!-- Caption -->
+        <div class="caption" id="caption-{{ campaign.id }}">
+            {{ campaign.content }}
         </div>
-        
+
         {% if campaign.content|length > 35 %}
             <span class="more-link" id="moreLink-{{ campaign.id }}" onclick="toggleCaption({{ campaign.id }})">more</span>
         {% endif %}
-        
-        <!-- Slide controls -->
+
+        <!-- Slide Controls -->
         {% if campaign.get_image_count > 1 %}
-        <div class="controls-row">
-            <div class="slide-controls">
-                <div class="slide-indicators" id="indicators-{{ campaign.id }}">
-                    {% for image in campaign.get_images %}
-                        <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
-                                onclick="goToSlide({{ campaign.id }}, {{ forloop.counter0 }})">
-                        </button>
-                    {% endfor %}
-                </div>
-                <button class="autoplay-btn" id="autoplayBtn-{{ campaign.id }}" onclick="toggleSlideshow({{ campaign.id }})">
-                    <i class="fas fa-pause"></i>
-                </button>
+        <div class="slide-controls">
+            <div class="slide-indicators" id="indicators-{{ campaign.id }}">
+                {% for image in campaign.get_images %}
+                    <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
+                            onclick="goToSlide({{ campaign.id }}, {{ forloop.counter0 }})">
+                    </button>
+                {% endfor %}
             </div>
+            <button class="autoplay-btn" id="autoplayBtn-{{ campaign.id }}" onclick="toggleAutoplay({{ campaign.id }})">
+                <i class="fas fa-pause"></i>
+            </button>
         </div>
         {% endif %}
-        
-        <!-- Meta info -->
+
+        <!-- Meta Info -->
         <div class="meta-row">
             <span><i class="fas fa-map-pin"></i> {{ campaign.get_location_display }}</span>
             <span><i class="fas fa-calendar"></i> {{ campaign.get_current_day_display.display }}</span>
         </div>
-        
-        <!-- Media stats -->
+
+        <!-- Media Stats -->
         <div class="media-stats-row">
             <div class="media-counter">
                 <i class="fas fa-images"></i>
@@ -181,22 +148,23 @@
             {% if campaign.get_image_count > 1 %}
             <div class="slide-counter">
                 <i class="fas fa-image"></i>
-                <span class="current-slide" id="currentSlide-{{ campaign.id }}">1</span> / <span class="total-slides" id="totalSlides-{{ campaign.id }}">{{ campaign.get_image_count }}</span>
+                <span class="current-slide" id="currentSlide-{{ campaign.id }}">1</span> / 
+                <span class="total-slides" id="totalSlides-{{ campaign.id }}">{{ campaign.get_image_count }}</span>
             </div>
             {% endif %}
         </div>
-        
-        <!-- Donation progress bar (if funding goal exists) -->
+
+        <!-- Donation Progress -->
         {% if campaign.funding_goal and campaign.funding_goal > 0 %}
-        <div class="donation-progress">
-            <div class="progress-header">
-                <span class="raised-amount">${{ campaign.total_donations|floatformat:0 }}</span>
+        <div class="donation-progress" style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #ddd;">
+                <span class="raised-amount" style="font-weight: 600; color: #4CAF50;">${{ campaign.total_donations|floatformat:0 }}</span>
                 <span>raised of ${{ campaign.funding_goal|floatformat:0 }}</span>
             </div>
-            <div class="progress-bar-container">
-                <div class="progress-fill-donate" style="width: {{ campaign.donation_percentage }}%"></div>
+            <div style="width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden;">
+                <div style="height: 100%; background: #4CAF50; width: {{ campaign.donation_percentage }}%;"></div>
             </div>
-            <div class="donation-stats-row">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 10px; color: #aaa;">
                 <span>{{ campaign.get_donor_count }} donor{{ campaign.get_donor_count|pluralize }}</span>
                 <span>{{ campaign.donation_percentage }}%</span>
             </div>
@@ -204,6 +172,30 @@
         {% endif %}
     </div>
 
-    <!-- Audio element -->
+    <!-- Audio Element -->
     <audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
+
+    <script>
+        // Audio handling for this specific campaign
+        (function() {
+            const audio = document.getElementById('bgAudio-{{ campaign.id }}');
+            const trigger = document.querySelector('#campaign-{{ campaign.id }} .audio-trigger');
+            
+            if (audio && trigger) {
+                trigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    if (audio.paused) {
+                        // Pause all other audio
+                        document.querySelectorAll('.bg-audio').forEach(a => {
+                            if (!a.paused && a !== audio) a.pause();
+                        });
+                        audio.play().catch(() => {});
+                    } else {
+                        audio.pause();
+                    }
+                });
+            }
+        })();
+    </script>
 </div>

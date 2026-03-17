@@ -191,20 +191,23 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
 # Add these to your urlpatterns
 
 # Journey URLs
+# Add these to your urlpatterns
+
+# Journey URLs
 path('journey/', views.journey, name='journey'),
 path('journey/<int:campaign_id>/', views.journey, name='campaign_journey'),
 
-# HTMX endpoints
-path('htmx/campaign/<int:campaign_id>/love/', views.htmx_toggle_love, name='htmx_toggle_love'),
-path('htmx/campaign/<int:campaign_id>/follow/', views.htmx_toggle_follow, name='htmx_toggle_follow'),
-path('htmx/campaign/<int:campaign_id>/save/', views.htmx_toggle_save, name='htmx_toggle_save'),
-path('htmx/campaign/<int:campaign_id>/comments/', views.htmx_get_comments, name='htmx_get_comments'),
-path('htmx/campaign/<int:campaign_id>/post-comment/', views.htmx_post_comment, name='htmx_post_comment'),
-path('htmx/campaign/<int:campaign_id>/stats/', views.htmx_get_stats, name='htmx_get_stats'),
-path('htmx/campaign/<int:campaign_id>/menu/', views.htmx_get_menu, name='htmx_get_menu'),
+# Interaction URLs (using regular JSON responses for reliability)
+path('campaign/<int:campaign_id>/toggle-love/', views.toggle_love, name='toggle_love'),
+path('campaign/<int:campaign_id>/toggle-follow/', views.toggle_follow, name='toggle_follow'),
+path('campaign/<int:campaign_id>/toggle-save/', views.toggle_save, name='toggle_save'),
+path('campaign/<int:campaign_id>/get-comments/', views.get_comments, name='get_comments'),
+path('campaign/<int:campaign_id>/post-comment/', views.post_comment, name='post_comment'),
+path('campaign/<int:campaign_id>/get-stats/', views.get_stats, name='get_stats'),
+path('campaign/<int:campaign_id>/get-menu/', views.get_menu, name='get_menu'),
 
 # Clone URL
-path('journey/<int:original_id>/clone-simple/', views.clone_journey_simple, name='clone_journey_simple'),
+path('journey/<int:original_id>/clone/', views.clone_journey, name='clone_journey'),
 ]
 
 

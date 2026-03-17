@@ -5,11 +5,8 @@
 </div>
 
 <button class="menu-item" 
-        style="width: 100%; background: #4CAF50; color: white; border: none;"
-        hx-post="{% url 'clone_journey_simple' campaign.id %}"
-        hx-target="#clone-result-container"
-        hx-swap="innerHTML"
-        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+        style="background: #4CAF50; color: white;"
+        onclick="startThisJourney({{ campaign.id }}, this)">
     <i class="fas fa-rocket"></i> Start This Journey
 </button>
 {% endif %}
@@ -17,12 +14,15 @@
 <a href="/campaign/{{ campaign.id }}/activities/" class="menu-item">
     <i class="fas fa-tasks"></i> View Journey
 </a>
+
 <a href="/campaign/{{ campaign.id }}/top-participants/" class="menu-item">
     <i class="fas fa-trophy"></i> Top Supporters
 </a>
+
 <a href="/campaign/{{ campaign.id }}/donate/" class="menu-item">
     <i class="fas fa-hand-holding-heart"></i> Donate
 </a>
+
 <a href="/campaign/{{ campaign.id }}/report/" class="menu-item report">
     <i class="fas fa-flag"></i> Report
 </a>
@@ -31,7 +31,48 @@
 <a href="/recreate-campaign/{{ campaign.id }}/" class="menu-item">
     <i class="fas fa-edit"></i> Edit
 </a>
-<a href="/campaign/delete/{{ campaign.id }}/" class="menu-item delete">
+<a href="/campaign/delete/{{ campaign.id }}/" class="menu-item report">
     <i class="fas fa-trash"></i> Delete
 </a>
 {% endif %}
+
+<script>
+function startThisJourney(originalId, btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.disabled = true;
+    
+    fetch(`/journey/${originalId}/clone/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.already_exists) {
+                if (confirm('You already started this journey! Continue where you left off?')) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } else {
+                window.location.href = data.redirect_url;
+            }
+        } else {
+            alert('Error: ' + (data.error || 'Something went wrong'));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
