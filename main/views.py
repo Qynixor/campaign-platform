@@ -248,7 +248,11 @@ def trending_causes_view(request):
     return render(request, 'main/trending_causes.html')
 
 
-
+# In your views.py
+def new_causes(request):
+    """View for new causes"""
+    campaigns = Campaign.objects.filter(is_active=True).order_by('-timestamp')[:20]
+    return render(request, 'main/new_causes.html', {'campaigns': campaigns})
 
 
 
@@ -2486,536 +2490,132 @@ def record_campaign_view(request, campaign_id):
         # Handle logic (e.g., increment views)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
-
 import json
+from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.http import require_POST
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
-from .models import Campaign, Love, CampaignFollow, Comment, Notification
+from django.template.loader import render_to_string
+from django.core.cache import cache
+
+from .models import (
+    Campaign, Love, CampaignFollow, Comment, 
+    CampaignWatchTime, CampaignSave, CampaignShare, Activity, Profile
+)
+from django.contrib.auth.models import User
+
+# ============================================================================
+# JOURNEY FEED VIEW - HTMX VERSION
+# ============================================================================
+
 @login_required
 def journey(request, campaign_id=None):
-    """Main journey feed view - displays campaigns in a reel format"""
+    """Journey feed - shows followed campaigns first, then all campaigns"""
     try:
+        print("\n" + "="*50)
+        print("JOURNEY VIEW - HTMX VERSION")
+        
         # Base queryset - only active campaigns
         campaigns_query = Campaign.objects.filter(is_active=True).select_related(
             'user', 'user__user'
-        ).prefetch_related(
-            'loves', 'followers', 'pledges', 'donations', 'comments', 'activity_set'
         )
         
-        # If campaign_id is provided, filter to that specific campaign
+        print(f"Total active campaigns: {campaigns_query.count()}")
+        
+        # If specific campaign requested
         if campaign_id:
-            campaigns_query = campaigns_query.filter(id=campaign_id)
-            # If no campaign found, 404
-            if not campaigns_query.exists():
-                from django.http import Http404
-                raise Http404("Campaign not found")
-            campaigns = campaigns_query
+            campaign = get_object_or_404(campaigns_query, id=campaign_id)
+            campaigns = [campaign]
+            followed_ids = []
+            saved_ids = []
         else:
-            # ===== FOLLOWED CAMPAIGNS FIRST =====
-            if request.user.is_authenticated:
-                # Get IDs of campaigns this user follows
-                followed_campaign_ids = list(CampaignFollow.objects.filter(
-                    user=request.user
-                ).values_list('campaign_id', flat=True))
-                
-                # Split into followed and not followed
-                followed_campaigns = campaigns_query.filter(id__in=followed_campaign_ids)
-                other_campaigns = campaigns_query.exclude(id__in=followed_campaign_ids).order_by('-timestamp')
-                
-                # Combine: followed first, then others
-                campaigns = list(followed_campaigns) + list(other_campaigns)
-            else:
-                # For non-authenticated users, show all by timestamp
-                campaigns = campaigns_query.order_by('-timestamp')
+            # Get IDs of campaigns this user follows
+            followed_ids = list(CampaignFollow.objects.filter(
+                user=request.user
+            ).values_list('campaign_id', flat=True))
+            
+            # Get IDs of campaigns this user saves
+            saved_ids = list(CampaignSave.objects.filter(
+                user=request.user
+            ).values_list('campaign_id', flat=True))
+            
+            print(f"Followed IDs: {followed_ids}")
+            print(f"Saved IDs: {saved_ids}")
+            
+            # Followed campaigns first, then all others
+            followed = campaigns_query.filter(id__in=followed_ids)
+            others = campaigns_query.exclude(id__in=followed_ids).order_by('-timestamp')
+            
+            # Combine lists
+            campaigns = list(followed) + list(others)
         
-        campaign_data = []
+        print(f"Total campaigns to display: {len(campaigns)}")
         
+        # Add user-specific flags to each campaign
         for campaign in campaigns:
-            try:
-                # ===== BASIC INFO (SAME AS YOUR WORKING VIEW) =====
-                images = []
-                if campaign.poster:
-                    images.append(campaign.poster.url)
-                
-                if campaign.additional_images:
-                    try:
-                        if isinstance(campaign.additional_images, list):
-                            images.extend(campaign.additional_images)
-                        elif isinstance(campaign.additional_images, str):
-                            additional = json.loads(campaign.additional_images)
-                            if isinstance(additional, list):
-                                images.extend(additional)
-                    except:
-                        pass
-                
-                # Audio URL
-                audio_url = None
-                if campaign.audio:
-                    audio_url = campaign.audio.url
-                else:
-                    audio_url = campaign.get_default_audio()
-                
-                # User interaction flags
-                user_loved = False
-                user_following = False
-                is_campaign_owner = False
-                
-                if request.user.is_authenticated:
-                    user_loved = campaign.loves.filter(user=request.user).exists()
-                    user_following = campaign.is_followed_by(request.user)
-                    is_campaign_owner = request.user == campaign.user.user
-                
-                # Calculate totals safely
-                total_pledges = campaign.pledges.aggregate(total=Sum('amount'))['total'] or 0
-                total_donations = campaign.donations.filter(fulfilled=True).aggregate(total=Sum('amount'))['total'] or 0
-                
-                # ===== BASIC STATS (YOUR WORKING STRUCTURE) =====
-                stats = {
-                    'love_count': campaign.love_count,
-                    'comment_count': campaign.comments.count(),
-                    'follower_count': campaign.follower_count,
-                    'activity_count': campaign.activity_set.count(),
-                    'total_pledges': float(total_pledges),
-                    'total_donations': float(total_donations),
-                    'funding_goal': float(campaign.funding_goal) if campaign.funding_goal else 0,
-                    'donation_percentage': campaign.donation_percentage,
-                    'days_left': campaign.days_left if campaign.days_left is not None else 0,
-                    'current_day': campaign.get_current_day(),
-                    'total_days': campaign.duration or 30,
-                    
-                    # ===== PREMIUM STATS WITH SAFE DEFAULTS =====
-                    'avg_donation': 0,
-                    'total_donors': 0,
-                    'total_pledgers': 0,
-                    'new_followers_7d': 0,
-                    'new_followers_30d': 0,
-                    'follower_growth': 0,
-                    'activity_completion': 0,
-                    'engagement_score': 0,
-                    'donation_conversion': 0,
-                    'repeat_donors': 0,
-                    'follower_chart': [],
-                    'donor_demographics': {'locations': {}, 'brackets': {}, 'repeat_donors': 0},
-                    'predictive': {
-                        'projected_final': 0,
-                        'success_probability': 'N/A',
-                        'recommendations': ['Keep up the great work!'],
-                        'estimated_completion_date': 'N/A'
-                    },
-                    'benchmarks': None,
-                    'conversion_funnel': {
-                        'view_to_follower': 0,
-                        'follower_to_pledger': 0,
-                        'pledger_to_donor': 0
-                    }
-                }
-                
-                # ===== CHECK IF USER CAN VIEW PREMIUM =====
-                can_view_premium = False
-                
-                # Campaign owner gets premium stats automatically
-                if is_campaign_owner:
-                    try:
-                        if campaign.premium_activated:
-                            can_view_premium = True
-                    except:
-                        pass
-                
-                # ===== ONLY CALCULATE PREMIUM STATS IF NEEDED =====
-                if can_view_premium:
-                    try:
-                        # Follower stats
-                        from django.utils import timezone
-                        from datetime import timedelta
-                        
-                        seven_days_ago = timezone.now() - timedelta(days=7)
-                        thirty_days_ago = timezone.now() - timedelta(days=30)
-                        
-                        stats['new_followers_7d'] = campaign.campaign_follows.filter(
-                            followed_at__gte=seven_days_ago
-                        ).count()
-                        
-                        stats['new_followers_30d'] = campaign.campaign_follows.filter(
-                            followed_at__gte=thirty_days_ago
-                        ).count()
-                        
-                        if stats['follower_count'] > 0:
-                            stats['follower_growth'] = round(
-                                (stats['new_followers_7d'] / stats['follower_count']) * 100, 1
-                            )
-                        
-                        # Donor stats
-                        donors_qs = campaign.donations.filter(fulfilled=True)
-                        stats['total_donors'] = donors_qs.values('user').distinct().count()
-                        
-                        donations_sum = donors_qs.aggregate(total=Sum('amount'))['total'] or 0
-                        if stats['total_donors'] > 0:
-                            stats['avg_donation'] = round(donations_sum / stats['total_donors'], 2)
-                        
-                        # Pledgers
-                        stats['total_pledgers'] = campaign.pledges.values('user').distinct().count()
-                        
-                        # Activity completion
-                        if campaign.duration and campaign.duration > 0:
-                            stats['activity_completion'] = round(
-                                (stats['activity_count'] / campaign.duration) * 100, 1
-                            )
-                        
-                        # Engagement score
-                        if stats['follower_count'] > 0:
-                            love_ratio = stats['love_count'] / stats['follower_count']
-                            comment_ratio = stats['comment_count'] / stats['follower_count']
-                            stats['engagement_score'] = min(
-                                round((love_ratio * 40) + (comment_ratio * 30) + 30), 100
-                            )
-                        
-                        # Donation conversion
-                        if stats['follower_count'] > 0 and stats['total_donors'] > 0:
-                            stats['donation_conversion'] = round(
-                                (stats['total_donors'] / stats['follower_count']) * 100, 1
-                            )
-                        
-                    except Exception as e:
-                        print(f"Error calculating premium stats for campaign {campaign.id}: {e}")
-                        # Keep the default values, don't let this crash
-                
-                # ===== ADD ENGAGEMENT TRACKING STATS =====
-                try:
-                    stats['watch_time'] = getattr(campaign, 'total_watch_time', 0)
-                    stats['avg_watch_time'] = getattr(campaign, 'avg_watch_time', 0)
-                    stats['completion_rate'] = getattr(campaign, 'completion_rate', 0)
-                    stats['save_count'] = getattr(campaign, 'save_count', 0)
-                    stats['share_count'] = getattr(campaign, 'share_count', 0)
-                    
-                    if 'engagement_score' not in stats or stats['engagement_score'] == 0:
-                        stats['engagement_score'] = getattr(campaign, 'get_engagement_score', lambda: 0)()
-                except Exception as e:
-                    print(f"Error adding engagement stats: {e}")
-                    stats['watch_time'] = 0
-                    stats['avg_watch_time'] = 0
-                    stats['completion_rate'] = 0
-                    stats['save_count'] = 0
-                    stats['share_count'] = 0
-
-                # ===== ADD CAMPAIGN DATA =====
-                campaign_data.append({
-                    'id': campaign.id,
-                    'title': campaign.title,
-                    'content': campaign.content,
-                    'images': images[:5],
-                    'audio_url': audio_url,
-                    'user': {
-                        'username': campaign.user.user.username,
-                        'profile_image': campaign.user.image.url if campaign.user.image else None,
-                        'verified': campaign.user.profile_verified,
-                    },
-                    'stats': stats,
-                    'location': campaign.user.location or 'Unknown',
-                    'timestamp': campaign.timestamp.isoformat(),
-                    'time_ago': get_time_ago(campaign.timestamp),
-                    'category': campaign.category,
-                    'user_loved': user_loved,
-                    'user_following': user_following,
-                    'is_campaign_owner': is_campaign_owner,
-                    'can_view_premium': can_view_premium,
+            campaign.user_loved = campaign.loves.filter(user=request.user).exists()
+            campaign.user_following = campaign.id in followed_ids
+            campaign.user_saved = campaign.id in saved_ids
+            campaign.user = campaign.user  # Ensure user is accessible
+            
+            # Print first few for debugging
+            if campaigns.index(campaign) < 5:
+                print(f"  Campaign: {campaign.title}, Loved: {campaign.user_loved}, Following: {campaign.user_following}, Saved: {campaign.user_saved}")
+        
+        # Check if this is an HTMX request for loading more
+        if request.headers.get('HX-Request') and request.GET.get('load-more'):
+            offset = int(request.GET.get('offset', 0))
+            limit = 5  # Load 5 at a time
+            
+            if offset < len(campaigns):
+                next_batch = campaigns[offset:offset + limit]
+                print(f"HTMX: Loading next batch of {len(next_batch)} campaigns")
+                return render(request, 'main/partials/campaign_cards.html', {
+                    'campaigns': next_batch,
+                    'offset': offset + len(next_batch),
+                    'total_campaigns': len(campaigns)
                 })
-                
-            except Exception as e:
-                print(f"Error processing campaign {campaign.id}: {e}")
-                continue
-
-        # ===== JSON SERIALIZATION =====
-        context = {
-            'campaigns': campaign_data,
-            'campaigns_json': json.dumps(campaign_data, default=str),
+            else:
+                print("HTMX: No more campaigns")
+                return HttpResponse('')  # No more campaigns
+        
+        # Full page load - initial 20 campaigns
+        print(f"Full page load: Sending {min(20, len(campaigns))} campaigns")
+        return render(request, 'main/journey.html', {
+            'campaigns': campaigns[:20],
+            'total_campaigns': len(campaigns),
             'is_single_campaign': campaign_id is not None,
-            'campaign_id': campaign_id,
-        }
+        })
         
-        return render(request, 'main/journey.html', context)
-        
+    except Http404:
+        raise
     except Exception as e:
-        print(f"Critical error: {e}")
+        print(f"Error in journey view: {e}")
+        import traceback
+        traceback.print_exc()
         return render(request, 'main/journey.html', {
             'campaigns': [],
-            'campaigns_json': '[]',
+            'total_campaigns': 0,
             'is_single_campaign': False,
         })
 
-# Add these to your views.py
+
+# ============================================================================
+# HTMX INTERACTION VIEWS
+# ============================================================================
 
 @login_required
 @require_POST
-def track_watch_time(request):
-    """Track watch time for a campaign"""
-    try:
-        data = json.loads(request.body)
-        campaign_id = data.get('campaign_id')
-        watch_time = data.get('watch_time', 0)  # in seconds
-        completed = data.get('completed', False)
-        
-        campaign = get_object_or_404(Campaign, id=campaign_id)
-        
-        # Get or create watch time record
-        watch_record, created = CampaignWatchTime.objects.get_or_create(
-            user=request.user if request.user.is_authenticated else None,
-            campaign=campaign,
-            defaults={'watch_time_seconds': watch_time, 'completed': completed}
-        )
-        
-        if not created:
-            # Update existing record
-            watch_record.watch_time_seconds = watch_time
-            if completed:
-                watch_record.completed = True
-            watch_record.save()
-        
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-@login_required
-@require_POST
-def toggle_save_campaign(request, campaign_id):
-    """Save or unsave a campaign"""
-    try:
-        campaign = get_object_or_404(Campaign, id=campaign_id)
-        
-        # Check if already saved
-        saved = CampaignSave.objects.filter(user=request.user, campaign=campaign).first()
-        
-        if saved:
-            saved.delete()
-            saved_status = False
-        else:
-            CampaignSave.objects.create(user=request.user, campaign=campaign)
-            saved_status = True
-        
-        return JsonResponse({
-            'success': True,
-            'saved': saved_status,
-            'save_count': campaign.save_count
-        })
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-@login_required
-@require_POST
-def track_share(request, campaign_id):
-    """Track when a campaign is shared"""
-    try:
-        data = json.loads(request.body)
-        platform = data.get('platform', '')
-        
-        campaign = get_object_or_404(Campaign, id=campaign_id)
-        
-        CampaignShare.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            campaign=campaign,
-            platform=platform
-        )
-        
-        return JsonResponse({'success': True, 'share_count': campaign.share_count})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-def get_rising_campaigns(request):
-    """API endpoint for rising campaigns (high growth rate)"""
-    try:
-        seven_days_ago = timezone.now() - timedelta(days=7)
-        
-        campaigns = Campaign.objects.filter(
-            is_active=True,
-            timestamp__gte=seven_days_ago
-        ).annotate(
-            growth_score=(
-                Count('followers', filter=Q(campaign_follows__followed_at__gte=seven_days_ago)) * 3 +
-                Count('loves', filter=Q(loves__timestamp__gte=seven_days_ago)) * 2 +
-                Count('saves', filter=Q(saves__saved_at__gte=seven_days_ago)) * 4
-            )
-        ).order_by('-growth_score')[:20]
-        
-        # Format for response
-        data = [{
-            'id': c.id,
-            'title': c.title,
-            'follower_count': c.follower_count,
-            'love_count': c.love_count,
-            'save_count': c.save_count,
-            'growth_score': c.growth_score
-        } for c in campaigns]
-        
-        return JsonResponse({'success': True, 'campaigns': data})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-
-@login_required
-@require_POST
-def activate_premium(request, campaign_id):
-    """Activate premium stats for a campaign"""
-    try:
-        campaign = Campaign.objects.get(id=campaign_id)
-        
-        # Check if user is the owner
-        if request.user != campaign.user.user:
-            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
-        
-        # Activate premium
-        campaign.premium_activated = True
-        campaign.save()
-        
-        return JsonResponse({'success': True})
-        
-    except Campaign.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Campaign not found'}, status=404)
-
-
-
-
-
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-
-@login_required
-@require_POST
-def activate_owner_premium(request, campaign_id):
-    """Activate free premium for campaign owners (temporary promotion)"""
-    try:
-        campaign = Campaign.objects.get(id=campaign_id)
-        
-        # Verify the user is the campaign owner
-        if request.user != campaign.user.user:
-            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
-        
-        # Here you would typically create a PremiumSubscription or set a flag
-        # For now, we'll just return success and let the frontend reload
-        
-        # You could store this in session or create a temporary record
-        request.session[f'premium_activated_{campaign_id}'] = True
-        
-        return JsonResponse({'success': True})
-        
-    except Campaign.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Campaign not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-
-@login_required
-def get_campaign_comments_simple(request, campaign_id):
-    """Get comments for a campaign - returns HTML directly"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    comments = campaign.comments.filter(parent_comment=None).select_related(
-        'user', 'user__user'
-    ).order_by('-timestamp')[:50]
-    
-    # Prepare comment data
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            'id': comment.id,
-            'user': {
-                'username': comment.user.user.username,
-                'profile_image': comment.user.image.url if comment.user.image else None,
-                'verified': comment.user.profile_verified,
-            },
-            'text': comment.text,
-            'time_ago': get_time_ago(comment.timestamp),
-        })
-    
-    # Render HTML directly
-    html = render_to_string('main/comments_partial.html', {'comments': comments_data})
-    return HttpResponse(html)
-
-@require_POST
-@login_required
-def add_campaign_comment_simple(request, campaign_id):
-    """Add a comment - returns HTML directly"""
-    campaign = get_object_or_404(Campaign, id=campaign_id)
-    text = request.POST.get('text', '').strip()
-    
-    if text:
-        Comment.objects.create(
-            user=request.user.profile,
-            campaign=campaign,
-            text=text
-        )
-    
-    # Return updated comments HTML
-    comments = campaign.comments.filter(parent_comment=None).select_related(
-        'user', 'user__user'
-    ).order_by('-timestamp')[:50]
-    
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            'id': comment.id,
-            'user': {
-                'username': comment.user.user.username,
-                'profile_image': comment.user.image.url if comment.user.image else None,
-                'verified': comment.user.profile_verified,
-            },
-            'text': comment.text,
-            'time_ago': get_time_ago(comment.timestamp),
-        })
-    
-    html = render_to_string('main/comments_partial.html', {'comments': comments_data})
-    return HttpResponse(html)
-
-def get_time_ago(timestamp):
-    """Helper function to get human readable time ago"""
-    from django.utils import timezone
-    now = timezone.now()
-    diff = now - timestamp
-    
-    if diff.days > 365:
-        years = diff.days // 365
-        return f"{years}y ago"
-    elif diff.days > 30:
-        months = diff.days // 30
-        return f"{months}mo ago"
-    elif diff.days > 0:
-        return f"{diff.days}d ago"
-    elif diff.seconds > 3600:
-        hours = diff.seconds // 3600
-        return f"{hours}h ago"
-    elif diff.seconds > 60:
-        minutes = diff.seconds // 60
-        return f"{minutes}m ago"
-    else:
-        return "Just now"
-
-@require_POST
-@login_required
-def toggle_campaign_love(request, campaign_id):
-    """Toggle love on a campaign"""
+def htmx_toggle_love(request, campaign_id):
+    """Toggle love - returns updated love button HTML"""
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
     love, created = Love.objects.get_or_create(
-        campaign=campaign,
-        user=request.user
+        user=request.user,
+        campaign=campaign
     )
     
     if not created:
@@ -3024,84 +2624,176 @@ def toggle_campaign_love(request, campaign_id):
     else:
         loved = True
     
-    return JsonResponse({
-        'success': True,
-        'loved': loved,
-        'love_count': campaign.love_count
+    return render(request, 'main/partials/love_button.html', {
+        'campaign': campaign,
+        'user_loved': loved,
+        'love_count': campaign.loves.count()
     })
 
-@require_POST
+
 @login_required
-def toggle_campaign_follow(request, campaign_id):
-    """Toggle follow on a campaign"""
+@require_POST
+def htmx_toggle_follow(request, campaign_id):
+    """Toggle follow - returns updated follow button HTML"""
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    if campaign.is_followed_by(request.user):
-        # Unfollow
-        CampaignFollow.objects.filter(
-            user=request.user,
-            campaign=campaign
-        ).delete()
+    follow, created = CampaignFollow.objects.get_or_create(
+        user=request.user,
+        campaign=campaign
+    )
+    
+    if not created:
+        follow.delete()
         following = False
     else:
-        # Follow
-        CampaignFollow.objects.create(
-            user=request.user,
-            campaign=campaign
-        )
         following = True
     
-    return JsonResponse({
-        'success': True,
-        'following': following,
-        'follower_count': campaign.follower_count
+    return render(request, 'main/partials/follow_button.html', {
+        'campaign': campaign,
+        'user_following': following,
+        'follower_count': campaign.followers.count()
     })
+
 
 @login_required
-def get_campaign_stats(request, campaign_id):
-    """Get updated stats for a campaign"""
+@require_POST
+def htmx_toggle_save(request, campaign_id):
+    """Toggle save - returns updated save button HTML"""
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    return JsonResponse({
-        'love_count': campaign.love_count,
-        'comment_count': campaign.comments.count(),
-        'follower_count': campaign.follower_count,
-        'total_pledges': float(campaign.total_pledges),
-        'total_donations': float(campaign.total_donations),
-        'donation_percentage': campaign.donation_percentage,
-        'days_left': campaign.days_left,
-        'current_day': campaign.get_current_day(),
+    saved = CampaignSave.objects.filter(user=request.user, campaign=campaign).first()
+    
+    if saved:
+        saved.delete()
+        is_saved = False
+    else:
+        CampaignSave.objects.create(user=request.user, campaign=campaign)
+        is_saved = True
+    
+    return render(request, 'main/partials/save_button.html', {
+        'campaign': campaign,
+        'saved': is_saved,
+        'save_count': CampaignSave.objects.filter(campaign=campaign).count()
     })
 
-# Add this to your views.py
-def load_more_activities(request):
-    """Load more activities for infinite scroll"""
-    campaign_id = request.GET.get('campaign_id')
-    cursor = request.GET.get('cursor')
+
+@login_required
+def htmx_get_comments(request, campaign_id):
+    """Get comments HTML partial"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    comments = campaign.comments.filter(parent_comment=None).select_related(
+        'user', 'user__user'
+    ).order_by('-timestamp')[:50]
     
-    activities = Activity.objects.filter(
-        campaign_id=campaign_id,
-        id__lt=cursor
-    ).order_by('-id')[:10]
-    
-    # Prepare activities data
-    activities_data = []
-    for activity in activities:
-        activities_data.append({
-            'id': activity.id,
-            'content': activity.content,
-            'day_number': activity.day_number,
-            'file_url': activity.file.url if activity.file else None,
-            'screenshots': [s.image.url for s in activity.video_screenshots.all()],
-            'love_count': activity.loves.count(),
-            'comment_count': activity.comments.count(),
-        })
-    
-    return JsonResponse({
-        'activities': activities_data,
-        'next_cursor': activities.last().id if activities.exists() else None,
-        'has_more': activities.count() == 10
+    return render(request, 'main/partials/comments_list.html', {
+        'comments': comments,
+        'campaign': campaign
     })
+
+
+@login_required
+@require_POST
+def htmx_post_comment(request, campaign_id):
+    """Post comment and return updated comments HTML"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    text = request.POST.get('text', '').strip()
+    
+    if text and hasattr(request.user, 'profile'):
+        Comment.objects.create(
+            user=request.user.profile,
+            campaign=campaign,
+            text=text
+        )
+    
+    # Return updated comments
+    return htmx_get_comments(request, campaign_id)
+
+
+@login_required
+def htmx_get_stats(request, campaign_id):
+    """Get stats popup HTML"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    return render(request, 'main/partials/stats_popup.html', {
+        'campaign': campaign
+    })
+
+
+@login_required
+def htmx_get_menu(request, campaign_id):
+    """Get menu popup HTML"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    is_owner = (request.user == campaign.user.user) if campaign.user and campaign.user.user else False
+    clone_count = Campaign.objects.filter(template=campaign).count()
+    
+    return render(request, 'main/partials/menu_popup.html', {
+        'campaign': campaign,
+        'is_owner': is_owner,
+        'clone_count': clone_count
+    })
+
+
+# ============================================================================
+# CLONE JOURNEY FUNCTIONALITY
+# ============================================================================
+
+@login_required
+@require_POST
+def clone_journey_simple(request, original_id):
+    """Clone journey - returns HTML response"""
+    try:
+        original = get_object_or_404(Campaign, id=original_id)
+        
+        if not hasattr(request.user, 'profile'):
+            return render(request, 'main/partials/clone_error.html', {
+                'error': 'User profile not found'
+            }, status=400)
+        
+        existing = Campaign.objects.filter(
+            user=request.user.profile,
+            template=original
+        ).first()
+        
+        if existing:
+            return render(request, 'main/partials/clone_result.html', {
+                'already_exists': True,
+                'redirect_url': f'/campaign/{existing.id}/activities/'
+            })
+        
+        # Create new campaign
+        new_campaign = Campaign.objects.create(
+            user=request.user.profile,
+            title=f"My {original.title}",
+            content=f"Following {original.user.user.username if original.user and original.user.user else 'someone'}'s journey",
+            category=original.category,
+            duration=original.duration,
+            duration_unit=original.duration_unit,
+            template=original,
+            is_active=True,
+            is_template=False,
+        )
+        
+        # Copy activities
+        for act in original.activity_set.all():
+            Activity.objects.create(
+                campaign=new_campaign,
+                day_number=act.day_number,
+                title=act.title,
+                description="",
+                is_active=True,
+            )
+        
+        return render(request, 'main/partials/clone_result.html', {
+            'success': True,
+            'redirect_url': f'/campaign/{new_campaign.id}/activities/'
+        })
+        
+    except Exception as e:
+        return render(request, 'main/partials/clone_error.html', {
+            'error': str(e)
+        }, status=500)
+
 
 
 
@@ -4238,7 +3930,11 @@ def profile_view(request, username):
 
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
+    # Get cloned journeys (where template is not null)
+    cloned_journeys = user_profile.user_campaigns.filter(
+        template__isnull=False,
+        is_active=True
+    ).order_by('-timestamp')
     context = {
         'user_profile': user_profile,
         'user_obj': user_obj,
@@ -4255,6 +3951,8 @@ def profile_view(request, username):
         'your_earnings': your_earnings,
         'total_sales': total_sales,
         'recent_sales': recent_sales,
+        'cloned_journeys': cloned_journeys,
+        'cloned_journeys_count': cloned_journeys.count(),
     }
     
     return render(request, 'main/user_profile.html', context)

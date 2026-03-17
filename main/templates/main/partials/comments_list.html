@@ -1,0 +1,43 @@
+<div class="comments-list" id="comments-list">
+    {% for comment in comments %}
+    <div class="comment-item" id="comment-{{ comment.id }}">
+        <img src="{% if comment.user.image %}{{ comment.user.image.url }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
+             class="comment-avatar" 
+             alt="{{ comment.user.user.username }}">
+        <div class="comment-content">
+            <div class="comment-header">
+                <a href="{% url 'profile_view' username=comment.user.user.username %}" class="comment-username">@{{ comment.user.user.username }}</a>
+                <span class="comment-time">{{ comment.time_ago }}</span>
+            </div>
+            <div class="comment-text">{{ comment.text }}</div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="text-align: center; color: #888; padding: 30px 20px;">
+        No comments yet. Be the first to comment!
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Comment form -->
+<div class="add-comment">
+    <input type="text" 
+           name="text" 
+           id="comment-input-{{ campaign.id }}"
+           placeholder="Add a comment..." 
+           maxlength="500"
+           hx-trigger="keydown[key=='Enter'&&!shiftKey]"
+           hx-post="{% url 'htmx_post_comment' campaign.id %}"
+           hx-target="#comments-list"
+           hx-swap="outerHTML"
+           hx-include="[name='text']"
+           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <button type="button"
+            hx-post="{% url 'htmx_post_comment' campaign.id %}"
+            hx-target="#comments-list"
+            hx-swap="outerHTML"
+            hx-include="[name='text']"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+        Post
+    </button>
+</div>

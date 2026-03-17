@@ -1595,6 +1595,47 @@ body.dark-mode .payment-section {
         gap: 8px;
     }
 }
+
+/* Add to your CSS section */
+.cloned-journey-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cloned-journey-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.cloned-journeys-grid {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.cloned-journeys-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.cloned-journeys-grid::-webkit-scrollbar-track {
+    background: var(--light-gray);
+    border-radius: 10px;
+}
+
+.cloned-journeys-grid::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+    .cloned-journeys-grid {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+    
+    .cloned-journey-card {
+        margin-bottom: 8px;
+    }
+}
 </style>
 
 <!-- ===== MAIN PROFILE CONTAINER ===== -->
@@ -1681,7 +1722,7 @@ body.dark-mode .payment-section {
         </div>
       
         <div class="stat-item">
-            <span class="stat-value">{{ public_campaigns_count|format_count }}</span>
+            <span class="stat-value">{{ public_campaigns_count|k_format }}</span>
             <span class="stat-label">Causes</span>
         </div>
 
@@ -1693,10 +1734,89 @@ body.dark-mode .payment-section {
         </div>
         
         <div class="stat-item">
-            <span class="stat-value">{{ user_profile.total_loves|format_count }}</span>
+            <span class="stat-value">{{ user_profile.total_loves|k_format }}</span>
             <span class="stat-label">Loves</span>
         </div>
     </div>
+<!-- Add this right after the profile stats section and before the creator tabs -->
+
+
+
+<!-- ===== SIMPLE CLONED JOURNEYS SECTION ===== -->
+{% if request.user == user_profile.user %}
+<div class="cloned-journeys-section" style="padding: 16px 24px; border-bottom: 1px solid #ddd; background: #f9f9f9;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="font-size: 18px; font-weight: 700; margin: 0;">
+            <i class="fas fa-code-branch" style="color: #4CAF50;"></i>
+            Your Cloned Journeys
+        </h3>
+    </div>
+    
+    {% if cloned_journeys %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+            {% for journey in cloned_journeys %}
+            <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #ddd; position: relative;">
+                
+                <!-- Simple Journey Info -->
+                <h4 style="font-size: 16px; font-weight: 700; margin: 0 0 8px 0;">
+                    <a href="{% url 'activity_list' journey.id %}" style="text-decoration: none; color: #333;">
+                        {{ journey.title }}
+                    </a>
+                </h4>
+                
+                <!-- Simple Progress -->
+                <div style="margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 4px;">
+                        <span>Day {{ journey.current_day|default:0 }} of {{ journey.duration|default:0 }}</span>
+                        <span>
+                            {% if journey.duration and journey.duration > 0 %}
+                                {% widthratio journey.current_day|default:0 journey.duration 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div style="background: #eee; height: 6px; border-radius: 3px;">
+                        <div style="width: 
+                            {% if journey.duration and journey.duration > 0 %}
+                                {% widthratio journey.current_day|default:0 journey.duration 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}; 
+                            background: #4CAF50; height: 6px; border-radius: 3px;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Simple Button -->
+                <a href="{% url 'activity_list' journey.id %}" 
+                   style="display: block; text-align: center; background: #4CAF50; color: white; padding: 8px; border-radius: 6px; text-decoration: none; font-size: 14px; margin-top: 10px;">
+                    Continue Journey
+                </a>
+                
+                <!-- Completed Badge (if done) -->
+                {% if journey.completed %}
+                <div style="position: absolute; top: -5px; right: -5px; background: #28a745; color: white; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;">
+                    ✓ Completed
+                </div>
+                {% endif %}
+                
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px 20px; background: white; border-radius: 12px;">
+            <i class="fas fa-rocket" style="font-size: 48px; color: #aaa; margin-bottom: 12px;"></i>
+            <p style="color: #666; margin-bottom: 16px;">You haven't started any journeys yet.</p>
+            <a href="{% url 'index' %}" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+                Explore Journeys
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
 
     <!-- ===== CREATOR DASHBOARD TABS (Only for profile owner) ===== -->
     {% if request.user == user_profile.user %}
@@ -1940,11 +2060,11 @@ body.dark-mode .payment-section {
                         <div class="campaign-overlay">
                             <div class="campaign-views">
                                 <i class="far fa-eye"></i>
-                                {{ campaign.campaignview_set.count|format_count }}
+                                {{ campaign.campaignview_set.count|k_format }}
                             </div>
                             <div class="campaign-views" style="margin-left: 4px;">
                                 <i class="far fa-heart"></i>
-                                {{ campaign.love_count|format_count }}
+                                {{ campaign.love_count|k_format }}
                             </div>
                         </div>
                     </a>

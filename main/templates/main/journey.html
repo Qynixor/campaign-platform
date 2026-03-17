@@ -7,2586 +7,884 @@
     <title>Cause Journey · Reel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <meta name="csrf-token" content="{{ csrf_token }}">
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Inter', sans-serif;
-        background: #000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100%;
-    }
-
-    :root {
-        --twitter-blue: #1DA1F2;
-        --accent-white: #FFFFFF;
-        --vh: 1vh;
-        --donate-green: #4CAF50;
-        --save-yellow: #FFD700;
-    }
-
-    .reel-container {
-        width: 100%;
-        max-width: 430px;
-        height: 100vh;
-        height: calc(var(--vh, 1vh) * 100);
-        background: #000;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .loading-spinner {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-size: 24px;
-        z-index: 1000;
-        display: none;
-    }
-
-    .campaigns-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1;
-        overflow-y: scroll;
-        scroll-snap-type: y mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .campaigns-container::-webkit-scrollbar {
-        display: none;
-    }
-
-    .campaign-item {
-        min-height: 100vh;
-        min-height: calc(var(--vh, 1vh) * 100);
-        height: 100vh;
-        height: calc(var(--vh, 1vh) * 100);
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-        position: relative;
-        overflow: hidden;
-    }
-
-.campaign-title-overlay {
-    position: absolute;
-    top: 26%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 30;
-    text-align: center;
-    pointer-events: none;
-    width: 90%;
-    max-width: 350px;
-    padding-right: 80px;  /* ADD THIS - creates space for action buttons */
-    box-sizing: border-box;
-}
-
-.campaign-title {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: white;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-    margin-bottom: 12px;
-    letter-spacing: -0.2px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    hyphens: auto;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-@media screen and (max-width: 380px) and (max-height: 700px) {
-    .campaign-title-overlay {
-        top: 22%;
-        padding-right: 70px;  /* Slightly less on small screens */
-    }
-}
-
-@media screen and (max-width: 340px) and (max-height: 600px) {
-    .campaign-title-overlay {
-        top: 20%;
-        padding-right: 60px;
-    }
-}
-
-/* Landscape mode */
-@media screen and (orientation: landscape) and (max-height: 500px) {
-    .campaign-title-overlay {
-        top: 15%;
-        padding-right: 100px;  /* More space for landscape buttons */
-    }
-}
-    .audio-trigger {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 10;
-        cursor: pointer;
-    }
-
-    .image-slideshow {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 1;
-        overflow: hidden;
-    }
-
-    .slides-container {
-        display: flex;
-        height: 100%;
-        width: 100%;
-        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        transform: translateX(0%);
-        will-change: transform;
-    }
-
-    .slide-item {
-        flex: 0 0 100%;
-        height: 100%;
-        position: relative;
-    }
-
-    .slide-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        pointer-events: none;
-    }
-
-    .gradient-top {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 180px;
-        background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
-        z-index: 5;
-        pointer-events: none;
-    }
-
-    .gradient-bottom {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 380px;
-        background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
-        z-index: 5;
-        pointer-events: none;
-    }
-
-    .top-bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        padding: 20px 16px 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 20;
-        background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
-    }
-
-    .left-group {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .stats-icon {
-        width: 44px;
-        height: 44px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        border: 1.5px solid rgba(255,255,255,0.3);
-        position: relative;
-        z-index: 100;
-        backdrop-filter: blur(2px);
-    }
-
-    .audio-indicator.playing {
-        opacity: 1;
-        background: rgba(0, 0, 0, 0.6);
-        border-color: rgba(255, 255, 255, 0.4);
-    }
-
-    .controls-row {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin: 8px 0 12px;
-    }
-
-    .more-link {
-        font-size: 13px;
-        font-weight: 600;
-        color: white;
-        cursor: pointer;
-        display: inline-block;
-        background: rgba(255,255,255,0.15);
-        padding: 4px 12px;
-        border-radius: 16px;
-        backdrop-filter: blur(4px);
-        transition: all 0.2s;
-    }
-
-    .more-link:hover {
-        background: rgba(255,255,255,0.25);
-    }
-
-    .slide-controls {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        background: rgba(0, 0, 0, 0.3) !important;
-        backdrop-filter: blur(4px) !important;
-        padding: 4px 10px !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        width: fit-content !important;
-    }
-
-    .slide-indicators {
-        display: flex;
-        gap: 4px;
-    }
-
-    .indicator-dot {
-        width: 4px !important;
-        height: 4px !important;
-        background: rgba(255, 255, 255, 0.5);
-        border: none;
-        border-radius: 2px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        padding: 0;
-    }
-
-    .indicator-dot.active {
-        background: white;
-        width: 16px !important;
-    }
-
-    .autoplay-btn {
-        width: 20px !important;
-        height: 20px !important;
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 12px !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: all 0.2s ease;
-        border-left: 1px solid rgba(255, 255, 255, 0.2);
-        padding-left: 8px !important;
-        z-index: 10000;
-        pointer-events: auto !important;
-        position: relative;
-        opacity: 0.8;
-    }
-
-    .autoplay-btn:hover {
-        color: white;
-        opacity: 1;
-    }
-
-    .autoplay-btn i {
-        font-size: 12px !important;
-        pointer-events: none;
-    }
-
-    .journey-center-link {
-        position: absolute;
-        top: 52%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 30;
-        text-align: center;
-        pointer-events: auto;
-        white-space: nowrap;
-    }
-
-    .journey-link {
-        display: inline-block;
-        padding: 12px 28px;
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(6px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 40px;
-        color: white;
-        font-weight: 500;
-        font-size: 16px;
-        text-decoration: none;
-        transition: all 0.25s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .journey-link i {
-        margin-right: 8px;
-        color: white;
-    }
-
-    .action-buttons {
-        position: absolute;
-        right: 12px;
-        bottom: 80px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        z-index: 40;
-        pointer-events: auto;
-    }
-
-    .action-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        color: white;
-        background: none;
-        border: none;
-        cursor: pointer;
-        min-width: 60px;
-        padding: 0;
-    }
-
-    .action-btn i {
-        font-size: 28px;
-        color: white;
-        transition: transform 0.2s ease;
-    }
-
-    .action-btn i:active {
-        transform: scale(0.9);
-    }
-
-    .action-btn span {
-        font-size: 12px;
-        font-weight: 600;
-        color: white;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    .action-profile {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        border: 3px solid white;
-        object-fit: cover;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        margin-bottom: 8px;
-    }
-
-    .action-profile:active {
-        transform: scale(0.95);
-    }
-
-    .action-btn.follow-btn i {
-        color: white;
-    }
-
-    .action-btn.follow-btn.following i {
-        color: #4CAF50;
-    }
-
-    .action-btn.loved i {
-        color: #ff3b30;
-    }
-
-    .action-btn.save-btn i {
-        color: white;
-    }
-
-    .action-btn.save-btn.saved i {
-        color: var(--save-yellow);
-    }
-
-    .action-btn.donate-btn i {
-        color: var(--donate-green);
-    }
-
-    .action-btn.menu-btn i {
-        font-size: 24px;
-        color: white;
-    }
-
-    .info-panel {
-        position: absolute;
-        bottom: 30px;
-        left: 16px;
-        right: 80px;
-        z-index: 20;
-        color: white;
-        pointer-events: auto;
-    }
-
-    .username-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-    }
-
-    .username {
-        font-weight: 700;
-        font-size: 16px;
-        color: white;
-        text-decoration: none;
-        background: rgba(0,0,0,0.3);
-        padding: 2px 8px;
-        border-radius: 16px;
-        backdrop-filter: blur(4px);
-    }
-
-    .verified {
-        color: white;
-        font-size: 14px;
-    }
-
-    .timestamp {
-        font-size: 12px;
-        color: rgba(255,255,255,0.8);
-        background: rgba(0,0,0,0.3);
-        padding: 2px 8px;
-        border-radius: 16px;
-        backdrop-filter: blur(4px);
-    }
-
-    .caption {
-        font-size: 15px;
-        line-height: 1.4;
-        margin-bottom: 8px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        background: rgba(0,0,0,0.2);
-        padding: 8px 12px;
-        border-radius: 16px;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .caption.expanded {
-        -webkit-line-clamp: unset;
-    }
-
-    .meta-row {
-        display: flex;
-        gap: 16px;
-        font-size: 12px;
-        color: rgba(255,255,255,0.9);
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-        background: rgba(0,0,0,0.2);
-        padding: 8px 12px;
-        border-radius: 20px;
-        backdrop-filter: blur(4px);
-        width: fit-content;
-    }
-
-    .meta-row i {
-        margin-right: 4px;
-        color: white;
-    }
-
-    .media-stats-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 8px;
-    }
-
-    .media-counter {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(0,0,0,0.3);
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .slide-counter {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: rgba(0,0,0,0.3);
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 11px;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .slide-counter i {
-        color: white;
-        font-size: 10px;
-    }
-
-    .donation-progress {
-        margin: 8px 0 4px;
-        padding: 8px 12px;
-        background: rgba(0,0,0,0.3);
-        backdrop-filter: blur(4px);
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 6px;
-        font-size: 11px;
-        color: #ddd;
-    }
-
-    .progress-header i {
-        color: var(--donate-green);
-        margin-right: 4px;
-    }
-
-    .raised-amount {
-        font-weight: 600;
-        color: var(--donate-green);
-    }
-
-    .progress-bar-container {
-        width: 100%;
-        height: 6px;
-        background: #333;
-        border-radius: 3px;
-        overflow: hidden;
-        margin: 6px 0 4px;
-    }
-
-    .progress-fill-donate {
-        height: 100%;
-        background: var(--donate-green);
-        border-radius: 3px;
-        transition: width 0.3s ease;
-    }
-
-    .donation-stats-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 10px;
-        color: #aaa;
-        margin-top: 4px;
-    }
-
-    .goal-amount {
-        color: #ddd;
-    }
-
-    .donor-count {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .donor-count i {
-        color: var(--donate-green);
-        font-size: 10px;
-    }
-
-    .popup-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 999999;
-        display: none;
-        backdrop-filter: blur(5px);
-    }
-
-    .popup-backdrop.active {
-        display: block;
-    }
-
-    .global-stats-popup {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: #1a1a1a;
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
-        max-width: 430px;
-        margin: 0 auto;
-        transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
-        z-index: 1000000;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-        color: white;
-        padding-bottom: 24px;
-    }
-
-    .global-stats-popup.active {
-        transform: translateY(0);
-    }
-
-    .global-stats-popup .popup-handle {
-        width: 40px;
-        height: 5px;
-        background: #444;
-        border-radius: 3px;
-        margin: 12px auto 8px;
-    }
-
-    .global-stats-popup .popup-header {
-        padding: 8px 20px 16px 20px;
-        border-bottom: 1px solid #333;
-    }
-
-    .global-stats-popup .popup-header h3 {
-        color: white;
-        font-size: 20px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .global-stats-popup .popup-header h3 i {
-        color: #1DA1F2;
-        font-size: 22px;
-    }
-
-    .global-stats-popup .popup-content {
-        padding: 20px;
-        max-height: 70vh;
-        overflow-y: auto;
-    }
-
-    .global-stats-popup .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-    }
-
-    .global-stats-popup .stat-item {
-        background: #252525;
-        border-radius: 16px;
-        padding: 20px 12px;
-        text-align: center;
-        border: 1px solid #333;
-    }
-
-    .global-stats-popup .stat-value {
-        font-size: 32px;
-        font-weight: 800;
-        color: white;
-        display: block;
-        margin-bottom: 6px;
-        line-height: 1;
-    }
-
-    .global-stats-popup .stat-label {
-        font-size: 13px;
-        color: #aaa;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .global-menu-popup {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: #1a1a1a;
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
-        max-width: 430px;
-        margin: 0 auto;
-        transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
-        z-index: 1000000;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-        padding-bottom: 24px;
-    }
-
-    .global-menu-popup.active {
-        transform: translateY(0);
-    }
-
-    .global-menu-popup .popup-handle {
-        width: 40px;
-        height: 5px;
-        background: #444;
-        border-radius: 3px;
-        margin: 12px auto 8px;
-    }
-
-    .global-menu-popup .popup-header {
-        padding: 8px 20px 16px 20px;
-        border-bottom: 1px solid #333;
-    }
-
-    .global-menu-popup .popup-header h3 {
-        color: white;
-        font-size: 20px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .global-menu-popup .popup-header h3 i {
-        color: #1DA1F2;
-        font-size: 22px;
-    }
-
-    .global-menu-popup .popup-content {
-        padding: 8px;
-    }
-
-    .global-menu-popup .menu-item {
-        padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        color: white;
-        text-decoration: none;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s;
-        width: 100%;
-        border: none;
-        background: transparent;
-        text-align: left;
-        border-bottom: 1px solid #2a2a2a;
-    }
-
-    .global-menu-popup .menu-item:last-child {
-        border-bottom: none;
-    }
-
-    .global-menu-popup .menu-item:hover {
-        background: #252525;
-    }
-
-    .global-menu-popup .menu-item i {
-        width: 28px;
-        color: #1DA1F2;
-        font-size: 20px;
-        text-align: center;
-    }
-
-    .global-menu-popup .menu-item.report i {
-        color: #ff4444;
-    }
-
-    .global-menu-popup .menu-item.delete i {
-        color: #ff4444;
-    }
-
-    .comments-modal {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: #1a1a1a;
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
-        z-index: 1000000;
-        transform: translateY(100%);
-        transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
-        max-height: 80vh;
-        display: flex;
-        flex-direction: column;
-        max-width: 430px;
-        margin: 0 auto;
-        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-    }
-
-    .comments-modal.active {
-        transform: translateY(0);
-    }
-
-    .comments-modal .modal-handle {
-        width: 40px;
-        height: 5px;
-        background: #444;
-        border-radius: 3px;
-        margin: 12px auto 8px;
-    }
-
-    .comments-header {
-        padding: 8px 20px 16px 20px;
-        border-bottom: 1px solid #333;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .comments-header h3 {
-        color: white;
-        font-size: 18px;
-        font-weight: 600;
-    }
-
-    .close-comments {
-        background: #333;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s;
-    }
-
-    .close-comments:hover {
-        background: #444;
-    }
-
-    .comments-list {
-        padding: 16px 20px;
-        overflow-y: auto;
-        flex: 1;
-        max-height: 60vh;
-    }
-
-    .comment-item {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-
-    .comment-avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #333;
-    }
-
-    .comment-content {
-        flex: 1;
-        background: #252525;
-        padding: 12px 16px;
-        border-radius: 18px;
-        border: 1px solid #333;
-    }
-
-    .comment-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-        flex-wrap: wrap;
-    }
-
-    .comment-username {
-        color: white;
-        font-weight: 600;
-        font-size: 14px;
-        text-decoration: none;
-    }
-
-    .comment-time {
-        color: #888;
-        font-size: 12px;
-    }
-
-    .comment-text {
-        color: white;
-        font-size: 14px;
-        line-height: 1.5;
-        word-break: break-word;
-    }
-
-    .add-comment {
-        padding: 16px 20px 24px 20px;
-        border-top: 1px solid #333;
-        display: flex;
-        gap: 12px;
-        background: #1a1a1a;
-    }
-
-    .add-comment input {
-        flex: 1;
-        background: #252525;
-        border: 1px solid #333;
-        border-radius: 30px;
-        padding: 12px 18px;
-        color: white;
-        font-size: 15px;
-        outline: none;
-    }
-
-    .add-comment input:focus {
-        border-color: #1DA1F2;
-    }
-
-    .add-comment button {
-        background: #1DA1F2;
-        border: none;
-        border-radius: 30px;
-        padding: 0 24px;
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-    .desktop-back-arrow {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        width: 48px;
-        height: 48px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        border: 1.5px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(8px);
-        z-index: 10000;
-    }
-
-    .mobile-back-arrow {
-        width: 44px;
-        height: 44px;
-        background: rgba(255,255,255,0.15);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 22px;
-        cursor: pointer;
-        border: 1.5px solid rgba(255,255,255,0.3);
-        backdrop-filter: blur(2px);
-        margin-right: 8px;
-    }
-
-    @media (min-width: 769px) {
-        .mobile-back-arrow {
-            display: none;
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-    }
 
-    @media (max-width: 768px) {
-        .desktop-back-arrow {
-            display: none;
-        }
-        .mobile-back-arrow {
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
             display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
-        .audio-indicator {
+
+        :root {
+            --twitter-blue: #1DA1F2;
+            --accent-white: #FFFFFF;
+            --vh: 1vh;
+            --donate-green: #4CAF50;
+            --save-yellow: #FFD700;
+        }
+
+        .reel-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
             display: none;
         }
-    }
 
-    .web-scroll-arrows {
-        position: fixed;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-        z-index: 10001;
-        pointer-events: auto;
-    }
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 200ms ease-in;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
 
-    .scroll-arrow {
-        width: 48px;
-        height: 48px;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        border: 1.5px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
+        .campaigns-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
 
-    .scroll-arrow:hover {
-        background: white;
-        border-color: white;
-        color: black;
-        transform: scale(1.1);
-    }
-
-    .scroll-arrow:active {
-        transform: scale(0.95);
-    }
-
-    .scroll-arrow i {
-        pointer-events: none;
-    }
-
-    @media (max-width: 768px) {
-        .web-scroll-arrows {
+        .campaigns-container::-webkit-scrollbar {
             display: none;
         }
-    }
 
-    .no-campaigns {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-        color: white;
-        z-index: 10;
-    }
-
-    .no-campaigns i {
-        font-size: 48px;
-        color: white;
-        margin-bottom: 16px;
-    }
-
-    .no-campaigns p {
-        font-size: 18px;
-        margin-bottom: 20px;
-        color: #888;
-    }
-
-    .create-campaign-btn {
-        display: inline-block;
-        padding: 12px 24px;
-        background: white;
-        color: black;
-        text-decoration: none;
-        border-radius: 30px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .username, .timestamp, .caption, .meta-row, .more-link {
-        background: none;
-        backdrop-filter: none;
-        border: none;
-        padding: 0;
-    }
-
-}
-
-
-    /* Small mobile devices */
-    @media screen and (max-width: 380px) and (max-height: 700px) {
-        
-        .journey-center-link {
-            top: 45%;
+        .campaign-item {
+            min-height: 100vh;
+            min-height: calc(var(--vh, 1vh) * 100);
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            overflow: hidden;
         }
-        
-        .journey-link {
-            padding: 8px 20px;
-            font-size: 14px;
+
+        .campaign-title-overlay {
+            position: absolute;
+            top: 26%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            text-align: center;
+            pointer-events: none;
+            width: 90%;
+            max-width: 350px;
+            padding-right: 80px;
+            box-sizing: border-box;
         }
-        
-        .action-buttons {
-            bottom: 70px;
+
+        .campaign-title {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            margin-bottom: 12px;
+            letter-spacing: -0.2px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .audio-trigger {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .image-slideshow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .slides-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(0%);
+            will-change: transform;
+        }
+
+        .slide-item {
+            flex: 0 0 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+        }
+
+        .gradient-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 180px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .gradient-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 380px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 16px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+        }
+
+        .left-group {
+            display: flex;
+            align-items: center;
             gap: 12px;
         }
-        
-        .action-btn i {
+
+        .stats-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 100;
+            backdrop-filter: blur(2px);
+        }
+
+        .mobile-back-arrow {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(2px);
+            margin-right: 8px;
+        }
+
+        .desktop-back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-size: 24px;
+            cursor: pointer;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
         }
-        
+
+        .journey-center-link {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            text-align: center;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+
+        .journey-link {
+            display: inline-block;
+            padding: 12px 28px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 40px;
+            color: white;
+            font-weight: 500;
+            font-size: 16px;
+            text-decoration: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .journey-link i {
+            margin-right: 8px;
+            color: white;
+        }
+
+        .action-buttons {
+            position: absolute;
+            right: 12px;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            z-index: 40;
+            pointer-events: auto;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+            min-width: 60px;
+            padding: 0;
+        }
+
+        .action-btn i {
+            font-size: 28px;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+
+        .action-btn i:active {
+            transform: scale(0.9);
+        }
+
+        .action-btn span {
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
         .action-profile {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid white;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 8px;
         }
-        
+
+        .action-btn.follow-btn.following i {
+            color: #4CAF50;
+        }
+
+        .action-btn.loved i {
+            color: #ff3b30;
+        }
+
+        .action-btn.save-btn.saved i {
+            color: var(--save-yellow);
+        }
+
+        .action-btn.donate-btn i {
+            color: var(--donate-green);
+        }
+
+        .action-btn.menu-btn i {
+            font-size: 24px;
+            color: white;
+        }
+
         .info-panel {
-            bottom: 15px;
-            left: 12px;
-            right: 70px;
+            position: absolute;
+            bottom: 30px;
+            left: 16px;
+            right: 80px;
+            z-index: 20;
+            color: white;
+            pointer-events: auto;
         }
-        
+
+        .username-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
         .username {
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .verified {
+            color: white;
             font-size: 14px;
         }
-        
+
+        .timestamp {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }
+
         .caption {
+            font-size: 15px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .caption.expanded {
+            -webkit-line-clamp: unset;
+        }
+
+        .controls-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 8px 0 12px;
+        }
+
+        .more-link {
             font-size: 13px;
-            margin-bottom: 4px;
-            padding: 4px 8px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            display: inline-block;
         }
-        
-        .meta-row {
-            font-size: 11px;
-            margin-bottom: 6px;
-            padding: 4px 8px;
-            gap: 10px;
+
+        .slide-controls {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            background: rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(4px) !important;
+            padding: 4px 10px !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: fit-content !important;
         }
-        
-        .media-stats-row {
-            margin-bottom: 4px;
-        }
-        
-        .media-counter, .slide-counter {
-            font-size: 10px;
-            padding: 2px 6px;
-        }
-        
-        .gradient-bottom {
-            height: 300px;
-        }
-        
-        .donation-progress {
-            padding: 4px 8px;
-        }
-    }
 
-    /* Extra small devices */
-    @media screen and (max-width: 340px) and (max-height: 600px) {
-     
-        
-        .journey-center-link {
-            top: 40%;
-        }
-        
-        .action-buttons {
-            bottom: 50px;
-            right: 8px;
-            gap: 8px;
-        }
-        
-        .action-btn {
-            min-width: 45px;
-        }
-        
-        .action-btn i {
-            font-size: 20px;
-        }
-        
-        .action-btn span {
-            font-size: 10px;
-        }
-        
-        .action-profile {
-            width: 36px;
-            height: 36px;
-            border-width: 2px;
-        }
-        
-        .info-panel {
-            bottom: 10px;
-            left: 8px;
-            right: 60px;
-        }
-        
-        .username-row {
-            margin-bottom: 4px;
-        }
-        
-        .gradient-bottom {
-            height: 250px;
-        }
-    }
-
-    /* Landscape mode */
-    @media screen and (orientation: landscape) and (max-height: 500px) {
-        .campaign-title-overlay {
-            top: 15%;
-        }
-        
-        .campaign-title {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-        
-        .journey-center-link {
-            top: 30%;
-        }
-        
-        .journey-link {
-            padding: 4px 12px;
-            font-size: 12px;
-        }
-        
-        .action-buttons {
-            bottom: 20px;
-            right: 8px;
-            flex-direction: row;
-            gap: 8px;
-        }
-        
-        .action-btn {
-            min-width: auto;
-        }
-        
-        .action-btn i {
-            font-size: 18px;
-        }
-        
-        .action-btn span {
-            display: none;
-        }
-        
-        .action-profile {
-            width: 32px;
-            height: 32px;
-        }
-        
-        .info-panel {
-            bottom: 10px;
-            left: 8px;
-            right: auto;
-            max-width: 60%;
-        }
-        
-        .gradient-bottom {
-            height: 150px;
-        }
-        
-        .meta-row {
-            display: none;
-        }
-        
-        .media-stats-row {
-            display: none;
-        }
-        
-        .donation-progress {
-            display: none;
-        }
-    }
-
-    .stats-tabs {
-        display: flex;
-        gap: 8px;
-        padding: 8px 16px;
-        background: #1e1e1e;
-        border-bottom: 1px solid #333;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-
-    .stats-tabs::-webkit-scrollbar {
-        display: none;
-    }
-
-    .tab-btn {
-        padding: 8px 16px;
-        background: transparent;
-        border: 1px solid #333;
-        border-radius: 20px;
-        color: #aaa;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-        background: #1DA1F2;
-        border-color: #1DA1F2;
-        color: white;
-    }
-
-    .tab-btn.premium-tab {
-        border-color: #FFD700;
-        color: #FFD700;
-    }
-
-    .tab-btn.premium-tab.active {
-        background: #FFD700;
-        color: #1a1a1a;
-    }
-
-    .tab-btn i {
-        margin-right: 4px;
-        font-size: 12px;
-    }
-
-    .stat-trend {
-        display: block;
-        font-size: 11px;
-        margin-top: 4px;
-        font-weight: 500;
-    }
-
-    .stat-trend.positive {
-        color: #4CAF50;
-    }
-
-    .stat-trend.negative {
-        color: #ff4444;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 4px;
-        background: #333;
-        border-radius: 2px;
-        margin-top: 8px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: #1DA1F2;
-        border-radius: 2px;
-        transition: width 0.3s ease;
-    }
-
-    .stat-detail {
-        display: block;
-        font-size: 11px;
-        color: #aaa;
-        margin-top: 4px;
-    }
-
-    .quick-insights {
-        margin-top: 20px;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-        border: 1px solid #333;
-    }
-
-    .quick-insights h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .quick-insights h4 i {
-        color: #1DA1F2;
-    }
-
-    .insight-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .insight-row:last-child {
-        border-bottom: none;
-    }
-
-    .insight-row i {
-        width: 20px;
-        color: #1DA1F2;
-        font-size: 14px;
-    }
-
-    .insight-row strong {
-        color: white;
-    }
-
-    .premium-teaser {
-        margin-top: 20px;
-        padding: 20px;
-        background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-        border-radius: 16px;
-        border: 1px solid #444;
-        text-align: center;
-    }
-
-    .premium-teaser i.fa-crown {
-        font-size: 40px;
-        color: #FFD700;
-        margin-bottom: 12px;
-    }
-
-    .premium-teaser i.fa-star {
-        font-size: 40px;
-        color: #1DA1F2;
-        margin-bottom: 12px;
-    }
-
-    .premium-teaser h4 {
-        color: white;
-        font-size: 18px;
-        margin-bottom: 8px;
-    }
-
-    .premium-teaser p {
-        color: #aaa;
-        font-size: 14px;
-        margin-bottom: 16px;
-    }
-
-    .premium-features {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin: 16px 0;
-        text-align: left;
-    }
-
-    .feature {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: #ddd;
-        font-size: 12px;
-    }
-
-    .feature i {
-        color: #1DA1F2;
-        font-size: 12px;
-    }
-
-    .upgrade-btn {
-        background: #1DA1F2;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 30px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        margin: 8px 0;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .upgrade-btn:hover {
-        background: #1a8cd8;
-        transform: scale(1.02);
-    }
-
-    .upgrade-btn i {
-        color: #FFD700;
-    }
-
-    .owner-teaser {
-        background: linear-gradient(135deg, #1a2a3a 0%, #0a1a2a 100%);
-        border-color: #1DA1F2;
-    }
-
-    .owner-teaser .upgrade-btn {
-        background: #FFD700;
-        color: #1a1a1a;
-    }
-
-    .owner-teaser .upgrade-btn i {
-        color: #1a1a1a;
-    }
-
-    .teaser-small {
-        font-size: 11px !important;
-        color: #666 !important;
-        margin-top: 8px !important;
-    }
-
-    .premium-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 16px 20px 8px;
-        color: #FFD700;
-    }
-
-    .premium-header i {
-        font-size: 24px;
-    }
-
-    .premium-header h3 {
-        color: white;
-        font-size: 18px;
-        margin: 0;
-    }
-
-    .chart-container {
-        height: 180px;
-        margin: 16px;
-        background: #252525;
-        border-radius: 12px;
-        padding: 16px;
-    }
-
-    .chart-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-around;
-    }
-
-    .bar-chart {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-around;
-        width: 100%;
-        height: 100%;
-        gap: 4px;
-    }
-
-    .mock-bar {
-        flex: 1;
-        background: #1DA1F2;
-        border-radius: 4px 4px 0 0;
-        min-width: 8px;
-        opacity: 0.7;
-    }
-
-    .stats-grid.small {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 8px 16px;
-    }
-
-    .stats-grid.small .stat-item {
-        padding: 12px 8px;
-    }
-
-    .benchmark-comparison {
-        margin: 16px;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .benchmark-comparison h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .benchmark-comparison h4 i {
-        color: #FFD700;
-    }
-
-    .comparison-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .comparison-item .value {
-        font-weight: 600;
-        color: white;
-    }
-
-    .comparison-item .value.avg {
-        color: #888;
-    }
-
-    .comparison-item .vs {
-        color: #444;
-        font-size: 11px;
-    }
-
-    .rank-badge {
-        margin-top: 12px;
-        padding: 8px 12px;
-        background: #1a2a3a;
-        border-radius: 20px;
-        color: #1DA1F2;
-        font-size: 13px;
-        text-align: center;
-    }
-
-    .donor-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 16px;
-    }
-
-    .donor-stat-card {
-        background: #252525;
-        border-radius: 12px;
-        padding: 12px 8px;
-        text-align: center;
-        border: 1px solid #333;
-    }
-
-    .donor-stat-value {
-        display: block;
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 4px;
-    }
-
-    .donor-stat-label {
-        font-size: 11px;
-        color: #aaa;
-    }
-
-    .donor-brackets, .top-locations {
-        margin: 16px;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .donor-brackets h4, .top-locations h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        font-weight: 600;
-    }
-
-    .bracket-item, .location-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .bracket-value, .location-count {
-        color: #1DA1F2;
-        font-weight: 600;
-    }
-
-    .location-item i {
-        color: #1DA1F2;
-        margin-right: 6px;
-        font-size: 12px;
-    }
-
-    .predict-card {
-        margin: 16px;
-        padding: 16px;
-        background: linear-gradient(135deg, #1a2a3a 0%, #0a1a2a 100%);
-        border-radius: 12px;
-        border: 1px solid #1DA1F2;
-    }
-
-    .predict-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-    }
-
-    .predict-item:last-child {
-        border-bottom: none;
-    }
-
-    .predict-label {
-        color: #aaa;
-        font-size: 13px;
-    }
-
-    .predict-value {
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .predict-value.high {
-        color: #4CAF50;
-    }
-
-    .predict-value.medium {
-        color: #FFD700;
-    }
-
-    .predict-value.needs-attention {
-        color: #ff4444;
-    }
-
-    .recommendations {
-        margin: 16px;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .recommendations h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .recommendations h4 i {
-        color: #FFD700;
-    }
-
-    .recommendation-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .recommendation-item:last-child {
-        border-bottom: none;
-    }
-
-    .recommendation-item i {
-        color: #4CAF50;
-        font-size: 14px;
-        margin-top: 2px;
-    }
-
-    .conversion-funnel {
-        margin: 16px;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .conversion-funnel h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-    }
-
-    .funnel-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-    }
-
-    .funnel-item span:first-child {
-        width: 110px;
-        color: #aaa;
-        font-size: 12px;
-    }
-
-    .funnel-bar-container {
-        flex: 1;
-        height: 8px;
-        background: #333;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .funnel-bar {
-        height: 100%;
-        background: #1DA1F2;
-        border-radius: 4px;
-        transition: width 0.3s;
-    }
-
-    .funnel-percent {
-        width: 45px;
-        color: white;
-        font-weight: 600;
-        font-size: 12px;
-    }
-
-    .no-data {
-        color: #666;
-        text-align: center;
-        padding: 16px;
-        font-style: italic;
-    }
-
-    .pricing-modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1000001;
-        width: 90%;
-        max-width: 900px;
-        max-height: 90vh;
-        overflow-y: auto;
-        display: none;
-    }
-
-    .pricing-modal.active {
-        display: block;
-    }
-
-    .modal-content {
-        background: #1a1a1a;
-        border-radius: 24px;
-        padding: 32px 24px;
-        position: relative;
-        border: 1px solid #333;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-
-    .close-modal {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        background: #333;
-        border: none;
-        color: white;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-    }
-
-    .modal-content h2 {
-        color: white;
-        font-size: 24px;
-        margin-bottom: 24px;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .pricing-plans {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-    }
-
-    .plan {
-        background: #252525;
-        border-radius: 16px;
-        padding: 24px 16px;
-        border: 1px solid #333;
-        position: relative;
-        transition: transform 0.3s;
-    }
-
-    .plan:hover {
-        transform: translateY(-5px);
-        border-color: #1DA1F2;
-    }
-
-    .plan.popular {
-        border-color: #FFD700;
-        box-shadow: 0 10px 30px rgba(255, 215, 0, 0.1);
-    }
-
-    .popular-badge {
-        position: absolute;
-        top: -12px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #FFD700;
-        color: #1a1a1a;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .plan h3 {
-        color: white;
-        font-size: 18px;
-        margin-bottom: 12px;
-        text-align: center;
-    }
-
-    .price {
-        color: white;
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 4px;
-        text-align: center;
-    }
-
-    .period {
-        color: #888;
-        font-size: 12px;
-        margin-bottom: 16px;
-        text-align: center;
-    }
-
-    .features {
-        list-style: none;
-        padding: 0;
-        margin: 20px 0;
-    }
-
-    .features li {
-        color: #aaa;
-        padding: 6px 0;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .features li i {
-        color: #4CAF50;
-        font-size: 14px;
-    }
-
-    .select-plan {
-        width: 100%;
-        padding: 12px;
-        background: transparent;
-        border: 2px solid #1DA1F2;
-        border-radius: 30px;
-        color: #1DA1F2;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .select-plan:hover {
-        background: #1DA1F2;
-        color: white;
-    }
-
-    .plan.popular .select-plan {
-        background: #FFD700;
-        border-color: #FFD700;
-        color: #1a1a1a;
-    }
-
-    .plan.popular .select-plan:hover {
-        background: #e6c200;
-    }
-
-    @media (max-width: 768px) {
-        .pricing-plans {
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        
-        .plan {
-            max-width: 300px;
-            margin: 0 auto;
-        }
-        
-        .stats-tabs {
-            padding: 8px 12px;
-        }
-        
-        .tab-btn {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        
-        .donor-stats-grid {
-            grid-template-columns: repeat(3, 1fr);
+        .slide-indicators {
+            display: flex;
             gap: 4px;
         }
-        
-        .funnel-item span:first-child {
-            width: 90px;
-            font-size: 11px;
+
+        .indicator-dot {
+            width: 4px !important;
+            height: 4px !important;
+            background: rgba(255, 255, 255, 0.5);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0;
         }
-    }
-
-    .donation-modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1000001;
-        width: 90%;
-        max-width: 400px;
-        max-height: 90vh;
-        overflow-y: auto;
-        display: none;
-    }
-
-    .donation-modal.active {
-        display: block;
-    }
-
-    .donation-modal .modal-content {
-        background: #1a1a1a;
-        border-radius: 24px;
-        padding: 24px;
-        position: relative;
-        border: 1px solid #333;
-    }
-
-    .donation-header {
-        text-align: center;
-        margin-bottom: 24px;
-    }
-
-    .donation-header h3 {
-        color: white;
-        font-size: 20px;
-        margin-bottom: 8px;
-    }
-
-    .donation-header p {
-        color: #aaa;
-        font-size: 14px;
-    }
-
-    .donation-amounts {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-
-    .amount-btn {
-        background: #252525;
-        border: 1px solid #333;
-        border-radius: 30px;
-        padding: 12px 8px;
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .amount-btn:hover {
-        background: #333;
-        border-color: var(--donate-green);
-    }
-
-    .amount-btn.selected {
-        background: var(--donate-green);
-        border-color: var(--donate-green);
-    }
-
-    .custom-amount {
-        margin: 16px 0;
-    }
-
-    .custom-amount input {
-        width: 100%;
-        background: #252525;
-        border: 1px solid #333;
-        border-radius: 30px;
-        padding: 14px 18px;
-        color: white;
-        font-size: 16px;
-        outline: none;
-    }
-
-    .custom-amount input:focus {
-        border-color: var(--donate-green);
-    }
-
-    .donate-modal-btn {
-        background: var(--donate-green);
-        color: white;
-        border: none;
-        border-radius: 30px;
-        padding: 16px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        margin: 16px 0;
-        transition: all 0.2s;
-    }
-
-    .donate-modal-btn:hover {
-        background: #45a049;
-        transform: scale(1.02);
-    }
-
-    .donation-footer {
-        text-align: center;
-        color: #666;
-        font-size: 12px;
-        margin-top: 16px;
-    }
-
-    .donation-footer i {
-        color: var(--donate-green);
-    }
-
-    .premium-stats-section {
-        margin-top: 20px;
-        border-top: 1px solid #333;
-        padding-top: 20px;
-    }
-
-    .premium-stats-section h4 {
-        color: white;
-        font-size: 16px;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .chart-container {
-        background: #252525;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-
-    .chart-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .chart-title {
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .growth-rate {
-        color: #4CAF50;
-        font-weight: 600;
-        font-size: 14px;
-    }
-
-    .bar-tooltip {
-        display: none;
-        position: absolute;
-        top: -25px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        white-space: nowrap;
-    }
-
-    .mock-bar:hover .bar-tooltip {
-        display: block;
-    }
-
-    .stats-grid.small {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 16px 0;
-    }
-
-    .stats-grid.small .stat-item {
-        padding: 12px 8px;
-    }
-
-    .donor-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin: 16px 0;
-    }
-
-    .donor-stat-card {
-        background: #252525;
-        border-radius: 12px;
-        padding: 12px 8px;
-        text-align: center;
-        border: 1px solid #333;
-    }
-
-    .donor-stat-value {
-        display: block;
-        font-size: 20px;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 4px;
-    }
-
-    .donor-stat-label {
-        font-size: 11px;
-        color: #aaa;
-    }
-
-    .donor-brackets, .top-locations {
-        margin: 16px 0;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .donor-brackets h4, .top-locations h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        font-weight: 600;
-    }
-
-    .bracket-item, .location-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .bracket-value, .location-count {
-        color: #1DA1F2;
-        font-weight: 600;
-    }
-
-    .location-item i {
-        color: #1DA1F2;
-        margin-right: 6px;
-        font-size: 12px;
-    }
-
-    .predict-card {
-        margin: 16px 0;
-        padding: 16px;
-        background: linear-gradient(135deg, #1a2a3a 0%, #0a1a2a 100%);
-        border-radius: 12px;
-        border: 1px solid #1DA1F2;
-    }
-
-    .predict-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-    }
-
-    .predict-item:last-child {
-        border-bottom: none;
-    }
-
-    .predict-label {
-        color: #aaa;
-        font-size: 13px;
-    }
-
-    .predict-value {
-        color: white;
-        font-weight: 600;
-        font-size: 16px;
-    }
-
-    .predict-value.high {
-        color: #4CAF50;
-    }
-
-    .predict-value.medium {
-        color: #FFD700;
-    }
-
-    .predict-value.needs-attention {
-        color: #ff4444;
-    }
-
-    .recommendations {
-        margin: 16px 0;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .recommendations h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .recommendations h4 i {
-        color: #FFD700;
-    }
-
-    .recommendation-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .recommendation-item:last-child {
-        border-bottom: none;
-    }
-
-    .recommendation-item i {
-        color: #4CAF50;
-        font-size: 14px;
-        margin-top: 2px;
-    }
-
-    .conversion-funnel {
-        margin: 16px 0;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .conversion-funnel h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-    }
-
-    .funnel-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-    }
-
-    .funnel-item span:first-child {
-        width: 110px;
-        color: #aaa;
-        font-size: 12px;
-    }
-
-    .funnel-bar-container {
-        flex: 1;
-        height: 8px;
-        background: #333;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .funnel-bar {
-        height: 100%;
-        background: #1DA1F2;
-        border-radius: 4px;
-        transition: width 0.3s;
-    }
-
-    .funnel-percent {
-        width: 45px;
-        color: white;
-        font-weight: 600;
-        font-size: 12px;
-    }
-
-    .benchmark-comparison {
-        margin: 16px 0;
-        padding: 16px;
-        background: #252525;
-        border-radius: 12px;
-    }
-
-    .benchmark-comparison h4 {
-        color: white;
-        font-size: 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .benchmark-comparison h4 i {
-        color: #FFD700;
-    }
-
-    .comparison-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #333;
-        color: #ddd;
-        font-size: 13px;
-    }
-
-    .comparison-item .value {
-        font-weight: 600;
-        color: white;
-    }
-
-    .comparison-item .value.avg {
-        color: #888;
-    }
-
-    .comparison-item .vs {
-        color: #444;
-        font-size: 11px;
-    }
-
-    .rank-badge {
-        margin-top: 12px;
-        padding: 8px 12px;
-        background: #1a2a3a;
-        border-radius: 20px;
-        color: #1DA1F2;
-        font-size: 13px;
-        text-align: center;
-    }
-
-    .no-data {
-        color: #666;
-        text-align: center;
-        padding: 16px;
-        font-style: italic;
-    }
-
-    .premium-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 16px 0 8px;
-        color: #FFD700;
-    }
-
-    .premium-header i {
-        font-size: 24px;
-    }
-
-    .premium-header h3 {
-        color: white;
-        font-size: 18px;
-        margin: 0;
-    }
-
-/* Remove all mobile tap highlights */
-* {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-}
-
-/* Remove default button styles on mobile */
-button, 
-.action-btn, 
-.menu-dots-bottom, 
-.stats-icon, 
-.mobile-back-arrow,
-.scroll-arrow,
-.menu-item,
-.indicator-dot,
-.autoplay-btn,
-.close-comments,
-.donate-modal-btn,
-.upgrade-btn,
-.select-plan,
-.amount-btn {
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
-}
-
-/* Remove focus outlines on mobile */
-button:focus,
-.action-btn:focus,
-.menu-dots-bottom:focus,
-.stats-icon:focus,
-.mobile-back-arrow:focus,
-.scroll-arrow:focus,
-.menu-item:focus,
-.indicator-dot:focus,
-.autoplay-btn:focus,
-.close-comments:focus {
-    outline: none;
-}
-
-/* Optional: Add a subtle active state instead of the blue flash */
-.action-btn:active,
-.menu-dots-bottom:active,
-.stats-icon:active,
-.mobile-back-arrow:active {
-    opacity: 0.7;
-    transition: opacity 0.1s ease;
-}
-</style>
+
+        .indicator-dot.active {
+            background: white;
+            width: 16px !important;
+        }
+
+        .autoplay-btn {
+            width: 20px !important;
+            height: 20px !important;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.2s ease;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding-left: 8px !important;
+            z-index: 10000;
+            pointer-events: auto !important;
+            position: relative;
+            opacity: 0.8;
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .media-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .media-counter, .slide-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .popup-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999999;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-backdrop.active {
+            display: block;
+        }
+
+        .global-stats-popup, .global-menu-popup, .comments-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            max-width: 430px;
+            margin: 0 auto;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            z-index: 1000000;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            color: white;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .global-stats-popup.active, .global-menu-popup.active, .comments-modal.active {
+            transform: translateY(0);
+        }
+
+        .popup-handle, .modal-handle {
+            width: 40px;
+            height: 5px;
+            background: #444;
+            border-radius: 3px;
+            margin: 12px auto 8px;
+        }
+
+        .popup-header, .comments-header {
+            padding: 8px 20px 16px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-header h3, .comments-header h3 {
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .popup-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .close-comments {
+            background: #333;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comments-list {
+            padding: 16px 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .comment-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #333;
+        }
+
+        .comment-content {
+            flex: 1;
+            background: #252525;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border: 1px solid #333;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .comment-username {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .comment-time {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .comment-text {
+            color: white;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .add-comment {
+            padding: 16px 20px 24px 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 12px;
+            background: #1a1a1a;
+        }
+
+        .add-comment input {
+            flex: 1;
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 30px;
+            padding: 12px 18px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .add-comment button {
+            background: #1DA1F2;
+            border: none;
+            border-radius: 30px;
+            padding: 0 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .menu-item {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: left;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .menu-item i {
+            width: 28px;
+            color: #1DA1F2;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .menu-item.report i, .menu-item.delete i {
+            color: #ff4444;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-item {
+            background: #252525;
+            border-radius: 16px;
+            padding: 20px 12px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            display: block;
+            margin-bottom: 6px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .donation-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000001;
+            width: 90%;
+            max-width: 400px;
+            display: none;
+        }
+
+        .donation-modal.active {
+            display: block;
+        }
+
+        .donation-modal .modal-content {
+            background: #1a1a1a;
+            border-radius: 24px;
+            padding: 24px;
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #333;
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donation-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .donation-header h3 {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .donate-modal-btn {
+            background: var(--donate-green);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 16px 0;
+            transition: all 0.2s;
+        }
+
+        .web-scroll-arrows {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10001;
+            pointer-events: auto;
+        }
+
+        .scroll-arrow {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .no-campaigns {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 10;
+        }
+
+        @media (min-width: 769px) {
+            .mobile-back-arrow { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .desktop-back-arrow { display: none; }
+            .mobile-back-arrow { display: flex; }
+            .web-scroll-arrows { display: none; }
+        }
+    </style>
 </head>
-
 <body>
     <!-- Backdrop -->
     <div class="popup-backdrop" id="popupBackdrop" onclick="closeAllPopups()"></div>
 
-    <!-- Global Stats Popup -->
+    <!-- Stats Popup -->
     <div class="global-stats-popup" id="globalStatsPopup">
         <div class="popup-handle"></div>
         <div class="popup-header">
             <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
         </div>
-        <div class="popup-content" id="statsPopupContent">
-            <!-- Stats will be populated dynamically -->
+        <div class="popup-content" id="stats-popup-container">
+            <!-- HTMX will load content here -->
         </div>
     </div>
 
-    <!-- Global Menu Popup -->
+    <!-- Menu Popup -->
     <div class="global-menu-popup" id="globalMenuPopup">
         <div class="popup-handle"></div>
         <div class="popup-header">
             <h3><i class="fas fa-bars"></i> Menu</h3>
         </div>
-        <div class="popup-content" id="menuPopupContent">
-            <!-- Menu items will be populated dynamically -->
+        <div class="popup-content" id="menu-popup-content">
+            <!-- HTMX will load content here -->
         </div>
     </div>
 
@@ -2594,15 +892,11 @@ button:focus,
     <div class="comments-modal" id="commentsModal">
         <div class="modal-handle"></div>
         <div class="comments-header">
-            <h3>Comments (<span id="totalComments">0</span>)</h3>
+            <h3>Comments (<span id="total-comments">0</span>)</h3>
             <button class="close-comments" onclick="closeCommentsModal()">✕</button>
         </div>
-        <div class="comments-list" id="commentsList">
-            <!-- Comments will be loaded here -->
-        </div>
-        <div class="add-comment">
-            <input type="text" id="commentInput" placeholder="Add a comment..." maxlength="500">
-            <button onclick="postNewComment()" id="postCommentBtn">Post</button>
+        <div id="comments-modal-content">
+            <!-- HTMX will load comments here -->
         </div>
     </div>
 
@@ -2612,199 +906,49 @@ button:focus,
             <button class="close-modal" onclick="closeDonationModal()">✕</button>
             <div class="donation-header">
                 <h3 id="donationCampaignTitle">Support this Cause</h3>
-                <p id="donationMessage">Make a difference today</p>
+                <p>Make a difference today</p>
             </div>
-            
-            <!-- Just one button to proceed -->
-            <button class="donate-modal-btn" onclick="proceedToDonation()" id="proceedToDonateBtn">
+            <button class="donate-modal-btn" onclick="proceedToDonation()">
                 <i class="fas fa-hand-holding-heart"></i> Continue to Donation
             </button>
-            
-            <div class="donation-footer">
+            <div style="text-align: center; font-size: 12px; color: #888;">
                 <i class="fas fa-lock"></i> Secure donation via PayPal
             </div>
         </div>
     </div>
-    
+
+    <!-- Main Container -->
     <div class="reel-container">
-        <div class="loading-spinner" id="loadingSpinner">
+        <div class="loading-spinner" id="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
         </div>
 
         {% if campaigns %}
-            <div class="campaigns-container" id="campaignsContainer">
+            <div class="campaigns-container" id="campaigns-container">
                 {% for campaign in campaigns %}
-                    <div class="campaign-item" data-campaign-index="{{ forloop.counter0 }}" data-campaign-id="{{ campaign.id }}" data-campaign-cursor="{{ campaign.id }}">
-                        <div class="audio-trigger" onclick="handleAudioToggle(event, {{ forloop.counter0 }})"></div>
-                        
-                        <div class="image-slideshow">
-                            <div class="slides-container" id="slidesContainer-{{ forloop.counter0 }}">
-                                {% for image in campaign.images %}
-                                    <div class="slide-item">
-                                        <img loading="lazy" src="{{ image }}" alt="{{ campaign.title }}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <!-- Campaign Title Overlay -->
-                        <div class="campaign-title-overlay">
-                            <h1 class="campaign-title">{{ campaign.title }}</h1>
-                        </div>
-
-                        <div class="gradient-top"></div>
-                        <div class="gradient-bottom"></div>
-
-                        <div class="top-bar">
-                            <div class="left-group">
-                                <div class="mobile-back-arrow" onclick="window.location.href='{% url 'index' %}'">
-                                    <i class="fas fa-arrow-left"></i>
-                                </div>
-                                
-                                <div>
-                                    <div class="stats-icon" onclick="openStatsPopup({{ forloop.counter0 }})">
-                                        <i class="fas fa-chart-bar"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="journey-center-link">
-                            <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="journey-link" onclick="event.stopPropagation()">
-                                <i class="fas fa-compass"></i> view journey
-                            </a>
-                        </div>
-
-                        <div class="action-buttons">
-                            <img src="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:48 }}{% else %}https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg{% endif %}" 
-                                 srcset="{% if campaign.user.profile_image %}{{ campaign.user.profile_image|cloudinary_optimize_avatar:96 }} 2x{% endif %}"
-                                 class="action-profile" 
-                                 alt="Profile"
-                                 loading="lazy"
-                                 width="48" 
-                                 height="48"
-                                 onclick="event.stopPropagation(); window.location.href='{% url 'profile_view' username=campaign.user.username %}'">
-                            
-                            <button class="action-btn {% if campaign.user_loved %}loved{% endif %}" id="loveBtn-{{ forloop.counter0 }}" onclick="handleLove(event, this, {{ campaign.id }}, {{ forloop.counter0 }})">
-                                <i class="{% if campaign.user_loved %}fas{% else %}far{% endif %} fa-heart"></i>
-                                <span id="loveCount-{{ forloop.counter0 }}">{{ campaign.stats.love_count }}</span>
-                            </button>
-                            
-                            <button class="action-btn" onclick="handleComments(event, {{ campaign.id }}, {{ forloop.counter0 }})">
-                                <i class="far fa-comment"></i>
-                                <span id="commentCount-{{ forloop.counter0 }}">{{ campaign.stats.comment_count }}</span>
-                            </button>
-                            
-                            <button class="action-btn follow-btn {% if campaign.user_following %}following{% endif %}" id="followBtn-{{ forloop.counter0 }}" onclick="handleFollow(event, this, {{ campaign.id }}, {{ forloop.counter0 }})">
-                                <i class="{% if campaign.user_following %}fas fa-check{% else %}fas fa-plus{% endif %}"></i>
-                                <span id="followText-{{ forloop.counter0 }}">{% if campaign.user_following %}Following{% else %}Follow{% endif %}</span>
-                            </button>
-                            
-                            <button class="action-btn save-btn" id="saveBtn-{{ forloop.counter0 }}" onclick="toggleSave(event, {{ campaign.id }}, {{ forloop.counter0 }})">
-                                <i class="far fa-bookmark"></i>
-                                <span id="saveCount-{{ forloop.counter0 }}">{{ campaign.stats.save_count|default:0 }}</span>
-                            </button>
-                            
-                            <button class="action-btn donate-btn" onclick="handleDonate(event, {{ campaign.id }}, {{ forloop.counter0 }})">
-                                <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
-                                <span id="donateCount-{{ forloop.counter0 }}">{{ campaign.stats.total_donors|default:0 }}</span>
-                            </button>
-                            
-                            <button class="action-btn" onclick="handleShare(event, {{ campaign.id }})">
-                                <i class="fas fa-share-alt"></i>
-                                <span></span>
-                            </button>
-                            
-                            <!-- Menu dots as the last button in action buttons column -->
-                            <button class="action-btn menu-btn" onclick="openMenuPopup({{ forloop.counter0 }})">
-                                <i class="fas fa-ellipsis-h"></i>
-                                <span></span>
-                            </button>
-                        </div>
-
-                        <div class="info-panel">
-                            <div class="username-row">
-                                <a href="{% url 'profile_view' username=campaign.user.username %}" class="username" onclick="event.stopPropagation()">@{{ campaign.user.username }}</a>
-                                {% if campaign.user.verified %}
-                                    <i class="fas fa-check-circle verified"></i>
-                                {% endif %}
-                                <span class="timestamp">• {{ campaign.time_ago }}</span>
-                            </div>
-                            
-                            <div class="caption" id="caption-{{ forloop.counter0 }}">{{ campaign.content|truncatechars:35 }}</div>
-                            
-                            <div class="controls-row">
-                                {% if campaign.content|length > 35 %}
-                                    <span class="more-link" onclick="handleMoreCaption(event, {{ forloop.counter0 }})">more</span>
-                                {% endif %}
-                                
-                                {% if campaign.images|length > 1 %}
-                                <div class="slide-controls" id="slideControls-{{ forloop.counter0 }}">
-                                    <div class="slide-indicators" id="slideIndicators-{{ forloop.counter0 }}">
-                                        {% for image in campaign.images %}
-                                            <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
-                                                    onclick="handleIndicatorClick(event, {{ forloop.counter0 }}, {{ forloop.parentloop.counter0 }});"
-                                                    style="width: 4px; height: 4px;">
-                                            </button>
-                                        {% endfor %}
-                                    </div>
-                                    <button class="autoplay-btn" id="autoplayBtn-{{ forloop.counter0 }}" 
-                                            onclick="toggleSlideshow(event, {{ forloop.counter0 }})" 
-                                            style="cursor: pointer !important; width: 20px; height: 20px; font-size: 12px; padding-left: 8px; opacity: 0.8;">
-                                        <i class="fas fa-pause" style="font-size: 12px;"></i>
-                                    </button>
-                                </div>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Donation Progress Bar -->
-                            {% if campaign.stats.funding_goal > 0 %}
-                            <div class="donation-progress">
-                                <div class="progress-header">
-                                    <span><i class="fas fa-hand-holding-heart"></i> Raised</span>
-                                    <span class="raised-amount">${{ campaign.stats.total_donations|floatformat:0 }}</span>
-                                </div>
-                                <div class="progress-bar-container">
-                                    <div class="progress-fill-donate" style="width: {{ campaign.stats.donation_percentage }}%"></div>
-                                </div>
-                                <div class="donation-stats-row">
-                                    <span class="goal-amount">Goal: ${{ campaign.stats.funding_goal|floatformat:0 }}</span>
-                                    <span class="donor-count">
-                                        <i class="fas fa-users"></i> {{ campaign.stats.total_donors|default:0 }} donors
-                                    </span>
-                                </div>
-                            </div>
-                            {% endif %}
-                            
-                            <div class="meta-row">
-                                <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-{{ forloop.counter0 }}">{{ campaign.location }}</span></span>
-                                <span><i class="fas fa-calendar"></i> Day <span id="currentDay-{{ forloop.counter0 }}">{{ campaign.stats.current_day }}</span> of <span id="totalDays-{{ forloop.counter0 }}">{{ campaign.stats.total_days }}</span></span>
-                            </div>
-                            
-                            <div class="media-stats-row">
-                                <div class="media-counter">
-                                    <i class="fas fa-images"></i>
-                                    <span id="mediaCount-{{ forloop.counter0 }}">{{ campaign.images|length }} photo{% if campaign.images|length != 1 %}s{% endif %}</span>
-                                </div>
-                                
-                                {% if campaign.images|length > 1 %}
-                                <div class="slide-counter" id="slideCounter-{{ forloop.counter0 }}">
-                                    <i class="fas fa-image"></i>
-                                    <span id="currentSlide-{{ forloop.counter0 }}">1</span> / <span id="totalSlides-{{ forloop.counter0 }}">{{ campaign.images|length }}</span>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <audio class="bg-audio" id="bgAudio-{{ forloop.counter0 }}" loop preload="none" src="{{ campaign.audio_url }}"></audio>
-                    </div>
+                    {% include "main/partials/campaign_card.html" %}
                 {% endfor %}
+                
+                <!-- Infinite scroll trigger -->
+                {% if not is_single_campaign and total_campaigns > 20 %}
+                <div hx-get="{% url 'journey' %}?load-more=true&offset=20"
+                     hx-trigger="revealed"
+                     hx-target="#campaigns-container"
+                     hx-swap="beforeend"
+                     hx-indicator="#loading-spinner">
+                    <div style="height: 20px; text-align: center; color: white; padding: 20px;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading more...
+                    </div>
+                </div>
+                {% endif %}
             </div>
 
-            <div class="desktop-back-arrow" onclick="window.location.href='{% url 'index' %}'">
+            <!-- Desktop back arrow -->
+            <div class="desktop-back-arrow" onclick="window.location.href='/'">
                 <i class="fas fa-arrow-left"></i>
             </div>
             
+            <!-- Scroll arrows -->
             <div class="web-scroll-arrows">
                 <button class="scroll-arrow up-arrow" onclick="scrollToPrevCampaign()" title="Previous campaign">
                     <i class="fas fa-chevron-up"></i>
@@ -2822,30 +966,18 @@ button:focus,
             </div>
         {% endif %}
     </div>
-    
+
     <script>
-        // ========== DATA INITIALIZATION ==========
-        let campaignsData = [];
-        try {
-            campaignsData = JSON.parse('{{ campaigns_json|safe }}');
-        } catch (e) {
-            campaignsData = [];
-        }
-        
-        // State management
-        let currentSlideIndex = [];
-        let slideshowTimers = [];
-        let slideshowActive = [];
-        let audioElements = [];
-        let currentPopupCampaignId = null;
-        let currentCommentId = null;
-        let currentDonationCampaignId = null;
-        let selectedAmount = null;
-        
-        // Initialize
-        campaignsData.forEach((campaign, i) => {
-            currentSlideIndex[i] = 0;
-            slideshowActive[i] = true;
+        // ========== HTMX CONFIGURATION ==========
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(event) {
+            // Re-initialize any dynamic elements if needed
+            if (event.detail.target.id === 'campaigns-container') {
+                // New campaigns loaded
+            }
         });
 
         // ========== VIEWPORT HEIGHT FIX ==========
@@ -2853,995 +985,18 @@ button:focus,
             let vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
         }
-
-        // Call on load and resize
-        setVhProperty();
+        
         window.addEventListener('resize', setVhProperty);
         window.addEventListener('orientationchange', setVhProperty);
+        setVhProperty();
 
-        // DOM Ready
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.bg-audio').forEach((audio, i) => {
-                audioElements[i] = audio;
-            });
-            
-            const spinner = document.getElementById('loadingSpinner');
-            if (spinner) spinner.style.display = 'none';
-            
-            initializeAllSlides();
-            startAllTimers();
-            setupIntersectionObservers();
-            setupInfiniteScrollObserver();
-        });
-
-        // ========== SLIDESHOW FUNCTIONS ==========
-        function initializeAllSlides() {
-            campaignsData.forEach((campaign, i) => {
-                const container = document.getElementById(`slidesContainer-${i}`);
-                if (container) {
-                    container.style.transform = 'translateX(0%)';
-                }
-                
-                const totalEl = document.getElementById(`totalSlides-${i}`);
-                if (totalEl) totalEl.textContent = campaign.images.length;
-                
-                updateSlideCounter(i);
-            });
-        }
-
-        function startAllTimers() {
-            campaignsData.forEach((campaign, i) => {
-                if (campaign.images && campaign.images.length > 1) {
-                    startTimer(i);
-                }
-            });
-        }
-
-        function startTimer(index) {
-            if (slideshowTimers[index]) {
-                clearInterval(slideshowTimers[index]);
-            }
-            
-            slideshowTimers[index] = setInterval(() => {
-                if (slideshowActive[index]) {
-                    nextSlide(index);
-                }
-            }, 3000);
-        }
-
-        function nextSlide(index) {
-            const campaign = campaignsData[index];
-            if (!campaign || !campaign.images) return;
-            
-            const total = campaign.images.length;
-            if (total <= 1) return;
-            
-            const next = (currentSlideIndex[index] + 1) % total;
-            
-            const container = document.getElementById(`slidesContainer-${index}`);
-            if (container) {
-                container.style.transform = `translateX(-${next * 100}%)`;
-                currentSlideIndex[index] = next;
-                updateSlideCounter(index);
-                updateIndicators(index, next);
-            }
-        }
-
-        function updateSlideCounter(index) {
-            const current = currentSlideIndex[index] + 1;
-            const counter = document.getElementById(`currentSlide-${index}`);
-            if (counter) counter.textContent = current;
-        }
-
-        function updateIndicators(index, activeIndex) {
-            const indicators = document.getElementById(`slideIndicators-${index}`);
-            if (!indicators) return;
-            
-            const dots = indicators.querySelectorAll('.indicator-dot');
-            dots.forEach((dot, i) => {
-                if (i === activeIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
-
-        function toggleSlideshow(event, index) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const btn = document.getElementById(`autoplayBtn-${index}`);
-            
-            slideshowActive[index] = !slideshowActive[index];
-            
-            if (slideshowActive[index]) {
-                btn.innerHTML = '<i class="fas fa-pause"></i>';
-                startTimer(index);
-            } else {
-                btn.innerHTML = '<i class="fas fa-play"></i>';
-                if (slideshowTimers[index]) {
-                    clearInterval(slideshowTimers[index]);
-                    slideshowTimers[index] = null;
-                }
-            }
-        }
-
-        function handleIndicatorClick(event, imageIndex, campaignIndex) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            if (slideshowActive[campaignIndex]) {
-                slideshowActive[campaignIndex] = false;
-                const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
-                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
-                
-                if (slideshowTimers[campaignIndex]) {
-                    clearInterval(slideshowTimers[campaignIndex]);
-                }
-                
-                setTimeout(() => {
-                    if (!slideshowActive[campaignIndex]) {
-                        slideshowActive[campaignIndex] = true;
-                        const btn = document.getElementById(`autoplayBtn-${campaignIndex}`);
-                        if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-                        startTimer(campaignIndex);
-                    }
-                }, 5000);
-            }
-            
-            const container = document.getElementById(`slidesContainer-${campaignIndex}`);
-            if (container) {
-                container.style.transform = `translateX(-${imageIndex * 100}%)`;
-                currentSlideIndex[campaignIndex] = imageIndex;
-                updateSlideCounter(campaignIndex);
-                updateIndicators(campaignIndex, imageIndex);
-            }
-        }
-
-        // ========== AUDIO FUNCTIONS ==========
-        function handleAudioToggle(event, index) {
-            event.stopPropagation();
-            
-            const audio = audioElements[index];
-            if (!audio) return;
-            
-            if (!audio.paused) {
-                audio.pause();
-                updateAudioIndicator(index, false);
-                return;
-            }
-            
-            audioElements.forEach((other, i) => {
-                if (i !== index && other && !other.paused) {
-                    other.pause();
-                    updateAudioIndicator(i, false);
-                }
-            });
-            
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => updateAudioIndicator(index, true))
-                    .catch(() => updateAudioIndicator(index, false));
-            }
-        }
-
-        function updateAudioIndicator(index, playing) {
-            const indicator = document.getElementById(`audioIndicator-${index}`);
-            if (!indicator) return;
-            
-            if (playing) {
-                indicator.classList.add('playing');
-                indicator.innerHTML = '<i class="fas fa-volume-up"></i>';
-            } else {
-                indicator.classList.remove('playing');
-                indicator.innerHTML = '<i class="fas fa-music"></i>';
-            }
-        }
-
-        // ========== CATEGORY MESSAGES ==========
-        function getDonationMessage(category) {
-            const messages = {
-                'Health & Wellbeing Causes': 'Support medical treatment and wellness',
-                'Economic Support & Financial Causes': 'Help achieve financial stability',
-                'Housing, Living & Stability': 'Support safe housing',
-                'Community & Social Impact': 'Strengthen our community',
-                'Education & Skill Building': 'Invest in education',
-                'Mental Health & Emotional Support': 'Support mental wellness',
-                'Personal Empowerment': 'Empower personal growth',
-                'Career, Work & Opportunity': 'Create opportunities',
-                'Creative & Cultural Causes': 'Support creativity',
-                'Exploration, Sports & Challenges': 'Fuel adventures',
-                'Religious & Spiritual Causes': 'Support faith and community',
-                'Other Causes': 'Make a difference'
-            };
-            return messages[category] || 'Support this cause';
-        }
-
-        // ========== DONATION FUNCTIONS ==========
-        function handleDonate(event, campaignId, index) {
-            event.stopPropagation();
-            
-            const campaign = campaignsData[index];
-            if (!campaign) return;
-            
-            // Store the campaign ID
-            currentDonationCampaignId = campaignId;
-            
-            // Also store in a data attribute as backup
-            const modal = document.getElementById('donationModal');
-            modal.setAttribute('data-campaign-id', campaignId);
-            modal.setAttribute('data-campaign-index', index);
-            
-            // Set campaign title and inspirational message
-            document.getElementById('donationCampaignTitle').textContent = campaign.title || 'Support this Cause';
-            document.getElementById('donationMessage').textContent = getDonationMessage(campaign.category);
-            
-            // Show the inspirational modal
-            document.getElementById('donationModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-            
-            console.log('Donation modal opened for campaign:', campaignId);
-        }
-
-        function proceedToDonation() {
-            // Try to get campaign ID from multiple sources
-            let campaignId = currentDonationCampaignId;
-            
-            // If not found, try from modal data attribute
-            if (!campaignId || campaignId === 'null') {
-                const modal = document.getElementById('donationModal');
-                campaignId = modal.getAttribute('data-campaign-id');
-            }
-            
-            // Final check
-            if (!campaignId || campaignId === 'null') {
-                console.error('No campaign ID found');
-                alert('Error: Campaign not found. Please try again.');
-                closeDonationModal();
-                return;
-            }
-            
-            console.log('Redirecting to campaign:', campaignId);
-            
-            // Close the modal
-            closeDonationModal();
-            
-            // Redirect to the donation page
-            window.location.href = `/campaign/${campaignId}/donate/`;
-        }
-
-        function closeDonationModal() {
-            document.getElementById('donationModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-            // Don't clear immediately - give time for redirect
-            setTimeout(() => {
-                currentDonationCampaignId = null;
-            }, 100);
-        }
-
-        // ========== ENHANCED STATS POPUP FUNCTIONS ==========
-        function openStatsPopup(index) {
-            event.stopPropagation();
-            const campaign = campaignsData[index];
-            if (!campaign) return;
-            
-            currentPopupCampaignId = campaign.id;
-            
-            // Create tabbed interface
-            const statsHtml = `
-                <div class="stats-tabs">
-                    <button class="tab-btn active" onclick="switchStatsTab(event, 'basic', ${index})">Overview</button>
-                    ${campaign.can_view_premium ? `
-                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'growth', ${index})">
-                            <i class="fas fa-chart-line"></i> Growth
-                        </button>
-                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'donors', ${index})">
-                            <i class="fas fa-users"></i> Donors
-                        </button>
-                        <button class="tab-btn premium-tab" onclick="switchStatsTab(event, 'predict', ${index})">
-                            <i class="fas fa-brain"></i> Predict
-                        </button>
-                    ` : ''}
-                </div>
-                <div id="statsTabContent">
-                    ${getBasicStatsHTML(campaign, index)}
-                </div>
-            `;
-            
-            document.getElementById('statsPopupContent').innerHTML = statsHtml;
-            document.getElementById('globalStatsPopup').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-        }
-
-        function switchStatsTab(event, tab, index) {
-            // Update active tab
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            const campaign = campaignsData[index];
-            if (!campaign) return;
-            
-            let content = '';
-            switch(tab) {
-                case 'basic':
-                    content = getBasicStatsHTML(campaign, index);
-                    break;
-                case 'growth':
-                    content = getGrowthStatsHTML(campaign);
-                    break;
-                case 'donors':
-                    content = getDonorStatsHTML(campaign);
-                    break;
-                case 'predict':
-                    content = getPredictStatsHTML(campaign);
-                    break;
-            }
-            
-            document.getElementById('statsTabContent').innerHTML = content;
-        }
-
-        function getBasicStatsHTML(campaign, index) {
-            const stats = campaign.stats || {};
-            const isOwner = campaign.is_campaign_owner;
-            const canViewPremium = campaign.can_view_premium;
-            
-            // Calculate growth trend indicator
-            const growthTrend = stats.new_followers_7d > 0 ? 'positive' : (stats.new_followers_7d < 0 ? 'negative' : '');
-            const growthIcon = stats.new_followers_7d > 0 ? '↑' : (stats.new_followers_7d < 0 ? '↓' : '→');
-            
-            return `
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.follower_count || 0}</span>
-                        <span class="stat-label">Supporters</span>
-                        ${stats.new_followers_7d ? 
-                            `<span class="stat-trend ${growthTrend}">${growthIcon} ${Math.abs(stats.new_followers_7d)} this week</span>` : ''}
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">$${stats.total_donations || 0}</span>
-                        <span class="stat-label">Raised</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${stats.donation_percentage || 0}%"></div>
-                        </div>
-                        <span class="stat-detail">of $${stats.funding_goal || 0}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.activity_count || 0}</span>
-                        <span class="stat-label">Activities</span>
-                        <span class="stat-detail">${stats.activity_completion || 0}% complete</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.days_left || 0}</span>
-                        <span class="stat-label">Days Left</span>
-                        <span class="stat-detail">Day ${stats.current_day || 1} of ${stats.total_days || 30}</span>
-                    </div>
-                </div>
-                
-                <div class="quick-insights">
-                    <h4><i class="fas fa-chart-line"></i> Quick Insights</h4>
-                    <div class="insight-row">
-                        <i class="fas fa-hand-holding-heart"></i>
-                        <span>Avg donation: <strong>$${stats.avg_donation || 0}</strong> (${stats.total_donors || 0} donors)</span>
-                    </div>
-                    <div class="insight-row">
-                        <i class="fas fa-users"></i>
-                        <span>${stats.total_pledgers || 0} people have pledged</span>
-                    </div>
-                    <div class="insight-row">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Engagement score: <strong>${stats.engagement_score || 0}/100</strong></span>
-                    </div>
-                    <div class="insight-row">
-                        <i class="fas fa-percent"></i>
-                        <span>${stats.donation_conversion || 0}% of supporters donated</span>
-                    </div>
-                </div>
-                
-                ${canViewPremium ? getPremiumStatsHTML(campaign) : ''}
-                
-                ${!canViewPremium && !isOwner ? `
-                    <div class="premium-teaser">
-                        <i class="fas fa-crown"></i>
-                        <h4>Unlock Premium Analytics</h4>
-                        <p>Get detailed growth charts, donor demographics, and AI-powered predictions</p>
-                        <div class="premium-features">
-                            <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
-                            <div class="feature"><i class="fas fa-globe"></i> Donor locations</div>
-                            <div class="feature"><i class="fas fa-brain"></i> Success predictions</div>
-                        </div>
-                        <button class="upgrade-btn" onclick="showPricingModal(${campaign.id})">
-                            <i class="fas fa-crown"></i> Unlock Premium
-                        </button>
-                        <p class="teaser-small">From $4.99/month or $9.99 one-time for this campaign</p>
-                    </div>
-                ` : ''}
-                
-                ${!canViewPremium && isOwner ? `
-                    <div class="premium-teaser owner-teaser">
-                        <i class="fas fa-star"></i>
-                        <h4>You're Missing Out!</h4>
-                        <p>Premium stats are <strong>FREE</strong> for campaign owners during launch</p>
-                        <div class="premium-features">
-                            <div class="feature"><i class="fas fa-chart-line"></i> Follower growth trends</div>
-                            <div class="feature"><i class="fas fa-globe"></i> Donor demographics</div>
-                            <div class="feature"><i class="fas fa-brain"></i> AI predictions</div>
-                            <div class="feature"><i class="fas fa-trophy"></i> Category benchmarks</div>
-                        </div>
-                        <button class="upgrade-btn" onclick="activateOwnerPremium(${campaign.id})">
-                            <i class="fas fa-gift"></i> Activate Free Premium
-                        </button>
-                        <p class="teaser-small">Limited time offer - expires in 30 days</p>
-                    </div>
-                ` : ''}
-            `;
-        }
-
-        function getPremiumStatsHTML(campaign) {
-            const stats = campaign.stats || {};
-            const predictive = stats.predictive || {};
-            const demographics = stats.donor_demographics || {};
-            
-            return `
-                <div class="premium-stats-section">
-                    <h4><i class="fas fa-crown" style="color: #FFD700;"></i> Premium Analytics</h4>
-                    
-                    <!-- Follower Growth Chart -->
-                    <div class="chart-container">
-                        <div class="chart-header">
-                            <span class="chart-title"><i class="fas fa-chart-line"></i> Follower Growth (30 days)</span>
-                            <span class="growth-rate">+${stats.follower_growth || 0}%</span>
-                        </div>
-                        <div class="chart-placeholder" id="followerChart-${campaign.id}">
-                            <div class="bar-chart">
-                                ${generateDynamicBars(stats.follower_chart || [])}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Donor Stats Grid -->
-                    <div class="donor-stats-grid">
-                        <div class="donor-stat-card">
-                            <span class="donor-stat-value">${stats.total_donors || 0}</span>
-                            <span class="donor-stat-label">Total Donors</span>
-                        </div>
-                        <div class="donor-stat-card">
-                            <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
-                            <span class="donor-stat-label">Repeat Donors</span>
-                        </div>
-                        <div class="donor-stat-card">
-                            <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
-                            <span class="donor-stat-label">Avg Donation</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Donation Brackets -->
-                    <div class="donor-brackets">
-                        <h4>Donation Size Breakdown</h4>
-                        ${generateDonationBracketsHTML(demographics.brackets)}
-                    </div>
-                    
-                    <!-- Top Locations -->
-                    <div class="top-locations">
-                        <h4><i class="fas fa-map-marker-alt"></i> Top Donor Locations</h4>
-                        ${generateLocationsHTML(demographics.locations)}
-                    </div>
-                    
-                    <!-- AI Predictions -->
-                    <div class="predict-card">
-                        <h4><i class="fas fa-brain"></i> AI Predictions</h4>
-                        <div class="predict-item">
-                            <span class="predict-label">Projected final</span>
-                            <span class="predict-value">$${predictive.projected_final || 0}</span>
-                        </div>
-                        <div class="predict-item">
-                            <span class="predict-label">Success probability</span>
-                            <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
-                        </div>
-                        <div class="predict-item">
-                            <span class="predict-label">Est. completion</span>
-                            <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Recommendations -->
-                    <div class="recommendations">
-                        <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
-                        ${generateRecommendationsHTML(predictive.recommendations)}
-                    </div>
-                    
-                    <!-- Conversion Funnel -->
-                    <div class="conversion-funnel">
-                        <h4>Conversion Funnel</h4>
-                        ${generateFunnelHTML(stats.conversion_funnel)}
-                    </div>
-                    
-                    <!-- Category Benchmark -->
-                    ${generateBenchmarkHTML(stats.benchmarks)}
-                </div>
-            `;
-        }
-
-        function getGrowthStatsHTML(campaign) {
-            const stats = campaign.stats || {};
-            const benchmarks = stats.benchmarks || {};
-            
-            return `
-                <div class="premium-header">
-                    <i class="fas fa-crown"></i>
-                    <h3>Follower Growth (30 days)</h3>
-                </div>
-                
-                <div class="chart-container">
-                    <div class="chart-placeholder">
-                        <div class="bar-chart">
-                            ${generateDynamicBars(stats.follower_chart || [])}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="stats-grid small">
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.follower_growth || 0}%</span>
-                        <span class="stat-label">Growth Rate</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.new_followers_7d || 0}</span>
-                        <span class="stat-label">New (7d)</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.new_followers_30d || 0}</span>
-                        <span class="stat-label">New (30d)</span>
-                    </div>
-                </div>
-                
-                <div class="benchmark-comparison">
-                    <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
-                    <div class="comparison-item">
-                        <span>Your followers</span>
-                        <span class="value">${stats.follower_count || 0}</span>
-                        <span class="vs">vs</span>
-                        <span class="value avg">${benchmarks.avg_followers || 0}</span>
-                    </div>
-                    <div class="comparison-item">
-                        <span>Your growth</span>
-                        <span class="value">${stats.follower_growth || 0}%</span>
-                        <span class="vs">vs</span>
-                        <span class="value avg">${benchmarks.avg_growth || 5}%</span>
-                    </div>
-                    <div class="rank-badge">
-                        ${benchmarks.rank_text || 'Not enough data for comparison yet'}
-                    </div>
-                </div>
-            `;
-        }
-
-        function getDonorStatsHTML(campaign) {
-            const stats = campaign.stats || {};
-            const demographics = stats.donor_demographics || {};
-            
-            return `
-                <div class="premium-header">
-                    <i class="fas fa-crown"></i>
-                    <h3>Donor Insights</h3>
-                </div>
-                
-                <div class="donor-stats-grid">
-                    <div class="donor-stat-card">
-                        <span class="donor-stat-value">${stats.total_donors || 0}</span>
-                        <span class="donor-stat-label">Total Donors</span>
-                    </div>
-                    <div class="donor-stat-card">
-                        <span class="donor-stat-value">${demographics.repeat_donors || 0}</span>
-                        <span class="donor-stat-label">Repeat Donors</span>
-                    </div>
-                    <div class="donor-stat-card">
-                        <span class="donor-stat-value">$${stats.avg_donation || 0}</span>
-                        <span class="donor-stat-label">Avg Donation</span>
-                    </div>
-                </div>
-                
-                <div class="donor-brackets">
-                    <h4>Donation Size</h4>
-                    ${generateDonationBracketsHTML(demographics.brackets)}
-                </div>
-                
-                <div class="top-locations">
-                    <h4>Top Locations</h4>
-                    ${generateLocationsHTML(demographics.locations)}
-                </div>
-            `;
-        }
-
-        function getPredictStatsHTML(campaign) {
-            const stats = campaign.stats || {};
-            const predictive = stats.predictive || {};
-            
-            return `
-                <div class="premium-header">
-                    <i class="fas fa-crown"></i>
-                    <h3>AI Predictions</h3>
-                </div>
-                
-                <div class="predict-card">
-                    <div class="predict-item">
-                        <span class="predict-label">Projected final</span>
-                        <span class="predict-value">$${predictive.projected_final || 0}</span>
-                    </div>
-                    <div class="predict-item">
-                        <span class="predict-label">Success probability</span>
-                        <span class="predict-value ${getProbabilityClass(predictive.success_probability)}">${predictive.success_probability || 'Calculating...'}</span>
-                    </div>
-                    <div class="predict-item">
-                        <span class="predict-label">Est. completion</span>
-                        <span class="predict-value">${predictive.estimated_completion_date || 'N/A'}</span>
-                    </div>
-                </div>
-                
-                <div class="recommendations">
-                    <h4><i class="fas fa-lightbulb"></i> Recommendations</h4>
-                    ${generateRecommendationsHTML(predictive.recommendations)}
-                </div>
-                
-                <div class="conversion-funnel">
-                    <h4>Conversion Funnel</h4>
-                    ${generateFunnelHTML(stats.conversion_funnel)}
-                </div>
-            `;
-        }
-
-        // ========== PREMIUM STATS HELPER FUNCTIONS ==========
-
-        function generateDynamicBars(chartData) {
-            if (!chartData || chartData.length === 0) {
-                // Generate mock data if no real data
-                let bars = '';
-                for (let i = 0; i < 12; i++) {
-                    const height = 30 + Math.floor(Math.random() * 60);
-                    bars += `<div class="mock-bar" style="height: ${height}px;"></div>`;
-                }
-                return bars;
-            }
-            
-            // Use real data to generate bars
-            const maxValue = Math.max(...chartData.map(d => d.new_followers || 0));
-            return chartData.map(day => {
-                const height = maxValue > 0 ? (day.new_followers / maxValue) * 100 : 30;
-                return `
-                    <div class="mock-bar" style="height: ${height}px;" title="${day.date}: ${day.new_followers} new followers">
-                        <span class="bar-tooltip">${day.new_followers}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function generateDonationBracketsHTML(brackets) {
-            if (!brackets || Object.keys(brackets).length === 0) {
-                return '<p class="no-data">No donation data yet</p>';
-            }
-            
-            return `
-                <div class="bracket-item">
-                    <span>Under $10</span>
-                    <span class="bracket-value">${brackets.under_10 || 0} donors</span>
-                </div>
-                <div class="bracket-item">
-                    <span>$10 - $50</span>
-                    <span class="bracket-value">${brackets['10_50'] || 0} donors</span>
-                </div>
-                <div class="bracket-item">
-                    <span>$50 - $100</span>
-                    <span class="bracket-value">${brackets['50_100'] || 0} donors</span>
-                </div>
-                <div class="bracket-item">
-                    <span>$100 - $500</span>
-                    <span class="bracket-value">${brackets['100_500'] || 0} donors</span>
-                </div>
-                <div class="bracket-item">
-                    <span>Over $500</span>
-                    <span class="bracket-value">${brackets.over_500 || 0} donors</span>
-                </div>
-            `;
-        }
-
-        function generateLocationsHTML(locations) {
-            if (!locations || Object.keys(locations).length === 0) {
-                return '<p class="no-data">No location data yet</p>';
-            }
-            
-            return Object.entries(locations).slice(0, 5).map(([loc, count]) => `
-                <div class="location-item">
-                    <span><i class="fas fa-map-marker-alt"></i> ${loc}</span>
-                    <span class="location-count">${count} donor${count !== 1 ? 's' : ''}</span>
-                </div>
-            `).join('');
-        }
-
-        function generateRecommendationsHTML(recommendations) {
-            if (!recommendations || recommendations.length === 0) {
-                recommendations = ['You\'re on track! Keep up the great work'];
-            }
-            
-            return recommendations.map(rec => `
-                <div class="recommendation-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>${rec}</span>
-                </div>
-            `).join('');
-        }
-
-        function generateFunnelHTML(funnel) {
-            if (!funnel) {
-                funnel = {
-                    view_to_follower: 0,
-                    follower_to_pledger: 0,
-                    pledger_to_donor: 0
-                };
-            }
-            
-            return `
-                <div class="funnel-item">
-                    <span>Views → Followers</span>
-                    <div class="funnel-bar-container">
-                        <div class="funnel-bar" style="width: ${funnel.view_to_follower || 0}%"></div>
-                    </div>
-                    <span class="funnel-percent">${funnel.view_to_follower || 0}%</span>
-                </div>
-                <div class="funnel-item">
-                    <span>Followers → Pledgers</span>
-                    <div class="funnel-bar-container">
-                        <div class="funnel-bar" style="width: ${funnel.follower_to_pledger || 0}%"></div>
-                    </div>
-                    <span class="funnel-percent">${funnel.follower_to_pledger || 0}%</span>
-                </div>
-                <div class="funnel-item">
-                    <span>Pledgers → Donors</span>
-                    <div class="funnel-bar-container">
-                        <div class="funnel-bar" style="width: ${funnel.pledger_to_donor || 0}%"></div>
-                    </div>
-                    <span class="funnel-percent">${funnel.pledger_to_donor || 0}%</span>
-                </div>
-            `;
-        }
-
-        function generateBenchmarkHTML(benchmarks) {
-            if (!benchmarks) {
-                return '';
-            }
-            
-            return `
-                <div class="benchmark-comparison">
-                    <h4><i class="fas fa-trophy"></i> vs Category Average</h4>
-                    <div class="comparison-item">
-                        <span>Your followers</span>
-                        <span class="value">${benchmarks.your_followers || 0}</span>
-                        <span class="vs">vs</span>
-                        <span class="value avg">${benchmarks.avg_followers || 0}</span>
-                    </div>
-                    <div class="comparison-item">
-                        <span>Your growth</span>
-                        <span class="value">${benchmarks.your_growth || 0}%</span>
-                        <span class="vs">vs</span>
-                        <span class="value avg">${benchmarks.avg_growth || 5}%</span>
-                    </div>
-                    <div class="rank-badge">
-                        ${benchmarks.rank_text || 'Not enough data for comparison yet'}
-                    </div>
-                </div>
-            `;
-        }
-
-        function getProbabilityClass(probability) {
-            if (!probability) return '';
-            probability = probability.toLowerCase();
-            if (probability.includes('high')) return 'high';
-            if (probability.includes('medium')) return 'medium';
-            if (probability.includes('attention')) return 'needs-attention';
-            return '';
-        }
-
-        function openMenuPopup(index) {
-            event.stopPropagation();
-            const campaign = campaignsData[index];
-            if (!campaign) return;
-            
-            currentPopupCampaignId = campaign.id;
-            
-            // Populate menu with conditional owner-only links
-            const menuHtml = `
-                <a href="/campaign/${campaign.id}/activity_list/" class="menu-item">
-                    <i class="fas fa-tasks"></i> View Journey
-                </a>
-                <a href="/campaign/${campaign.id}/top-participants/" class="menu-item">
-                    <i class="fas fa-trophy"></i> Top Supporters
-                </a>
-                <a href="/campaign/${campaign.id}/donate/" class="menu-item">
-                    <i class="fas fa-hand-holding-heart"></i> Donate
-                </a>
-                <a href="/campaign/${campaign.id}/pledge/" class="menu-item">
-                    <i class="fas fa-hand-holding-heart"></i> Make a Pledge
-                </a>
-                <a href="/campaign/${campaign.id}/report/" class="menu-item report">
-                    <i class="fas fa-flag"></i> Report
-                </a>
-                ${campaign.is_campaign_owner ? `
-                <a href="/recreate-campaign/${campaign.id}/" class="menu-item">
-                    <i class="fas fa-edit"></i> Edit
-                </a>
-                <a href="/campaign/delete/${campaign.id}/" class="menu-item delete">
-                    <i class="fas fa-trash"></i> Delete
-                </a>
-                ` : ''}
-            `;
-            
-            document.getElementById('menuPopupContent').innerHTML = menuHtml;
-            
-            // Show popup
-            document.getElementById('globalMenuPopup').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-        }
-
+        // ========== POPUP FUNCTIONS ==========
         function closeAllPopups() {
             document.getElementById('globalStatsPopup').classList.remove('active');
             document.getElementById('globalMenuPopup').classList.remove('active');
             document.getElementById('commentsModal').classList.remove('active');
             document.getElementById('donationModal').classList.remove('active');
             document.getElementById('popupBackdrop').classList.remove('active');
-            currentPopupCampaignId = null;
-            currentDonationCampaignId = null;
-        }
-
-        // ========== PRICING MODAL FUNCTIONS ==========
-        function showPricingModal(campaignId) {
-            const modalHtml = `
-                <div class="pricing-modal" id="pricingModal">
-                    <div class="modal-content">
-                        <button class="close-modal" onclick="closePricingModal()">✕</button>
-                        <h2><i class="fas fa-crown" style="color: #FFD700;"></i> Unlock Premium Stats</h2>
-                        
-                        <div class="pricing-plans">
-                            <div class="plan">
-                                <h3>Campaign Only</h3>
-                                <div class="price">$9.99</div>
-                                <p class="period">one-time payment</p>
-                                <ul class="features">
-                                    <li><i class="fas fa-check"></i> Lifetime access for this campaign</li>
-                                    <li><i class="fas fa-check"></i> Follower growth charts</li>
-                                    <li><i class="fas fa-check"></i> Donor demographics</li>
-                                    <li><i class="fas fa-check"></i> AI predictions</li>
-                                </ul>
-                                <button class="select-plan" onclick="purchaseCampaignStats(${campaignId})">
-                                    Select Plan
-                                </button>
-                            </div>
-                            
-                            <div class="plan popular">
-                                <div class="popular-badge">MOST POPULAR</div>
-                                <h3>Monthly</h3>
-                                <div class="price">$4.99</div>
-                                <p class="period">per month</p>
-                                <ul class="features">
-                                    <li><i class="fas fa-check"></i> All campaigns you follow</li>
-                                    <li><i class="fas fa-check"></i> Unlimited stat views</li>
-                                    <li><i class="fas fa-check"></i> Export data</li>
-                                    <li><i class="fas fa-check"></i> Compare campaigns</li>
-                                    <li><i class="fas fa-check"></i> Cancel anytime</li>
-                                </ul>
-                                <button class="select-plan" onclick="subscribeMonthly()">
-                                    Subscribe
-                                </button>
-                            </div>
-                            
-                            <div class="plan">
-                                <h3>Yearly</h3>
-                                <div class="price">$49.99</div>
-                                <p class="period">per year (save 17%)</p>
-                                <ul class="features">
-                                    <li><i class="fas fa-check"></i> Everything in Monthly</li>
-                                    <li><i class="fas fa-check"></i> 2 months free</li>
-                                    <li><i class="fas fa-check"></i> Priority support</li>
-                                    <li><i class="fas fa-check"></i> Early access to new features</li>
-                                </ul>
-                                <button class="select-plan" onclick="subscribeYearly()">
-                                    Subscribe
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Remove existing modal if any
-            const existingModal = document.getElementById('pricingModal');
-            if (existingModal) existingModal.remove();
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            document.getElementById('pricingModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-        }
-
-        function closePricingModal() {
-            const modal = document.getElementById('pricingModal');
-            if (modal) modal.remove();
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function purchaseCampaignStats(campaignId) {
-            // Redirect to payment page
-            window.location.href = `/campaign/${campaignId}/purchase-stats/`;
-        }
-
-        function subscribeMonthly() {
-            window.location.href = '/subscribe/monthly/';
-        }
-
-        function subscribeYearly() {
-            window.location.href = '/subscribe/yearly/';
-        }
-        
-        function activateOwnerPremium(campaignId) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activating...';
-            btn.disabled = true;
-            
-            fetch(`/campaign/${campaignId}/activate-premium/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    alert('✅ Premium activated! Page will reload to show your new stats.');
-                    location.reload();
-                } else {
-                    alert('❌ Failed: ' + data.error);
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
-        }
-        
-        // ========== SIMPLE COMMENT FUNCTIONS ==========
-        function handleComments(event, id, index) {
-            event.stopPropagation();
-            currentCommentId = id;
-            
-            // Show loading
-            document.getElementById('commentsList').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
-            document.getElementById('commentInput').value = '';
-            document.getElementById('totalComments').textContent = '...';
-            
-            // Show modal
-            document.getElementById('commentsModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-            
-            // Load comments
-            fetch(`/campaign/${id}/comments-simple/`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('commentsList').innerHTML = html;
-                    // Update comment count
-                    const commentCount = (html.match(/comment-item/g) || []).length;
-                    document.getElementById('totalComments').textContent = commentCount;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('commentsList').innerHTML = '<div style="text-align: center; color: #888; padding: 30px 20px;">Failed to load comments. Please try again.</div>';
-                });
         }
 
         function closeCommentsModal() {
@@ -3849,490 +1004,95 @@ button:focus,
             document.getElementById('popupBackdrop').classList.remove('active');
         }
 
-        function postNewComment() {
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            
-            if (!text || !currentCommentId) return;
-            
-            // Disable button
-            const postBtn = document.getElementById('postCommentBtn');
-            postBtn.disabled = true;
-            postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
-            
-            // Create form data
-            const formData = new FormData();
-            formData.append('text', text);
-            formData.append('csrfmiddlewaretoken', document.querySelector('meta[name="csrf-token"]').content);
-            
-            // Post comment
-            fetch(`/campaign/${currentCommentId}/add-comment-simple/`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('commentsList').innerHTML = html;
-                input.value = '';
-                
-                // Update comment count
-                const commentCount = (html.match(/comment-item/g) || []).length;
-                document.getElementById('totalComments').textContent = commentCount;
-                
-                // Update comment count in main UI
-                const index = campaignsData.findIndex(c => c.id == currentCommentId);
-                if (index !== -1) {
-                    const countEl = document.getElementById(`commentCount-${index}`);
-                    if (countEl) countEl.textContent = commentCount;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to post comment. Please try again.');
-            })
-            .finally(() => {
-                postBtn.disabled = false;
-                postBtn.innerHTML = 'Post';
-            });
+        function openDonationModal(campaignId, campaignTitle) {
+            document.getElementById('donationCampaignTitle').textContent = campaignTitle;
+            document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId);
+            document.getElementById('donationModal').classList.add('active');
+            document.getElementById('popupBackdrop').classList.add('active');
         }
 
-        // ========== INTERACTION FUNCTIONS ==========
-        function handleLove(event, btn, id, index) {
-            event.stopPropagation();
-            fetch(`/campaign/${id}/toggle-love/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    btn.classList.toggle('loved', data.loved);
-                    btn.querySelector('i').className = data.loved ? 'fas fa-heart' : 'far fa-heart';
-                    const count = document.getElementById(`loveCount-${index}`);
-                    if (count) count.textContent = data.love_count;
-                }
-            });
+        function closeDonationModal() {
+            document.getElementById('donationModal').classList.remove('active');
+            document.getElementById('popupBackdrop').classList.remove('active');
         }
 
-        function handleFollow(event, btn, id, index) {
-            event.stopPropagation();
-            fetch(`/campaign/${id}/toggle-follow/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    btn.classList.toggle('following', data.following);
-                    btn.querySelector('i').className = data.following ? 'fas fa-check' : 'fas fa-plus';
-                    const text = document.getElementById(`followText-${index}`);
-                    if (text) text.textContent = data.following ? 'Following' : 'Follow';
-                }
-            });
-        }
-
-        function handleMoreCaption(event, index) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const captionElement = document.getElementById(`caption-${index}`);
-            const moreLink = event.target;
-            const campaign = campaignsData[index];
-            
-            if (!campaign) return;
-            
-            if (captionElement.classList.contains('expanded')) {
-                captionElement.textContent = campaign.content.length > 35 
-                    ? campaign.content.substring(0, 35) + '...' 
-                    : campaign.content;
-                captionElement.classList.remove('expanded');
-                moreLink.textContent = 'more';
-            } else {
-                captionElement.textContent = campaign.content;
-                captionElement.classList.add('expanded');
-                moreLink.textContent = 'less';
-            }
-        }
-
-        function handleShare(event, id) {
-            event.stopPropagation();
-            
-            // Track the share
-            trackShare(event, id, 'share');
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Check out this cause',
-                    url: window.location.origin + `/journey/${id}/`
-                });
-            } else {
-                prompt('Copy link:', window.location.origin + `/journey/${id}/`);
-            }
+        function proceedToDonation() {
+            const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id');
+            closeDonationModal();
+            window.location.href = `/campaign/${campaignId}/donate/`;
         }
 
         // ========== SCROLL FUNCTIONS ==========
-        const container = document.getElementById('campaignsContainer');
-        let currentView = 0;
-        
-        if (container) {
-            container.addEventListener('scroll', function() {
-                clearTimeout(window.scrollTimeout);
-                window.scrollTimeout = setTimeout(() => {
-                    const newIndex = Math.round(this.scrollTop / this.clientHeight);
-                    
-                    if (newIndex !== currentView && newIndex >= 0 && newIndex < campaignsData.length) {
-                        if (audioElements[currentView]) {
-                            audioElements[currentView].pause();
-                            updateAudioIndicator(currentView, false);
-                        }
-                        
-                        currentView = newIndex;
-                        closeAllPopups();
-                    }
-                }, 100);
-            });
-        }
-
         function scrollToPrevCampaign() {
-            const container = document.getElementById('campaignsContainer');
+            const container = document.getElementById('campaigns-container');
             if (!container) return;
-            
             const currentScroll = container.scrollTop;
             const itemHeight = container.clientHeight;
             const newScroll = currentScroll - itemHeight;
             
             if (newScroll >= 0) {
-                container.scrollTo({
-                    top: newScroll,
-                    behavior: 'smooth'
-                });
+                container.scrollTo({ top: newScroll, behavior: 'smooth' });
             }
         }
 
         function scrollToNextCampaign() {
-            const container = document.getElementById('campaignsContainer');
+            const container = document.getElementById('campaigns-container');
             if (!container) return;
-            
             const currentScroll = container.scrollTop;
             const itemHeight = container.clientHeight;
             const maxScroll = container.scrollHeight - container.clientHeight;
             const newScroll = currentScroll + itemHeight;
             
             if (newScroll <= maxScroll) {
-                container.scrollTo({
-                    top: newScroll,
-                    behavior: 'smooth'
-                });
+                container.scrollTo({ top: newScroll, behavior: 'smooth' });
             }
         }
 
-        // ========== OBSERVER FUNCTIONS ==========
-        function setupIntersectionObservers() {
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        const campaignItem = entry.target;
-                        const index = campaignItem.dataset.campaignIndex;
-                        
-                        if (!entry.isIntersecting) {
-                            if (audioElements[index] && !audioElements[index].paused) {
-                                audioElements[index].pause();
-                                updateAudioIndicator(index, false);
-                            }
-                            
-                            if (slideshowActive[index]) {
-                                slideshowActive[index] = false;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-play"></i>';
-                                if (slideshowTimers[index]) {
-                                    clearInterval(slideshowTimers[index]);
-                                }
-                            }
-                        } else {
-                            const campaign = campaignsData[index];
-                            if (campaign && campaign.images && campaign.images.length > 1) {
-                                slideshowActive[index] = true;
-                                const btn = document.getElementById(`autoplayBtn-${index}`);
-                                if (btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-                                startTimer(index);
-                            }
-                        }
-                    });
-                }, {
-                    threshold: 0.5
-                });
-
-                document.querySelectorAll('.campaign-item').forEach(item => {
-                    observer.observe(item);
-                });
-            }
-        }
-
-        // ========== INFINITE SCROLL ==========
-        let isLoading = false;
-        let hasMore = true;
-        let lastCursor = campaignsData.length > 0 ? campaignsData[campaignsData.length - 1].id : null;
-
-        function setupInfiniteScrollObserver() {
-            if ('IntersectionObserver' in window) {
-                const sentinel = document.createElement('div');
-                sentinel.id = 'infinite-scroll-sentinel';
-                sentinel.style.height = '10px';
-                sentinel.style.width = '100%';
-                document.getElementById('campaignsContainer').appendChild(sentinel);
-
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting && !isLoading && hasMore) {
-                        loadMoreCampaigns();
-                    }
-                }, {
-                    root: null,
-                    rootMargin: '200px',
-                    threshold: 0
-                });
-
-                observer.observe(sentinel);
-            }
-        }
-
-        async function loadMoreCampaigns() {
-            if (isLoading || !hasMore) return;
-            
-            isLoading = true;
-            document.getElementById('loadingSpinner').style.display = 'block';
-            
-            try {
-                const response = await fetch(`/load-more-campaigns/?cursor=${lastCursor}`);
-                const data = await response.json();
+        // ========== SLIDESHOW FUNCTIONS ==========
+        window.goToSlide = function(campaignId, slideIndex) {
+            const container = document.getElementById(`slidesContainer-${campaignId}`);
+            if (container) {
+                container.style.transform = `translateX(-${slideIndex * 100}%)`;
                 
-                if (data.campaigns && data.campaigns.length > 0) {
-                    appendCampaigns(data.campaigns);
-                    lastCursor = data.next_cursor;
-                    hasMore = data.has_more;
-                } else {
-                    hasMore = false;
-                }
-            } catch (error) {
-                console.error('Failed to load more campaigns:', error);
-                hasMore = false;
-            } finally {
-                isLoading = false;
-                document.getElementById('loadingSpinner').style.display = 'none';
+                // Update indicators
+                const indicators = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`);
+                indicators.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === slideIndex);
+                });
+                
+                // Update counter
+                const counter = document.getElementById(`currentSlide-${campaignId}`);
+                if (counter) counter.textContent = slideIndex + 1;
             }
-        }
+        };
 
-        function appendCampaigns(newCampaigns) {
-            const container = document.getElementById('campaignsContainer');
-            const startIndex = campaignsData.length;
+        window.toggleSlideshow = function(campaignId) {
+            const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+            if (!btn) return;
             
-            campaignsData = [...campaignsData, ...newCampaigns];
+            const isPlaying = btn.classList.contains('playing');
             
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                currentSlideIndex[globalIdx] = 0;
-                slideshowActive[globalIdx] = true;
-            });
-            
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                const campaignHtml = createCampaignHtml(campaign, globalIdx);
-                container.insertAdjacentHTML('beforeend', campaignHtml);
-            });
-            
-            document.querySelectorAll('.bg-audio').forEach((audio, i) => {
-                if (i >= audioElements.length) {
-                    audioElements[i] = audio;
-                }
-            });
-            
-            newCampaigns.forEach((campaign, idx) => {
-                const globalIdx = startIndex + idx;
-                if (campaign.images && campaign.images.length > 1) {
-                    startTimer(globalIdx);
-                }
-            });
-        }
+            if (isPlaying) {
+                btn.innerHTML = '<i class="fas fa-play"></i>';
+                btn.classList.remove('playing');
+            } else {
+                btn.innerHTML = '<i class="fas fa-pause"></i>';
+                btn.classList.add('playing');
+            }
+        };
 
-        function createCampaignHtml(campaign, index) {
-            let slidesHtml = '';
-            if (campaign.images && campaign.images.length > 0) {
-                campaign.images.forEach(image => {
-                    slidesHtml += `
-                        <div class="slide-item">
-                            <img loading="lazy" src="${image.url || image}" alt="${campaign.title}" onerror="this.src='https://via.placeholder.com/400x800?text=Image+Not+Found'">
-                        </div>
-                    `;
+        // ========== SHARE FUNCTION ==========
+        window.handleShare = function(event, campaignId) {
+            event.stopPropagation();
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Check out this cause',
+                    url: window.location.origin + `/journey/${campaignId}/`
                 });
             } else {
-                slidesHtml += `
-                    <div class="slide-item">
-                        <img loading="lazy" src="https://via.placeholder.com/400x800?text=No+Image" alt="No image">
-                    </div>
-                `;
+                prompt('Copy link:', window.location.origin + `/journey/${campaignId}/`);
             }
-            
-            let indicatorsHtml = '';
-            if (campaign.images && campaign.images.length > 1) {
-                campaign.images.forEach((_, imgIdx) => {
-                    indicatorsHtml += `
-                        <button class="indicator-dot ${imgIdx === 0 ? 'active' : ''}" 
-                                onclick="handleIndicatorClick(event, ${imgIdx}, ${index});"
-                                style="width: 4px; height: 4px;">
-                        </button>
-                    `;
-                });
-            }
-            
-            const truncatedCaption = campaign.content && campaign.content.length > 35 
-                ? campaign.content.substring(0, 35) + '...' 
-                : (campaign.content || '');
-            const showMoreLink = campaign.content && campaign.content.length > 35;
-            
-            return `
-                <div class="campaign-item" data-campaign-index="${index}" data-campaign-id="${campaign.id}" data-campaign-cursor="${campaign.id}">
-                    <div class="audio-trigger" onclick="handleAudioToggle(event, ${index})"></div>
-                    
-                    <div class="image-slideshow">
-                        <div class="slides-container" id="slidesContainer-${index}">
-                            ${slidesHtml}
-                        </div>
-                    </div>
-
-                    <div class="campaign-title-overlay">
-                        <h1 class="campaign-title">${escapeHtml(campaign.title || '')}</h1>
-                    </div>
-
-                    <div class="gradient-top"></div>
-                    <div class="gradient-bottom"></div>
-
-                    <div class="top-bar">
-                        <div class="left-group">
-                            <div class="mobile-back-arrow" onclick="window.location.href='/'">
-                                <i class="fas fa-arrow-left"></i>
-                            </div>
-                            
-                            <div>
-                                <div class="stats-icon" onclick="openStatsPopup(${index})">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="" id="audioIndicator-${index}">
-                      
-                    </div>
-
-                    <div class="journey-center-link">
-                        <a href="/campaign/${campaign.id}/activities/" class="journey-link" onclick="event.stopPropagation()">
-                            <i class="fas fa-compass"></i> view journey
-                        </a>
-                    </div>
-
-                    <div class="action-buttons">
-                        <img src="${campaign.user?.profile_image || 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'}" 
-                             class="action-profile" 
-                             alt="Profile"
-                             onclick="event.stopPropagation(); window.location.href='/profile/${campaign.user?.username || ''}/'">
-                        
-                        <button class="action-btn ${campaign.user_loved ? 'loved' : ''}" id="loveBtn-${index}" onclick="handleLove(event, this, ${campaign.id}, ${index})">
-                            <i class="${campaign.user_loved ? 'fas' : 'far'} fa-heart"></i>
-                            <span id="loveCount-${index}">${campaign.stats?.love_count || 0}</span>
-                        </button>
-                        
-                        <button class="action-btn" onclick="handleComments(event, ${campaign.id}, ${index})">
-                            <i class="far fa-comment"></i>
-                            <span id="commentCount-${index}">${campaign.stats?.comment_count || 0}</span>
-                        </button>
-                        
-                        <button class="action-btn follow-btn ${campaign.user_following ? 'following' : ''}" id="followBtn-${index}" onclick="handleFollow(event, this, ${campaign.id}, ${index})">
-                            <i class="${campaign.user_following ? 'fas fa-check' : 'fas fa-plus'}"></i>
-                            <span id="followText-${index}">${campaign.user_following ? 'Following' : 'Follow'}</span>
-                        </button>
-                        
-                        <button class="action-btn save-btn" id="saveBtn-${index}" onclick="toggleSave(event, ${campaign.id}, ${index})">
-                            <i class="far fa-bookmark"></i>
-                            <span id="saveCount-${index}">${campaign.stats?.save_count || 0}</span>
-                        </button>
-                        
-                        <button class="action-btn donate-btn" onclick="handleDonate(event, ${campaign.id}, ${index})">
-                            <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
-                            <span id="donateCount-${index}">${campaign.stats?.total_donors || 0}</span>
-                        </button>
-                        
-                        <button class="action-btn" onclick="handleShare(event, ${campaign.id})">
-                            <i class="fas fa-share-alt"></i>
-                            <span></span>
-                        </button>
-                        
-                        <!-- Menu dots as the last button -->
-                        <button class="action-btn menu-btn" onclick="openMenuPopup(${index})">
-                            <i class="fas fa-ellipsis-h"></i>
-                            <span></span>
-                        </button>
-                    </div>
-
-                    <div class="info-panel">
-                        <div class="username-row">
-                            <a href="/profile/${campaign.user?.username || ''}/" class="username" onclick="event.stopPropagation()">@${campaign.user?.username || 'unknown'}</a>
-                            ${campaign.user?.verified ? '<i class="fas fa-check-circle verified"></i>' : ''}
-                            <span class="timestamp">• ${campaign.time_ago || 'recent'}</span>
-                        </div>
-                        
-                        <div class="caption" id="caption-${index}">${truncatedCaption}</div>
-                        
-                        <div class="controls-row">
-                            ${showMoreLink ? `<span class="more-link" onclick="handleMoreCaption(event, ${index})">more</span>` : ''}
-                            
-                            ${campaign.images && campaign.images.length > 1 ? `
-                            <div class="slide-controls" id="slideControls-${index}">
-                                <div class="slide-indicators" id="slideIndicators-${index}">
-                                    ${indicatorsHtml}
-                                </div>
-                                <button class="autoplay-btn" id="autoplayBtn-${index}" 
-                                        onclick="toggleSlideshow(event, ${index})" 
-                                        style="cursor: pointer !important; width: 20px; height: 20px; font-size: 12px; padding-left: 8px; opacity: 0.8;">
-                                    <i class="fas fa-pause" style="font-size: 12px;"></i>
-                                </button>
-                            </div>
-                            ` : ''}
-                        </div>
-                        
-                        <div class="meta-row">
-                            <span><i class="fas fa-map-pin"></i> <span id="campaignLocation-${index}">${campaign.location || 'Unknown'}</span></span>
-                            <span><i class="fas fa-calendar"></i> Day <span id="currentDay-${index}">${campaign.stats?.current_day || 1}</span> of <span id="totalDays-${index}">${campaign.stats?.total_days || 30}</span></span>
-                        </div>
-                        
-                        <div class="media-stats-row">
-                            <div class="media-counter">
-                                <i class="fas fa-images"></i>
-                                <span id="mediaCount-${index}">${campaign.images ? campaign.images.length : 0} photo${campaign.images && campaign.images.length !== 1 ? 's' : ''}</span>
-                            </div>
-                            
-                            ${campaign.images && campaign.images.length > 1 ? `
-                            <div class="slide-counter" id="slideCounter-${index}">
-                                <i class="fas fa-image"></i>
-                                <span id="currentSlide-${index}">1</span> / <span id="totalSlides-${index}">${campaign.images.length}</span>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <audio class="bg-audio" id="bgAudio-${index}" loop preload="none" src="${campaign.audio_url || ''}"></audio>
-                </div>
-            `;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        };
 
         // ========== KEYBOARD NAVIGATION ==========
         document.addEventListener('keydown', function(e) {
@@ -4344,159 +1104,43 @@ button:focus,
             } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 scrollToNextCampaign();
+            } else if (e.key === 'Escape') {
+                closeAllPopups();
             }
         });
 
-        // ========== CLEANUP ==========
-        window.addEventListener('beforeunload', () => {
-            slideshowTimers.forEach(t => t && clearInterval(t));
-        });
-    </script>
-
-    <script>
-        // ========== WATCH TIME TRACKING ==========
-        let watchStartTime = Date.now();
-        let watchTimer = null;
-        let currentCampaignId = null;
-        let watchTracked = false;
-
-        // Get current campaign ID from the active campaign
-        function getCurrentCampaignId() {
-            const activeCampaign = document.querySelector('.campaign-item.active');
-            if (activeCampaign) {
-                return activeCampaign.dataset.campaignId;
-            }
-            return null;
-        }
-
-        // Start tracking when user views a campaign
-        function startWatchTracking(campaignId) {
-            if (!campaignId) return;
-            
-            // Stop previous tracking
-            stopWatchTracking();
-            
-            currentCampaignId = campaignId;
-            watchStartTime = Date.now();
-            watchTracked = false;
-            
-            // Send updates every 5 seconds
-            watchTimer = setInterval(() => {
-                const watchTime = (Date.now() - watchStartTime) / 1000; // in seconds
-                if (watchTime >= 5 && !watchTracked) { // Track after 5 seconds minimum
-                    sendWatchTime(currentCampaignId, watchTime, false);
-                    watchTracked = true;
-                }
-            }, 5000);
-        }
-
-        // Stop tracking
-        function stopWatchTracking() {
-            if (watchTimer) {
-                clearInterval(watchTimer);
-                watchTimer = null;
-            }
-        }
-
-        // Send watch time to server
-        function sendWatchTime(campaignId, watchTime, completed) {
-            fetch('/track-watch/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({
-                    campaign_id: campaignId,
-                    watch_time: watchTime,
-                    completed: completed
-                })
-            }).catch(error => console.error('Watch time error:', error));
-        }
-
-        // Track when user leaves
-        window.addEventListener('beforeunload', function() {
-            if (currentCampaignId) {
-                const watchTime = (Date.now() - watchStartTime) / 1000;
-                if (watchTime >= 5) {
-                    sendWatchTime(currentCampaignId, watchTime, false);
-                }
-            }
-        });
-
-        // Update your scroll observer to start/stop tracking
-        document.addEventListener('DOMContentLoaded', function() {
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            // Campaign is now visible
-                            const campaignId = entry.target.dataset.campaignId;
-                            startWatchTracking(campaignId);
-                            
-                            // Mark as active
-                            document.querySelectorAll('.campaign-item').forEach(item => {
-                                item.classList.remove('active');
-                            });
-                            entry.target.classList.add('active');
-                        }
-                    });
-                }, {
-                    threshold: 0.7 // 70% visible
-                });
-
-                document.querySelectorAll('.campaign-item').forEach(item => {
-                    observer.observe(item);
-                });
-            }
-        });
-
-        // ========== SAVE/BOOKMARK FUNCTIONALITY ==========
-        function toggleSave(event, campaignId, index) {
-            event.stopPropagation();
-            
-            fetch(`/campaign/${campaignId}/save/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const saveBtn = document.getElementById(`saveBtn-${index}`);
-                    if (saveBtn) {
-                        if (data.saved) {
-                            saveBtn.innerHTML = '<i class="fas fa-bookmark"></i>';
-                            saveBtn.classList.add('saved');
-                        } else {
-                            saveBtn.innerHTML = '<i class="far fa-bookmark"></i>';
-                            saveBtn.classList.remove('saved');
-                        }
-                    }
-                    
-                    // Update save count
-                    const countEl = document.getElementById(`saveCount-${index}`);
-                    if (countEl) {
-                        countEl.textContent = data.save_count;
+        // ========== AUDIO HANDLING ==========
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.audio-trigger')) {
+                const trigger = e.target.closest('.audio-trigger');
+                const audio = trigger.closest('.campaign-item').querySelector('.bg-audio');
+                if (audio) {
+                    if (audio.paused) {
+                        // Pause all other audio
+                        document.querySelectorAll('.bg-audio').forEach(a => {
+                            if (!a.paused) a.pause();
+                        });
+                        audio.play().catch(() => {});
+                    } else {
+                        audio.pause();
                     }
                 }
-            });
-        }
+            }
+        });
 
-        // ========== SHARE TRACKING ==========
-        function trackShare(event, campaignId, platform) {
-            event.stopPropagation();
+        // ========== CAPTION TOGGLE ==========
+        window.toggleCaption = function(campaignId) {
+            const caption = document.getElementById(`caption-${campaignId}`);
+            const moreLink = document.getElementById(`moreLink-${campaignId}`);
             
-            fetch(`/campaign/${campaignId}/share/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                },
-                body: JSON.stringify({ platform: platform })
-            }).catch(error => console.error('Share tracking error:', error));
-        }
+            if (caption.classList.contains('expanded')) {
+                caption.classList.remove('expanded');
+                moreLink.textContent = 'more';
+            } else {
+                caption.classList.add('expanded');
+                moreLink.textContent = 'less';
+            }
+        };
     </script>
 </body>
 </html>

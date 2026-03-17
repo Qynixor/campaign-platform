@@ -107,8 +107,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('campaign/<int:campaign_id>/activity/create/', views.create_activity, name='create_activity'),
     path('campaign/<int:campaign_id>/activity_list/', views.activity_list, name='activity_list'),
     path('campaign/<int:campaign_id>/comments/', views.campaign_comments, name='campaign_comments'),
-path('campaign/<int:campaign_id>/activate-owner-premium/', views.activate_owner_premium, name='activate_owner_premium'),
-path('campaign/<int:campaign_id>/activate-premium/', views.activate_premium, name='activate_premium'),
+
     path('record_campaign_view/<int:campaign_id>/', views.record_campaign_view, name='record_campaign_view'),
 # marketing 
     path('blog/', views.blog_list, name='blog_list'),
@@ -117,7 +116,8 @@ path('campaign/<int:campaign_id>/activate-premium/', views.activate_premium, nam
     path('blog/<slug:slug>/like/', views.blog_like, name='blog_like'),
     path('blog/<slug:slug>/share/', views.blog_share, name='blog_share'),
  
-
+# Add this to your urlpatterns
+path('new-causes/', views.new_causes, name='new_causes'),
 
     path('campaign-stories/', campaign_story_list, name='campaign_story_list'),
     path('campaign-stories/<slug:slug>/', campaign_story_detail, name='campaign_story_detail'),
@@ -188,27 +188,23 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
     path('<str:username>/supporters/', views.supporters_view, name='supporters'),
     path('<str:username>/following/causes/', views.following_causes_view, name='following_causes'),
 
-        # New and Trending Causes
-    path('causes/new/', views.new_causes_view, name='new_causes'),
-    path('causes/trending/', views.trending_causes_view, name='trending_causes'),
-
-   
-    # Add these to your existing urlpatterns
-# Add these to your existing urlpatterns
 # Add these to your urlpatterns
-# In your urls.py, add these:
-     path('journey/', views.journey, name='journey'),
-         path('journey/<int:campaign_id>/', views.journey, name='campaign_journey'),  # Add this line
-    path('campaign/<int:campaign_id>/toggle-love/', views.toggle_campaign_love, name='toggle_campaign_love'),
-    path('campaign/<int:campaign_id>/toggle-follow/', views.toggle_campaign_follow, name='toggle_campaign_follow'),
-     path('campaign/<int:campaign_id>/comments-simple/', views.get_campaign_comments_simple, name='get_campaign_comments_simple'),
-    path('campaign/<int:campaign_id>/add-comment-simple/', views.add_campaign_comment_simple, name='add_campaign_comment_simple'),
-    path('campaign/<int:campaign_id>/stats/', views.get_campaign_stats, name='get_campaign_stats'),
-        path('track-watch/', views.track_watch_time, name='track_watch'),
-    path('campaign/<int:campaign_id>/save/', views.toggle_save_campaign, name='toggle_save'),
-    path('campaign/<int:campaign_id>/share/', views.track_share, name='track_share'),
-    path('api/rising-campaigns/', views.get_rising_campaigns, name='rising_campaigns'),
-    path('load-more-activities/', views.load_more_activities, name='load_more_activities'),
+
+# Journey URLs
+path('journey/', views.journey, name='journey'),
+path('journey/<int:campaign_id>/', views.journey, name='campaign_journey'),
+
+# HTMX endpoints
+path('htmx/campaign/<int:campaign_id>/love/', views.htmx_toggle_love, name='htmx_toggle_love'),
+path('htmx/campaign/<int:campaign_id>/follow/', views.htmx_toggle_follow, name='htmx_toggle_follow'),
+path('htmx/campaign/<int:campaign_id>/save/', views.htmx_toggle_save, name='htmx_toggle_save'),
+path('htmx/campaign/<int:campaign_id>/comments/', views.htmx_get_comments, name='htmx_get_comments'),
+path('htmx/campaign/<int:campaign_id>/post-comment/', views.htmx_post_comment, name='htmx_post_comment'),
+path('htmx/campaign/<int:campaign_id>/stats/', views.htmx_get_stats, name='htmx_get_stats'),
+path('htmx/campaign/<int:campaign_id>/menu/', views.htmx_get_menu, name='htmx_get_menu'),
+
+# Clone URL
+path('journey/<int:original_id>/clone-simple/', views.clone_journey_simple, name='clone_journey_simple'),
 ]
 
 

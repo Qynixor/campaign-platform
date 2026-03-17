@@ -151,13 +151,30 @@ from django.core.files.base import ContentFile
 import cloudinary
 import cloudinary.uploader
 from cloudinary.models import CloudinaryField
+import json
+from datetime import timedelta
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.db.models import Q, Sum, Count, Avg
+from cloudinary.models import CloudinaryField
+
+# ============================================================================
+# CAMPAIGN MODEL
+# ============================================================================
 
 class Campaign(models.Model):
+    """
+    Main Campaign model for journey-based crowdfunding
+    """
+    # ==================== BASIC FIELDS ====================
     user = models.ForeignKey('Profile', on_delete=models.CASCADE, related_name='user_campaigns')
     title = models.CharField(max_length=50)
     timestamp = models.DateTimeField(auto_now_add=True)
     journey_start_date = models.DateTimeField(default=timezone.now, null=True, blank=True)
     content = models.TextField(max_length=150)
+    
+    # ==================== MEDIA FIELDS ====================
     poster = CloudinaryField('image', folder='campaign_files', null=True, blank=True)
     additional_images = models.JSONField(default=list, blank=True, 
                                        help_text="List of additional image URLs for slideshow")
@@ -169,9 +186,13 @@ class Campaign(models.Model):
         blank=True
     )
     
+    # ==================== STATUS FIELDS ====================
     is_active = models.BooleanField(default=True)
     premium_activated = models.BooleanField(default=False, help_text="Whether premium stats have been activated for this campaign")   
+    template = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, 
+                                related_name='clones')
     
+    # ==================== CATEGORY CHOICES ====================
     CATEGORY_CHOICES = (
         ('Personal Empowerment', 'Personal Empowerment'),
         ('Health & Wellbeing Causes', 'Health & Wellbeing Causes'),
@@ -183,12 +204,13 @@ class Campaign(models.Model):
         ('Community & Social Impact', 'Community & Social Impact'),
         ('Education & Skill Building', 'Education & Skill Building'),
         ('Exploration, Sports & Challenges', 'Exploration, Sports & Challenges'),
-        ('Religious & Spiritual Causes', 'Religious & Spiritual Causes'),  # NEW CATEGORY
+        ('Religious & Spiritual Causes', 'Religious & Spiritual Causes'),
         ('Other Causes', 'Other Causes'),
     )
 
     category = models.CharField(max_length=40, choices=CATEGORY_CHOICES, default='Personal Empowerment')
     
+    # ==================== DEFAULT AUDIO BY CATEGORY ====================
     DEFAULT_CATEGORY_AUDIO = {
         'Personal Empowerment': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201319/peace_lgzimr.mp3',
         'Health & Wellbeing Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201314/health_ni0stj.mp3',
@@ -200,16 +222,18 @@ class Campaign(models.Model):
         'Community & Social Impact': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
         'Education & Skill Building': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201304/education_wi2ywe.mp3',
         'Exploration, Sports & Challenges': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201367/Sustainable_llqh66.mp3',
-        'Religious & Spiritual Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201319/peace_lgzimr.mp3',  # Peaceful audio for religious causes
+        'Religious & Spiritual Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201319/peace_lgzimr.mp3',
         'Other Causes': 'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3',
     }
 
     def get_default_audio(self):
+        """Get default audio URL based on category"""
         return self.DEFAULT_CATEGORY_AUDIO.get(
             self.category,
             'https://res.cloudinary.com/dvlgdzood/video/upload/v1765201313/Equality_h3fufa.mp3'
         )
 
+    # ==================== DURATION FIELDS ====================
     DURATION_UNITS = (
         ('minutes', 'Minutes'),
         ('days', 'Days'),
@@ -229,6 +253,7 @@ class Campaign(models.Model):
     original_duration = models.PositiveIntegerField(null=True, blank=True, help_text="Original duration when campaign started")
     original_duration_unit = models.CharField(max_length=10, null=True, blank=True, help_text="Original duration unit when campaign started")
     
+    # ==================== FUNDING FIELDS ====================
     funding_goal = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
@@ -237,6 +262,7 @@ class Campaign(models.Model):
         default=0.00
     )
     
+    # ==================== RELATIONSHIP FIELDS ====================
     tags = models.ManyToManyField('Tag', through='CampaignTag', related_name='campaigns', blank=True)
     
     # Campaign following system
@@ -248,19 +274,312 @@ class Campaign(models.Model):
         help_text="Users following this campaign"
     )
 
+    # ==================== META CLASS ====================
     class Meta:
         indexes = [
             models.Index(fields=['timestamp']),
             models.Index(fields=['end_date']),
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['journey_start_date']),
+            models.Index(fields=['is_active', '-timestamp']),
+            models.Index(fields=['template']),
         ]
         ordering = ['-timestamp']
 
+    # ==================== STRING REPRESENTATION ====================
     def __str__(self):
         return self.title
 
-    # ==================== FUNDING PROPERTIES ====================
+    # ============================================================================
+    # SECTION 1: MEDIA HELPER METHODS
+    # ============================================================================
+    # Methods for handling images, audio, and other media files
+    # Used in: templates/campaign_card.html, templates/journey.html
+    # ============================================================================
+
+    def get_images(self):
+        """Return list of all image URLs for slideshow"""
+        images = []
+        if self.poster:
+            images.append(self.poster.url)
+        
+        # Add additional images if they exist
+        if self.additional_images and isinstance(self.additional_images, list):
+            images.extend(self.additional_images[:4])  # Limit to 4 additional images
+        
+        # If no images, return placeholder
+        if not images:
+            images.append('https://via.placeholder.com/400x800?text=No+Image')
+        
+        return images[:5]  # Max 5 images total
+    
+    def get_image_count(self):
+        """Get total number of images"""
+        return len(self.get_images())
+    
+    def get_audio_url(self):
+        """Get audio URL or default based on category"""
+        if self.audio:
+            return self.audio.url
+        return self.get_default_audio()
+
+    # ============================================================================
+    # SECTION 2: USER/PROFILE HELPER METHODS
+    # ============================================================================
+    # Methods for getting user-related information
+    # Used in: templates/campaign_card.html for profile links and displays
+    # ============================================================================
+
+    def get_username(self):
+        """Get creator username"""
+        try:
+            if self.user and self.user.user:
+                return self.user.user.username
+            return 'unknown'
+        except:
+            return 'unknown'
+    
+    def get_profile_image(self):
+        """Get creator profile image"""
+        try:
+            if self.user and self.user.image:
+                return self.user.image.url
+            return 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'
+        except:
+            return 'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg'
+    
+    def get_location_display(self):
+        """Get location for display"""
+        try:
+            if self.user and self.user.location:
+                return self.user.location
+            return 'Unknown'
+        except:
+            return 'Unknown'
+    
+    def is_verified(self):
+        """Check if creator is verified"""
+        try:
+            return getattr(self.user, 'profile_verified', False)
+        except:
+            return False
+
+    # ============================================================================
+    # SECTION 3: INTERACTION CHECK METHODS
+    # ============================================================================
+    # Methods to check if current user has interacted with campaign
+    # Used in: views.py to set user-specific flags
+    # ============================================================================
+
+    def is_loved_by(self, user):
+        """Check if campaign is loved by user"""
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            return self.loves.filter(user=user).exists()
+        except:
+            return False
+    
+    def is_followed_by(self, user):
+        """Check if campaign is followed by user"""
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            return self.followers.filter(id=user.id).exists()
+        except:
+            return False
+    
+    def is_saved_by(self, user):
+        """Check if campaign is saved by user"""
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            from .models import CampaignSave
+            return CampaignSave.objects.filter(user=user, campaign=self).exists()
+        except:
+            return False
+    
+    def is_owner(self, user):
+        """Check if user is campaign owner"""
+        try:
+            if not user or not user.is_authenticated:
+                return False
+            return user == self.user.user if self.user and self.user.user else False
+        except:
+            return False
+
+    # ============================================================================
+    # SECTION 4: COUNT HELPER METHODS
+    # ============================================================================
+    # Methods that return counts of various interactions
+    # Used in: templates/campaign_card.html, templates/partials/*.html
+    # ============================================================================
+
+    def get_love_count(self):
+        """Get love count safely"""
+        try:
+            return self.loves.count()
+        except:
+            return 0
+    
+    def get_comment_count(self):
+        """Get comment count safely"""
+        try:
+            return self.comments.count()
+        except:
+            return 0
+    
+    def get_follower_count(self):
+        """Get follower count safely"""
+        try:
+            return self.followers.count()
+        except:
+            return 0
+    
+    def get_save_count(self):
+        """Get save count safely"""
+        try:
+            from .models import CampaignSave
+            return CampaignSave.objects.filter(campaign=self).count()
+        except:
+            return 0
+    
+    def get_clone_count(self):
+        """Get number of times this campaign has been cloned"""
+        try:
+            return Campaign.objects.filter(template=self).count()
+        except:
+            return 0
+    
+    def get_donor_count(self):
+        """Get unique donor count"""
+        try:
+            if hasattr(self, 'donations'):
+                return self.donations.filter(fulfilled=True).values('user').distinct().count()
+            return 0
+        except:
+            return 0
+    
+    def get_pledger_count(self):
+        """Get unique pledger count"""
+        try:
+            if hasattr(self, 'pledges'):
+                return self.pledges.values('user').distinct().count()
+            return 0
+        except:
+            return 0
+
+    # ============================================================================
+    # SECTION 5: TIME/DISPLAY PROPERTIES
+    # ============================================================================
+    # Properties and methods for time-based displays
+    # Used in: templates/campaign_card.html for timestamps and day displays
+    # ============================================================================
+
+    @property
+    def time_ago(self):
+        """Get human-readable time ago string"""
+        from django.utils.timesince import timesince
+        from django.utils.timezone import now
+        try:
+            return timesince(self.timestamp, now())
+        except:
+            return 'recently'
+    
+    def get_current_day_display(self):
+        """Get current day with formatting"""
+        current = self.get_current_day()
+        total = self.duration or 30
+        return {
+            'current': current,
+            'total': total,
+            'display': f"Day {current} of {total}"
+        }
+    
+    def get_progress_percentage(self):
+        """Get progress percentage for display"""
+        try:
+            if self.duration and self.duration > 0:
+                current = self.get_current_day()
+                return min(round((current / self.duration) * 100), 100)
+            return 0
+        except:
+            return 0
+    
+    def get_days_remaining(self):
+        """Get days remaining"""
+        try:
+            if self.end_date:
+                remaining = self.end_date - timezone.now()
+                if remaining.total_seconds() <= 0:
+                    return 0
+                return max(remaining.days, 0)
+            return 0
+        except:
+            return 0
+    
+    def get_category_display(self):
+        """Get category for display"""
+        return self.category or 'Other'
+
+    # ============================================================================
+    # SECTION 6: STATS SUMMARY METHODS
+    # ============================================================================
+    # Methods that combine multiple stats into one object
+    # Used in: templates for quick access to multiple stats
+    # ============================================================================
+
+    def get_stats_summary(self):
+        """Get quick stats summary for cards"""
+        return {
+            'loves': self.get_love_count(),
+            'comments': self.get_comment_count(),
+            'followers': self.get_follower_count(),
+            'saves': self.get_save_count(),
+            'donors': self.get_donor_count(),
+            'current_day': self.get_current_day(),
+            'total_days': self.duration or 30,
+            'progress': self.get_progress_percentage(),
+        }
+    
+    def get_donation_stats(self):
+        """Get donation statistics"""
+        try:
+            total = float(self.total_donations)
+            goal = float(self.funding_goal) if self.funding_goal else 0
+            percentage = self.donation_percentage
+            remaining = float(self.donation_remaining)
+            donors = self.get_donor_count()
+            
+            return {
+                'total': total,
+                'goal': goal,
+                'percentage': percentage,
+                'remaining': remaining,
+                'donors': donors,
+                'formatted_total': f"${total:,.2f}" if total else "$0",
+                'formatted_goal': f"${goal:,.2f}" if goal else "$0",
+                'formatted_remaining': f"${remaining:,.2f}" if remaining else "$0",
+            }
+        except:
+            return {
+                'total': 0,
+                'goal': 0,
+                'percentage': 0,
+                'remaining': 0,
+                'donors': 0,
+                'formatted_total': '$0',
+                'formatted_goal': '$0',
+                'formatted_remaining': '$0',
+            }
+
+    # ============================================================================
+    # SECTION 7: FUNDING PROPERTIES
+    # ============================================================================
+    # Properties for donation and funding calculations
+    # Used in: templates for donation displays
+    # ============================================================================
+
     @property
     def total_pledges(self):
         try:
@@ -295,16 +614,19 @@ class Campaign(models.Model):
 
     @property
     def love_count(self):
-        try:
-            return self.loves.count()
-        except:
-            return 0
+        return self.get_love_count()
     
     @property
     def is_changemaker(self):
         return False
 
-    # ==================== TIME/DURATION PROPERTIES ====================
+    # ============================================================================
+    # SECTION 8: TIME/DURATION PROPERTIES
+    # ============================================================================
+    # Properties for campaign duration and timing
+    # Used in: templates for time-based displays
+    # ============================================================================
+
     @property
     def is_outdated(self):
         try:
@@ -365,7 +687,13 @@ class Campaign(models.Model):
         except:
             return 100
 
-    # ==================== FIXED DAY TRACKING METHODS ====================
+    # ============================================================================
+    # SECTION 9: DAY TRACKING METHODS
+    # ============================================================================
+    # Core methods for tracking campaign days and unlocking
+    # Used in: activity views and templates
+    # ============================================================================
+
     def get_current_day(self):
         try:
             start_date = self.journey_start_date or self.timestamp
@@ -510,21 +838,14 @@ class Campaign(models.Model):
     # Campaign follower methods
     @property
     def follower_count(self):
-        try:
-            return self.followers.count()
-        except:
-            return 0
-    
-    def is_followed_by(self, user):
-        """Check if a user follows this campaign"""
-        try:
-            if not user or not user.is_authenticated:
-                return False
-            return self.followers.filter(id=user.id).exists()
-        except:
-            return False
+        return self.get_follower_count()
 
-    # ==================== FIXED SAVE METHOD ====================
+    # ============================================================================
+    # SECTION 10: SAVE METHOD AND UTILITIES
+    # ============================================================================
+    # Overridden save method and related utilities
+    # ============================================================================
+
     def save(self, *args, **kwargs):
         try:
             is_new = self.pk is None
@@ -596,8 +917,13 @@ class Campaign(models.Model):
         except:
             pass
 
-    # ==================== ENHANCED STATS METHODS (SAFE VERSION) ====================
-    
+    # ============================================================================
+    # SECTION 11: ENHANCED STATS METHODS (DISCOVERY)
+    # ============================================================================
+    # Methods for campaign discovery, analytics, and premium features
+    # Used in: premium dashboards, discovery features, analytics
+    # ============================================================================
+
     def get_avg_daily_views(self):
         """Calculate average daily views"""
         return 0
@@ -643,29 +969,17 @@ class Campaign(models.Model):
         try:
             if hasattr(self, 'donations'):
                 donations = self.donations.filter(fulfilled=True)
-                avg = donations.aggregate(avg=Avg('amount'))['avg']
+                avg = donations.aggregate(avg=models.Avg('amount'))['avg']
                 return float(avg) if avg else 0
             return 0
         except:
             return 0
     
     def get_total_donors(self):
-        """Count unique donors"""
-        try:
-            if hasattr(self, 'donations'):
-                return self.donations.filter(fulfilled=True).values('user').distinct().count()
-            return 0
-        except:
-            return 0
+        return self.get_donor_count()
     
     def get_total_pledgers(self):
-        """Count unique pledgers"""
-        try:
-            if hasattr(self, 'pledges'):
-                return self.pledges.values('user').distinct().count()
-            return 0
-        except:
-            return 0
+        return self.get_pledger_count()
     
     def get_donation_conversion_rate(self):
         """Percentage of followers who donated"""
@@ -731,9 +1045,10 @@ class Campaign(models.Model):
     def get_category_ranking(self):
         """Get campaign's ranking in its category"""
         try:
+            total_in_category = Campaign.objects.filter(category=self.category).count()
             return {
                 'rank': 'N/A',
-                'total': Campaign.objects.filter(category=self.category).count(),
+                'total': total_in_category,
                 'percentile': 'N/A'
             }
         except:
@@ -782,9 +1097,14 @@ class Campaign(models.Model):
             return result
         except:
             return {'followers': [], 'donations': []}
-   
-    # ==================== PREMIUM STATS METHODS ====================
-    
+
+    # ============================================================================
+    # SECTION 12: PREMIUM STATS METHODS
+    # ============================================================================
+    # Premium/advanced analytics methods
+    # Used in: premium dashboards and advanced analytics
+    # ============================================================================
+
     def can_view_premium_stats(self, user):
         """Check if user can view premium stats for this campaign"""
         try:
@@ -1053,7 +1373,7 @@ class Campaign(models.Model):
             
             # Average stats for category
             avg_followers = category_campaigns.aggregate(
-                avg=Avg('follower_count')
+                avg=models.Avg('follower_count')
             )['avg'] or 0
             
             avg_donations = 0
@@ -1095,170 +1415,9 @@ class Campaign(models.Model):
         except Exception as e:
             print(f"Error in category benchmarks: {e}")
             return None
+    
 
-    def get_goals_and_activities(self):
-        goals_activities = {
-            'Personal Empowerment': {
-                'Goals': [
-                    'Empower an individual or group to overcome limitations and unlock potential.',
-                    'Support personal transformation that leads to long-term independence.'
-                ],
-                'Activities': [
-                    'Share weekly updates documenting growth, challenges, and breakthroughs.',
-                    'Run a skills-building challenge with community accountability.',
-                    'Host live or recorded talks sharing lessons learned.',
-                    'Provide tools, resources, or mentorship tied to the cause.',
-                    'Document impact stories from supporters or beneficiaries.'
-                ]
-            },
-            'Health & Wellbeing Causes': {
-                'Goals': [
-                    'Improve physical health outcomes for yourself or others.',
-                    'Raise awareness and support for health-related challenges.'
-                ],
-                'Activities': [
-                    'Post recovery, training, or treatment updates with proof and milestones.',
-                    'Share educational content about the health condition or goal.',
-                    'Organize a fitness or wellness challenge supporters can join.',
-                    'Document the use of funds for medical or wellness needs.',
-                    'Highlight supporter stories and encouragement.'
-                ]
-            },
-            'Economic Support & Financial Causes': {
-                'Goals': [
-                    'Provide financial relief, stability, or opportunity.',
-                    'Mobilize support to overcome economic barriers.'
-                ],
-                'Activities': [
-                    'Share transparent breakdowns of financial needs and progress.',
-                    'Post updates showing how funds are being used.',
-                    'Offer products or services that directly support the cause.',
-                    'Highlight milestones such as debts cleared or resources secured.',
-                    'Educate supporters on the broader financial issue being addressed.'
-                ]
-            },
-            'Creative & Cultural Causes': {
-                'Goals': [
-                    'Preserve, promote, or fund creative and cultural expression.',
-                    'Turn creativity into a sustainable source of impact.'
-                ],
-                'Activities': [
-                    'Share behind-the-scenes creation updates.',
-                    'Release exclusive content to supporters.',
-                    'Sell creative works or merchandise tied to the cause.',
-                    'Document cultural impact or community engagement.',
-                    'Collaborate with other creators or communities.'
-                ]
-            },
-            'Mental Health & Emotional Support': {
-                'Goals': [
-                    'Support emotional wellbeing and mental health awareness.',
-                    'Create safe spaces for healing and shared experiences.'
-                ],
-                'Activities': [
-                    'Post honest updates about mental health journeys or programs.',
-                    'Share educational resources and coping strategies.',
-                    'Host guided sessions, talks, or reflections.',
-                    'Highlight stories of hope, progress, and recovery.',
-                    'Use funds to access therapy, support groups, or outreach.'
-                ]
-            },
-            'Career, Work & Opportunity': {
-                'Goals': [
-                    'Create access to jobs, skills, or professional growth.',
-                    'Support career transitions or workforce development.'
-                ],
-                'Activities': [
-                    'Share progress toward certifications, training, or job placement.',
-                    'Offer mentorship or workshops to supporters.',
-                    'Document outcomes such as employment or business launches.',
-                    'Sell services or products that fund the cause.',
-                    'Highlight community success stories.'
-                ]
-            },
-            'Housing, Living & Stability': {
-                'Goals': [
-                    'Secure safe, stable, and dignified living conditions.',
-                    'Improve quality of life through better housing or resources.'
-                ],
-                'Activities': [
-                    'Share updates on housing progress or improvements.',
-                    'Post photos/videos showing before-and-after impact.',
-                    'Break down costs and needs transparently.',
-                    'Document how support improves daily living.',
-                    'Engage supporters in long-term stability planning.'
-                ]
-            },
-            'Community & Social Impact': {
-                'Goals': [
-                    'Strengthen communities and address social challenges.',
-                    'Mobilize people around a shared cause or mission.'
-                ],
-                'Activities': [
-                    'Post updates from community actions or events.',
-                    'Share stories from people impacted by the cause.',
-                    'Organize campaigns, drives, or collective actions.',
-                    'Highlight supporter contributions and involvement.',
-                    'Track measurable community impact over time.'
-                ]
-            },
-            'Education & Skill Building': {
-                'Goals': [
-                    'Expand access to education and practical skills.',
-                    'Empower learners through knowledge and opportunity.'
-                ],
-                'Activities': [
-                    'Share learning progress and teaching outcomes.',
-                    'Post educational content or mini-lessons.',
-                    'Fundraise for courses, materials, or training.',
-                    'Showcase student or participant success stories.',
-                    'Offer paid or free educational resources.'
-                ]
-            },
-            'Exploration, Sports & Challenges': {
-                'Goals': [
-                    'Use challenges and exploration to inspire or fund impact.',
-                    'Turn personal feats into collective motivation.'
-                ],
-                'Activities': [
-                    'Document challenge progress with photos, videos, or audio.',
-                    'Tie milestones to donation or pledge triggers.',
-                    'Engage supporters with live updates or check-ins.',
-                    'Share lessons learned and motivation.',
-                    'Celebrate achievements with the community.'
-                ]
-            },
-            # NEW: Religious & Spiritual Causes
-            'Religious & Spiritual Causes': {
-                'Goals': [
-                    'Support religious institutions, missions, and spiritual outreach programs.',
-                    'Fund community worship spaces, events, and religious education.',
-                    'Help spread faith, provide spiritual guidance, and support religious communities.'
-                ],
-                'Activities': [
-                    'Share updates on religious events, services, and community gatherings.',
-                    'Document mission trips, outreach programs, and charitable work.',
-                    'Post inspirational messages, sermons, or spiritual reflections.',
-                    'Show progress on building or renovating worship spaces.',
-                    'Highlight stories of faith, hope, and community support.',
-                    'Organize fundraising for religious holidays, festivals, or special events.'
-                ]
-            },
-            'Other Causes': {
-                'Goals': [
-                    'Support a unique or emerging cause.',
-                    'Experiment with new forms of impact and storytelling.'
-                ],
-                'Activities': [
-                    'Define custom updates that fit the cause.',
-                    'Combine storytelling, funding, and community building.',
-                    'Test new engagement or support models.',
-                    'Document learnings and outcomes openly.',
-                    'Let supporters help shape the direction of the cause.'
-                ]
-            },
-        }
-        return goals_activities.get(self.category, {})
+
 
 
 # NEW: Campaign Follow through model
@@ -1584,6 +1743,11 @@ class SupportCampaign(models.Model):
 class Love(models.Model):
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='loves')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'campaign']),
+        ]
 
     def save(self, *args, **kwargs):
         if self.pk is None:
