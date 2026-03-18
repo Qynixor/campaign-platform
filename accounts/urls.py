@@ -1,11 +1,10 @@
-from django.urls import path, include
+# urls.py
+from django.urls import path
 from . import views
-
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('check-username/', views.check_username, name='check_username'),
-  
+    
     # Lazy-loaded section URLs
     path('section/trending/', views.section_trending, name='section_trending'),
     path('section/rising/', views.section_rising, name='section_rising'),
@@ -16,8 +15,8 @@ urlpatterns = [
     path('section/suggested/', views.section_suggested, name='section_suggested'),
     path('section/new/', views.section_new_causes, name='section_new_causes'),
     path('section/category/<str:category>/', views.section_category, name='section_category'),
-
-
     
+    # Tracking URLs
+    path('track-category-impression/', views.track_category_impression, name='track_category_impression'),
+    path('track-featured-impression/', views.track_featured_impression, name='track_featured_impression'),
 ]
-

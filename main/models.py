@@ -543,6 +543,72 @@ class Campaign(models.Model):
                 return max(remaining.days, 0)
         except:
             return 0
+
+    
+    @classmethod
+    def search_with_boosts(cls, search_term, user=None):
+        """
+        Perform search with boosted results at top
+        Returns list of dicts with campaign and type info
+        """
+        from django.db.models import Q
+        
+        # Get active search boosts for this term
+        boosted_journeys = BoostedJourney.objects.get_search_boosts(search_term)
+        
+        # Get boosted campaign IDs ordered by bid amount
+        boosted_campaign_ids = [bj.campaign_id for bj in boosted_journeys]
+        
+        # Build base search query
+        search_filter = Q(title__icontains=search_term) | Q(content__icontains=search_term)
+        
+        # Get all matching campaigns (excluding soft-deleted or inactive)
+        all_campaigns = cls.objects.filter(
+            search_filter,
+            is_active=True
+        ).select_related('user__user').prefetch_related(
+            'loves', 'comments', 'boosted_journeys'
+        )
+        
+        # Separate boosted and organic
+        boosted_campaigns = []
+        organic_campaigns = []
+        
+        for campaign in all_campaigns:
+            if campaign.id in boosted_campaign_ids:
+                # Get the boost info
+                boost = next(
+                    (bj for bj in boosted_journeys if bj.campaign_id == campaign.id), 
+                    None
+                )
+                if boost:
+                    boosted_campaigns.append({
+                        'campaign': campaign,
+                        'type': 'sponsored',
+                        'boost': boost,
+                        'bid_amount': boost.bid_amount
+                    })
+            else:
+                organic_campaigns.append({
+                    'campaign': campaign,
+                    'type': 'organic'
+                })
+        
+        # Sort boosted by bid amount (already ordered, but ensure)
+        boosted_campaigns.sort(key=lambda x: x['bid_amount'], reverse=True)
+        
+        # Sort organic by love count or timestamp
+        organic_campaigns.sort(
+            key=lambda x: (
+                x['campaign'].get_love_count(),
+                x['campaign'].timestamp
+            ), 
+            reverse=True
+        )
+        
+        return boosted_campaigns + organic_campaigns
+
+
     
     # ==================== SAVE METHOD ====================
     
@@ -1529,6 +1595,379 @@ class CampaignShare(models.Model):
 
 
 
+# ============================================================================
+# BOOSTED JOURNEY / MONETIZATION MODELS
+# ============================================================================
+
+# FIRST: Define the Manager
+class BoostedJourneyManager(models.Manager):
+    def get_active_for_placement(self, placement_type):
+        """Get all active boosts for a specific placement"""
+        now = timezone.now()
+        return self.filter(
+            placement_type=placement_type,
+            status='active',
+            is_paid=True,
+            start_date__lte=now,
+            end_date__gte=now
+        )
+    
+    def get_search_boosts(self, search_terms):
+        """
+        Get active search boosts matching keywords
+        Returns: bids first (highest), then flat fees (highest)
+        """
+        now = timezone.now()
+        
+        # Split search terms into list
+        if isinstance(search_terms, str):
+            search_words = search_terms.lower().split()
+        else:
+            search_words = search_terms
+        
+        # Build Q objects for keyword matching
+        keyword_queries = models.Q()
+        for word in search_words:
+            keyword_queries |= models.Q(keywords__icontains=word)
+        
+        # Get all matching boosts
+        all_boosts = self.filter(
+            placement_type='search',
+            status='active',
+            is_paid=True,
+            start_date__lte=now,
+            end_date__gte=now
+        ).filter(keyword_queries)
+        
+        # Separate and order: bids first by amount, then flat fees by amount
+        bid_boosts = all_boosts.filter(bid_amount__gt=0).order_by('-bid_amount')
+        flat_boosts = all_boosts.filter(bid_amount=0, flat_fee__gt=0).order_by('-flat_fee')
+        
+        # Combine: all bids first, then all flat fees
+        return list(bid_boosts) + list(flat_boosts)
+    
+    def get_featured_boosts(self, limit=5):
+        """
+        Get active featured section boosts with weighted rotation
+        Higher payment = more chances to appear
+        """
+        now = timezone.now()
+        
+        # Get all active featured boosts
+        boosts = self.filter(
+            placement_type='featured',
+            status='active',
+            is_paid=True,
+            start_date__lte=now,
+            end_date__gte=now
+        )
+        
+        if not boosts.exists():
+            return []
+        
+        # Create weighted list: every $10 = 1 entry in the pool
+        weighted_pool = []
+        for boost in boosts:
+            # Minimum weight of 1, even for $1
+            weight = max(1, int(boost.flat_fee / 10))
+            weighted_pool.extend([boost] * weight)
+        
+        # Select randomly from weighted pool without duplicates
+        selected = []
+        selected_ids = set()
+        
+        # Shuffle for randomness
+        import random
+        random.shuffle(weighted_pool)
+        
+        for boost in weighted_pool:
+            if len(selected) >= limit:
+                break
+            if boost.id not in selected_ids:
+                selected.append(boost)
+                selected_ids.add(boost.id)
+        
+        # If we need more, fill with remaining boosts
+        if len(selected) < limit:
+            remaining = boosts.exclude(id__in=selected_ids).order_by('?')
+            selected.extend(list(remaining)[:limit - len(selected)])
+        
+        return selected
+    
+    def get_category_boosts(self, category, limit=3):
+        """
+        Get active category page boosts for specific category
+        Ordered by flat_fee (highest first)
+        """
+        now = timezone.now()
+        return self.filter(
+            placement_type='category',
+            status='active',
+            is_paid=True,
+            start_date__lte=now,
+            end_date__gte=now,
+            categories__icontains=category
+        ).order_by('-flat_fee')[:limit]
+    
+    def get_bundled_boosts(self):
+        """Get active bundle placements"""
+        now = timezone.now()
+        return self.filter(
+            placement_type='bundle',
+            status='active',
+            is_paid=True,
+            start_date__lte=now,
+            end_date__gte=now
+        )
+
+# SECOND: Define the BoostedJourney model
+class BoostedJourney(models.Model):
+    """
+    Model for campaign boosting/promotion across different placement types
+    """
+    PLACEMENT_CHOICES = (
+        ('featured', 'Featured Section (Right Sidebar)'),
+        ('search', 'Search Results Top Spot'),
+        ('category', 'Category Page Spotlight'),
+        ('bundle', 'All Placements Bundle'),
+    )
+    
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('pending', 'Pending Payment'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    )
+    
+    campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE, related_name='boosted_journeys')
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_boosts')
+    
+    # Placement & targeting
+    placement_type = models.CharField(max_length=20, choices=PLACEMENT_CHOICES)
+    keywords = models.CharField(max_length=500, blank=True, 
+                               help_text="Comma-separated keywords for search targeting")
+    categories = models.CharField(max_length=500, blank=True,
+                                 help_text="Comma-separated categories for category targeting")
+    
+    # Bidding & pricing
+    bid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
+                                    help_text="Bid amount for search auctions (if applicable)")
+    flat_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00,
+                                  help_text="Flat fee for non-auction placements")
+    total_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    # Duration & scheduling
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField()
+    duration_days = models.PositiveIntegerField(default=3, help_text="Duration in days")
+    
+    # Status & tracking
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    is_paid = models.BooleanField(default=False)
+    payment_id = models.CharField(max_length=255, blank=True, help_text="PayPal transaction ID")
+    
+    # Performance tracking
+    impressions = models.PositiveIntegerField(default=0)
+    clicks = models.PositiveIntegerField(default=0)
+    last_impression_at = models.DateTimeField(null=True, blank=True)
+    last_click_at = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Add the manager here
+    objects = BoostedJourneyManager()
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['placement_type', 'status', 'end_date']),
+            models.Index(fields=['campaign', 'status']),
+            models.Index(fields=['keywords']),  # For search matching
+            models.Index(fields=['-bid_amount']),  # For auction sorting
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.campaign.title} - {self.get_placement_type_display()}"
+    
+    def save(self, *args, **kwargs):
+        # Calculate end date based on duration if not set
+        if not self.end_date and self.duration_days:
+            self.end_date = self.start_date + timedelta(days=self.duration_days)
+        
+        # Calculate total paid based on placement type
+        if not self.total_paid and self.flat_fee:
+            self.total_paid = self.flat_fee
+        
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_active(self):
+        """Check if boost is currently active"""
+        now = timezone.now()
+        return (self.status == 'active' and 
+                self.start_date <= now <= self.end_date and 
+                self.is_paid)
+    
+    @property
+    def days_remaining(self):
+        """Get days remaining in boost period"""
+        if not self.is_active:
+            return 0
+        remaining = self.end_date - timezone.now()
+        return max(0, remaining.days)
+    
+    @property
+    def click_through_rate(self):
+        """Calculate CTR as percentage"""
+        if self.impressions > 0:
+            return round((self.clicks / self.impressions) * 100, 2)
+        return 0
+    
+    def record_impression(self):
+        """Record an impression for this boost"""
+        self.impressions += 1
+        self.last_impression_at = timezone.now()
+        self.save(update_fields=['impressions', 'last_impression_at'])
+    
+    def record_click(self):
+        """Record a click for this boost"""
+        self.clicks += 1
+        self.last_click_at = timezone.now()
+        self.save(update_fields=['clicks', 'last_click_at'])
+    
+    def activate(self):
+        """Activate the boost after payment"""
+        self.status = 'active'
+        self.is_paid = True
+        self.start_date = timezone.now()
+        if self.duration_days:
+            self.end_date = self.start_date + timedelta(days=self.duration_days)
+        self.save()
+    
+    def expire(self):
+        """Mark boost as expired"""
+        self.status = 'expired'
+        self.save()
+
+
+# THIRD: Define the other related models
+class BoostedJourneyImpression(models.Model):
+    """Track individual impressions for analytics"""
+    boosted_journey = models.ForeignKey(BoostedJourney, on_delete=models.CASCADE, 
+                                       related_name='impression_records')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    session_key = models.CharField(max_length=255, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    placement_context = models.CharField(max_length=50, blank=True,  # 'search', 'category', 'featured'
+                                       help_text="Where the impression occurred")
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['boosted_journey', '-viewed_at']),
+            models.Index(fields=['placement_context', '-viewed_at']),
+        ]
+    
+    def __str__(self):
+        return f"Impression for {self.boosted_journey} at {self.viewed_at}"
+
+
+class BoostedJourneyClick(models.Model):
+    """Track individual clicks for analytics"""
+    boosted_journey = models.ForeignKey(BoostedJourney, on_delete=models.CASCADE,
+                                       related_name='click_records')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    session_key = models.CharField(max_length=255, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    placement_context = models.CharField(max_length=50, blank=True)
+    clicked_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['boosted_journey', '-clicked_at']),
+        ]
+    
+    def __str__(self):
+        return f"Click for {self.boosted_journey} at {self.clicked_at}"
+
+
+class KeywordBidAuction(models.Model):
+    """
+    Track keyword bidding auction history
+    """
+    keyword = models.CharField(max_length=100, db_index=True)
+    boosted_journey = models.ForeignKey(BoostedJourney, on_delete=models.CASCADE,
+                                       related_name='bid_auctions')
+    bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    position = models.PositiveIntegerField(help_text="Auction position at time of bid")
+    auction_date = models.DateTimeField(auto_now_add=True)
+    was_winning = models.BooleanField(default=False)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['keyword', '-auction_date']),
+        ]
+        ordering = ['-auction_date']
+    
+    def __str__(self):
+        return f"{self.keyword} - ${self.bid_amount} (Position {self.position})"
+
+
+class BoostedJourneyPackage(models.Model):
+    """
+    Pre-defined packages for easy purchasing
+    """
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+    
+    # Placement types included
+    include_featured = models.BooleanField(default=False)
+    include_search = models.BooleanField(default=False)
+    include_category = models.BooleanField(default=False)
+    
+    # Pricing
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percentage = models.PositiveIntegerField(default=0, 
+                                                      help_text="Discount compared to buying separately")
+    
+    # Duration
+    duration_days = models.PositiveIntegerField(default=7)
+    
+    # Features
+    max_keywords = models.PositiveIntegerField(default=5, help_text="Max keywords for search targeting")
+    priority_support = models.BooleanField(default=False)
+    analytics_access = models.BooleanField(default=False)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['price']
+    
+    def __str__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+    
+    @property
+    def placement_count(self):
+        count = 0
+        if self.include_featured:
+            count += 1
+        if self.include_search:
+            count += 1
+        if self.include_category:
+            count += 1
+        return count
 
 
 

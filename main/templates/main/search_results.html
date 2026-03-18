@@ -6,17 +6,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
- 
     <title>Search Results</title>
     <style>
-        /* CSS Styles */
+        /* Your existing CSS styles... */
         .action-item {
             display: inline-block;
-            padding: 8px 15px; /* Adjusted padding */
+            padding: 8px 15px;
             margin-right: 10px;
             border-radius: 5px;
             text-align: center;
-            font-size: 11px; /* Reduced font size */
+            font-size: 11px;
         }
         .action-item a {
             color: #000;
@@ -26,39 +25,159 @@
         .action-item i {
             margin-right: 5px;
         }
-        .campaign-list, .profile-list, .quran-list, .adhkar-list {
+        
+        /* NEW STYLES FOR SPONSORED RESULTS */
+        .sponsored-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.05), rgba(255,215,0,0.02));
+            border-radius: 12px;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+        
+        .sponsored-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+        }
+        
+        .sponsored-badge {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .sponsored-badge i {
+            font-size: 10px;
+        }
+        
+        .sponsored-count {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .campaign-list {
             list-style-type: none;
-            padding: 10px; /* Added padding */
+            padding: 10px;
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
         }
-        .campaign-item, .profile-item, .quran-item, .adhkar-item {
+        
+        .campaign-item {
             border: 1px solid #cccccc;
             border-radius: 8px;
             overflow: hidden;
-            width: 280px; /* Slightly reduced width */
+            width: 280px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s;
+            position: relative;
         }
-        .campaign-item:hover, .profile-item:hover, .quran-item:hover, .adhkar-item:hover {
+        
+        .campaign-item.sponsored {
+            border: 2px solid #FFD700;
+            box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+        }
+        
+        .campaign-item:hover {
             transform: translateY(-5px);
         }
+        
+        .sponsored-ribbon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .sponsored-ribbon i {
+            font-size: 10px;
+        }
+        
+        .organic-section {
+            margin-top: 20px;
+        }
+        
+        .organic-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .organic-badge {
+            background: #f0f0f0;
+            color: #333;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode .sponsored-section {
+            background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+            border-color: rgba(255,215,0,0.3);
+        }
+        
+        body.dark-mode .sponsored-count {
+            color: #b0b0b0;
+        }
+        
+        body.dark-mode .campaign-item {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        
+        body.dark-mode .campaign-item.sponsored {
+            border-color: #FFD700;
+        }
+        
+        body.dark-mode .organic-header {
+            border-bottom-color: #333;
+        }
+        
+        body.dark-mode .organic-badge {
+            background: #333;
+            color: #e0e0e0;
+        }
+        
         .campaign-image img, .profile-image img {
             width: 100%;
             height: auto;
         }
-        .campaign-details, .profile-details, .quran-details, .adhkar-details {
-            padding: 12px; /* Adjusted padding */
+        .campaign-details, .profile-details {
+            padding: 12px;
         }
-        .campaign-details h2, .profile-details h2, .quran-details h2, .adhkar-details h2 {
+        .campaign-details h2, .profile-details h2 {
             margin: 0 0 8px;
             color: #333333;
-            font-size: 14px; /* Reduced font size */
+            font-size: 14px;
         }
-        .campaign-details p, .profile-details p, .quran-details p, .adhkar-details p {
+        .campaign-details p, .profile-details p {
             color: #555555;
-            font-size: 0.85em; /* Adjusted font size */
+            font-size: 0.85em;
         }
         a {
             color: #007bff;
@@ -69,196 +188,90 @@
             text-decoration: underline;
         }
 
-        /* Additional styles for Hadith section */
-        .hadith-list {
+        .profile-list {
+            list-style-type: none;
+            padding: 10px;
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            padding: 0;
-            list-style-type: none;
         }
-
-        .hadith-item {
+        
+        .profile-item {
             border: 1px solid #cccccc;
             border-radius: 8px;
             overflow: hidden;
-            width: 280px; /* Slightly reduced width */
+            width: 280px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s;
         }
-
-        .hadith-item:hover {
+        
+        .profile-item:hover {
             transform: translateY(-5px);
         }
-
-        .hadith-details {
-            padding: 12px; /* Adjusted padding */
+        
+        .profile-image img {
+            width: 100%;
+            height: auto;
         }
-
-        .hadith-details h2 {
+        
+        .profile-details {
+            padding: 12px;
+        }
+        
+        .profile-details h2 {
             margin: 0 0 8px;
             color: #333333;
-            font-size: 14px; /* Reduced font size */
+            font-size: 14px;
         }
-
-        .hadith-details p {
-            color: #555555;
-            font-size: 0.85em; /* Adjusted font size */
-        }
-
-        .hadith-details strong {
-            font-weight: bold;
-        }
-
-        .hadith-details em {
-            font-style: italic;
-        }
-
-        /* Styling for the "No suggested users yet" message */
-        .no-suggested-users {
-            text-align: center;
-            margin: 20px 0;
-            padding: 12px; /* Adjusted padding */
-            background-color: #e0f7e0; /* Light green background */
-            border-radius: 5px;
-            color: #228b22; /* Forest green text */
-            font-size: 13px; /* Adjusted font size */
-            border: 1px solid #2e8b57; /* Green border */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 600px) {
-            .no-suggested-users {
-                font-size: 11px; /* Adjust font size for mobile */
-            }
-        }
-
-
-
-/* Dark Mode Styles */
-body.dark-mode {
-    background-color: #121212; /* Dark background */
-    color: #ffffff; /* Light text */
-}
-
-body.dark-mode header,
-body.dark-mode footer,
-body.dark-mode section,
-body.dark-mode .left-aside,
-body.dark-mode .right-aside,
-body.dark-mode .upper-post,
-body.dark-mode .campaign-content,
-body.dark-mode .react div {
-    background-color: #1e1e1e; /* Slightly lighter dark background */
-    color: #ffffff; /* Light text */
-}
-
-body.dark-mode .campaign-category {
-    background-color: #333333; /* Darker background for category */
-    color: #ffffff; /* Light text */
-}
-
-body.dark-mode .objectives-activities {
-    background-color: #262626; /* Dark background for objectives */
-    border-left: 4px solid #3498db; /* Accent border */
-    color: #ffffff; /* Light text */
-}
-
-body.dark-mode .search-container input[type="text"] {
-    background-color: #333333; /* Dark background for input */
-    color: #ffffff; /* Light text */
-    border: 1px solid #444444; /* Dark border */
-}
-
-body.dark-mode .search-container .btn-reset {
-    color: #b0b0b0; /* Light icon color */
-}
-
-body.dark-mode button:not(.btn-search, .btn-reset) {
-    background-color: #262626; /* Dark background for buttons */
-    color: #ffffff; /* Light text */
-}
-
-body.dark-mode .explore-link i {
-    color: #ffffff; /* Light icon color */
-}
-
-body.dark-mode .love-count,
-body.dark-mode #view-count,
-body.dark-mode .comment-count {
-    color: #ffffff; /* Light text for counts */
-}
-
-
-body.dark-mode .affiliate-link {
-    display: inline-block;
-    margin-bottom: 20px;
-    padding: 10px 15px;
-    background-color: #3498db; /* Accent color for buttons */
-    color: #ffffff;
-    border-radius: 5px;
-    text-decoration: none;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-}
-
-body.dark-mode .affiliate-link:hover {
-    background-color: #2980b9; /* Darker accent color on hover */
-}
-
-body.dark-mode .affiliate-link i {
-    margin-right: 8px; /* Space between icon and text */
-}
-    </style>
-
-        <style type="text/css">
         
+        .profile-details p {
+            color: #555555;
+            font-size: 0.85em;
+        }
 
+        .sub {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px; 
+            padding: 14px;
+            border-radius: 10px; 
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s ease;
+        }
 
-    .sub {
-    display: flex;
-    align-items: center;
-    gap: 12px; /* slightly bigger */
-    margin-bottom: 14px; 
-    padding: 14px; /* increased */
-    border-radius: 10px; 
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    transition: transform 0.2s ease;
-}
+        .sub:hover {
+            transform: translateY(-2px); 
+        }
 
-.sub:hover {
-    transform: translateY(-2px); 
-}
+        .sub i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: #4b5563;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid #f9fafb;
+        }
 
-.sub i {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;   /* increased */
-    height: 38px;  /* increased */
-    font-size: 16px; /* slightly bigger */
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #4b5563;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 1px solid #f9fafb;
-}
+        .sub h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
 
-.sub h2 {
-    margin: 0;
-    font-size: 18px;  /* slightly larger */
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.sub p {
-    margin: 5px 0 0;
-    font-size: 13px;  /* increased */
-    color: #6b7280;
-    line-height: 1.45;
-}
+        .sub p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.45;
+        }
 
         /* Dark mode for sub elements */
         body.dark-mode .sub {
@@ -280,194 +293,275 @@ body.dark-mode .affiliate-link i {
             color: #a0a0a0;
         }
 
+        /* Empty state */
+        .no-query {
+            text-align: center;
+            padding: 40px 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            color: #6c757d;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
 
-        /* Empty state for search query */
-.no-query {
-    text-align: center;
-    padding: 40px 15px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 10px;
-    color: #6c757d;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    margin-top: 20px;
-}
+        .no-query i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ced4da;
+        }
 
-.no-query i {
-    font-size: 48px;
-    margin-bottom: 15px;
-    color: #ced4da;
-}
+        .no-query p {
+            margin: 0;
+            font-size: 14px;
+        }
 
-.no-query p {
-    margin: 0;
-    font-size: 14px;
-}
+        .no-query .query-time {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            align-items: center;
+        }
 
-.no-query .query-time {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-    align-items: center;
-}
+        .no-query .query-time i {
+            font-size: 18px;
+            margin-right: 8px;
+            margin-bottom: 0;
+        }
 
-.no-query .query-time i {
-    font-size: 18px;
-    margin-right: 8px;
-    margin-bottom: 0;
-}
+        /* Dark mode empty state */
+        body.dark-mode .no-query {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+        }
 
-/* Dark mode styles */
-body.dark-mode .no-query {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    color: #e0e0e0;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-}
+        body.dark-mode .no-query i {
+            color: #555555;
+        }
 
-body.dark-mode .no-query i {
-    color: #555555;
-}
+        body.dark-mode .no-query p {
+            color: #aaaaaa;
+        }
 
-body.dark-mode .no-query p {
-    color: #aaaaaa;
-}
-
-body.dark-mode .no-query .query-time {
-    color: #888888;
-}
-</style>
+        body.dark-mode .no-query .query-time {
+            color: #888888;
+        }
+    </style>
 </head>
 <body>
 
-
-   <div class="sub">
-   <i class="fas fa-search"></i>
-   <div>
-       <h2>Search Results</h2>
-       <p>Browse the causes, users, or content matching your search query.</p>
-   </div>
-</div>
-
-  
-    {% if campaigns or profiles or quran_verses or adhkar or hadiths %}
-        {% if campaigns %}
-            <!-- Display Campaigns -->
-            <h2 style="padding:10px; font-size:16px;">Causes</h2>
-            <ul class="campaign-list">
-                {% for campaign in campaigns %}
-                <li class="campaign-item">
-                    {% if campaign.poster %}
-                    <a href="{{ campaign.poster.url }}">
-                        <img src="{{ campaign.poster.url }}" alt="Image Description" id="campaign-image" style="max-width: 50%; height: auto;">
-                    </a>
-                    {% else %}
-                    <p style="padding: 20px;">No file associated with this campaign.</p>
+    <div class="sub">
+        <i class="fas fa-search"></i>
+        <div>
+            <h2>Search Results{% if search_query %} for "{{ search_query }}"{% endif %}</h2>
+            <p>
+                {% if sponsored_count or organic_count %}
+                    Found {{ sponsored_count|add:organic_count }} causes
+                    {% if sponsored_count %}
+                        ({{ sponsored_count }} sponsored)
                     {% endif %}
-                    <div class="campaign-details">
-                        <h2><a href="{% url 'view_campaign' campaign.id %}" style="font-size: 16px;">{{ campaign.title }}</a></h2>
-                        <p>{{ campaign.content|truncatewords:30 }}</p>
-                    </div>
-                </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+                {% else %}
+                    Browse causes, users, or content matching your search
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== SPONSORED RESULTS SECTION ===== -->
+    {% if boosted_campaigns %}
+    <div class="sponsored-section">
+        <div class="sponsored-header">
+            <span class="sponsored-badge">
+                <i class="fas fa-bolt"></i> Sponsored Results
+            </span>
+            <span class="sponsored-count">{{ sponsored_count }} promoted causes</span>
+        </div>
         
-        {% if profiles %}
-            <!-- Display Profiles -->
-            <h2 style="padding:10px; font-size:16px;">Profiles</h2>
-            <ul class="profile-list">
-                {% for profile in profiles %}
-                <li class="profile-item">
-                    <div class="profile-image">
-                        <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}">
+        <ul class="campaign-list">
+            {% for item in boosted_campaigns %}
+            <li class="campaign-item sponsored" onclick="trackSearchClick({{ item.boost.id }})">
+                <div class="sponsored-ribbon">
+                    <i class="fas fa-star"></i> Promoted
+                </div>
+                {% if item.campaign.poster %}
+                <div class="campaign-image">
+                    <img src="{{ item.campaign.poster.url }}" alt="{{ item.campaign.title }}">
+                </div>
+                {% endif %}
+                <div class="campaign-details">
+                    <h2>
+                        <a href="{% url 'campaign_journey' campaign_id=item.campaign.id %}" style="font-size: 16px;">
+                            {{ item.campaign.title }}
+                        </a>
+                    </h2>
+                    <p>{{ item.campaign.content|truncatewords:20 }}</p>
+                    <div style="display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: #666;">
+                        <span><i class="fas fa-heart" style="color: #ff4d4f;"></i> {{ item.campaign.get_love_count }}</span>
+                        <span><i class="fas fa-users"></i> {{ item.campaign.get_follower_count }}</span>
+                        <span><i class="fas fa-clock"></i> {{ item.campaign.days_left }}d left</span>
                     </div>
-                    <div class="profile-details">
-                        <h2><a href="{% url 'profile_view' profile.user.username %}">@{{ profile.user.username }}</a></h2>
-                        <p>{{ profile.bio|truncatewords:20 }}</p>
+                    <div style="margin-top: 8px; font-size: 11px;">
+                        <strong>Bid:</strong> ${{ item.bid_amount }}
                     </div>
-                </li>
-                {% endfor %}
-            </ul>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ===== ORGANIC RESULTS SECTION ===== -->
+    {% if organic_campaigns %}
+    <div class="organic-section">
+        <div class="organic-header">
+            <span class="organic-badge">
+                <i class="fas fa-leaf"></i> Organic Results
+            </span>
+            <span class="sponsored-count">{{ organic_count }} causes</span>
+        </div>
+        
+        <ul class="campaign-list">
+            {% for item in organic_campaigns %}
+            <li class="campaign-item">
+                {% if item.campaign.poster %}
+                <div class="campaign-image">
+                    <img src="{{ item.campaign.poster.url }}" alt="{{ item.campaign.title }}">
+                </div>
+                {% endif %}
+                <div class="campaign-details">
+                    <h2>
+                        <a href="{% url 'campaign_journey' campaign_id=item.campaign.id %}" style="font-size: 16px;">
+                            {{ item.campaign.title }}
+                        </a>
+                    </h2>
+                    <p>{{ item.campaign.content|truncatewords:20 }}</p>
+                    <div style="display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: #666;">
+                        <span><i class="fas fa-heart" style="color: #ff4d4f;"></i> {{ item.campaign.get_love_count }}</span>
+                        <span><i class="fas fa-users"></i> {{ item.campaign.get_follower_count }}</span>
+                        <span><i class="fas fa-clock"></i> {{ item.campaign.days_left }}d left</span>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ===== PROFILES SECTION ===== -->
+    {% if profiles %}
+    <div class="organic-section">
+        <div class="organic-header">
+            <span class="organic-badge">
+                <i class="fas fa-user"></i> Profiles
+            </span>
+            <span class="sponsored-count">{{ profiles|length }} users</span>
+        </div>
+        
+        <ul class="profile-list">
+            {% for profile in profiles %}
+            <li class="profile-item">
+                <div class="profile-image">
+                    <img src="{{ profile.image.url }}" alt="{{ profile.user.username }}">
+                </div>
+                <div class="profile-details">
+                    <h2><a href="{% url 'profile_view' profile.user.username %}">@{{ profile.user.username }}</a></h2>
+                    <p>{{ profile.bio|truncatewords:20 }}</p>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ===== NO RESULTS ===== -->
+    {% if not boosted_campaigns and not organic_campaigns and not profiles %}
+    <div class="no-query">
+        <i class="material-icons">search_off</i>
+        <p>No results found matching your query</p>
+        {% if search_query %}
+            <p>No causes or users found for "{{ search_query }}"</p>
         {% endif %}
-
-{% else %}
-<div class="no-query">
-    <i class="material-icons">search_off</i>
-    <p>No results found matching your query</p>
-    <p class="query-time">
-        <i class="material-icons">info</i> Try different keywords or check your spelling
-    </p>
-</div>
-{% endif %}
-
-<script type="text/javascript">
-function switchColor() {
-    const body = document.body;
-    const isDarkMode = body.classList.toggle('dark-mode'); // Toggle dark mode class
-    var reactDivs = document.querySelectorAll('.react');
-
-    // Update background and text colors for all elements
-    const elementsToUpdate = document.querySelectorAll(
-        'header, footer, section, .left-aside, .right-aside, .upper-post, .campaign-content, .react, .search-container input, .search-container .btn-reset'
-    );
-
-    elementsToUpdate.forEach(element => {
-        element.classList.toggle('dark-mode', isDarkMode);
-    });
-
-    // Update text colors for specific elements
-    const textElements = document.querySelectorAll(
-        'h1, h2, h3, h4, p, li, .campaign-nav, .campaign-nav a, .btn, .reaction, .action-item, .action-item a, .carousel, .ad, .slide, .ad a, .explore-link, .love-count, #view-count, .comment-count'
-    );
-
-    textElements.forEach(element => {
-        element.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update buttons
-    const buttons = document.querySelectorAll('button:not(.btn-search, .btn-reset)');
-    buttons.forEach(button => {
-        button.style.backgroundColor = isDarkMode ? '#262626' : '';
-        button.style.color = isDarkMode ? '#ffffff' : '#000000';
-    });
-
-    // Update `.react` divs
-    if (reactDivs.length > 0) {
-        reactDivs.forEach(function(reactDiv) {
-            reactDiv.style.backgroundColor = isDarkMode ? "#262626" : "";
-            reactDiv.style.color = isDarkMode ? "white" : "black";
-
-            if (isDarkMode) {
-                reactDiv.classList.add('react-hover');
-            } else {
-                reactDiv.classList.remove('react-hover');
-                reactDiv.style.backgroundColor = "";
-            }
-        });
-    }
-
-    // Update input field and reset button
-    const inputField = document.querySelector('.search-container input[type="text"]');
-    const inputResetButton = document.querySelector('.search-container .btn-reset');
-
-    if (inputField) {
-        inputField.style.backgroundColor = isDarkMode ? '#333333' : '#ffffff';
-        inputField.style.color = isDarkMode ? '#ffffff' : '#000000';
-    }
-
-    if (inputResetButton) {
-        inputResetButton.style.color = '#b0b0b0';
-    }
-}
-
-</script>
-
+        <p class="query-time">
+            <i class="material-icons">info</i> Try different keywords or check your spelling
+        </p>
+    </div>
+    {% endif %}
 
     <script type="text/javascript">
-        // JavaScript Functions
+        function switchColor() {
+            const body = document.body;
+            const isDarkMode = body.classList.toggle('dark-mode');
+            var reactDivs = document.querySelectorAll('.react');
+
+            const elementsToUpdate = document.querySelectorAll(
+                'header, footer, section, .left-aside, .right-aside, .upper-post, .campaign-content, .react, .search-container input, .search-container .btn-reset'
+            );
+
+            elementsToUpdate.forEach(element => {
+                element.classList.toggle('dark-mode', isDarkMode);
+            });
+
+            const textElements = document.querySelectorAll(
+                'h1, h2, h3, h4, p, li, .campaign-nav, .campaign-nav a, .btn, .reaction, .action-item, .action-item a, .carousel, .ad, .slide, .ad a, .explore-link, .love-count, #view-count, .comment-count'
+            );
+
+            textElements.forEach(element => {
+                element.style.color = isDarkMode ? '#ffffff' : '#000000';
+            });
+
+            const buttons = document.querySelectorAll('button:not(.btn-search, .btn-reset)');
+            buttons.forEach(button => {
+                button.style.backgroundColor = isDarkMode ? '#262626' : '';
+                button.style.color = isDarkMode ? '#ffffff' : '#000000';
+            });
+
+            if (reactDivs.length > 0) {
+                reactDivs.forEach(function(reactDiv) {
+                    reactDiv.style.backgroundColor = isDarkMode ? "#262626" : "";
+                    reactDiv.style.color = isDarkMode ? "white" : "black";
+
+                    if (isDarkMode) {
+                        reactDiv.classList.add('react-hover');
+                    } else {
+                        reactDiv.classList.remove('react-hover');
+                        reactDiv.style.backgroundColor = "";
+                    }
+                });
+            }
+
+            const inputField = document.querySelector('.search-container input[type="text"]');
+            const inputResetButton = document.querySelector('.search-container .btn-reset');
+
+            if (inputField) {
+                inputField.style.backgroundColor = isDarkMode ? '#333333' : '#ffffff';
+                inputField.style.color = isDarkMode ? '#ffffff' : '#000000';
+            }
+
+            if (inputResetButton) {
+                inputResetButton.style.color = '#b0b0b0';
+            }
+        }
+
+        // Track clicks on sponsored results
+        function trackSearchClick(boostId) {
+            fetch('/track-boost-click/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    boost_id: boostId,
+                    placement: 'search_results'
+                })
+            }).catch(error => console.error('Error tracking click:', error));
+        }
+    </script>
+
+    <script type="text/javascript">
         function uploadAudio() {
             var input = document.createElement('input');
             input.type = 'file';
-            input.accept = 'audio/*, video/*'; // Limit file selection to audio files
+            input.accept = 'audio/*, video/*';
 
             input.onchange = function(e) {
                 var file = e.target.files[0];
@@ -488,7 +582,6 @@ function switchColor() {
 
         window.onload = function() {
             var audio = document.getElementById('bgAudio');
-           
             var bgAudioFile = localStorage.getItem('bgAudioFile');
             var audioPosition = parseFloat(localStorage.getItem('bgAudioPosition'));
 
@@ -508,69 +601,24 @@ function switchColor() {
             localStorage.setItem('bgAudioPosition', audio.currentTime);
         });
 
+        document.addEventListener('DOMContentLoaded', function() {
+            var mediaQuery = window.matchMedia('(max-width: 768px)');
+            var leftAside = document.querySelector('.left-aside');
+            var rightAside = document.querySelector('.right-aside');
 
+            function handleMediaQueryChange(e) {
+                if (e.matches) {
+                    leftAside.style.display = 'none';
+                    rightAside.style.display = 'none';
+                } else {
+                    leftAside.style.display = 'block';
+                    rightAside.style.display = 'block';
+                }
+            }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    var mediaQuery = window.matchMedia('(max-width: 768px)');
-    var leftAside = document.querySelector('.left-aside');
-    var rightAside = document.querySelector('.right-aside');
-
-    function handleMediaQueryChange(e) {
-      if (e.matches) {
-        leftAside.style.display = 'none';
-        rightAside.style.display = 'none';
-      } else {
-        leftAside.style.display = 'block';
-        rightAside.style.display = 'block';
-      }
-    }
-
-    mediaQuery.addListener(handleMediaQueryChange);
-    handleMediaQueryChange(mediaQuery);
-  });
-
-
-
-    </script>
-    <script type="text/javascript">
-        
-document.addEventListener("DOMContentLoaded", function() {
-    const navbarToggle = document.getElementById("navbarToggle");
-    const navbar = document.getElementById("navbar");
-    const popupClose = document.getElementById("popupClose");
-
-    // Toggle navbar visibility
-    navbarToggle.addEventListener("click", function() {
-        if (navbar.style.display === "block") {
-            navbar.style.display = "none";
-        } else {
-            navbar.style.display = "block";
-        }
-    });
-
-    // Close popup when clicking the close button
-    popupClose.addEventListener("click", function() {
-        navbar.style.display = "none";
-    });
-
-    // Adjust navbar display on window resize
-    window.addEventListener("resize", function() {
-        if (window.innerWidth > 768) {
-            navbar.style.display = "none";
-        } else if (navbar.style.display === "block") {
-            navbar.style.display = "block";
-        } else {
-            navbar.style.display = "none";
-        }
-    });
-
-    // Ensure the navbar is initially hidden on page load for larger screens
-    if (window.innerWidth > 768) {
-        navbar.style.display = "none";
-    } else {
-        navbar.style.display = "none"; // or "block" based on your initial requirement
-    }
-});
+            mediaQuery.addListener(handleMediaQueryChange);
+            handleMediaQueryChange(mediaQuery);
+        });
     </script>
 </body>
 </html>

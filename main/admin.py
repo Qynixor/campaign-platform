@@ -18,7 +18,49 @@ from .models import (
 )
 
 
-from .models import CampaignFollow
+# admin.py
+from django.contrib import admin
+from django.utils import timezone
+from .models import (BoostedJourney, BoostedJourneyImpression, 
+                     BoostedJourneyClick, KeywordBidAuction, 
+                     BoostedJourneyPackage,   CampaignFollow ,)
+@admin.register(BoostedJourney)
+class BoostedJourneyAdmin(admin.ModelAdmin):
+    list_display = ['campaign', 'creator', 'placement_type', 'status', 'bid_amount', 'flat_fee', 'start_date', 'end_date', 'is_paid']
+    list_filter = ['placement_type', 'status', 'is_paid']
+    search_fields = ['campaign__title', 'creator__username', 'keywords']
+    readonly_fields = ['impressions', 'clicks', 'created_at', 'updated_at']
+    
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['categories'].required = False  # ← ADD THIS
+        return form
+
+
+
+
+@admin.register(BoostedJourneyImpression)
+class BoostedJourneyImpressionAdmin(admin.ModelAdmin):
+    list_display = ['boosted_journey', 'user', 'placement_context', 'viewed_at']
+    list_filter = ['placement_context', 'viewed_at']
+
+
+@admin.register(BoostedJourneyClick)
+class BoostedJourneyClickAdmin(admin.ModelAdmin):
+    list_display = ['boosted_journey', 'user', 'placement_context', 'clicked_at']
+    list_filter = ['placement_context', 'clicked_at']
+
+
+@admin.register(KeywordBidAuction)
+class KeywordBidAuctionAdmin(admin.ModelAdmin):
+    list_display = ['keyword', 'boosted_journey', 'bid_amount', 'position', 'auction_date']
+
+
+@admin.register(BoostedJourneyPackage)
+class BoostedJourneyPackageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'price', 'duration_days', 'is_active']
+    list_filter = ['is_active']
+    prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(CampaignFollow)
 class CampaignFollowAdmin(admin.ModelAdmin):

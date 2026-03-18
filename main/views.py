@@ -21,7 +21,13 @@ from .models import (
     Profile, Campaign, Comment,Activity, SupportCampaign,
     User, Love, CampaignView, Notification
 )
+# Existing imports
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+# ... all your existing imports ...
 
+# ADD THIS LINE
+from .boost_utils import get_featured_spot_campaigns, record_boost_impression
 from django.http import JsonResponse
 from django.core.exceptions import MultipleObjectsReturned
 from django.http import HttpResponseServerError
@@ -1226,7 +1232,6 @@ def fill_paypal_account(request):
 
 
 
-
 @login_required
 def search_campaign(request):
     
@@ -1236,26 +1241,47 @@ def search_campaign(request):
     # Initialize empty querysets for all searchable models
     campaigns = Campaign.objects.none()
     profiles = Profile.objects.none()
-  
+    
+    # Initialize boosted campaigns list
+    boosted_campaigns = []
+    organic_campaigns = []
     
     if query:
-        # Search across different models - CLEAN APPROACH
-        campaigns = Campaign.objects.filter(
+        # Get boosted search results first
+        boosted_journeys = BoostedJourney.objects.get_search_boosts(query)
+        boosted_campaign_ids = [bj.campaign_id for bj in boosted_journeys]
+        
+        # Get organic campaigns (excluding boosted ones)
+        organic_campaigns_qs = Campaign.objects.filter(
             Q(title__icontains=query) | 
             Q(content__icontains=query) |
             Q(category__icontains=query) |
             Q(tags__name__icontains=query)
-        ).distinct()  # This SHOULD prevent duplicates
-            # Temporary debug - remove after testing
-      
-        # Alternative: More explicit approach if you're still worried
-        # campaigns = Campaign.objects.distinct().filter(
-        #     Q(title__icontains=query) | 
-        #     Q(content__icontains=query) |
-        #     Q(category__icontains=query) |
-        #     Q(tags__name__icontains=query)
-        # )
+        ).exclude(
+            id__in=boosted_campaign_ids
+        ).distinct().annotate(
+            relevance=Count('loves') + Count('comments') * 2
+        ).order_by('-relevance', '-timestamp')
         
+        # Format boosted results with their boost info
+        for boost in boosted_journeys:
+            boosted_campaigns.append({
+                'campaign': boost.campaign,
+                'boost': boost,
+                'type': 'sponsored',
+                'bid_amount': boost.bid_amount
+            })
+            # Record impression
+            record_boost_impression(boost, request, 'search_results')
+        
+        # Format organic results
+        for campaign in organic_campaigns_qs:
+            organic_campaigns.append({
+                'campaign': campaign,
+                'type': 'organic'
+            })
+        
+        # Search profiles (unchanged)
         profiles = Profile.objects.filter(
             Q(user__username__icontains=query) |
             Q(user__first_name__icontains=query) |
@@ -1275,7 +1301,7 @@ def search_campaign(request):
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
 
-    # Top Contributors logic
+    # Top Contributors logic (unchanged)
     engaged_users = set()
 
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
@@ -1285,7 +1311,7 @@ def search_campaign(request):
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
     # Combine all engagement pairs
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
+    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
     # Count number of unique campaigns each user engaged with
@@ -1308,27 +1334,38 @@ def search_campaign(request):
 
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
+    
+    # ========== NEW: GET FEATURED SPOT CAMPAIGNS ==========
+    # Get featured spot campaigns (mix of boosted + relevant organic)
+    featured_spot_campaigns = get_featured_spot_campaigns(
+        limit=5, 
+        exclude_campaign_ids=boosted_campaign_ids if query else None
+    )
+    
+    # Record impressions for featured spot
+    for item in featured_spot_campaigns:
+        if item.get('type') == 'boosted' and 'boost' in item:
+            record_boost_impression(item['boost'], request, 'featured_spot_search_page')
 
     context = {
-       
-        'campaigns': campaigns,
+        # Replace single campaigns with separated lists
+        'boosted_campaigns': boosted_campaigns,
+        'organic_campaigns': organic_campaigns,
         'profiles': profiles,
-      
         'user_profile': user_profile,
         'unread_count': unread_count,
         'unread_notifications': unread_notifications,
-     
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
-        'search_query': query,  # Pass the search query back to template
+        'search_query': query,
+        # Add counts for template display
+        'sponsored_count': len(boosted_campaigns),
+        'organic_count': len(organic_campaigns),
+        # Add featured spot campaigns
+        'featured_spot_campaigns': featured_spot_campaigns,
     }
     
     return render(request, 'main/search_results.html', context)
-
-
-
-
 
 
 @login_required
@@ -2831,93 +2868,91 @@ def clone_journey(request, original_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+
 def face(request):
-   
-   
+    # ===== DEBUG =====
+    import sys
+    print("="*50, file=sys.stderr)
+    print("✅ FACE VIEW STARTED", file=sys.stderr)
+    print(f"User: {request.user}", file=sys.stderr)
+    # ===== END DEBUG =====
+    
     user_profile = get_object_or_404(Profile, user=request.user)
-    category_filter = request.GET.get('category', '')  # Get category filter from request
+    # ... rest of your code ...
+    
+    # ========== NEW: GET FEATURED SPOT CAMPAIGNS ==========
+    # Get mix of boosted + relevant organic campaigns for right sidebar
+    try:
+        featured_spot_campaigns = get_featured_spot_campaigns(limit=5)
+        print(f"✅ Got {len(featured_spot_campaigns)} featured campaigns", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Error getting featured campaigns: {e}", file=sys.stderr)
+        featured_spot_campaigns = []
+    
+    # Record impressions for boosted items in featured spot
+    for item in featured_spot_campaigns:
+        if item.get('type') == 'boosted' and 'boost' in item:
+            try:
+                record_boost_impression(
+                    item['boost'],
+                    request,
+                    'featured_spot_sidebar'
+                )
+                print(f"✅ Recorded impression for {item['campaign'].title}", file=sys.stderr)
+            except Exception as e:
+                print(f"❌ Error recording impression: {e}", file=sys.stderr)
 
-    campaign = Campaign.objects.last()
-
-    if user_profile.last_campaign_check is None:
-        user_profile.last_campaign_check = timezone.now()
-        user_profile.save()
-
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-
-    user_profile.last_campaign_check = timezone.now()
-    user_profile.save()
-
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter() \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)\
-      
-
-    # ✅ Apply category filter before slicing
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]  # Show top 10 trending campaigns
-
-    # Top Contributors logic
-    engaged_users = set()
-
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain( love_pairs, comment_pairs, view_pairs,
-         activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]  # Top 5
-
-    ads = NativeAd.objects.all()
-    categories = Campaign.objects.values_list('category', flat=True).distinct()  # Fetch unique categories
-
+    print("✅ ABOUT TO RENDER TEMPLATE", file=sys.stderr)
+    print(f"Context keys: {list(locals().keys())}", file=sys.stderr)
+    print("="*50, file=sys.stderr)
+    
     return render(request, 'main/face.html', {
         'ads': ads,
         'campaign': campaign,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'form': form,
-      
-        'suggested_users': suggested_users,
         'trending_campaigns': trending_campaigns,
+        'new_causes': new_causes,
+        'suggested_causes': suggested_causes,
         'top_contributors': top_contributors,
-        'categories': categories,  # Pass categories to template
-        'selected_category': category_filter,  # Pass selected category to retain state
+        'categories': categories,
+        'selected_category': category_filter,
+        'featured_spot_campaigns': featured_spot_campaigns,
     })
 
 
 
+def test_featured(request):
+    from .boost_utils import get_featured_spot_campaigns
+    
+    featured = get_featured_spot_campaigns(limit=5)
+    
+    return render(request, 'main/test_featured.html', {
+        'featured_spot_campaigns': featured,
+        'count': len(featured)
+    })
 
 
+from django.http import JsonResponse
+from .boost_utils import record_boost_click
 
-
+def track_boost_click(request):
+    """AJAX endpoint to track boosted clicks"""
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        boost_id = data.get('boost_id')
+        placement = data.get('placement')
+        
+        try:
+            from .models import BoostedJourney
+            boost = BoostedJourney.objects.get(id=boost_id)
+            record_boost_click(boost, request, placement)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    return JsonResponse({'status': 'error'}, status=405)
 
 
 @login_required
@@ -3716,17 +3751,17 @@ def face(request):
     # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]  # Top 5
 
-    ads = NativeAd.objects.all()
+    
     categories = Campaign.objects.values_list('category', flat=True).distinct()  # Fetch unique categories
 
     return render(request, 'main/face.html', {
-        'ads': ads,
+        
         'campaign': campaign,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-        'form': form,
+       
       
-        'suggested_users': suggested_users,
+      
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
         'categories': categories,  # Pass categories to template

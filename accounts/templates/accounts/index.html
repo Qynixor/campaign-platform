@@ -1019,6 +1019,48 @@
       height: 140px;
     }
   }
+
+  /* Sponsored card styles */
+.journey-card.sponsored {
+  border: 2px solid #FFD700 !important;
+  position: relative;
+  overflow: visible;
+  box-shadow: 0 8px 20px rgba(255,215,0,0.15);
+}
+
+.journey-card.sponsored:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 30px -8px rgba(255,215,0,0.25);
+  border-color: #FFA500 !important;
+}
+
+.sponsored-ribbon {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(255,215,0,0.3);
+}
+
+/* Dark mode sponsored cards */
+.dark-mode .journey-card.sponsored {
+  border-color: #FFD700 !important;
+  background: #1e1e1e;
+}
+
+.dark-mode .sponsored-ribbon {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+}
 </style>
 
 <script>
@@ -1068,14 +1110,12 @@
     // Category sections for lazy loading
     const categorySections = [];
     {% if category_popular %}
-      {% for category_value, category_campaigns in category_popular.items %}
-        {% if category_campaigns %}
-          categorySections.push({
-            id: 'category-{{ category_value|slugify }}-section',
-            url: '/section/category/{{ category_value|urlencode }}/',
-            loaded: false
-          });
-        {% endif %}
+      {% for category_value, category_data in category_popular.items %}
+        categorySections.push({
+          id: 'category-{{ category_value|slugify }}-section',
+          url: '/section/category/{{ category_value|urlencode }}/',
+          loaded: false
+        });
       {% endfor %}
     {% endif %}
     
@@ -1098,7 +1138,7 @@
         }
       });
     }, {
-      rootMargin: '200px', // Start loading when section is 200px from viewport
+      rootMargin: '200px',
       threshold: 0.1
     });
     
@@ -1112,7 +1152,6 @@
     
     // Function to load a section via AJAX
     function loadSection(container, sectionData) {
-      // Show loading spinner in container
       container.innerHTML = `
         <div class="section-header">
           <h2><i class="fas fa-spinner fa-spin"></i> Loading...</h2>
@@ -1120,18 +1159,13 @@
         <div class="section-placeholder"></div>
       `;
       
-      // Fetch the section content
       fetch(sectionData.url)
         .then(response => response.text())
         .then(html => {
           container.innerHTML = html;
           sectionData.loaded = true;
           container.classList.add('lazy-section');
-          
-          // Re-attach click handlers for cards in this section
           attachCardClickHandlers(container);
-          
-          // Update scroll indicators
           setTimeout(updateScrollIndicators, 100);
         })
         .catch(error => {
@@ -1171,14 +1205,11 @@
       chips.forEach(chip => {
         chip.addEventListener('click', function(e) {
           {% if user.is_authenticated %}
-          // Remove active class from all chips
           chips.forEach(c => c.classList.remove('active'));
-          // Add active class to clicked chip
           this.classList.add('active');
           
           const selectedCategory = this.dataset.category;
           
-          // Filter cards
           cards.forEach(card => {
             if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
               card.classList.remove('hidden');
@@ -1187,7 +1218,6 @@
             }
           });
           
-          // Update scroll indicators after filtering
           setTimeout(updateScrollIndicators, 100);
           {% else %}
           e.preventDefault();
@@ -1203,7 +1233,6 @@
     clickableElements.forEach(el => {
       if (el) {
         el.addEventListener('click', function(e) {
-          // Don't block modal close button or login/signup links
           if (e.target.closest('.login-modal-close') || 
               e.target.closest('.btn-login') || 
               e.target.closest('.btn-signup') ||
@@ -1217,20 +1246,16 @@
       }
     });
     {% else %}
-    // ===== AUTHENTICATED USER HANDLING - Navigate to campaign URLs =====
     const allCards = document.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
     allCards.forEach(card => {
       card.addEventListener('click', function(e) {
-        // Get the campaign ID from data attribute
         const campaignId = this.dataset.campaignId;
         if (campaignId) {
-          // Navigate to the campaign journey page
           window.location.href = `/journey/${campaignId}/`;
         }
       });
     });
     
-    // Handle search button - Navigate to search page
     const searchBtn = document.querySelector('.search-btn');
     if (searchBtn) {
       searchBtn.addEventListener('click', function() {
@@ -1243,7 +1268,6 @@
     const chipScroll = document.querySelector('.chip-scroll');
     if (chipScroll) {
       chipScroll.addEventListener('touchstart', function() {
-        // Just to ensure touch events are captured
       }, {passive: true});
     }
     
@@ -1253,7 +1277,6 @@
       const infiniteObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            // Load more content (pagination) - you can implement this later
             console.log('Load more campaigns...');
           }
         });
@@ -1261,7 +1284,7 @@
       infiniteObserver.observe(sentinel);
     }
     
-    // ===== DYNAMIC SCROLL INDICATOR (just arrow icon) =====
+    // ===== DYNAMIC SCROLL INDICATOR =====
     function updateScrollIndicators() {
       const grids = document.querySelectorAll('.card-grid');
       grids.forEach(grid => {
@@ -1270,9 +1293,7 @@
           const header = parentSection.previousElementSibling;
           if (header && header.classList.contains('section-header')) {
             let indicator = header.querySelector('.scroll-indicator');
-            
-            // Check if grid has overflow
-            const hasOverflow = grid.scrollWidth > grid.clientWidth + 10; // +10 for tolerance
+            const hasOverflow = grid.scrollWidth > grid.clientWidth + 10;
             
             if (hasOverflow) {
               if (!indicator) {
@@ -1291,11 +1312,9 @@
       });
     }
     
-    // Run on load and resize
     setTimeout(updateScrollIndicators, 200);
     window.addEventListener('resize', updateScrollIndicators);
     
-    // Also run after any filtering that might change visible cards
     const mutationObserver = new MutationObserver(updateScrollIndicators);
     document.querySelectorAll('.card-grid').forEach(grid => {
       mutationObserver.observe(grid, { childList: true, subtree: true });
@@ -1320,7 +1339,7 @@
       </div>
     </div>
 
-    <!-- Category filters - Horizontal scroll (ALWAYS LOAD FIRST) -->
+    <!-- Category filters -->
     {% if campaign_categories %}
     <div class="category-section">
       <div class="category-label">BROWSE BY CATEGORY</div>
@@ -1348,55 +1367,102 @@
     </div>
     {% endif %}
 
-    <!-- ===== FEATURED SECTION (ALWAYS LOAD FIRST - Critical) ===== -->
-    {% if trending_campaigns.0 %}
+    <!-- ===== FEATURED SPOT SECTION ===== -->
+    {% if featured_spot_campaigns %}
     <div class="featured-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-star" style="color: #FFD700;"></i> 
+          Featured Spot
+          <span class="section-badge" style="font-size: 11px;">{{ featured_spot_campaigns|length }} promoted</span>
+        </h3>
+      </div>
+      
       <div class="featured-grid">
         <!-- Main featured -->
-        <div class="featured-card" data-category="{{ trending_campaigns.0.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ trending_campaigns.0.id }}"{% endif %}>
+        {% with item=featured_spot_campaigns.0 %}
+        <div class="featured-card" data-category="{{ item.campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ item.campaign.id }}"{% endif %} style="position: relative;">
+          {% if item.type == 'boosted' %}
+          <div style="position: absolute; top: 20px; right: 20px; background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 600; z-index: 10; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(255,215,0,0.3);">
+            <i class="fas fa-star" style="font-size: 11px;"></i> Promoted
+          </div>
+          {% endif %}
+          
           <div class="featured-media">
-            <img src="{% if trending_campaigns.0.poster %}{{ trending_campaigns.0.poster.url|cloudinary_cover:'800,400' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=400&fit=crop{% endif %}" 
-                 srcset="{% if trending_campaigns.0.poster %}{{ trending_campaigns.0.poster.url|cloudinary_cover:'1600,800' }} 2x{% endif %}"
-                 alt="{{ trending_campaigns.0.title }}" 
+            <img src="{% if item.campaign.poster %}{{ item.campaign.poster.url|cloudinary_cover:'800,400' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=400&fit=crop{% endif %}" 
+                 srcset="{% if item.campaign.poster %}{{ item.campaign.poster.url|cloudinary_cover:'1600,800' }} 2x{% endif %}"
+                 alt="{{ item.campaign.title }}" 
                  loading="lazy"
                  style="width: 100%; height: 100%; object-fit: cover;">
           </div>
           <div class="featured-content">
-            <div class="featured-category">{{ trending_campaigns.0.get_category_display }}</div>
-            <div class="featured-title">{{ trending_campaigns.0.title|truncatechars:50 }}</div>
+            <div class="featured-category">
+              {{ item.campaign.get_category_display }}
+              {% if item.type == 'boosted' %}
+              <span style="margin-left: 8px; font-size: 10px; background: rgba(255,215,0,0.2); padding: 2px 8px; border-radius: 12px;">⭐ Sponsored</span>
+              {% endif %}
+            </div>
+            <div class="featured-title">{{ item.campaign.title|truncatechars:50 }}</div>
             <div class="featured-creator">
               <img class="creator-avatar" 
-                   src="{% if trending_campaigns.0.user.image %}{{ trending_campaigns.0.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=56&h=56&fit=crop{% endif %}" 
-                   srcset="{% if trending_campaigns.0.user.image %}{{ trending_campaigns.0.user.image.url }} 2x{% endif %}"
-                   alt="@{{ trending_campaigns.0.user.user.username }}" 
+                   src="{% if item.campaign.user.image %}{{ item.campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=56&h=56&fit=crop{% endif %}" 
+                   srcset="{% if item.campaign.user.image %}{{ item.campaign.user.image.url }} 2x{% endif %}"
+                   alt="@{{ item.campaign.user.user.username }}" 
                    loading="lazy">
-              <span>@{{ trending_campaigns.0.user.user.username }}</span>
+              <span>@{{ item.campaign.user.user.username }}</span>
+            </div>
+            <div class="journey-metrics" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #eaeef2;">
+              <span><i class="fas fa-heart" style="color: #ff4d4f;"></i> {{ item.campaign.love_count|default:0|k_format }}</span>
+              <span style="margin-left: 20px;"><i class="fas fa-users" style="color: #1DA1F2;"></i> {{ item.campaign.follower_count|default:0|k_format }}</span>
             </div>
           </div>
+          
+          {% if item.type == 'boosted' %}
+          <div hx-post="{% url 'track_featured_impression' %}" 
+               hx-trigger="revealed"
+               hx-vals='{"boost_id": {{ item.boost.id }}}'
+               hx-swap="none">
+          </div>
+          {% endif %}
         </div>
+        {% endwith %}
         
         <!-- Secondary featured -->
         <div style="display: flex; flex-direction: column; gap: 16px;">
-          {% for campaign in trending_campaigns|slice:"1:3" %}
-          {% if campaign.id %}
-          <div class="featured-card" style="display: flex; height: auto;" data-category="{{ campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
-            <div class="wide-img" style="width: 100px; height: 100px; background-image: url('{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}');"></div>
+          {% for item in featured_spot_campaigns|slice:"1:3" %}
+          {% if item.campaign.id %}
+          <div class="featured-card" style="display: flex; height: auto; position: relative;" data-category="{{ item.campaign.category|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ item.campaign.id }}"{% endif %}>
+            {% if item.type == 'boosted' %}
+            <div style="position: absolute; top: 10px; right: 10px; background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; z-index: 10; display: flex; align-items: center; gap: 3px; box-shadow: 0 2px 6px rgba(255,215,0,0.3);">
+              <i class="fas fa-star" style="font-size: 8px;"></i> Promoted
+            </div>
+            {% endif %}
+            
+            <div class="wide-img" style="width: 100px; height: 100px; background-image: url('{% if item.campaign.poster %}{{ item.campaign.poster.url|cloudinary_optimize:'200,200' }}{% else %}https://images.unsplash.com/photo-1593113598335-c28859f6a0a6?w=200&h=200&fit=crop{% endif %}'); background-size: cover; background-position: center;"></div>
             <div class="wide-content" style="padding: 16px;">
-              <div class="journey-title" style="font-size: 15px; min-height: auto;">{{ campaign.title|truncatechars:25 }}</div>
+              <div class="journey-title" style="font-size: 15px; min-height: auto;">{{ item.campaign.title|truncatechars:25 }}</div>
               <div class="journey-creator" style="margin: 4px 0;">
                 <img class="creator-avatar" 
-                     src="{% if campaign.user.image %}{{ campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
-                     srcset="{% if campaign.user.image %}{{ campaign.user.image.url }} 2x{% endif %}"
-                     alt="@{{ campaign.user.user.username }}" 
+                     src="{% if item.campaign.user.image %}{{ item.campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=24&h=24&fit=crop{% endif %}" 
+                     srcset="{% if item.campaign.user.image %}{{ item.campaign.user.image.url }} 2x{% endif %}"
+                     alt="@{{ item.campaign.user.user.username }}" 
                      loading="lazy"
                      style="width: 24px; height: 24px;">
-                <span>@{{ campaign.user.user.username }}</span>
+                <span>@{{ item.campaign.user.user.username }}</span>
               </div>
               <div class="journey-metrics" style="border: none; padding: 0; margin: 8px 0 0;">
-                <span><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
-                <span><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+                <span style="font-size: 11px;"><i class="fas fa-heart" style="color: #ff4d4f;"></i> {{ item.campaign.love_count|default:0|k_format }}</span>
+                <span style="margin-left: 12px; font-size: 11px;"><i class="fas fa-users" style="color: #1DA1F2;"></i> {{ item.campaign.follower_count|default:0|k_format }}</span>
               </div>
             </div>
+            
+            {% if item.type == 'boosted' %}
+            <div hx-post="{% url 'track_featured_impression' %}" 
+                 hx-trigger="revealed"
+                 hx-vals='{"boost_id": {{ item.boost.id }}}'
+                 hx-swap="none">
+            </div>
+            {% endif %}
           </div>
           {% endif %}
           {% endfor %}
@@ -1407,7 +1473,7 @@
     <div class="divider"></div>
     {% endif %}
 
-    <!-- ===== TRENDING JOURNEYS (ALWAYS LOAD FIRST) ===== -->
+    <!-- ===== TRENDING JOURNEYS ===== -->
     {% if trending_campaigns %}
     <div class="section-header">
       <h2>
@@ -1453,35 +1519,134 @@
     <div class="divider"></div>
     {% endif %}
 
-    <!-- ===== LAZY LOADED SECTIONS ===== -->
-    
-    <!-- Rising Stars (Lazy Loaded) -->
-    <div id="rising-stars-section"></div>
-
-    <!-- Fastest Growing + Most Completed (Lazy Loaded) -->
-    <div id="fastest-growing-section"></div>
-    <div id="most-completed-section"></div>
-
-    <!-- Most Watched (Lazy Loaded) -->
-    <div id="most-watched-section"></div>
-
-    <!-- Most Saved (Lazy Loaded) -->
-    <div id="most-saved-section"></div>
-
-    <!-- Suggested For You (Lazy Loaded) -->
-    <div id="suggested-section"></div>
-
-    <!-- New Journeys (Lazy Loaded) -->
-    <div id="new-journeys-section"></div>
-
-    <!-- Popular by Category Sections (Lazy Loaded) -->
+    <!-- ===== CATEGORY SECTIONS WITH SPOTLIGHT ===== -->
     {% if category_popular %}
-      {% for category_value, category_campaigns in category_popular.items %}
-        {% if category_campaigns %}
-        <div id="category-{{ category_value|slugify }}-section"></div>
+      {% for category_value, category_data in category_popular.items %}
+        {% if category_data.sponsored or category_data.organic %}
+        <!-- Category: {{ category_data.label }} -->
+        <div class="section-header">
+          <h2>
+            <i class="fas 
+              {% if category_value == 'Personal Empowerment' %}fa-hand-holding-heart
+              {% elif category_value == 'Health & Wellbeing Causes' %}fa-heartbeat
+              {% elif category_value == 'Economic Support & Financial Causes' %}fa-coins
+              {% elif category_value == 'Creative & Cultural Causes' %}fa-palette
+              {% elif category_value == 'Mental Health & Emotional Support' %}fa-brain
+              {% elif category_value == 'Career, Work & Opportunity' %}fa-briefcase
+              {% elif category_value == 'Housing, Living & Stability' %}fa-home
+              {% elif category_value == 'Community & Social Impact' %}fa-users
+              {% elif category_value == 'Education & Skill Building' %}fa-graduation-cap
+              {% elif category_value == 'Exploration, Sports & Challenges' %}fa-compass
+              {% elif category_value == 'Religious & Spiritual Causes' %}fa-pray
+              {% else %}fa-tag{% endif %}"></i>
+            {{ category_data.label }}
+          </h2>
+          <span class="section-badge">
+            {% if category_data.sponsored|length %}{{ category_data.sponsored|length }} sponsored • {% endif %}{{ category_data.organic|length }} journeys
+          </span>
+        </div>
+
+        <div class="content-grid">
+          <div class="card-grid">
+            <!-- ===== SPOTLIGHT: SPONSORED CAMPAIGNS (Gold border) ===== -->
+            {% for item in category_data.sponsored %}
+            {% with campaign=item.campaign %}
+            <div class="journey-card sponsored" 
+                 data-category="{{ category_value|slugify }}" 
+                 {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}
+                 style="border: 2px solid #FFD700; position: relative; overflow: visible;">
+              
+              <!-- Sponsored Ribbon -->
+              <div class="sponsored-ribbon">
+                <i class="fas fa-star"></i> Sponsored
+                {% if item.amount %}
+                <span style="margin-left: 4px; background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 12px; font-size: 9px;">${{ item.amount }}</span>
+                {% endif %}
+              </div>
+              
+              <div class="card-media">
+                <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                     srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                     alt="{{ campaign.title }}" 
+                     loading="lazy">
+                <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+              </div>
+              <div class="card-content">
+                <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+                <div class="journey-creator">
+                  <img class="creator-avatar" 
+                       src="{% if campaign.user.image %}{{ campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                       srcset="{% if campaign.user.image %}{{ campaign.user.image.url }} 2x{% endif %}"
+                       alt="@{{ campaign.user.user.username }}" 
+                       loading="lazy">
+                  <span>@{{ campaign.user.user.username }}</span>
+                  {% if campaign.user.profile_verified %}
+                  <i class="fas fa-check-circle verified-badge" style="color: #1DA1F2; font-size: 12px;"></i>
+                  {% endif %}
+                </div>
+                <div class="journey-metrics">
+                  <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+                  <span class="metric-item"><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+                </div>
+              </div>
+              
+              <!-- HTMX tracking -->
+              <div hx-post="{% url 'track_category_impression' %}" 
+                   hx-trigger="revealed"
+                   hx-vals='{"boost_id": {{ item.boost.id }}, "category": "{{ category_value }}"}'
+                   hx-swap="none">
+              </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+            
+            <!-- ===== ORGANIC CAMPAIGNS ===== -->
+            {% for campaign in category_data.organic %}
+            {% if campaign.id %}
+            <div class="journey-card" data-category="{{ category_value|slugify }}" {% if user.is_authenticated %}data-campaign-id="{{ campaign.id }}"{% endif %}>
+              <div class="card-media">
+                <img src="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'400,250' }}{% else %}https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400&h=250&fit=crop{% endif %}" 
+                     srcset="{% if campaign.poster %}{{ campaign.poster.url|cloudinary_optimize:'800,500' }} 2x{% endif %}"
+                     alt="{{ campaign.title }}" 
+                     loading="lazy">
+                <span class="journey-badge">{{ campaign.get_category_display|truncatechars:15 }}</span>
+              </div>
+              <div class="card-content">
+                <div class="journey-title">{{ campaign.title|truncatechars:35 }}</div>
+                <div class="journey-creator">
+                  <img class="creator-avatar" 
+                       src="{% if campaign.user.image %}{{ campaign.user.image.url }}{% else %}https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=28&h=28&fit=crop{% endif %}" 
+                       srcset="{% if campaign.user.image %}{{ campaign.user.image.url }} 2x{% endif %}"
+                       alt="@{{ campaign.user.user.username }}" 
+                       loading="lazy">
+                  <span>@{{ campaign.user.user.username }}</span>
+                  {% if campaign.user.profile_verified %}
+                  <i class="fas fa-check-circle verified-badge" style="color: #1DA1F2; font-size: 12px;"></i>
+                  {% endif %}
+                </div>
+                <div class="journey-metrics">
+                  <span class="metric-item"><i class="fas fa-heart"></i> {{ campaign.love_count|default:0|k_format }}</span>
+                  <span class="metric-item"><i class="fas fa-users"></i> {{ campaign.follower_count|default:0|k_format }}</span>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="divider"></div>
         {% endif %}
       {% endfor %}
     {% endif %}
+
+    <!-- ===== LAZY LOADED SECTIONS ===== -->
+    <div id="rising-stars-section"></div>
+    <div id="fastest-growing-section"></div>
+    <div id="most-completed-section"></div>
+    <div id="most-watched-section"></div>
+    <div id="most-saved-section"></div>
+    <div id="suggested-section"></div>
+    <div id="new-journeys-section"></div>
 
     <!-- Error message if no campaigns -->
     {% if not trending_campaigns and not rising_campaigns and not new_campaigns %}
@@ -1503,7 +1668,7 @@
       </div>
     </div>
     
-    <!-- Loading sentinel for infinite scroll -->
+    <!-- Loading sentinel -->
     <div id="scroll-sentinel"></div>
     <div class="loading-spinner" id="loading-spinner">
       <i class="fas fa-circle-notch"></i>

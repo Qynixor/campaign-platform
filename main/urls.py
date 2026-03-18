@@ -206,7 +206,8 @@ path('campaign/<int:campaign_id>/post-comment/', views.post_comment, name='post_
 path('campaign/<int:campaign_id>/get-stats/', views.get_stats, name='get_stats'),
 path('campaign/<int:campaign_id>/get-menu/', views.get_menu, name='get_menu'),
 path('journey/<int:original_id>/clone/', views.clone_journey, name='clone_journey'),
-
+path('track-boost-click/', views.track_boost_click, name='track_boost_click'),
+path('test-featured/', views.test_featured, name='test_featured'),
 ]
 
 

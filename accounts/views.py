@@ -89,13 +89,19 @@ from django.shortcuts import render
 from django.db.models import Count, Sum, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
-
 import logging
-
-logger = logging.getLogger(__name__)
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.db.models import Count, Q, Sum, F
 from django.db.models.functions import ExtractDay
+from django.utils import timezone
 from datetime import timedelta
+
+from main.models import Campaign, BoostedJourney
+from main.boost_utils import get_category_boosts, record_boost_impression
+
+logger = logging.getLogger(__name__)
 
 def index(request):
     """
@@ -109,11 +115,9 @@ def index(request):
         campaign_categories = Campaign.CATEGORY_CHOICES
         
         # ========== TRENDING CAMPAIGNS ==========
-        # Trending based on engagement (loves + followers)
         trending_campaigns = base_campaigns.annotate(
             love_count_total=Count('loves', distinct=True),
             follower_count_total=Count('followers', distinct=True),
-            # Calculate trending score for display
             trending_score=(
                 Count('loves', distinct=True) * 2 +
                 Count('followers', distinct=True) * 3
@@ -121,7 +125,6 @@ def index(request):
         ).order_by('-love_count_total', '-follower_count_total', '-timestamp')[:15]
         
         # ========== RISING STARS ==========
-        # New creators gaining traction (campaigns less than 14 days old with good growth)
         fourteen_days_ago = timezone.now() - timedelta(days=14)
         rising_campaigns = base_campaigns.filter(
             timestamp__gte=fourteen_days_ago,
@@ -129,16 +132,14 @@ def index(request):
         ).annotate(
             love_count_total=Count('loves', distinct=True),
             follower_count_total=Count('followers', distinct=True),
-            # Calculate growth rate (followers per day)
             days_old=ExtractDay(timezone.now() - F('timestamp')),
             growth_rate=Count('followers', distinct=True) * 100 / 
                        (ExtractDay(timezone.now() - F('timestamp')) + 1)
         ).filter(
-            follower_count_total__gte=2  # At least 2 followers to be "rising"
+            follower_count_total__gte=2
         ).order_by('-growth_rate', '-timestamp')[:15]
         
         # ========== FASTEST GROWING ==========
-        # Campaigns with biggest momentum (highest follower growth in last 7 days)
         seven_days_ago = timezone.now() - timedelta(days=7)
         fastest_growing_campaigns = base_campaigns.annotate(
             recent_followers=Count(
@@ -156,7 +157,6 @@ def index(request):
         ).order_by('-recent_followers', '-timestamp')[:15]
         
         # ========== MOST COMPLETED ==========
-        # Journeys people actually finish (highest completion rate)
         most_completed_campaigns = base_campaigns.annotate(
             total_watch_count=Count('watch_times', distinct=True),
             completed_count=Count(
@@ -170,22 +170,20 @@ def index(request):
                 distinct=True
             ) * 100 / (Count('watch_times', distinct=True) + 1)
         ).filter(
-            total_watch_count__gte=5  # At least 5 views to calculate meaningful rate
+            total_watch_count__gte=5
         ).order_by('-completion_rate', '-timestamp')[:15]
         
         # ========== MOST WATCHED ==========
-        # High watch time (highest average watch time)
         most_watched_campaigns = base_campaigns.annotate(
             total_watch_time=Sum('watch_times__watch_time_seconds'),
             watch_count=Count('watch_times', distinct=True),
             avg_watch_time=Sum('watch_times__watch_time_seconds') / 
                           (Count('watch_times', distinct=True) + 1)
         ).filter(
-            watch_count__gte=3  # At least 3 views
+            watch_count__gte=3
         ).order_by('-avg_watch_time', '-timestamp')[:15]
         
         # ========== MOST SAVED ==========
-        # Bookmarked for later (highest save count)
         most_saved_campaigns = base_campaigns.annotate(
             save_count=Count('saves', distinct=True)
         ).filter(
@@ -193,29 +191,22 @@ def index(request):
         ).order_by('-save_count', '-timestamp')[:15]
         
         # ========== SUGGESTED CAMPAIGNS ==========
-        # Personalized suggestions based on user's interests
-        suggested_campaigns = base_campaigns
-        
         if request.user.is_authenticated:
-            # Exclude campaigns the user already follows/loves
             excluded_campaigns = Campaign.objects.filter(
                 Q(followers=request.user) | 
                 Q(loves__user=request.user)
             ).values_list('id', flat=True)
             
-            # Get categories the user has interacted with
             user_categories = Campaign.objects.filter(
                 Q(loves__user=request.user) |
                 Q(followers=request.user)
             ).values_list('category', flat=True).distinct()
             
             if user_categories:
-                # Prioritize campaigns from categories the user likes
                 suggested_campaigns = base_campaigns.filter(
                     category__in=user_categories
                 ).exclude(id__in=excluded_campaigns)
             else:
-                # If no interaction history, show recent campaigns
                 suggested_campaigns = base_campaigns.exclude(
                     id__in=excluded_campaigns
                 ).order_by('-timestamp')
@@ -224,32 +215,60 @@ def index(request):
                 relevance_score=Count('loves') + Count('followers') * 2
             ).order_by('-relevance_score', '-timestamp')[:15]
         else:
-            # For non-authenticated users, show recently active campaigns
             thirty_days_ago = timezone.now() - timedelta(days=30)
             suggested_campaigns = base_campaigns.filter(
                 activity__timestamp__gte=thirty_days_ago
             ).distinct().order_by('-timestamp')[:15]
         
         # ========== NEW CAMPAIGNS ==========
-        # Latest campaigns created in the last 30 days
         thirty_days_ago = timezone.now() - timedelta(days=30)
         new_campaigns = base_campaigns.filter(
             timestamp__gte=thirty_days_ago
         ).order_by('-timestamp')[:15]
         
-        # ========== POPULAR BY CATEGORY ==========
-        # Top campaigns in each category
+        # ========== CATEGORY SECTIONS WITH SPONSORED ==========
         category_popular = {}
         for category_value, category_label in campaign_categories:
-            category_campaigns = base_campaigns.filter(
+            # Get ONLY category placement boosts for this specific category
+            sponsored_campaigns = get_category_boosts(category_value, limit=3)
+            
+            # Record impressions
+            sponsored_ids = []
+            for item in sponsored_campaigns:
+                record_boost_impression(item['boost'], request, f'category_{category_value}')
+                sponsored_ids.append(item['campaign'].id)
+            
+            # Get organic campaigns (excluding sponsored)
+            organic_campaigns = base_campaigns.filter(
                 category=category_value
+            ).exclude(
+                id__in=sponsored_ids
             ).annotate(
                 engagement_score=Count('loves', distinct=True) + 
                                  (Count('followers', distinct=True) * 2)
             ).order_by('-engagement_score', '-timestamp')[:8]
             
-            if category_campaigns.exists():
-                category_popular[category_value] = category_campaigns
+            # Only add if there are campaigns
+            if sponsored_campaigns or organic_campaigns.exists():
+                category_popular[category_value] = {
+                    'sponsored': sponsored_campaigns,
+                    'organic': organic_campaigns,
+                    'label': category_label,
+                    'sponsored_count': len(sponsored_campaigns),
+                    'total_count': len(sponsored_campaigns) + organic_campaigns.count()
+                }
+        
+        # ========== FEATURED SPOT CAMPAIGNS ==========
+        from main.boost_utils import get_featured_spot_campaigns
+        featured_spot_campaigns = get_featured_spot_campaigns(limit=5)
+        
+        for item in featured_spot_campaigns:
+            if item.get('type') == 'boosted' and 'boost' in item:
+                record_boost_impression(
+                    item['boost'],
+                    request,
+                    'featured_spot'
+                )
         
         # ========== CONTEXT FOR TEMPLATE ==========
         context = {
@@ -268,6 +287,7 @@ def index(request):
             'suggested_campaigns': suggested_campaigns,
             'new_campaigns': new_campaigns,
             'category_popular': category_popular,
+            'featured_spot_campaigns': featured_spot_campaigns,
             
             # Stats
             'total_campaigns': base_campaigns.count(),
@@ -278,7 +298,6 @@ def index(request):
     
     except Exception as e:
         logger.error(f"Error in index view: {str(e)}", exc_info=True)
-        # Return a basic context even if there's an error
         context = {
             'campaign_categories': Campaign.CATEGORY_CHOICES,
             'trending_campaigns': [],
@@ -290,6 +309,7 @@ def index(request):
             'suggested_campaigns': [],
             'new_campaigns': [],
             'category_popular': {},
+            'featured_spot_campaigns': [],
             'total_campaigns': 0,
             'total_active_changemakers': 0,
             'error_message': "Unable to load campaigns at this time."
@@ -297,11 +317,46 @@ def index(request):
         return render(request, 'accounts/index.html', context)
 
 
-from django.template.loader import render_to_string
-from django.http import HttpResponse
-from django.db.models import Count, Q, Sum, F
-from django.db.models.functions import ExtractDay
-from datetime import timedelta
+def track_category_impression(request):
+    """Track category sponsored impressions"""
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        boost_id = data.get('boost_id')
+        category = data.get('category')
+        
+        from main.models import BoostedJourney
+        from main.boost_utils import record_boost_impression
+        
+        try:
+            boost = BoostedJourney.objects.get(id=boost_id)
+            record_boost_impression(boost, request, f"category_{category}")
+            return HttpResponse(status=200)
+        except Exception as e:
+            logger.error(f"Error tracking category impression: {e}")
+            return HttpResponse(status=400)
+    return HttpResponse(status=405)
+
+
+def track_featured_impression(request):
+    """Track featured spot impressions"""
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        boost_id = data.get('boost_id')
+        
+        from main.models import BoostedJourney
+        from main.boost_utils import record_boost_impression
+        
+        try:
+            boost = BoostedJourney.objects.get(id=boost_id)
+            record_boost_impression(boost, request, 'featured_spot')
+            return HttpResponse(status=200)
+        except Exception as e:
+            logger.error(f"Error tracking featured impression: {e}")
+            return HttpResponse(status=400)
+    return HttpResponse(status=405)
+
 
 # ===== LAZY-LOADED SECTION VIEWS =====
 
@@ -321,6 +376,7 @@ def section_trending(request):
     }, request=request)
     
     return HttpResponse(html)
+
 
 def section_rising(request):
     """Return HTML for rising stars section"""
@@ -344,6 +400,7 @@ def section_rising(request):
     }, request=request)
     
     return HttpResponse(html)
+
 
 def section_fastest(request):
     """Return HTML for fastest growing section"""
@@ -370,6 +427,7 @@ def section_fastest(request):
     
     return HttpResponse(html)
 
+
 def section_most_completed(request):
     """Return HTML for most completed section"""
     campaigns = Campaign.objects.filter(is_active=True).annotate(
@@ -394,6 +452,7 @@ def section_most_completed(request):
     
     return HttpResponse(html)
 
+
 def section_most_watched(request):
     """Return HTML for most watched section"""
     campaigns = Campaign.objects.filter(is_active=True).annotate(
@@ -411,6 +470,7 @@ def section_most_watched(request):
     
     return HttpResponse(html)
 
+
 def section_most_saved(request):
     """Return HTML for most saved section"""
     campaigns = Campaign.objects.filter(is_active=True).annotate(
@@ -424,6 +484,7 @@ def section_most_saved(request):
     }, request=request)
     
     return HttpResponse(html)
+
 
 def section_suggested(request):
     """Return HTML for suggested section"""
@@ -462,6 +523,7 @@ def section_suggested(request):
     
     return HttpResponse(html)
 
+
 def section_new_causes(request):
     """Return HTML for new causes section"""
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -477,11 +539,21 @@ def section_new_causes(request):
     
     return HttpResponse(html)
 
+
 def section_category(request, category):
     """Return HTML for category section"""
-    campaigns = Campaign.objects.filter(
+    from main.boost_utils import get_category_boosts
+    
+    # Get sponsored campaigns
+    sponsored_campaigns = get_category_boosts(category, limit=2)
+    sponsored_ids = [item['campaign'].id for item in sponsored_campaigns]
+    
+    # Get organic campaigns
+    organic_campaigns = Campaign.objects.filter(
         is_active=True,
         category=category
+    ).exclude(
+        id__in=sponsored_ids
     ).annotate(
         engagement_score=Count('loves', distinct=True) + 
                          (Count('followers', distinct=True) * 2)
@@ -490,99 +562,16 @@ def section_category(request, category):
     category_label = dict(Campaign.CATEGORY_CHOICES).get(category, category)
     
     html = render_to_string('sections/category_section.html', {
-        'campaigns': campaigns,
+        'sponsored_campaigns': sponsored_campaigns,
+        'organic_campaigns': organic_campaigns,
         'category_value': category,
-        'category_label': category_label
+        'category_label': category_label,
+        'sponsored_count': len(sponsored_campaigns),
+        'total_count': len(sponsored_campaigns) + organic_campaigns.count()
     }, request=request)
     
     return HttpResponse(html)
 
-
-
-# Optional helper functions for more sophisticated suggestions
-
-def get_user_interests(user):
-    """
-    Analyze user's interests based on their interactions
-    """
-    if not user.is_authenticated:
-        return {}
-    
-    # Get categories from campaigns they've loved
-    loved_categories = Campaign.objects.filter(
-        loves__user=user
-    ).values('category').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Get categories from campaigns they follow
-    followed_categories = Campaign.objects.filter(
-        followers=user
-    ).values('category').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Get categories from campaigns they've commented on
-    commented_categories = Campaign.objects.filter(
-        comments__user__user=user
-    ).values('category').annotate(
-        count=Count('id')
-    ).order_by('-count')
-    
-    # Combine and weight interests
-    interests = {}
-    
-    for item in loved_categories:
-        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 3)
-    
-    for item in followed_categories:
-        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 2)
-    
-    for item in commented_categories:
-        interests[item['category']] = interests.get(item['category'], 0) + (item['count'] * 1)
-    
-    return dict(sorted(interests.items(), key=lambda x: x[1], reverse=True))
-
-
-def get_trending_campaigns(days=7, limit=15):
-    """
-    Get campaigns that are trending based on recent engagement
-    """
-    since_date = timezone.now() - timedelta(days=days)
-    
-    return Campaign.objects.filter(
-        is_active=True
-    ).annotate(
-        recent_loves=Count('loves', filter=Q(loves__timestamp__gte=since_date), distinct=True),
-        recent_follows=Count('followers', filter=Q(campaign_follows__followed_at__gte=since_date), distinct=True),
-        recent_activities=Count('activity', filter=Q(activity__timestamp__gte=since_date), distinct=True),
-        trending_score=(
-            Count('loves', filter=Q(loves__timestamp__gte=since_date), distinct=True) * 3 +
-            Count('followers', filter=Q(campaign_follows__followed_at__gte=since_date), distinct=True) * 2 +
-            Count('activity', filter=Q(activity__timestamp__gte=since_date), distinct=True) * 4
-        )
-    ).order_by('-trending_score')[:limit]
-
-
-def get_category_recommendations(user, category, limit=8):
-    """
-    Get recommendations for a specific category
-    """
-    base_qs = Campaign.objects.filter(
-        is_active=True,
-        category=category
-    )
-    
-    if user.is_authenticated:
-        # Exclude campaigns user has already interacted with
-        base_qs = base_qs.exclude(
-            Q(followers=user) | 
-            Q(loves__user=user)
-        )
-    
-    return base_qs.annotate(
-        popularity=Count('loves', distinct=True) + Count('followers', distinct=True)
-    ).order_by('-popularity', '-timestamp')[:limit]
 
 
 def home(request):
