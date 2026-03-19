@@ -230,12 +230,41 @@ def supporters_view(request, username):
     return render(request, 'main/supporters.html')
 
 
+
+
 @login_required
 def following_causes_view(request, username):
     """
-    Empty template for now - will add dynamic data later
+    Display all campaigns that a user is following
     """
-    return render(request, 'main/following_causes.html')
+    # Get the user whose following list we're viewing
+    profile_user = get_object_or_404(User, username=username)
+    
+    # Get all campaigns this user is following
+    following_campaigns = Campaign.objects.filter(
+        campaign_follows__user=profile_user
+    ).select_related(
+        'user__user'
+    ).prefetch_related(
+        'loves',
+        'campaign_follows',
+        'saves'
+    ).annotate(
+        # Remove love_count from here - use the model property instead
+        follower_count=Count('campaign_follows', distinct=True),
+        comment_count=Count('comments', distinct=True)
+    ).order_by('-campaign_follows__followed_at')
+    
+    context = {
+        'profile_user': profile_user,
+        'following_campaigns': following_campaigns,
+        'following_count': following_campaigns.count(),
+        'is_own_profile': request.user == profile_user,
+    }
+    
+    return render(request, 'main/following_causes.html', context)
+
+
 
 
 
@@ -3879,7 +3908,6 @@ def profile_edit(request, username):
     return render(request, 'main/edit_profile.html', context)
 
 
-
 @login_required
 def profile_view(request, username):
     # Get the User object
@@ -3891,6 +3919,12 @@ def profile_view(request, username):
     # ===== FIXED: Get ALL campaigns (no public/private filter) =====
     user_campaigns = user_profile.user_campaigns.filter(is_active=True).order_by('-timestamp')
     user_campaigns_count = user_campaigns.count()
+    
+    # ===== ADD FOLLOWING COUNT =====
+    # Get count of campaigns this user is following
+    following_count = Campaign.objects.filter(
+        campaign_follows__user=user_obj
+    ).count()
     
     # ===== COMPLETED JOURNEYS (for Store Manager) =====
     from django.utils import timezone
@@ -3998,13 +4032,14 @@ def profile_view(request, username):
     context = {
         'user_profile': user_profile,
         'user_obj': user_obj,
-        'user_campaigns': user_campaigns,  # FIXED: renamed from public_campaigns
-        'user_campaigns_count': user_campaigns_count,  # FIXED: renamed
-        'changemaker_category': None,  # Set to None since we removed changemaker logic
+        'user_campaigns': user_campaigns,
+        'user_campaigns_count': user_campaigns_count,
+        'following_count': following_count,  # ADDED: Following count
+        'changemaker_category': None,
         'unread_notifications': unread_notifications,
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
-        # NEW: Store Manager data
+        # Store Manager data
         'completed_journeys': completed_journeys,
         'completed_journeys_count': completed_journeys_count,
         'total_revenue': total_revenue,
@@ -4016,9 +4051,6 @@ def profile_view(request, username):
     }
     
     return render(request, 'main/user_profile.html', context)
-
-
-
 
 
 

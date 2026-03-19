@@ -186,7 +186,7 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
 
     # Supporters and Following (empty templates for now)
     path('<str:username>/supporters/', views.supporters_view, name='supporters'),
-    path('<str:username>/following/causes/', views.following_causes_view, name='following_causes'),
+  
 
 # Add these to your urlpatterns
 
@@ -208,6 +208,9 @@ path('campaign/<int:campaign_id>/get-menu/', views.get_menu, name='get_menu'),
 path('journey/<int:original_id>/clone/', views.clone_journey, name='clone_journey'),
 path('track-boost-click/', views.track_boost_click, name='track_boost_click'),
 path('test-featured/', views.test_featured, name='test_featured'),
+
+# In your urls.py
+path('profile/<str:username>/following/',views.following_causes_view, name='following_causes'),
 ]
 
 
