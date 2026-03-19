@@ -31,29 +31,134 @@
             </div>
         </div>
         
-        <!-- Tabs Navigation - Using data attributes for JavaScript to hook into -->
+        <!-- Tabs Navigation -->
         <div style="display: flex; gap: 8px; border-bottom: 1px solid #333; margin-bottom: 24px;">
-            <button class="tab-btn active" data-tab="overview" style="background: none; border: none; color: #fff; padding: 12px 20px; cursor: pointer; border-bottom: 2px solid #4CAF50;">Overview</button>
-            <button class="tab-btn" data-tab="boosts" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Boosts</button>
-            <button class="tab-btn" data-tab="analytics" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Analytics</button>
-            <button class="tab-btn" data-tab="packages" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Packages</button>
+            <button id="tab-overview-btn" onclick="window.showManagerTab('overview')" style="background: none; border: none; color: #fff; padding: 12px 20px; cursor: pointer; border-bottom: 2px solid #4CAF50;">Overview</button>
+            <button id="tab-boosts-btn" onclick="window.showManagerTab('boosts')" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Boosts</button>
+            <button id="tab-analytics-btn" onclick="window.showManagerTab('analytics')" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Analytics</button>
+            <button id="tab-packages-btn" onclick="window.showManagerTab('packages')" style="background: none; border: none; color: #aaa; padding: 12px 20px; cursor: pointer;">Packages</button>
         </div>
         
-        <!-- Tab Content -->
-        <div id="overview-tab" class="tab-content active">
+        <!-- Overview Tab -->
+        <div id="overview-content" style="display: block;">
             {% include 'main/partials/manager_overview.html' %}
         </div>
         
-        <div id="boosts-tab" class="tab-content" style="display: none;">
-            {% include 'main/partials/manager_boosts.html' %}
+        <!-- Boosts Tab -->
+        <div id="boosts-content" style="display: none;">
+            <div style="background: #222; border-radius: 12px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: white; margin: 0;">Active Boosts</h3>
+                    <button onclick="window.createBoost()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                        + Create New Boost
+                    </button>
+                </div>
+                
+                {% if active_boosts %}
+                    {% for boost in active_boosts %}
+                    <div style="background: #2a2a2a; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong style="color: white;">{{ boost.get_placement_type_display }}</strong>
+                            <span style="color: #4CAF50;">Active</span>
+                        </div>
+                        <div style="color: #aaa; margin-top: 8px;">
+                            Impressions: {{ boost.impressions }} | Clicks: {{ boost.clicks }} | CTR: {{ boost.click_through_rate }}%
+                        </div>
+                        <div style="color: #aaa; font-size: 12px; margin-top: 5px;">
+                            Days remaining: {{ boost.days_remaining }} | Created: {{ boost.created_at|date:"M d, Y" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #aaa;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🚀</div>
+                        <p>No active boosts. Create your first boost to increase visibility!</p>
+                        <button onclick="window.createBoost()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-top: 10px; cursor: pointer;">Create Boost</button>
+                    </div>
+                {% endif %}
+            </div>
         </div>
         
-        <div id="analytics-tab" class="tab-content" style="display: none;">
-            {% include 'main/partials/manager_analytics.html' %}
+        <!-- Analytics Tab -->
+        <div id="analytics-content" style="display: none;">
+            <div style="background: #222; border-radius: 12px; padding: 20px;">
+                <h3 style="color: white; margin-bottom: 20px;">Performance Analytics</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; text-align: center;">
+                        <div style="color: #aaa; font-size: 12px;">Total Impressions</div>
+                        <div style="color: #4CAF50; font-size: 32px; font-weight: bold;">{{ total_impressions|default:"0" }}</div>
+                    </div>
+                    <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; text-align: center;">
+                        <div style="color: #aaa; font-size: 12px;">Total Clicks</div>
+                        <div style="color: #ff6b6b; font-size: 32px; font-weight: bold;">{{ total_clicks|default:"0" }}</div>
+                    </div>
+                    <div style="background: #2a2a2a; padding: 20px; border-radius: 8px; text-align: center;">
+                        <div style="color: #aaa; font-size: 12px;">Click-Through Rate</div>
+                        <div style="color: #4ecdc4; font-size: 32px; font-weight: bold;">{{ ctr|floatformat:1|default:"0" }}%</div>
+                    </div>
+                </div>
+                
+                <div style="background: #2a2a2a; border-radius: 8px; padding: 15px;">
+                    <h4 style="color: white; margin-bottom: 15px;">Campaign Statistics</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <div><span style="color: #aaa;">Followers:</span> <span style="color: white;">{{ stats.followers|default:"0" }}</span></div>
+                        <div><span style="color: #aaa;">Total Loves:</span> <span style="color: white;">{{ stats.loves|default:"0" }}</span></div>
+                        <div><span style="color: #aaa;">Comments:</span> <span style="color: white;">{{ stats.comments|default:"0" }}</span></div>
+                        <div><span style="color: #aaa;">Total Donors:</span> <span style="color: white;">{{ stats.donors|default:"0" }}</span></div>
+                        <div><span style="color: #aaa;">Total Raised:</span> <span style="color: white;">${{ stats.donations|default:"0"|floatformat:0 }}</span></div>
+                        <div><span style="color: #aaa;">Funding Goal:</span> <span style="color: white;">${{ campaign.funding_goal|default:"0"|floatformat:0 }}</span></div>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <div id="packages-tab" class="tab-content" style="display: none;">
-            {% include 'main/partials/manager_packages.html' %}
+        <!-- Packages Tab -->
+        <div id="packages-content" style="display: none;">
+            <div style="background: #222; border-radius: 12px; padding: 20px;">
+                <h3 style="color: white; margin-bottom: 20px;">Boost Packages</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div style="background: #2a2a2a; border-radius: 8px; padding: 20px; text-align: center;">
+                        <h4 style="color: white;">Starter</h4>
+                        <div style="color: #4CAF50; font-size: 32px; font-weight: bold;">$9.99</div>
+                        <div style="color: #aaa; margin: 10px 0;">7 days</div>
+                        <ul style="text-align: left; color: #aaa; font-size: 12px; margin: 15px 0;">
+                            <li>✓ Featured Section</li>
+                            <li>✓ Search Results</li>
+                            <li>✓ Basic Analytics</li>
+                        </ul>
+                        <button onclick="window.purchasePackage(1)" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Select Package</button>
+                    </div>
+                    
+                    <div style="background: #2a2a2a; border-radius: 8px; padding: 20px; text-align: center; border: 2px solid #4CAF50;">
+                        <div style="position: relative; top: -30px; background: #4CAF50; color: white; display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px;">POPULAR</div>
+                        <h4 style="color: white;">Pro</h4>
+                        <div style="color: #4CAF50; font-size: 32px; font-weight: bold;">$24.99</div>
+                        <div style="color: #aaa; margin: 10px 0;">14 days</div>
+                        <ul style="text-align: left; color: #aaa; font-size: 12px; margin: 15px 0;">
+                            <li>✓ All Starter features</li>
+                            <li>✓ Category Spotlight</li>
+                            <li>✓ Priority Support</li>
+                            <li>✓ Advanced Analytics</li>
+                        </ul>
+                        <button onclick="window.purchasePackage(2)" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Select Package</button>
+                    </div>
+                    
+                    <div style="background: #2a2a2a; border-radius: 8px; padding: 20px; text-align: center;">
+                        <h4 style="color: white;">Enterprise</h4>
+                        <div style="color: #4CAF50; font-size: 32px; font-weight: bold;">$49.99</div>
+                        <div style="color: #aaa; margin: 10px 0;">30 days</div>
+                        <ul style="text-align: left; color: #aaa; font-size: 12px; margin: 15px 0;">
+                            <li>✓ All Pro features</li>
+                            <li>✓ Unlimited Keywords</li>
+                            <li>✓ Dedicated Support</li>
+                            <li>✓ Custom Analytics</li>
+                        </ul>
+                        <button onclick="window.purchasePackage(3)" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Contact Sales</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

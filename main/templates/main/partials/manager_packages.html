@@ -1,112 +1,21 @@
-<!-- templates/main/partials/manager_packages.html -->
-<div>
-    <h3 style="color: white; margin-bottom: 20px;">Boost Packages</h3>
+<div style="padding: 20px;">
+    <h3 style="color: white;">Boost Packages</h3>
     
-    <!-- Package Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-        {% if packages %}
-            {% for package in packages %}
-            <div style="background: #222; border-radius: 12px; overflow: hidden; position: relative;">
-                {% if package.discount_percentage > 0 %}
-                <div style="position: absolute; top: 12px; right: 12px; background: #ff4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
-                    Save {{ package.discount_percentage }}%
-                </div>
-                {% endif %}
-                
-                <div style="padding: 24px;">
-                    <h4 style="color: white; margin: 0 0 8px 0;">{{ package.name }}</h4>
-                    <p style="color: #aaa; font-size: 14px; margin-bottom: 16px;">{{ package.description }}</p>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <span style="color: #4CAF50; font-size: 32px; font-weight: 700;">${{ package.price }}</span>
-                        <span style="color: #aaa; font-size: 14px;"> / {{ package.duration_days }} days</span>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <h5 style="color: white; margin: 0 0 12px 0;">Includes:</h5>
-                        <ul style="list-style: none; padding: 0; margin: 0;">
-                            {% if package.include_featured %}
-                            <li style="color: #aaa; margin-bottom: 8px;">
-                                <i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Featured Section
-                            </li>
-                            {% endif %}
-                            {% if package.include_search %}
-                            <li style="color: #aaa; margin-bottom: 8px;">
-                                <i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Search Results ({{ package.max_keywords }} keywords)
-                            </li>
-                            {% endif %}
-                            {% if package.include_category %}
-                            <li style="color: #aaa; margin-bottom: 8px;">
-                                <i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Category Spotlight
-                            </li>
-                            {% endif %}
-                            {% if package.priority_support %}
-                            <li style="color: #aaa; margin-bottom: 8px;">
-                                <i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Priority Support
-                            </li>
-                            {% endif %}
-                            {% if package.analytics_access %}
-                            <li style="color: #aaa; margin-bottom: 8px;">
-                                <i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i>
-                                Advanced Analytics
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    
-                    <button onclick="purchasePackage({{ package.id }})" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        Purchase Package
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <!-- Default packages if none exist in database -->
-            <div style="background: #222; border-radius: 12px; padding: 24px;">
-                <h4 style="color: white; margin: 0 0 8px 0;">Starter Boost</h4>
-                <p style="color: #aaa; font-size: 14px; margin-bottom: 16px;">Perfect for getting started</p>
-                <div style="margin-bottom: 20px;">
-                    <span style="color: #4CAF50; font-size: 32px; font-weight: 700;">$9.99</span>
-                    <span style="color: #aaa; font-size: 14px;"> / 7 days</span>
-                </div>
-                <ul style="list-style: none; padding: 0; margin: 0 0 20px 0;">
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Featured Section (3 days)</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Search Results (5 keywords)</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Basic Analytics</li>
-                </ul>
-                <button onclick="purchasePackage(1)" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Purchase</button>
-            </div>
-            
-            <div style="background: linear-gradient(135deg, #2a2a2a 0%, #222 100%); border-radius: 12px; padding: 24px; border: 2px solid #4CAF50;">
-                <div style="position: absolute; top: -12px; left: 20px; background: #4CAF50; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">POPULAR</div>
-                <h4 style="color: white; margin: 0 0 8px 0;">Pro Boost</h4>
-                <p style="color: #aaa; font-size: 14px; margin-bottom: 16px;">Maximum visibility</p>
-                <div style="margin-bottom: 20px;">
-                    <span style="color: #4CAF50; font-size: 32px; font-weight: 700;">$24.99</span>
-                    <span style="color: #aaa; font-size: 14px;"> / 14 days</span>
-                </div>
-                <ul style="list-style: none; padding: 0; margin: 0 0 20px 0;">
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> All Featured Section</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Top Search Results</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Category Spotlight</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Priority Support</li>
-                    <li style="color: #aaa; margin-bottom: 8px;"><i class="fas fa-check" style="color: #4CAF50; margin-right: 8px;"></i> Advanced Analytics</li>
-                </ul>
-                <button onclick="purchasePackage(2)" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer;">Purchase</button>
-            </div>
-        {% endif %}
-    </div>
-    
-    <!-- Custom Package -->
-    <div style="background: #222; padding: 24px; border-radius: 12px; margin-top: 24px;">
-        <h4 style="color: white; margin: 0 0 8px 0;">Need something custom?</h4>
-        <p style="color: #aaa; margin-bottom: 16px;">Contact us for custom boost packages tailored to your needs</p>
-        <button onclick="contactSupport()" style="background: #333; color: white; border: 1px solid #4CAF50; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-            Contact Support
-        </button>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+        <div style="background: #222; padding: 20px; border-radius: 8px;">
+            <h4 style="color: white;">Starter</h4>
+            <div style="color: #4CAF50; font-size: 24px;">$9.99</div>
+            <button onclick="alert('Coming soon')" style="margin-top: 10px; background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Select</button>
+        </div>
+        <div style="background: #222; padding: 20px; border-radius: 8px; border: 1px solid #4CAF50;">
+            <h4 style="color: white;">Pro</h4>
+            <div style="color: #4CAF50; font-size: 24px;">$24.99</div>
+            <button onclick="alert('Coming soon')" style="margin-top: 10px; background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Select</button>
+        </div>
+        <div style="background: #222; padding: 20px; border-radius: 8px;">
+            <h4 style="color: white;">Enterprise</h4>
+            <div style="color: #4CAF50; font-size: 24px;">$49.99</div>
+            <button onclick="alert('Coming soon')" style="margin-top: 10px; background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Select</button>
+        </div>
     </div>
 </div>

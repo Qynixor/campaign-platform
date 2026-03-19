@@ -199,7 +199,14 @@ from django.db.models import Count
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 
-
+# At the top of your views.py, add these imports if not already present
+from django.db.models import Q, Count, Sum
+from django.db import models
+from .models import (
+    Campaign, BoostedJourney, BoostedJourneyImpression, 
+    BoostedJourneyClick, BoostedJourneyPackage, 
+    CampaignFollow, Love, Donation, Comment
+)
 
 
 
@@ -3293,6 +3300,10 @@ def clone_journey(request, original_id):
 
 # views.py - Add these new views
 
+
+
+# views.py - Simplified campaign_manager view
+
 @login_required
 def campaign_manager(request, campaign_id):
     """Main campaign management dashboard"""
@@ -3326,18 +3337,82 @@ def campaign_manager(request, campaign_id):
         boosted_journey__campaign=campaign
     ).count()
     
-    # Get recent impressions for chart
-    recent_impressions = BoostedJourneyImpression.objects.filter(
-        boosted_journey__campaign=campaign,
-        viewed_at__gte=timezone.now() - timedelta(days=7)
-    ).values('viewed_at__date').annotate(
-        count=models.Count('id')
-    ).order_by('viewed_at__date')
+    ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+    
+    # Get impressions by day for the last 7 days
+    impressions_by_day = []
+    clicks_by_day = []
+    for i in range(7, 0, -1):
+        date = timezone.now().date() - timedelta(days=i)
+        day_impressions = BoostedJourneyImpression.objects.filter(
+            boosted_journey__campaign=campaign,
+            viewed_at__date=date
+        ).count()
+        day_clicks = BoostedJourneyClick.objects.filter(
+            boosted_journey__campaign=campaign,
+            clicked_at__date=date
+        ).count()
+        impressions_by_day.append({
+            'date': date.strftime('%b %d'),
+            'count': day_impressions
+        })
+        clicks_by_day.append({
+            'date': date.strftime('%b %d'),
+            'count': day_clicks
+        })
+    
+    # Get top activities (simplified - just get recent activities)
+    top_activities = []
+    try:
+        if hasattr(campaign, 'activity_set'):
+            top_activities = campaign.activity_set.all().order_by('-timestamp')[:5]
+    except:
+        top_activities = []
+    
+    # Simple weekly growth (without complex queries that might fail)
+    followers_7d = 0
+    try:
+        # Try to get followers count from the last 7 days if followed_at exists
+        followers_7d = CampaignFollow.objects.filter(
+            campaign=campaign
+        ).count()  # Just get total for now
+    except:
+        followers_7d = 0
+    
+    loves_7d = campaign.get_love_count()  # Total loves
+    donations_7d = float(campaign.total_donations)  # Total donations
+    
+    weekly_growth = {
+        'followers': followers_7d,
+        'loves': loves_7d,
+        'donations': donations_7d,
+    }
+    
+    # Audience data (placeholder)
+    audience_data = {
+        'age_groups': [
+            {'group': '18-24', 'percentage': 25},
+            {'group': '25-34', 'percentage': 35},
+            {'group': '35-44', 'percentage': 20},
+            {'group': '45+', 'percentage': 20},
+        ],
+        'devices': [
+            {'type': 'Mobile', 'percentage': 65},
+            {'type': 'Desktop', 'percentage': 25},
+            {'type': 'Tablet', 'percentage': 10},
+        ],
+        'locations': [
+            {'country': 'USA', 'percentage': 45},
+            {'country': 'UK', 'percentage': 20},
+            {'country': 'Canada', 'percentage': 15},
+            {'country': 'Other', 'percentage': 20},
+        ]
+    }
     
     # Get available packages
     packages = BoostedJourneyPackage.objects.filter(is_active=True)
     
-    # Get campaign stats
+    # Get campaign stats using your existing methods
     stats = {
         'followers': campaign.get_follower_count(),
         'loves': campaign.get_love_count(),
@@ -3352,8 +3427,12 @@ def campaign_manager(request, campaign_id):
         'boost_history': boost_history,
         'total_impressions': total_impressions,
         'total_clicks': total_clicks,
-        'ctr': (total_clicks / total_impressions * 100) if total_impressions > 0 else 0,
-        'recent_impressions': list(recent_impressions),
+        'ctr': ctr,
+        'impressions_by_day': impressions_by_day,
+        'clicks_by_day': clicks_by_day,
+        'top_activities': top_activities,
+        'audience_data': audience_data,
+        'weekly_growth': weekly_growth,
         'packages': packages,
         'stats': stats,
         'placement_choices': BoostedJourney.PLACEMENT_CHOICES,
@@ -3366,55 +3445,100 @@ def campaign_manager(request, campaign_id):
     return render(request, 'main/campaign_manager_full.html', context)
 
 
+# views.py - Update your create_boost view
+
 @login_required
 @require_POST
 def create_boost(request, campaign_id):
     """Create a new boost for a campaign"""
+    print(f"=== CREATE BOOST DEBUG ===")
+    print(f"User: {request.user.username} (ID: {request.user.id})")
+    print(f"Campaign ID: {campaign_id}")
+    
     campaign = get_object_or_404(Campaign, id=campaign_id)
+    print(f"Campaign owner: {campaign.user.user.username if campaign.user and campaign.user.user else 'None'}")
     
     # Verify ownership
-    if not (campaign.user and campaign.user.user == request.user):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    is_owner = campaign.user and campaign.user.user == request.user
+    print(f"Is owner: {is_owner}")
+    
+    if not is_owner:
+        return JsonResponse({'error': 'You are not the owner of this campaign'}, status=403)
     
     try:
         data = json.loads(request.body)
+        print(f"Received data: {data}")
         
         # Validate dates
         start_date = timezone.now()
-        end_date = start_date + timedelta(days=int(data.get('duration_days', 3)))
+        end_date = start_date + timedelta(days=int(data.get('duration_days', 7)))
+        
+        # Calculate total based on placement type
+        placement_type = data.get('placement_type')
+        flat_fee = Decimal(str(data.get('flat_fee', 0)))
+        bid_amount = Decimal(str(data.get('bid_amount', 0)))
+        
+        # For search boosts, use bid amount, otherwise use flat fee
+        if placement_type == 'search':
+            total_paid = bid_amount * int(data.get('duration_days', 7))
+        else:
+            total_paid = flat_fee
+        
+        print(f"Creating boost with total_paid: {total_paid}")
         
         # Create boost
         boost = BoostedJourney.objects.create(
             campaign=campaign,
             creator=request.user,
-            placement_type=data['placement_type'],
+            placement_type=placement_type,
             keywords=data.get('keywords', ''),
             categories=data.get('categories', ''),
-            bid_amount=Decimal(data.get('bid_amount', 0)),
-            flat_fee=Decimal(data.get('flat_fee', 0)),
-            duration_days=int(data.get('duration_days', 3)),
+            bid_amount=bid_amount,
+            flat_fee=flat_fee,
+            total_paid=total_paid,
+            duration_days=int(data.get('duration_days', 7)),
             start_date=start_date,
             end_date=end_date,
-            status='pending',  # Will become active after payment
+            status='pending',
             is_paid=False
         )
         
-        # Here you would integrate payment processing
-        # For now, we'll simulate a successful payment
-        if data.get('simulate_payment'):
-            boost.activate()
-            boost.payment_id = f"sim_{uuid.uuid4().hex[:8]}"
-            boost.save()
+        print(f"Boost created successfully! ID: {boost.id}")
         
         return JsonResponse({
             'success': True,
             'boost_id': boost.id,
-            'message': 'Boost created successfully!'
+            'message': 'Boost created successfully!',
+            'payment_url': f'/boost/{boost.id}/pay/'
         })
         
     except Exception as e:
+        print(f"Error creating boost: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
+
+
+
+@login_required
+def boost_payment(request, boost_id):
+    """Payment page for boost"""
+    boost = get_object_or_404(BoostedJourney, id=boost_id)
+    
+    # Verify ownership
+    if boost.creator != request.user:
+        return HttpResponse("Unauthorized", status=403)
+    
+    context = {
+        'boost': boost,
+        'campaign': boost.campaign,
+        'amount': boost.total_paid,
+        'placement': boost.get_placement_type_display(),
+        'duration': boost.duration_days,
+    }
+    
+    return render(request, 'main/boost_payment.html', context)
 
 @login_required
 def get_boost_performance(request, boost_id):
