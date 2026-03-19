@@ -2620,6 +2620,9 @@ def record_campaign_view(request, campaign_id):
         # Handle logic (e.g., increment views)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+
 import json
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
@@ -2643,6 +2646,9 @@ from .models import (
 def journey(request, campaign_id=None):
     """Journey feed - shows followed campaigns first, then all campaigns"""
     try:
+        # Check if this is a saved campaigns request
+        show_saved = request.path.endswith('saved/')
+        
         # Base queryset - only active campaigns
         campaigns_query = Campaign.objects.filter(is_active=True).select_related(
             'user', 'user__user'
@@ -2665,12 +2671,16 @@ def journey(request, campaign_id=None):
                 user=request.user
             ).values_list('campaign_id', flat=True))
             
-            # Followed campaigns first, then all others
-            followed = campaigns_query.filter(id__in=followed_ids)
-            others = campaigns_query.exclude(id__in=followed_ids).order_by('-timestamp')
-            
-            # Combine lists
-            campaigns = list(followed) + list(others)
+            if show_saved:
+                # ONLY show saved campaigns
+                campaigns = campaigns_query.filter(id__in=saved_ids).order_by('-timestamp')
+                # For the template to know it's saved view
+                campaigns = list(campaigns)
+            else:
+                # Followed campaigns first, then all others
+                followed = campaigns_query.filter(id__in=followed_ids)
+                others = campaigns_query.exclude(id__in=followed_ids).order_by('-timestamp')
+                campaigns = list(followed) + list(others)
         
         # Add user-specific flags to each campaign
         campaign_list = []
@@ -2702,6 +2712,7 @@ def journey(request, campaign_id=None):
             'campaigns': campaign_list[:20],
             'total_campaigns': len(campaign_list),
             'is_single_campaign': campaign_id is not None,
+            'is_saved_view': show_saved,  # Add this flag for template
         })
         
     except Http404:
@@ -2714,8 +2725,8 @@ def journey(request, campaign_id=None):
             'campaigns': [],
             'total_campaigns': 0,
             'is_single_campaign': False,
+            'is_saved_view': False,
         })
-
 
 # ============================================================================
 # INTERACTION VIEWS
@@ -3974,6 +3985,8 @@ def profile_edit(request, username):
 
 
 
+
+
 @login_required
 def profile_view(request, username):
     # Get the User object
@@ -4000,6 +4013,12 @@ def profile_view(request, username):
         campaign__in=user_campaigns,
         fulfilled=True
     ).values('user').distinct().count()
+    
+    # ===== ADD SAVED COUNT =====
+    # Get count of campaigns this user has saved/bookmarked
+    saved_count = CampaignSave.objects.filter(
+        user=user_obj
+    ).count()
     
     # ===== COMPLETED JOURNEYS (for Store Manager) =====
     from django.utils import timezone
@@ -4110,7 +4129,8 @@ def profile_view(request, username):
         'user_campaigns': user_campaigns,
         'user_campaigns_count': user_campaigns_count,
         'following_count': following_count,
-        'supporters_count': supporters_count,  # ADDED: Supporters count
+        'supporters_count': supporters_count,
+        'saved_count': saved_count,  # ADDED: Saved campaigns count
         'changemaker_category': None,
         'unread_notifications': unread_notifications,
         'trending_campaigns': trending_campaigns,
@@ -4127,7 +4147,6 @@ def profile_view(request, username):
     }
     
     return render(request, 'main/user_profile.html', context)
-
 
 
 
