@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token }}">
     
+    <!-- HTMX for dynamic content loading -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
     <style>
         * {
             margin: 0;
@@ -737,37 +740,170 @@
             }
         }
 
-        /* Add these styles to your journey.html CSS if they're missing */
-.campaign-title-overlay {
-    position: absolute;
-    top: 26%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 30;
-    text-align: center;
-    pointer-events: none;
-    width: 90%;
-    max-width: 350px;
-    padding-right: 80px;
-    box-sizing: border-box;
-}
+        /* Campaign Title Overlay */
+        .campaign-title-overlay {
+            position: absolute;
+            top: 26%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            text-align: center;
+            pointer-events: none;
+            width: 90%;
+            max-width: 350px;
+            padding-right: 80px;
+            box-sizing: border-box;
+        }
 
-.campaign-title {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.2;
-    color: white;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-    margin-bottom: 12px;
-    letter-spacing: -0.2px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    hyphens: auto;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
+        .campaign-title {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            margin-bottom: 12px;
+            letter-spacing: -0.2px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ===== PREMIUM FEATURES STYLES ===== */
+        .htmx-indicator {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: block !important;
+        }
+
+        .htmx-request .popup-content {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .premium-badge {
+            background: linear-gradient(135deg, #fdc830, #f37335);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 8px;
+            display: inline-block;
+        }
+
+        .premium-upgrade-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 15px 0;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .premium-upgrade-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .premium-card {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 1px solid #fdc830;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 10px 0;
+        }
+
+        .price-tag {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fdc830;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            color: #ddd;
+            font-size: 13px;
+        }
+
+        .feature-list li i {
+            color: #4CAF50;
+            margin-right: 8px;
+        }
+
+        .premium-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .premium-grid-item {
+            background: #252525;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .premium-grid-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fdc830;
+            display: block;
+        }
+
+        .premium-grid-item .label {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .progress-meter {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .recommendation-item {
+            background: #252525;
+            border-left: 3px solid #fdc830;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+        }
+
+        .stats-popup .popup-content {
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
@@ -781,8 +917,11 @@
             <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
             <button class="close-btn" onclick="closeStatsPopup()">✕</button>
         </div>
+        <div class="htmx-indicator">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
         <div class="popup-content" id="statsContent">
-            Loading...
+            <!-- Stats will load here via HTMX -->
         </div>
     </div>
 
@@ -882,6 +1021,11 @@
             return document.querySelector('meta[name="csrf-token"]').content;
         }
 
+        // Configure HTMX
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            evt.detail.headers['X-CSRFToken'] = getCSRFToken();
+        });
+
         // ========== POPUP FUNCTIONS ==========
         function closeAllPopups() {
             document.getElementById('statsPopup').classList.remove('active');
@@ -911,21 +1055,61 @@
             document.getElementById('popupBackdrop').classList.remove('active');
         }
 
-        // ========== STATS POPUP ==========
+        // ========== STATS POPUP WITH PREMIUM SUPPORT ==========
         window.openStatsPopup = function(campaignId) {
-            document.getElementById('statsContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
-            document.getElementById('statsPopup').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
+            const statsContent = document.getElementById('statsContent');
+            const statsPopup = document.getElementById('statsPopup');
+            const backdrop = document.getElementById('popupBackdrop');
             
-            fetch(`/campaign/${campaignId}/get-stats/`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('statsContent').innerHTML = html;
-                })
-                .catch(error => {
-                    document.getElementById('statsContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading stats</div>';
-                });
+            // Show loading state
+            statsContent.innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
+            
+            // Show popup
+            statsPopup.classList.add('active');
+            backdrop.classList.add('active');
+            
+            // Add loading class for indicator
+            statsPopup.classList.add('htmx-request');
+            
+            // Use HTMX to load the stats
+            htmx.ajax('GET', `/campaign/${campaignId}/get-stats/`, {
+                target: '#statsContent',
+                swap: 'innerHTML'
+            }).then(() => {
+                statsPopup.classList.remove('htmx-request');
+            });
         };
+
+        // ========== PREMIUM FEATURES EVENT HANDLERS ==========
+        document.body.addEventListener('premiumSubscribed', function(evt) {
+            alert(evt.detail.message);
+            closeAllPopups();
+            // Optionally refresh to update premium status
+            // location.reload();
+        });
+
+        document.body.addEventListener('premiumPurchased', function(evt) {
+            alert('Premium access unlocked!');
+            closeStatsPopup();
+            setTimeout(() => {
+                openStatsPopup(evt.detail.campaignId);
+            }, 300);
+        });
+
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            if (evt.detail.xhr.status === 403) {
+                alert('Please login to access premium features');
+                window.location.href = '/login/?next=' + window.location.pathname;
+            }
+            // Remove loading class on error
+            document.getElementById('statsPopup').classList.remove('htmx-request');
+        });
+
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'statsContent') {
+                document.getElementById('statsPopup').classList.remove('htmx-request');
+            }
+        });
 
         // ========== MENU POPUP ==========
         window.openMenuPopup = function(campaignId) {
@@ -1013,7 +1197,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update button with new HTML from server
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = data.button_html;
                     const newBtn = tempDiv.firstElementChild;
@@ -1141,13 +1324,11 @@
             
             container.style.transform = `translateX(-${index * 100}%)`;
             
-            // Update indicators
             const indicators = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`);
             indicators.forEach((dot, i) => {
                 dot.classList.toggle('active', i === index);
             });
             
-            // Update counter
             const currentEl = document.getElementById(`currentSlide-${campaignId}`);
             if (currentEl) currentEl.textContent = index + 1;
         };
@@ -1190,7 +1371,7 @@
                     setTimeout(() => {
                         const btn = document.getElementById(`autoplayBtn-${campaignId}`);
                         if (btn) {
-                            btn.click(); // Start autoplay
+                            btn.click();
                         }
                     }, 1000);
                 }
@@ -1274,67 +1455,56 @@
         }
 
         // ========== START JOURNEY FUNCTION ==========
-window.startThisJourney = function(originalId, btn) {
-    // Prevent any event bubbling
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    
-    // Save original button text
-    const originalText = btn.innerHTML;
-    
-    // Show loading state
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-    btn.disabled = true;
-    
-    // Get CSRF token
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-    
-    // Make the request
-    fetch(`/journey/${originalId}/clone/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({})
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            if (data.already_exists) {
-                // Campaign already cloned
-                if (confirm('You already started this journey! Would you like to continue where you left off?')) {
-                    window.location.href = data.redirect_url;
+        window.startThisJourney = function(originalId, btn) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            btn.disabled = true;
+            
+            fetch(`/journey/${originalId}/clone/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    if (data.already_exists) {
+                        if (confirm('You already started this journey! Would you like to continue where you left off?')) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                        }
+                    } else {
+                        window.location.href = data.redirect_url;
+                    }
                 } else {
-                    // Reset button
+                    alert('Error: ' + (data.error || 'Something went wrong'));
                     btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
-            } else {
-                // Success - redirect to new campaign
-                window.location.href = data.redirect_url;
-            }
-        } else {
-            // Show error
-            alert('Error: ' + (data.error || 'Something went wrong'));
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Network error. Please try again.');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-};
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        };
     </script>
+   
 </body>
 </html>

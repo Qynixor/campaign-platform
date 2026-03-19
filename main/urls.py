@@ -213,6 +213,21 @@ path('test-featured/', views.test_featured, name='test_featured'),
 
 # In your urls.py
 path('profile/<str:username>/following/',views.following_causes_view, name='following_causes'),
+
+    # Stats popup URL
+    path('campaign/<int:campaign_id>/get-stats/', views.get_stats, name='get_stats'),
+    
+    # Premium feature URLs
+    path('campaign/<int:campaign_id>/purchase-premium/', views.purchase_premium_stats, name='purchase_premium_stats'),
+    path('campaign/<int:campaign_id>/refresh-predictions/', views.refresh_predictions, name='refresh_predictions'),
+    path('campaign/<int:campaign_id>/export-data/', views.export_campaign_data, name='export_campaign_data'),
+    path('campaign/<int:campaign_id>/check-premium-status/', views.check_premium_status, name='check_premium_status'),
+    
+    # Subscription URLs
+    path('premium/subscribe/', views.subscribe_premium, name='subscribe_premium'),
+    path('premium/dashboard/', views.load_premium_dashboard, name='load_premium_dashboard'),
+    path('campaign/<int:campaign_id>/activate-owner-trial/', views.activate_owner_trial, name='activate_owner_trial'),
+   
 ]
 
 

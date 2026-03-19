@@ -2728,6 +2728,337 @@ def journey(request, campaign_id=None):
             'is_saved_view': False,
         })
 
+
+# views.py
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.db.models import Q
+from .models import Campaign, PremiumSubscription, CampaignPrediction, CampaignAnalytics, CampaignPremiumAccess
+import json
+from datetime import timedelta
+
+
+@login_required
+def get_stats(request, campaign_id):
+    """Get stats popup HTML with premium integration"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Check if user is owner
+    is_owner = campaign.user and campaign.user.user == request.user
+    
+    # Default values
+    has_premium = False
+    subscription = None
+    can_purchase = True
+    one_time_price = 4.99
+    owner_trial_active = False
+    owner_trial_days = 0
+    
+    if is_owner:
+        # Check if owner has activated trial
+        owner_trial = OwnerTrial.objects.filter(
+            campaign=campaign,
+            owner=request.user,
+            is_active=True
+        ).first()
+        
+        if owner_trial:
+            # AUTO-EXPIRE CHECK - This runs automatically on every view
+            if owner_trial.expires_at <= timezone.now():
+                owner_trial.is_active = False
+                owner_trial.save()
+                owner_trial_active = False
+            else:
+                owner_trial_active = True
+                has_premium = True
+                can_purchase = False
+                owner_trial_days = owner_trial.days_remaining
+    else:
+        # Check subscription for non-owners
+        subscription = PremiumSubscription.get_user_subscription(request.user)
+        if subscription and subscription.is_active:
+            has_premium = True
+            can_purchase = False
+        else:
+            # Check one-time purchase
+            one_time = CampaignPremiumAccess.objects.filter(
+                campaign=campaign,
+                purchased_by=request.user,
+            ).filter(
+                Q(expiry_date__isnull=True) | Q(expiry_date__gt=timezone.now())
+            ).first()
+            
+            if one_time:
+                has_premium = True
+                can_purchase = False
+    
+    # Get premium data if user has access
+    prediction = None
+    analytics = None
+    if has_premium:
+        prediction = campaign.get_or_create_prediction()
+        analytics, _ = CampaignAnalytics.objects.get_or_create(campaign=campaign)
+    
+    html = render_to_string('main/partials/stats_popup.html', {
+        'campaign': campaign,
+        'is_owner': is_owner,
+        'owner_trial_active': owner_trial_active,
+        'owner_trial_days': owner_trial_days,
+        'has_premium': has_premium,
+        'can_purchase': can_purchase,
+        'subscription': subscription,
+        'prediction': prediction,
+        'analytics': analytics,
+        'one_time_price': one_time_price,
+        'monthly_price': PremiumSubscription.PRICING['monthly'],
+        'yearly_price': PremiumSubscription.PRICING['yearly'],
+        'lifetime_price': PremiumSubscription.PRICING['lifetime'],
+        'yearly_savings': round(
+            (PremiumSubscription.PRICING['monthly'] * 12) - 
+            PremiumSubscription.PRICING['yearly'], 2
+        ),
+    })
+    
+    return HttpResponse(html)
+
+
+
+
+
+@login_required
+def activate_owner_trial(request, campaign_id):
+    """Activate 30-day free trial for campaign owner"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Verify user is the owner
+    if not (campaign.user and campaign.user.user == request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    # Check if owner already has an active trial
+    existing_trial = OwnerTrial.objects.filter(
+        campaign=campaign,
+        owner=request.user,
+        is_active=True,
+        expires_at__gt=timezone.now()
+    ).first()
+    
+    if existing_trial:
+        # Trial already active, just show premium stats
+        return get_stats(request, campaign_id)
+    
+    # Create new 30-day trial
+    trial = OwnerTrial.objects.create(
+        campaign=campaign,
+        owner=request.user,
+        started_at=timezone.now(),
+        expires_at=timezone.now() + timedelta(days=30),
+        is_active=True
+    )
+    
+    # Store in session for quick access
+    request.session[f'owner_trial_{campaign_id}'] = {
+        'active': True,
+        'started': trial.started_at.isoformat(),
+        'expires': trial.expires_at.isoformat()
+    }
+    
+    # Return updated stats popup with premium content
+    return get_stats(request, campaign_id)
+
+
+
+
+@login_required
+def purchase_premium_stats(request, campaign_id):
+    """Handle one-time purchase of premium stats for a campaign"""
+    if request.method == 'POST':
+        campaign = get_object_or_404(Campaign, id=campaign_id)
+        
+        # Here you would integrate payment gateway
+        # For now, we'll create a simulated purchase
+        
+        # Create one-time access (30 days access)
+        access = CampaignPremiumAccess.objects.create(
+            campaign=campaign,
+            purchased_by=request.user,
+            amount_paid=4.99,
+            expiry_date=timezone.now() + timedelta(days=30)
+        )
+        
+        # Return updated stats popup
+        return get_stats(request, campaign_id)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+def subscribe_premium(request):
+    """Handle premium subscription"""
+    if request.method == 'POST':
+        plan = request.POST.get('plan')
+        
+        if plan not in ['monthly', 'yearly', 'lifetime']:
+            return JsonResponse({'error': 'Invalid plan'}, status=400)
+        
+        # Cancel existing subscriptions
+        PremiumSubscription.objects.filter(
+            user=request.user,
+            status__in=['active', 'trial']
+        ).update(status='cancelled', cancelled_at=timezone.now())
+        
+        # Calculate end date
+        start_date = timezone.now()
+        if plan == 'monthly':
+            end_date = start_date + timedelta(days=30)
+        elif plan == 'yearly':
+            end_date = start_date + timedelta(days=365)
+        else:  # lifetime
+            end_date = None
+        
+        # Create subscription
+        subscription = PremiumSubscription.objects.create(
+            user=request.user,
+            plan=plan,
+            status='active',
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Return success response for HTMX
+        response = HttpResponse()
+        response['HX-Trigger'] = json.dumps({
+            'premiumSubscribed': {
+                'plan': plan,
+                'message': f'Successfully subscribed to {plan} plan!'
+            }
+        })
+        return response
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+def refresh_predictions(request, campaign_id):
+    """Refresh AI predictions for a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Check access
+    has_access = campaign.user and campaign.user.user == request.user
+    if not has_access:
+        subscription = PremiumSubscription.get_user_subscription(request.user)
+        if not (subscription and subscription.is_active):
+            return JsonResponse({'error': 'Premium required'}, status=403)
+    
+    # Generate new predictions
+    prediction = campaign.generate_ai_prediction()
+    
+    # Return just the predictions section
+    html = render_to_string('main/partials/premium_predictions.html', {
+        'campaign': campaign,
+        'prediction': prediction,
+    })
+    
+    return HttpResponse(html)
+
+
+@login_required
+def export_campaign_data(request, campaign_id):
+    """Export campaign data as CSV"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Check access
+    has_access = campaign.user and campaign.user.user == request.user
+    if not has_access:
+        subscription = PremiumSubscription.get_user_subscription(request.user)
+        if not (subscription and subscription.is_active):
+            return JsonResponse({'error': 'Premium required'}, status=403)
+    
+    # Generate CSV data
+    import csv
+    from django.http import HttpResponse
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{campaign.title}_stats.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Metric', 'Value'])
+    writer.writerow(['Followers', campaign.get_follower_count()])
+    writer.writerow(['Loves', campaign.get_love_count()])
+    writer.writerow(['Comments', campaign.get_comment_count()])
+    writer.writerow(['Saves', campaign.get_save_count()])
+    writer.writerow(['Donors', campaign.get_donor_count()])
+    writer.writerow(['Total Donations', campaign.total_donations])
+    
+    if hasattr(campaign, 'prediction'):
+        writer.writerow([])
+        writer.writerow(['AI Predictions', ''])
+        writer.writerow(['Success Probability', f"{campaign.prediction.success_probability}%"])
+        writer.writerow(['Predicted Final Amount', campaign.prediction.predicted_final_amount])
+        writer.writerow(['30-Day Followers', campaign.prediction.predicted_followers_30d])
+    
+    return response
+
+
+@login_required
+def load_premium_dashboard(request):
+    """Load premium dashboard via HTMX"""
+    subscription = PremiumSubscription.get_user_subscription(request.user)
+    
+    if not subscription:
+        return render(request, 'main/partials/premium_upgrade_prompt.html')
+    
+    # Get user's campaigns with predictions
+    campaigns = Campaign.objects.filter(
+        user__user=request.user
+    ).select_related('prediction').order_by('-timestamp')[:5]
+    
+    html = render_to_string('main/partials/premium_dashboard.html', {
+        'subscription': subscription,
+        'campaigns': campaigns,
+    })
+    
+    return HttpResponse(html)
+
+
+@login_required
+def check_premium_status(request, campaign_id):
+    """Check premium status for HTMX updates"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    has_premium = False
+    subscription = PremiumSubscription.get_user_subscription(request.user)
+    
+    if campaign.user and campaign.user.user == request.user:
+        has_premium = True
+    elif subscription and subscription.is_active:
+        has_premium = True
+    else:
+        # Check one-time purchase
+        one_time = CampaignPremiumAccess.objects.filter(
+            campaign=campaign,
+            purchased_by=request.user,
+        ).filter(
+            Q(expiry_date__isnull=True) | Q(expiry_date__gt=timezone.now())
+        ).first()
+        
+        if one_time:
+            has_premium = True
+    
+    return JsonResponse({
+        'has_premium': has_premium,
+        'subscription_active': subscription.is_active if subscription else False
+    })
+
+
+
+
+
+
+
 # ============================================================================
 # INTERACTION VIEWS
 # ============================================================================
@@ -2862,19 +3193,8 @@ def post_comment(request, campaign_id):
         return HttpResponse(f'<div class="error">Error posting comment: {str(e)}</div>')
 
 
-@login_required
-def get_stats(request, campaign_id):
-    """Get stats popup HTML"""
-    try:
-        campaign = get_object_or_404(Campaign, id=campaign_id)
-        
-        html = render_to_string('main/partials/stats_popup.html', {
-            'campaign': campaign
-        })
-        
-        return HttpResponse(html)
-    except Exception as e:
-        return HttpResponse(f'<div class="error">Error loading stats: {str(e)}</div>')
+
+
 
 
 @login_required

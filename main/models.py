@@ -159,6 +159,7 @@ from django.utils import timezone
 from django.db.models import Q, Sum, Count, Avg
 from cloudinary.models import CloudinaryField
 
+
 # ============================================================================
 # CAMPAIGN MODEL
 # ============================================================================
@@ -544,6 +545,195 @@ class Campaign(models.Model):
         except:
             return 0
 
+    # ==================== PREMIUM ACCESS METHODS ====================
+    
+    def can_access_premium(self, user):
+        """Check if user can access premium stats for this campaign"""
+        if not user.is_authenticated:
+            return False
+        
+        # Campaign owner always has access
+        if self.user and self.user.user == user:
+            return True
+        
+        # Check subscription
+        subscription = PremiumSubscription.objects.filter(
+            user=user,
+            status__in=['active', 'trial']
+        ).first()
+        
+        if subscription and subscription.is_active:
+            return True
+        
+        # Check one-time purchase
+        one_time = CampaignPremiumAccess.objects.filter(
+            campaign=self,
+            purchased_by=user
+        ).filter(
+            Q(expiry_date__isnull=True) | Q(expiry_date__gt=timezone.now())
+        ).first()
+        
+        if one_time:
+            return True
+        
+        # Check free trial
+        trial = CampaignFreeTrial.objects.filter(
+            campaign=self,
+            user=user,
+            is_active=True,
+            expires_at__gt=timezone.now()
+        ).first()
+        
+        return bool(trial)
+
+    def start_free_trial(self, user):
+        """Start a free trial for a user"""
+        # Deactivate any existing trials
+        CampaignFreeTrial.objects.filter(
+            campaign=self,
+            user=user,
+            is_active=True
+        ).update(is_active=False)
+        
+        # Create new trial (30 days)
+        trial = CampaignFreeTrial.objects.create(
+            campaign=self,
+            user=user,
+            expires_at=timezone.now() + timedelta(days=30),
+            is_active=True
+        )
+        
+        return trial
+    def get_share_count(self):
+        """Get number of shares"""
+        return Share.objects.filter(campaign=self).count()
+    
+    def get_repeat_donor_count(self):
+        """Get number of repeat donors"""
+        from django.db.models import Count
+        return Donation.objects.filter(
+            campaign=self,
+            fulfilled=True
+        ).values('user').annotate(
+            count=Count('id')
+        ).filter(count__gt=1).count()
+    def get_or_create_prediction(self):
+        """Get or generate AI predictions"""
+        prediction, created = CampaignPrediction.objects.get_or_create(
+            campaign=self
+        )
+        
+        # Update if older than 24 hours
+        if not created and (timezone.now() - prediction.last_updated).days >= 1:
+            prediction = self.generate_ai_prediction()
+        
+        return prediction
+
+    def generate_ai_prediction(self):
+        """Generate AI predictions based on campaign data"""
+        from django.db.models import Q
+        
+        prediction, _ = CampaignPrediction.objects.get_or_create(campaign=self)
+        
+        # Get historical data
+        total_days = self.get_current_day()
+        daily_growth_rate = 0
+        
+        # Calculate follower growth rate
+        follower_count = self.get_follower_count()
+        if total_days > 1:
+            daily_growth_rate = follower_count / total_days
+        
+        # Get donation data
+        total_donations = float(self.total_donations)
+        donor_count = self.get_donor_count()
+        avg_donation = total_donations / donor_count if donor_count > 0 else 25
+        
+        # Get engagement data
+        love_count = self.get_love_count()
+        comment_count = self.get_comment_count()
+        
+        # Calculate success probability based on multiple factors
+        success_factors = []
+        
+        # Factor 1: Funding progress (40% weight)
+        funding_progress = 0
+        if self.funding_goal and self.funding_goal > 0:
+            funding_progress = (total_donations / float(self.funding_goal)) * 100
+            funding_score = min(funding_progress, 100) * 0.4
+            success_factors.append(funding_score)
+        
+        # Factor 2: Follower engagement (30% weight)
+        engagement_rate = 0
+        if follower_count > 0:
+            engagement_rate = ((love_count + comment_count) / follower_count) * 100
+            engagement_score = min(engagement_rate * 3, 100) * 0.3
+            success_factors.append(engagement_score)
+        
+        # Factor 3: Growth momentum (20% weight)
+        momentum_score = min(daily_growth_rate * 10, 100) * 0.2
+        success_factors.append(momentum_score)
+        
+        # Factor 4: Time remaining (10% weight)
+        days_left = self.days_left or 30
+        if days_left > 0:
+            time_score = min((days_left / 30) * 100, 100) * 0.1
+            success_factors.append(time_score)
+        
+        # Calculate final probability
+        success_probability = sum(success_factors) / len(success_factors) if success_factors else 50
+        
+        # Predict final amount
+        if total_donations > 0 and total_days > 0:
+            daily_rate = total_donations / total_days
+            remaining_days = self.days_left or 30
+            predicted_final = total_donations + (daily_rate * remaining_days)
+        else:
+            predicted_final = float(self.funding_goal or 1000) * 0.5
+        
+        # Predict peak day (usually around 30-40% through campaign)
+        peak_day = int(total_days * 1.5) if total_days < 10 else total_days
+        
+        # Generate risk factors
+        risk_factors = []
+        recommendations = []
+        
+        if 'funding_progress' in locals() and funding_progress < 20 and total_days > 5:
+            risk_factors.append("Low funding progress relative to time elapsed")
+            recommendations.append("Share your campaign on social media platforms")
+        
+        if 'engagement_rate' in locals() and engagement_rate < 5:
+            risk_factors.append("Low audience engagement")
+            recommendations.append("Post more interactive activities to boost engagement")
+        
+        if daily_growth_rate < 1:
+            risk_factors.append("Slow follower growth")
+            recommendations.append("Encourage followers to share your campaign")
+        
+        if not risk_factors:
+            risk_factors.append("No major risks detected")
+            recommendations.append("Keep up the great work!")
+        
+        # Update prediction
+        prediction.success_probability = round(success_probability, 1)
+        prediction.predicted_final_amount = round(predicted_final, 2)
+        prediction.estimated_days_to_goal = max(1, int((float(self.funding_goal or 0) - total_donations) / max(daily_rate, 1)))
+        prediction.predicted_peak_day = peak_day
+        prediction.predicted_followers_7d = int(follower_count + (daily_growth_rate * 7))
+        prediction.predicted_followers_30d = int(follower_count + (daily_growth_rate * 30))
+        prediction.predicted_donors_7d = int(donor_count + (donor_count / max(total_days, 1) * 7))
+        prediction.predicted_donors_30d = int(donor_count + (donor_count / max(total_days, 1) * 30))
+        prediction.predicted_total_loves = int(love_count * 1.5)
+        prediction.predicted_total_comments = int(comment_count * 1.5)
+        prediction.predicted_total_shares = int(love_count * 0.8)
+        prediction.avg_predicted_donation = round(avg_donation, 2)
+        prediction.predicted_repeat_donor_rate = round(min(donor_count / max(follower_count, 1) * 100, 30), 1)
+        prediction.risk_factors = risk_factors
+        prediction.recommendations = recommendations
+        prediction.confidence_score = round(min(70 + (total_days * 2), 95), 1)  # More data = higher confidence
+        
+        prediction.save()
+        return prediction
     
     @classmethod
     def search_with_boosts(cls, search_term, user=None):
@@ -608,8 +798,6 @@ class Campaign(models.Model):
         
         return boosted_campaigns + organic_campaigns
 
-
-    
     # ==================== SAVE METHOD ====================
     
     def save(self, *args, **kwargs):
@@ -656,9 +844,6 @@ class Campaign(models.Model):
                 return base_time + timedelta(days=self.duration)
         except:
             return None
-    
-
-
 
 
 # NEW: Campaign Follow through model
@@ -2023,10 +2208,14 @@ class PostJourneyProduct(models.Model):
 
 
 
-
-
-
 # Add to your models.py
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Q, Count, Avg, Sum
+import json
 
 class PremiumSubscription(models.Model):
     """Tracks premium subscriptions for users"""
@@ -2043,14 +2232,20 @@ class PremiumSubscription(models.Model):
         ('trial', 'Trial'),
     )
     
+    # Pricing (you can adjust these)
+    PRICING = {
+        'monthly': 9.99,
+        'yearly': 79.99,  # 2 months free
+        'lifetime': 299.99,
+    }
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='premium_subscriptions')
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='trial')
     
-    # Payment info
+    # Payment info (placeholder for now)
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
-    paypal_agreement_id = models.CharField(max_length=255, blank=True, null=True)
     
     # Dates
     start_date = models.DateTimeField(default=timezone.now)
@@ -2058,23 +2253,28 @@ class PremiumSubscription(models.Model):
     trial_end_date = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     
-    # Features
+    # Features access flags
     can_view_advanced_stats = models.BooleanField(default=True)
-    can_export_data = models.BooleanField(default=False)
-    can_compare_campaigns = models.BooleanField(default=False)
-    can_access_predictive = models.BooleanField(default=False)
+    can_export_data = models.BooleanField(default=True)
+    can_compare_campaigns = models.BooleanField(default=True)
+    can_access_predictive = models.BooleanField(default=True)
+    can_view_demographics = models.BooleanField(default=True)
+    can_view_trends = models.BooleanField(default=True)
     
     class Meta:
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['end_date']),
+            models.Index(fields=['user', '-start_date']),
         ]
+        ordering = ['-start_date']
     
     def __str__(self):
         return f"{self.user.username} - {self.plan} ({self.status})"
     
     @property
     def is_active(self):
+        """Check if subscription is currently active"""
         if self.status == 'active' or self.status == 'trial':
             if self.end_date and self.end_date < timezone.now():
                 return False
@@ -2083,15 +2283,92 @@ class PremiumSubscription(models.Model):
     
     @property
     def days_remaining(self):
+        """Get days remaining in subscription"""
         if not self.end_date:
             return None
         remaining = self.end_date - timezone.now()
         return max(0, remaining.days)
+    
+    @property
+    def price(self):
+        """Get price for this plan"""
+        return self.PRICING.get(self.plan, 0)
+    
+    def get_features_list(self):
+        """Get list of active features"""
+        features = []
+        if self.can_view_advanced_stats:
+            features.append('Advanced Statistics')
+        if self.can_export_data:
+            features.append('Data Export')
+        if self.can_compare_campaigns:
+            features.append('Campaign Comparison')
+        if self.can_access_predictive:
+            features.append('AI Predictions')
+        if self.can_view_demographics:
+            features.append('Donor Demographics')
+        if self.can_view_trends:
+            features.append('Trend Analysis')
+        return features
+    
+    def cancel(self):
+        """Cancel subscription"""
+        self.status = 'cancelled'
+        self.cancelled_at = timezone.now()
+        self.save()
+    
+    def renew(self):
+        """Renew subscription for another period"""
+        if self.plan == 'monthly':
+            self.end_date = timezone.now() + timedelta(days=30)
+        elif self.plan == 'yearly':
+            self.end_date = timezone.now() + timedelta(days=365)
+        elif self.plan == 'lifetime':
+            self.end_date = None
+        
+        self.status = 'active'
+        self.start_date = timezone.now()
+        self.save()
+    
+    @classmethod
+    def get_user_subscription(cls, user):
+        """Get user's active subscription"""
+        if not user.is_authenticated:
+            return None
+        
+        return cls.objects.filter(
+            user=user,
+            status__in=['active', 'trial']
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gt=timezone.now())
+        ).first()
+    
+    @classmethod
+    def start_trial(cls, user):
+        """Start a 14-day trial for user"""
+        # Check if user already had a trial
+        existing_trial = cls.objects.filter(
+            user=user,
+            plan='trial'
+        ).exists()
+        
+        if existing_trial:
+            return None
+        
+        trial = cls.objects.create(
+            user=user,
+            plan='monthly',
+            status='trial',
+            trial_end_date=timezone.now() + timedelta(days=14),
+            end_date=timezone.now() + timedelta(days=14)
+        )
+        
+        return trial
 
 
 class CampaignPremiumAccess(models.Model):
     """One-time purchases for individual campaign stats"""
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='premium_access')
+    campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE, related_name='premium_access')
     purchased_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchased_campaign_stats')
     purchase_date = models.DateTimeField(auto_now_add=True)
     expiry_date = models.DateTimeField(null=True, blank=True)  # Null = lifetime
@@ -2099,7 +2376,13 @@ class CampaignPremiumAccess(models.Model):
     
     # Payment info
     stripe_payment_intent = models.CharField(max_length=255, blank=True, null=True)
-    paypal_transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', 'purchased_by']),
+            models.Index(fields=['expiry_date']),
+        ]
+        ordering = ['-purchase_date']
     
     def __str__(self):
         return f"{self.purchased_by.username} - {self.campaign.title}"
@@ -2111,23 +2394,259 @@ class CampaignPremiumAccess(models.Model):
         return self.expiry_date > timezone.now()
 
 
-class StatViewLog(models.Model):
-    """Track which premium stats are viewed (for analytics)"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
-    stat_type = models.CharField(max_length=50)  # 'follower_chart', 'donor_demographics', etc.
-    viewed_at = models.DateTimeField(auto_now_add=True)
-    was_premium = models.BooleanField(default=False)
+class CampaignPrediction(models.Model):
+    """Store AI predictions for campaigns"""
+    campaign = models.OneToOneField('Campaign', on_delete=models.CASCADE, related_name='prediction')
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    # Success prediction
+    success_probability = models.FloatField(default=0, help_text="0-100% chance of reaching funding goal")
+    predicted_final_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Timeline predictions
+    estimated_days_to_goal = models.IntegerField(default=0, help_text="Predicted days until funding goal reached")
+    predicted_peak_day = models.IntegerField(default=0, help_text="Day when engagement will peak")
+    
+    # Growth predictions
+    predicted_followers_7d = models.IntegerField(default=0)
+    predicted_followers_30d = models.IntegerField(default=0)
+    predicted_donors_7d = models.IntegerField(default=0)
+    predicted_donors_30d = models.IntegerField(default=0)
+    
+    # Engagement predictions
+    predicted_total_loves = models.IntegerField(default=0)
+    predicted_total_comments = models.IntegerField(default=0)
+    predicted_total_shares = models.IntegerField(default=0)
+    
+    # Donor insights
+    avg_predicted_donation = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    predicted_repeat_donor_rate = models.FloatField(default=0)
+    
+    # Risk factors
+    risk_factors = models.JSONField(default=list, help_text="List of risk factors identified")
+    recommendations = models.JSONField(default=list, help_text="AI recommendations to improve")
+    
+    # Confidence score
+    confidence_score = models.FloatField(default=0, help_text="AI confidence in predictions 0-100%")
+    
+    # Add these fields
+    seven_day_trend = models.JSONField(default=dict, help_text="7-day prediction percentages")
+    peak_day_name = models.CharField(max_length=20, default="Day 5")
+    
+    def save(self, *args, **kwargs):
+        # Generate 7-day trend
+        if not self.seven_day_trend:
+            self.seven_day_trend = {
+                'day1': 60,
+                'day2': 65,
+                'day3': 72,
+                'day4': 80,
+                'day5': 85,
+                'day6': 82,
+                'day7': 78
+            }
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', '-last_updated']),
+        ]
+    
+    def __str__(self):
+        return f"Prediction for {self.campaign.title}"
+    
+    def get_risk_factors_display(self):
+        """Get formatted risk factors"""
+        return [factor for factor in self.risk_factors if factor]
+    
+    def get_recommendations_display(self):
+        """Get formatted recommendations"""
+        return [rec for rec in self.recommendations if rec]
+
+
+class CampaignAnalytics(models.Model):
+    """Advanced analytics for campaigns"""
+    campaign = models.OneToOneField('Campaign', on_delete=models.CASCADE, related_name='analytics')
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    # Donor demographics
+    donor_demographics = models.JSONField(default=dict, help_text="Age, location, etc.")
+    donor_retention_rate = models.FloatField(default=0)
+    avg_donation_per_donor = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Engagement metrics
+    engagement_rate = models.FloatField(default=0)
+    viral_coefficient = models.FloatField(default=0, help_text="How many new users each user brings")
+    share_conversion_rate = models.FloatField(default=0)
+    
+    # Time-based metrics
+    best_posting_times = models.JSONField(default=list)
+    peak_hours = models.JSONField(default=list)
+    
+    # Trend analysis
+    growth_trend = models.CharField(max_length=20, choices=(
+        ('accelerating', 'Accelerating'),
+        ('steady', 'Steady'),
+        ('slowing', 'Slowing'),
+        ('declining', 'Declining'),
+    ), default='steady')
+    
+    predicted_trend = models.JSONField(default=list, help_text="7-day prediction data points")
+    # Add these fields
+    avg_engagement_rate = models.FloatField(default=3.2)
+    peak_activity_times = models.JSONField(default=dict)
+    best_posting_time = models.CharField(max_length=50, default="Thursday 7PM")
+    
+    def calculate_peak_times(self):
+        """Calculate peak activity times from real data"""
+        # Implement based on your activity logs
+        pass
+    class Meta:
+        indexes = [
+            models.Index(fields=['campaign', '-last_updated']),
+        ]
+
+class OwnerTrial(models.Model):
+    """Track 30-day free trials for campaign owners"""
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='owner_trials')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='campaign_trials')
+    started_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ('campaign', 'owner')
+        indexes = [
+            models.Index(fields=['owner', 'is_active', 'expires_at']),
+        ]
+    
+    def __str__(self):
+        return f"Trial for {self.campaign.title} - {self.owner.username}"
+    
+    @property
+    def days_remaining(self):
+        remaining = self.expires_at - timezone.now()
+        return max(0, remaining.days)
+    
+    def is_valid(self):
+        return self.is_active and self.expires_at > timezone.now()
+    
+    def check_expiry(self):
+        """Auto-expire if past date"""
+        if self.is_active and self.expires_at <= timezone.now():
+            self.is_active = False
+            self.save()
+            return True
+        return False
+
+class Share(models.Model):
+    """Track shares of campaigns"""
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='share_records')  # Changed from 'shares'
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    platform = models.CharField(max_length=20, choices=(
+        ('facebook', 'Facebook'),
+        ('twitter', 'Twitter'),
+        ('whatsapp', 'WhatsApp'),
+        ('linkedin', 'LinkedIn'),
+        ('copy', 'Copy Link'),
+        ('other', 'Other'),
+    ), default='other')
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     
     class Meta:
         indexes = [
-            models.Index(fields=['campaign', 'stat_type']),
+            models.Index(fields=['campaign', '-created_at']),
         ]
+        verbose_name = 'Share Record'
+        verbose_name_plural = 'Share Records'
+    
+    def __str__(self):
+        return f"Share of {self.campaign.title} on {self.platform}"
 
 
 
 
 
+    
+    def __str__(self):
+        return f"Share of {self.campaign.title} on {self.platform}"
+
+class CampaignComparison(models.Model):
+    """Saved campaign comparisons"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_comparisons')
+    name = models.CharField(max_length=100)
+    campaigns = models.ManyToManyField('Campaign', related_name='comparisons')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_viewed = models.DateTimeField(auto_now=True)
+    is_public = models.BooleanField(default=False)
+    share_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['share_token']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.user.username}"
+    
+    def get_campaign_count(self):
+        return self.campaigns.count()
+    
+    def generate_share_token(self):
+        import secrets
+        self.share_token = secrets.token_urlsafe(32)
+        self.save()
+        return self.share_token
+
+
+class ExportJob(models.Model):
+    """Track data export jobs"""
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
+    
+    EXPORT_TYPES = (
+        ('campaign_stats', 'Campaign Statistics'),
+        ('donor_data', 'Donor Data'),
+        ('predictions', 'Predictions'),
+        ('comparison', 'Comparison'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='export_jobs')
+    export_type = models.CharField(max_length=20, choices=EXPORT_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    file_url = models.CharField(max_length=500, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    parameters = models.JSONField(default=dict)
+    error_message = models.TextField(blank=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['status']),
+        ]
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.export_type} ({self.status})"
+    
+    def mark_completed(self, file_url):
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.file_url = file_url
+        self.save()
+    
+    def mark_failed(self, error):
+        self.status = 'failed'
+        self.error_message = str(error)
+        self.save()
 
 
 
