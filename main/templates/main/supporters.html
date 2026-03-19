@@ -6,149 +6,86 @@
     <!-- Header -->
     <div class="supporters-header">
         <div class="header-top">
-            <a href="javascript:history.back()" class="back-btn">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-            <h2>Supporters</h2>
-            <span class="count-badge">128</span>
+           
+            <h2>
+                {% if is_own_profile %}
+                    Your Supporters
+                {% else %}
+                    {{ profile_user.username }}'s Supporters
+                {% endif %}
+            </h2>
+            <span class="count-badge">{{ supporters_count }}</span>
         </div>
         
         <!-- Search -->
         <div class="search-box">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search supporters...">
+            <input type="text" placeholder="Search supporters..." id="searchInput">
         </div>
     </div>
 
     <!-- Supporters List -->
-    <div class="supporters-list">
-        <!-- Supporter 1 -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Avatar" class="supporter-avatar">
+    <div class="supporters-list" id="supportersList">
+        {% for supporter in supporters %}
+        <div class="supporter-card" data-username="{{ supporter.user.username }}" data-name="{{ supporter.user.get_full_name }}">
+            <img src="{{ supporter.profile.image.url|default:'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg' }}" alt="{{ supporter.user.username }}" class="supporter-avatar">
             <div class="supporter-info">
                 <div class="supporter-name-row">
-                    <h4>Sarah Johnson</h4>
-                    <span class="username">@sarah.j</span>
+                    <h4>{{ supporter.user.get_full_name|default:supporter.user.username }}</h4>
+                    <span class="username">@{{ supporter.user.username }}</span>
                 </div>
                 <div class="supporter-cause">
                     <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Clean Water for Rural Schools</strong></span>
+                    <span>Supporting: <strong>{{ supporter.recent_campaign.title|truncatechars:30 }}</strong></span>
                 </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since Mar 2024
+                <div class="supporter-stats">
+                    <span><i class="fas fa-dollar-sign"></i> ${{ supporter.total_donated|floatformat:2 }}</span>
+                    <span><i class="fas fa-heart"></i> {{ supporter.donation_count }} donation{{ supporter.donation_count|pluralize }}</span>
+                    <span><i class="fas fa-calendar"></i> {{ supporter.first_donation|date:"M Y" }}</span>
                 </div>
-            </div>
-            <button class="message-btn">
-                <i class="fas fa-envelope"></i>
-            </button>
-        </div>
-
-        <!-- Supporter 2 -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Avatar" class="supporter-avatar">
-            <div class="supporter-info">
-                <div class="supporter-name-row">
-                    <h4>Michael Chen</h4>
-                    <span class="username">@mike.c</span>
-                </div>
-                <div class="supporter-cause">
-                    <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Women in Tech Mentorship</strong></span>
-                </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since Apr 2024
-                </div>
-            </div>
-            <button class="message-btn">
-                <i class="fas fa-envelope"></i>
-            </button>
-        </div>
-
-        <!-- Supporter 3 -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Avatar" class="supporter-avatar">
-            <div class="supporter-info">
-                <div class="supporter-name-row">
-                    <h4>Emma Williams</h4>
-                    <span class="username">@emma.w</span>
-                </div>
-                <div class="supporter-cause">
-                    <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Indigenous Artist Residency</strong></span>
-                </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since Feb 2024
-                </div>
-            </div>
-            <button class="message-btn">
-                <i class="fas fa-envelope"></i>
-            </button>
-        </div>
-
-        <!-- Supporter 4 -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Avatar" class="supporter-avatar">
-            <div class="supporter-info">
-                <div class="supporter-name-row">
-                    <h4>James Wilson</h4>
-                    <span class="username">@james.w</span>
-                </div>
-                <div class="supporter-cause">
-                    <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Free Therapy for Teens</strong></span>
-                </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since Jan 2024
-                </div>
-            </div>
-            <button class="message-btn">
-                <i class="fas fa-envelope"></i>
-            </button>
-        </div>
-
-        <!-- Supporter 5 -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/women/90.jpg" alt="Avatar" class="supporter-avatar">
-            <div class="supporter-info">
-                <div class="supporter-name-row">
-                    <h4>Olivia Brown</h4>
-                    <span class="username">@olivia.b</span>
-                </div>
-                <div class="supporter-cause">
-                    <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Medical Supplies for Clinic</strong></span>
-                </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since May 2024
-                </div>
-            </div>
-            <button class="message-btn">
-                <i class="fas fa-envelope"></i>
-            </button>
-        </div>
-
-        <!-- Supporter 6 - shows multiple causes -->
-        <div class="supporter-card">
-            <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Avatar" class="supporter-avatar">
-            <div class="supporter-info">
-                <div class="supporter-name-row">
-                    <h4>David Kim</h4>
-                    <span class="username">@david.k</span>
-                </div>
+                {% if supporter.campaigns_supported|length > 1 %}
                 <div class="supporter-cause multiple">
                     <i class="fas fa-hand-holding-heart"></i>
-                    <span>Supporting: <strong>Clean Water</strong> +2 others</span>
+                    <span>Also supports <strong>{{ supporter.campaigns_supported|length|add:"-1" }} other cause{{ supporter.campaigns_supported|length|add:"-1"|pluralize }}</strong></span>
                 </div>
-                <div class="supporter-date">
-                    <i class="fas fa-calendar"></i> Since Mar 2024
-                </div>
+                {% endif %}
             </div>
-            <button class="message-btn">
+            <a href="{% url 'start_dm' user_id=supporter.user.id %}" class="message-btn">
                 <i class="fas fa-envelope"></i>
-            </button>
+            </a>
         </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            {% if is_own_profile %}
+                <p>You don't have any supporters yet</p>
+                <p class="empty-sub">When someone donates to your campaigns, they'll appear here</p>
+            {% else %}
+                <p>{{ profile_user.username }} doesn't have any supporters yet</p>
+            {% endif %}
+        </div>
+        {% endfor %}
     </div>
 </div>
+
+<script>
+    // Simple search functionality
+    document.getElementById('searchInput')?.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const cards = document.querySelectorAll('.supporter-card');
+        
+        cards.forEach(card => {
+            const username = card.dataset.username?.toLowerCase() || '';
+            const name = card.dataset.name?.toLowerCase() || '';
+            
+            if (username.includes(searchTerm) || name.includes(searchTerm)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
 
 <style>
     .supporters-container {
@@ -296,18 +233,17 @@
         color: #888;
     }
 
-    .supporter-cause.multiple strong {
-        color: #1DA1F2;
-    }
-
-    .supporter-date {
+    .supporter-stats {
+        display: flex;
+        gap: 12px;
         font-size: 11px;
-        color: #888;
+        color: #666;
+        margin: 5px 0;
     }
 
-    .supporter-date i {
+    .supporter-stats i {
         color: #1DA1F2;
-        margin-right: 4px;
+        margin-right: 3px;
         font-size: 10px;
     }
 
@@ -323,11 +259,34 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        text-decoration: none;
     }
 
     .message-btn:hover {
         background: #0d8bd9;
         transform: scale(1.1);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: #ccc;
+        margin-bottom: 16px;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .empty-sub {
+        font-size: 14px;
+        color: #999;
     }
 
     /* Dark mode */
@@ -355,8 +314,16 @@
         color: #ccc;
     }
 
-    .dark-mode .supporter-date {
+    .dark-mode .supporter-stats {
         color: #999;
+    }
+
+    .dark-mode .empty-state {
+        color: #aaa;
+    }
+
+    .dark-mode .empty-state i {
+        color: #444;
     }
 </style>
 {% endblock %}

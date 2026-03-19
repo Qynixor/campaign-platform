@@ -222,12 +222,76 @@ Sitemap: https://rallynex.com/sitemap.xml
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
+
 @login_required
 def supporters_view(request, username):
     """
-    Empty template for now - will add dynamic data later
+    Display all users who have donated to any of this user's campaigns
     """
-    return render(request, 'main/supporters.html')
+    # Get the profile user
+    profile_user = get_object_or_404(User, username=username)
+    profile = get_object_or_404(Profile, user=profile_user)
+    
+    # Get all campaigns created by this user
+    user_campaigns = Campaign.objects.filter(user=profile, is_active=True)
+    
+    # Get all unique donors who donated to these campaigns
+    from django.db.models import Count, Sum, Max
+    
+    # Get all fulfilled donations for user's campaigns
+    donations = Donation.objects.filter(
+        campaign__in=user_campaigns,
+        fulfilled=True
+    ).select_related(
+        'user',  # The donor user
+        'user__profile',  # Donor's profile
+        'campaign'  # The campaign they donated to
+    ).order_by('-timestamp')
+    
+    # Get unique donors with their stats
+    donors_data = {}
+    for donation in donations:
+        donor = donation.user
+        if donor.id not in donors_data:
+            donors_data[donor.id] = {
+                'user': donor,
+                'profile': donor.profile,
+                'total_donated': 0,
+                'donation_count': 0,
+                'campaigns_supported': set(),
+                'first_donation': donation.timestamp,
+                'last_donation': donation.timestamp,
+                'donations': []
+            }
+        
+        donors_data[donor.id]['total_donated'] += float(donation.amount)
+        donors_data[donor.id]['donation_count'] += 1
+        donors_data[donor.id]['campaigns_supported'].add(donation.campaign.id)
+        
+        # Track first and last donation
+        if donation.timestamp < donors_data[donor.id]['first_donation']:
+            donors_data[donor.id]['first_donation'] = donation.timestamp
+        if donation.timestamp > donors_data[donor.id]['last_donation']:
+            donors_data[donor.id]['last_donation'] = donation.timestamp
+        
+        # Store the most recent campaign for display
+        donors_data[donor.id]['recent_campaign'] = donation.campaign
+    
+    # Convert to list and sort by total donated
+    supporters_list = list(donors_data.values())
+    supporters_list.sort(key=lambda x: x['total_donated'], reverse=True)
+    
+    # Get supporter count
+    supporters_count = len(supporters_list)
+    
+    context = {
+        'profile_user': profile_user,
+        'supporters': supporters_list,
+        'supporters_count': supporters_count,
+        'is_own_profile': request.user == profile_user,
+    }
+    
+    return render(request, 'main/supporters.html', context)
 
 
 
@@ -3908,6 +3972,8 @@ def profile_edit(request, username):
     return render(request, 'main/edit_profile.html', context)
 
 
+
+
 @login_required
 def profile_view(request, username):
     # Get the User object
@@ -3925,6 +3991,15 @@ def profile_view(request, username):
     following_count = Campaign.objects.filter(
         campaign_follows__user=user_obj
     ).count()
+    
+    # ===== ADD SUPPORTERS COUNT =====
+    # Get count of unique donors who donated to this user's campaigns
+    from django.db.models import Count
+    
+    supporters_count = Donation.objects.filter(
+        campaign__in=user_campaigns,
+        fulfilled=True
+    ).values('user').distinct().count()
     
     # ===== COMPLETED JOURNEYS (for Store Manager) =====
     from django.utils import timezone
@@ -4034,7 +4109,8 @@ def profile_view(request, username):
         'user_obj': user_obj,
         'user_campaigns': user_campaigns,
         'user_campaigns_count': user_campaigns_count,
-        'following_count': following_count,  # ADDED: Following count
+        'following_count': following_count,
+        'supporters_count': supporters_count,  # ADDED: Supporters count
         'changemaker_category': None,
         'unread_notifications': unread_notifications,
         'trending_campaigns': trending_campaigns,
@@ -4051,6 +4127,11 @@ def profile_view(request, username):
     }
     
     return render(request, 'main/user_profile.html', context)
+
+
+
+
+
 
 
 
