@@ -1,0 +1,72 @@
+<!-- templates/main/partials/manager_analytics.html -->
+<div>
+    <h3 style="color: white; margin-bottom: 20px;">Analytics Dashboard</h3>
+    
+    <!-- Date Range Selector -->
+    <div style="background: #222; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <span style="color: white;">Date Range:</span>
+            <select style="background: #333; color: white; border: 1px solid #444; padding: 8px 16px; border-radius: 6px;">
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>Last 90 days</option>
+                <option>All time</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Key Metrics -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+        <div style="background: #222; padding: 20px; border-radius: 12px;">
+            <div style="color: #4CAF50; font-size: 14px; margin-bottom: 8px;">Total Reach</div>
+            <div style="color: white; font-size: 28px; font-weight: 700;">{{ total_impressions }}</div>
+            <div style="color: #4CAF50; font-size: 12px;">↑ 12% vs last period</div>
+        </div>
+        
+        <div style="background: #222; padding: 20px; border-radius: 12px;">
+            <div style="color: #ff6b6b; font-size: 14px; margin-bottom: 8px;">Engagements</div>
+            <div style="color: white; font-size: 28px; font-weight: 700;">{{ total_clicks }}</div>
+            <div style="color: #ff6b6b; font-size: 12px;">↑ 8% vs last period</div>
+        </div>
+        
+        <div style="background: #222; padding: 20px; border-radius: 12px;">
+            <div style="color: #4ecdc4; font-size: 14px; margin-bottom: 8px;">CTR</div>
+            <div style="color: white; font-size: 28px; font-weight: 700;">{{ ctr|floatformat:1 }}%</div>
+            <div style="color: #4ecdc4; font-size: 12px;">↑ 2% vs last period</div>
+        </div>
+    </div>
+    
+    <!-- Chart Placeholder -->
+    <div style="background: #222; padding: 24px; border-radius: 12px; margin-bottom: 24px;">
+        <h4 style="color: white; margin: 0 0 16px 0;">Performance Over Time</h4>
+        <div style="height: 200px; display: flex; align-items: flex-end; gap: 8px;">
+            {% for day in "1234567"|make_list %}
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 100%; height: {% widthratio forloop.counter 7 150 %}px; background: linear-gradient(180deg, #4CAF50, #45a049); border-radius: 4px 4px 0 0;"></div>
+                <div style="color: #aaa; font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Top Performing Content -->
+    <div style="background: #222; padding: 24px; border-radius: 12px;">
+        <h4 style="color: white; margin: 0 0 16px 0;">Top Performing Content</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid #333;">
+                    <th style="text-align: left; padding: 12px; color: #aaa;">Content</th>
+                    <th style="text-align: center; padding: 12px; color: #aaa;">Views</th>
+                    <th style="text-align: center; padding: 12px; color: #aaa;">Engagement</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 12px; color: white;">Campaign Poster</td>
+                    <td style="padding: 12px; text-align: center; color: #4CAF50;">{{ campaign.impressions|default:"0" }}</td>
+                    <td style="padding: 12px; text-align: center; color: #ff6b6b;">{{ campaign.loves|default:"0" }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

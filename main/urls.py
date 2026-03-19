@@ -227,6 +227,11 @@ path('profile/<str:username>/following/',views.following_causes_view, name='foll
     path('premium/subscribe/', views.subscribe_premium, name='subscribe_premium'),
     path('premium/dashboard/', views.load_premium_dashboard, name='load_premium_dashboard'),
     path('campaign/<int:campaign_id>/activate-owner-trial/', views.activate_owner_trial, name='activate_owner_trial'),
+        path('campaign/<int:campaign_id>/manager/', views.campaign_manager, name='campaign_manager'),
+    path('campaign/<int:campaign_id>/boost/create/', views.create_boost, name='create_boost'),
+    path('boost/<int:boost_id>/performance/', views.get_boost_performance, name='boost_performance'),
+    path('boost/<int:boost_id>/cancel/', views.cancel_boost, name='cancel_boost'),
+    path('campaign/<int:campaign_id>/boost/recommendations/', views.get_boost_recommendations, name='boost_recommendations'),
    
 ]
 

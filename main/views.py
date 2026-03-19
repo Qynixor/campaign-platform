@@ -3291,7 +3291,242 @@ def clone_journey(request, original_id):
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
+# views.py - Add these new views
 
+@login_required
+def campaign_manager(request, campaign_id):
+    """Main campaign management dashboard"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Verify user is the owner
+    if not (campaign.user and campaign.user.user == request.user):
+        return HttpResponse("Unauthorized", status=403)
+    
+    # Get active boosts for this campaign
+    active_boosts = BoostedJourney.objects.filter(
+        campaign=campaign,
+        status='active',
+        is_paid=True,
+        end_date__gte=timezone.now()
+    ).order_by('-created_at')
+    
+    # Get boost history
+    boost_history = BoostedJourney.objects.filter(
+        campaign=campaign
+    ).exclude(
+        id__in=active_boosts.values_list('id', flat=True)
+    ).order_by('-created_at')[:10]
+    
+    # Get performance metrics
+    total_impressions = BoostedJourneyImpression.objects.filter(
+        boosted_journey__campaign=campaign
+    ).count()
+    
+    total_clicks = BoostedJourneyClick.objects.filter(
+        boosted_journey__campaign=campaign
+    ).count()
+    
+    # Get recent impressions for chart
+    recent_impressions = BoostedJourneyImpression.objects.filter(
+        boosted_journey__campaign=campaign,
+        viewed_at__gte=timezone.now() - timedelta(days=7)
+    ).values('viewed_at__date').annotate(
+        count=models.Count('id')
+    ).order_by('viewed_at__date')
+    
+    # Get available packages
+    packages = BoostedJourneyPackage.objects.filter(is_active=True)
+    
+    # Get campaign stats
+    stats = {
+        'followers': campaign.get_follower_count(),
+        'loves': campaign.get_love_count(),
+        'comments': campaign.get_comment_count(),
+        'donations': campaign.total_donations,
+        'donors': campaign.get_donor_count(),
+    }
+    
+    context = {
+        'campaign': campaign,
+        'active_boosts': active_boosts,
+        'boost_history': boost_history,
+        'total_impressions': total_impressions,
+        'total_clicks': total_clicks,
+        'ctr': (total_clicks / total_impressions * 100) if total_impressions > 0 else 0,
+        'recent_impressions': list(recent_impressions),
+        'packages': packages,
+        'stats': stats,
+        'placement_choices': BoostedJourney.PLACEMENT_CHOICES,
+    }
+    
+    # Check if HTMX request
+    if request.headers.get('HX-Request'):
+        return render(request, 'main/partials/campaign_manager.html', context)
+    
+    return render(request, 'main/campaign_manager_full.html', context)
+
+
+@login_required
+@require_POST
+def create_boost(request, campaign_id):
+    """Create a new boost for a campaign"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Verify ownership
+    if not (campaign.user and campaign.user.user == request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Validate dates
+        start_date = timezone.now()
+        end_date = start_date + timedelta(days=int(data.get('duration_days', 3)))
+        
+        # Create boost
+        boost = BoostedJourney.objects.create(
+            campaign=campaign,
+            creator=request.user,
+            placement_type=data['placement_type'],
+            keywords=data.get('keywords', ''),
+            categories=data.get('categories', ''),
+            bid_amount=Decimal(data.get('bid_amount', 0)),
+            flat_fee=Decimal(data.get('flat_fee', 0)),
+            duration_days=int(data.get('duration_days', 3)),
+            start_date=start_date,
+            end_date=end_date,
+            status='pending',  # Will become active after payment
+            is_paid=False
+        )
+        
+        # Here you would integrate payment processing
+        # For now, we'll simulate a successful payment
+        if data.get('simulate_payment'):
+            boost.activate()
+            boost.payment_id = f"sim_{uuid.uuid4().hex[:8]}"
+            boost.save()
+        
+        return JsonResponse({
+            'success': True,
+            'boost_id': boost.id,
+            'message': 'Boost created successfully!'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def get_boost_performance(request, boost_id):
+    """Get performance data for a specific boost"""
+    boost = get_object_or_404(BoostedJourney, id=boost_id)
+    
+    # Verify ownership
+    if boost.creator != request.user:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    # Get hourly/daily performance
+    impressions = BoostedJourneyImpression.objects.filter(
+        boosted_journey=boost
+    ).values('viewed_at__date').annotate(
+        count=models.Count('id')
+    ).order_by('viewed_at__date')
+    
+    clicks = BoostedJourneyClick.objects.filter(
+        boosted_journey=boost
+    ).values('clicked_at__date').annotate(
+        count=models.Count('id')
+    ).order_by('clicked_at__date')
+    
+    return JsonResponse({
+        'success': True,
+        'impressions': list(impressions),
+        'clicks': list(clicks),
+        'total_impressions': boost.impressions,
+        'total_clicks': boost.clicks,
+        'ctr': boost.click_through_rate,
+        'days_remaining': boost.days_remaining,
+        'is_active': boost.is_active,
+    })
+
+
+@login_required
+@require_POST
+def cancel_boost(request, boost_id):
+    """Cancel an active boost"""
+    boost = get_object_or_404(BoostedJourney, id=boost_id)
+    
+    # Verify ownership
+    if boost.creator != request.user:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    boost.status = 'cancelled'
+    boost.save()
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Boost cancelled successfully'
+    })
+
+
+@login_required
+def get_boost_recommendations(request, campaign_id):
+    """Get AI-powered boost recommendations based on campaign data"""
+    campaign = get_object_or_404(Campaign, id=campaign_id)
+    
+    # Verify ownership
+    if not (campaign.user and campaign.user.user == request.user):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    # Analyze campaign to suggest best boost types
+    recommendations = []
+    
+    # Check if campaign has many keywords in title/content
+    words = campaign.title.lower().split() + campaign.content.lower().split()
+    if len(words) > 10:
+        recommendations.append({
+            'type': 'search',
+            'title': 'Search Boost Recommended',
+            'description': 'Your campaign has good keywords for search targeting',
+            'suggested_bid': 5.00,
+            'potential_reach': 'High'
+        })
+    
+    # Check engagement to suggest featured placement
+    if campaign.get_love_count() > 10:
+        recommendations.append({
+            'type': 'featured',
+            'title': 'Featured Section Boost',
+            'description': 'Good engagement makes this ideal for featured placement',
+            'price': 9.99,
+            'potential_reach': 'Very High'
+        })
+    
+    # Check category specificity
+    if campaign.category != 'Other Causes':
+        recommendations.append({
+            'type': 'category',
+            'title': 'Category Spotlight',
+            'description': f'Stand out in the {campaign.category} category',
+            'price': 7.99,
+            'potential_reach': 'Medium'
+        })
+    
+    # Bundle recommendation
+    if len(recommendations) >= 2:
+        recommendations.append({
+            'type': 'bundle',
+            'title': 'Complete Bundle',
+            'description': 'Get all placements at a discount',
+            'price': 19.99,
+            'savings': 'Save 30%',
+            'potential_reach': 'Maximum'
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'recommendations': recommendations
+    })
 
 def face(request):
     # ===== DEBUG =====
