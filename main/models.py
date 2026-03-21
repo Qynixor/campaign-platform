@@ -64,7 +64,7 @@ class Profile(models.Model):
     profile_verified = models.BooleanField(default=False)
 
     # ✅ Payment-related field for PayPal
-    paypal_email = models.EmailField(max_length=255, blank=True, null=True)
+    paypal_email = models.EmailField(max_length=254, blank=True, null=True, verbose_name="PayPal Email")
     last_activity = models.DateTimeField(default=timezone.now)
     
     def update_last_activity(self):
@@ -2965,9 +2965,6 @@ class Meta:
         models.Index(fields=['campaign', '-timestamp']),
         models.Index(fields=['user', '-timestamp']),
     ]
-
-
-
 
 
 

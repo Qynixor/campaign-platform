@@ -379,12 +379,15 @@ class ChangemakerAwardAdmin(admin.ModelAdmin):
 # ============================================================================
 # MARKETING & CONTENT ADMIN
 # ============================================================================
+# main/admin.py
 
-from .forms import BlogForm
+from django.contrib import admin
+from .models import Blog  # Import your models
+# from .forms import BlogForm  # Comment this out if you're not using it
 
 @admin.register(Blog)
 class BlogAdmin(admin.ModelAdmin):
-    form = BlogForm
+    # form = BlogForm  # ← REMOVE THIS LINE
     list_display = ('title', 'category', 'status', 'author', 'created_at', 'view_count')
     list_filter = ('status', 'category', 'created_at')
     search_fields = ('title', 'content', 'excerpt', 'author__username')
@@ -413,7 +416,6 @@ class BlogAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-
 
 @admin.register(CampaignStory)
 class CampaignStoryAdmin(admin.ModelAdmin):

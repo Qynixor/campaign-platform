@@ -101,7 +101,7 @@ path('add_activity_comment/<int:activity_id>/', views.add_activity_comment, name
     path('edit-profile/<str:username>/', views.profile_edit, name='edit_profile'),
   path('user-profile/@<str:username>/', views.profile_view, name='profile_view'),
  
-
+   path('signup/', views.custom_signup_view, name='custom_signup'),
     path('recreate-campaign/<int:campaign_id>/', views.recreate_campaign, name='recreate_campaign'),
      path('success/', views.success_page, name='success_page'),
     path('campaign/<int:campaign_id>/activity/create/', views.create_activity, name='create_activity'),
@@ -226,13 +226,15 @@ path('profile/<str:username>/following/',views.following_causes_view, name='foll
     # Subscription URLs
     path('premium/subscribe/', views.subscribe_premium, name='subscribe_premium'),
     path('premium/dashboard/', views.load_premium_dashboard, name='load_premium_dashboard'),
-    path('campaign/<int:campaign_id>/activate-owner-trial/', views.activate_owner_trial, name='activate_owner_trial'),
+       path('check-username/', views.check_username, name='check_username'),
+        path('campaign/<int:campaign_id>/activate-trial/', views.activate_owner_trial, name='activate_owner_trial'),
         path('campaign/<int:campaign_id>/manager/', views.campaign_manager, name='campaign_manager'),
     path('campaign/<int:campaign_id>/boost/create/', views.create_boost, name='create_boost'),
     path('boost/<int:boost_id>/performance/', views.get_boost_performance, name='boost_performance'),
     path('boost/<int:boost_id>/cancel/', views.cancel_boost, name='cancel_boost'),
     path('campaign/<int:campaign_id>/boost/recommendations/', views.get_boost_recommendations, name='boost_recommendations'),
-   
+  # In your urls.py
+path('check-paypal/', views.check_paypal_status, name='check_paypal'),
 ]
 
 

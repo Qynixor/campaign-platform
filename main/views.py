@@ -2766,7 +2766,7 @@ def get_stats(request, campaign_id):
     owner_trial_days = 0
     
     if is_owner:
-        # Check if owner has activated trial
+        # Check if owner has activated trial - FIXED QUERY
         owner_trial = OwnerTrial.objects.filter(
             campaign=campaign,
             owner=request.user,
@@ -2774,11 +2774,13 @@ def get_stats(request, campaign_id):
         ).first()
         
         if owner_trial:
-            # AUTO-EXPIRE CHECK - This runs automatically on every view
+            # Check if expired
             if owner_trial.expires_at <= timezone.now():
+                # Auto-expire if past date
                 owner_trial.is_active = False
                 owner_trial.save()
                 owner_trial_active = False
+                owner_trial_days = 0
             else:
                 owner_trial_active = True
                 has_premium = True
@@ -2807,8 +2809,15 @@ def get_stats(request, campaign_id):
     prediction = None
     analytics = None
     if has_premium:
-        prediction = campaign.get_or_create_prediction()
-        analytics, _ = CampaignAnalytics.objects.get_or_create(campaign=campaign)
+        try:
+            prediction = campaign.get_or_create_prediction()
+        except Exception as e:
+            print(f"Error getting prediction: {e}")
+        
+        try:
+            analytics, _ = CampaignAnalytics.objects.get_or_create(campaign=campaign)
+        except Exception as e:
+            print(f"Error getting analytics: {e}")
     
     html = render_to_string('main/partials/stats_popup.html', {
         'campaign': campaign,
@@ -2834,11 +2843,12 @@ def get_stats(request, campaign_id):
 
 
 
-
-
 @login_required
 def activate_owner_trial(request, campaign_id):
     """Activate 30-day free trial for campaign owner"""
+    import json
+    from datetime import timedelta
+    
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
     # Verify user is the owner
@@ -2854,28 +2864,32 @@ def activate_owner_trial(request, campaign_id):
     ).first()
     
     if existing_trial:
-        # Trial already active, just show premium stats
+        # Trial already active - just return the stats popup
         return get_stats(request, campaign_id)
     
     # Create new 30-day trial
-    trial = OwnerTrial.objects.create(
-        campaign=campaign,
-        owner=request.user,
-        started_at=timezone.now(),
-        expires_at=timezone.now() + timedelta(days=30),
-        is_active=True
-    )
-    
-    # Store in session for quick access
-    request.session[f'owner_trial_{campaign_id}'] = {
-        'active': True,
-        'started': trial.started_at.isoformat(),
-        'expires': trial.expires_at.isoformat()
-    }
-    
-    # Return updated stats popup with premium content
-    return get_stats(request, campaign_id)
-
+    try:
+        trial = OwnerTrial.objects.create(
+            campaign=campaign,
+            owner=request.user,
+            started_at=timezone.now(),
+            expires_at=timezone.now() + timedelta(days=30),
+            is_active=True
+        )
+        
+        # Store in session for quick access
+        request.session[f'owner_trial_{campaign_id}'] = {
+            'active': True,
+            'started': trial.started_at.isoformat(),
+            'expires': trial.expires_at.isoformat()
+        }
+        
+        # For HTMX - return the updated stats popup
+        return get_stats(request, campaign_id)
+        
+    except Exception as e:
+        print(f"Error creating trial: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 
@@ -4823,6 +4837,7 @@ def profile_view(request, username):
         'recent_sales': recent_sales,
         'cloned_journeys': cloned_journeys,
         'cloned_journeys_count': cloned_journeys.count(),
+       'paypal_email': user_obj.profile.paypal_email if hasattr(user_obj, 'profile') else None,
     }
     
     return render(request, 'main/user_profile.html', context)
@@ -6245,3 +6260,128 @@ def check_status(request, user_id):
         'is_online': is_online,
         'last_seen': last_seen_text
     })
+
+
+
+
+# main/views.py
+
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+
+def check_username(request):
+    """Check if username is available and suggest alternatives"""
+    username = request.GET.get('username', '')
+    
+    if len(username) < 3:
+        return JsonResponse({'available': False, 'suggestions': []})
+    
+    # Check if username exists
+    exists = User.objects.filter(username=username).exists()
+    
+    if not exists:
+        return JsonResponse({'available': True, 'suggestions': []})
+    
+    # Generate suggestions
+    suggestions = []
+    for i in range(1, 4):
+        suggestions.append(f"{username}{i}")
+        suggestions.append(f"{username}_{i}")
+    
+    # Remove duplicates and limit to 5
+    suggestions = list(set(suggestions))[:5]
+    
+    return JsonResponse({
+        'available': False,
+        'suggestions': suggestions
+    })
+
+# main/views.py
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib import messages
+from django.urls import reverse
+from .forms import CustomSignupForm
+import logging
+
+logger = logging.getLogger(__name__)
+
+def custom_signup_view(request):
+    """Custom signup view that saves PayPal email to user profile"""
+    
+    if request.method == 'POST':
+        form = CustomSignupForm(request.POST)
+        
+        if form.is_valid():
+            try:
+                # Save the user
+                user = form.save()
+                print(f"DEBUG: User created: {user.username}")
+                
+                # Verify profile was created with PayPal email
+                user.refresh_from_db()
+                
+                if hasattr(user, 'profile'):
+                    user.profile.refresh_from_db()
+                    print(f"DEBUG: Profile exists with PayPal email: {user.profile.paypal_email}")
+                    
+                    if not user.profile.paypal_email:
+                        print("DEBUG: PayPal email still None, trying to save again")
+                        paypal_email = form.cleaned_data.get('paypal_email')
+                        user.profile.paypal_email = paypal_email
+                        user.profile.save()
+                        print(f"DEBUG: Re-saved PayPal email: {user.profile.paypal_email}")
+                else:
+                    print("DEBUG: No profile found! Creating one now...")
+                    from .models import Profile
+                    profile = Profile.objects.create(
+                        user=user,
+                        paypal_email=form.cleaned_data.get('paypal_email')
+                    )
+                    print(f"DEBUG: Created new profile with PayPal email: {profile.paypal_email}")
+                
+                # Log the user in
+                user.backend = 'django.contrib.auth.backends.ModelBackend'
+                login(request, user)
+                
+                messages.success(request, 'Account created successfully!')
+                
+                # Redirect to the profile view with the username
+                # Using your existing profile URL pattern: 'user-profile/@username/'
+                return redirect('profile_view', username=user.username)
+                
+            except Exception as e:
+                print(f"DEBUG: Error: {str(e)}")
+                messages.error(request, f'Error creating account: {str(e)}')
+                return redirect('custom_signup')
+        else:
+            # Display form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = CustomSignupForm()
+    
+    return render(request, 'account/signup.html', {'form': form})
+
+
+
+# main/views.py - Add this test view
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def check_paypal_status(request):
+    """Test view to check PayPal email status"""
+    if hasattr(request.user, 'profile'):
+        return JsonResponse({
+            'has_profile': True,
+            'paypal_email': request.user.profile.paypal_email,
+            'user_id': request.user.id,
+            'username': request.user.username
+        })
+    else:
+        return JsonResponse({
+            'has_profile': False,
+            'paypal_email': None
+        })

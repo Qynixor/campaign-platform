@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    
+        path('check-username/', views.check_username, name='check_username'),
     # Lazy-loaded section URLs
     path('section/trending/', views.section_trending, name='section_trending'),
     path('section/rising/', views.section_rising, name='section_rising'),

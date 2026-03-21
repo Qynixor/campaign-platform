@@ -1,3 +1,5 @@
+# main/forms.py
+
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -9,7 +11,6 @@ from .models import (
     UserVerification, Pledge, Blog, Donation
 )
 
-
 # ============================================================================
 # CUSTOM VALIDATORS
 # ============================================================================
@@ -20,20 +21,87 @@ def validate_no_long_words(value):
         if len(word) > 20:
             raise ValidationError(f"Word '{word}' exceeds the allowed length of 20 characters.")
 
+# main/forms.py
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from .models import Profile
+import logging
+
+logger = logging.getLogger(__name__)
+
+class CustomSignupForm(UserCreationForm):
+    email = forms.EmailField(
+        required=True,
+        label="Email Address",
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'your-email@example.com'
+        })
+    )
+    
+    paypal_email = forms.EmailField(
+        required=True,
+        label="PayPal Email",
+        help_text="Required—we need your PayPal email to send you payouts.",
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'your-email@paypal.com'
+        })
+    )
+    
+    terms_agreement = forms.BooleanField(
+        required=True,
+        error_messages={
+            'required': 'You must agree to the terms and conditions to sign up.'
+        }
+    )
+    
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("A user with this email already exists.")
+        return email
+    
+    def clean_paypal_email(self):
+        paypal_email = self.cleaned_data.get('paypal_email')
+        print(f"Cleaning paypal_email: {paypal_email}")
+        if not paypal_email:
+            raise forms.ValidationError("PayPal email is required to receive payouts.")
+        return paypal_email
+    
+    def save(self, commit=True):
+        print("DEBUG: Entering save method")
+        # Save user
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        
+        paypal_email = self.cleaned_data.get('paypal_email')
+        print(f"DEBUG: PayPal email from form: {paypal_email}")
+        
+        if commit:
+            user.save()
+            print(f"DEBUG: User saved with username: {user.username}")
+            
+            # Create or update profile
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.paypal_email = paypal_email
+            profile.save()
+            print(f"DEBUG: Profile {'created' if created else 'updated'} with PayPal email: {profile.paypal_email}")
+            
+            # Double-check it saved
+            profile.refresh_from_db()
+            print(f"DEBUG: Verified profile PayPal email after save: {profile.paypal_email}")
+        
+        return user
 
 # ============================================================================
 # PROFILE FORMS
 # ============================================================================
 
 class ProfileForm(forms.ModelForm):
-    paypal_email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Enter your PayPal email'
-        })
-    )
-
     class Meta:
         model = Profile
         fields = [
@@ -41,6 +109,44 @@ class ProfileForm(forms.ModelForm):
             'date_of_birth', 'gender', 'highest_level_of_education',
             'paypal_email'
         ]
+        widgets = {
+            'paypal_email': forms.EmailInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'your-email@paypal.com'
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-input',
+                'rows': 4,
+                'placeholder': 'Tell us about yourself...'
+            }),
+            'contact': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Your phone number'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'City, Country'
+            }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-input',
+                'type': 'date'
+            }),
+            'gender': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'highest_level_of_education': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'image': forms.FileInput(attrs={
+                'class': 'form-file'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields optional
+        for field in self.fields:
+            self.fields[field].required = False
 
 
 class ProfileSearchForm(forms.Form):
@@ -59,6 +165,7 @@ class UserForm(forms.ModelForm):
             'username': 'Username:',
             'email': 'Email:'
         }
+
 
 # ============================================================================
 # CAMPAIGN FORMS
@@ -87,7 +194,7 @@ class CampaignForm(forms.ModelForm):
         model = Campaign
         fields = [
             'title', 'category', 'poster', 'audio',
-           'content', 'duration',
+            'content', 'duration',
             'duration_unit', 'funding_goal'
         ]
         
@@ -102,7 +209,6 @@ class CampaignForm(forms.ModelForm):
                 'rows': 5
             }),
             'category': forms.Select(attrs={'class': 'form-select'}),
-         
             'duration': forms.NumberInput(attrs={
                 'class': 'form-input',
                 'min': '1',
@@ -134,7 +240,6 @@ class CampaignForm(forms.ModelForm):
         self.fields['title'].required = True
         self.fields['content'].required = True
         self.fields['category'].required = True
-       
         
         # Optional fields
         self.fields['poster'].required = False
@@ -243,6 +348,7 @@ class CampaignForm(forms.ModelForm):
 class CampaignSearchForm(forms.Form):
     search_query = forms.CharField(label='Search', max_length=100)
 
+
 # ============================================================================
 # ACTIVITY FORMS
 # ============================================================================
@@ -265,7 +371,7 @@ class ActivityForm(forms.ModelForm):
         required=False,
         widget=forms.Select(attrs={
             'class': 'screenshot-count-select',
-            'style': 'display: none;'  # Hidden by default, shown only for videos
+            'style': 'display: none;'
         })
     )
     
@@ -294,7 +400,6 @@ class ActivityForm(forms.ModelForm):
             elif hasattr(file, 'public_id'):
                 return file.public_id.lower()
             elif hasattr(file, 'url'):
-                # Extract from URL
                 url_parts = str(file.url).split('/')
                 return url_parts[-1].lower() if url_parts else ""
             else:
@@ -310,7 +415,6 @@ class ActivityForm(forms.ModelForm):
             elif hasattr(file, 'file') and hasattr(file.file, 'content_type'):
                 return file.file.content_type
             elif hasattr(file, 'resource_type'):
-                # Cloudinary resource_type
                 return file.resource_type
             return ""
         except (AttributeError, TypeError):
@@ -337,20 +441,16 @@ class ActivityForm(forms.ModelForm):
         file = self.cleaned_data.get('file')
         
         if file:
-            # Safely get file info
             file_name = self._get_file_name(file)
             content_type = self._get_content_type(file)
             
-            # Determine file type
             is_video = False
             is_image = False
             
-            # Check by content type
             if content_type:
                 is_video = content_type.startswith('video/') or content_type == 'video'
                 is_image = content_type.startswith('image/') or content_type == 'image'
             
-            # Check by file extension if not determined
             if not (is_video or is_image):
                 video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
                 image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
@@ -358,18 +458,16 @@ class ActivityForm(forms.ModelForm):
                 is_video = any(file_name.endswith(ext) for ext in video_exts)
                 is_image = any(file_name.endswith(ext) for ext in image_exts)
             
-            # Set different size limits based on file type
-            max_size = 500 * 1024 * 1024  # Default 500MB
+            max_size = 500 * 1024 * 1024
             size_limit_mb = 500
             
             if is_image:
-                max_size = 20 * 1024 * 1024  # 20MB for images
+                max_size = 20 * 1024 * 1024
                 size_limit_mb = 20
             elif is_video:
-                max_size = 500 * 1024 * 1024  # 500MB for videos
+                max_size = 500 * 1024 * 1024
                 size_limit_mb = 500
             
-            # Check file size (only for new uploads, not existing Cloudinary files)
             if hasattr(file, 'size') and file.size:
                 if file.size > max_size:
                     file_type = "Video" if is_video else "Image" if is_image else "File"
@@ -378,15 +476,12 @@ class ActivityForm(forms.ModelForm):
                         f'Current size: {file.size / (1024*1024):.1f}MB'
                     )
             
-            # Validate file type
             if not (is_video or is_image) and content_type and not content_type.startswith('audio/'):
-                # Check if it's audio
                 audio_exts = ['.mp3', '.wav', '.ogg', '.m4a']
                 is_audio = any(file_name.endswith(ext) for ext in audio_exts) or content_type.startswith('audio/')
                 if not is_audio:
                     raise forms.ValidationError('Only image, video, and audio files are allowed')
             
-            # Add file type info to cleaned data for use in view
             self.cleaned_data['_is_video'] = is_video
             self.cleaned_data['_is_image'] = is_image
         
@@ -426,7 +521,7 @@ class CommentForm(forms.ModelForm):
 class SupportForm(forms.ModelForm):
     class Meta:
         model = SupportCampaign
-        fields = []  # Remove the 'category' field from the list
+        fields = []
 
 
 # ============================================================================
@@ -489,7 +584,7 @@ class UserVerificationForm(forms.ModelForm):
     def clean_document(self):
         document = self.cleaned_data.get('document')
         if document:
-            if document.size > 5 * 1024 * 1024:  # Limit file size to 5 MB
+            if document.size > 5 * 1024 * 1024:
                 raise forms.ValidationError("File size must be under 5 MB.")
         return document
 
