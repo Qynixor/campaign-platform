@@ -1,4 +1,3 @@
-
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from .models import Campaign, Profile, Blog
@@ -22,15 +21,10 @@ class StaticViewSitemap(Sitemap):
             'fund',
             'geno',
             'face',
-            'jobs',
-            'events',
-            'library_affiliates',
-            'news_affiliates',
-            'changemakers_view',
-            'affiliate_links',
-            'platformfund',
             'blog_list',
             'campaign_story_list',
+            'journey',
+            'saved_journeys',
         ]
 
     def location(self, item):
@@ -43,16 +37,16 @@ class CampaignSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # Fetch all public campaigns
-        return Campaign.objects.filter(visibility='public')
+        # Fetch all active campaigns (no visibility field anymore)
+        return Campaign.objects.filter(is_active=True)
 
     def lastmod(self, obj):
         # Return the timestamp of the last modification
         return obj.timestamp
 
     def location(self, obj):
-        # Generate the URL for the campaign
-        return reverse('view_campaign', args=[obj.id])
+        # Generate the URL for the campaign journey page
+        return reverse('campaign_journey', args=[obj.id])
 
 
 class ProfileSitemap(Sitemap):
@@ -79,19 +73,11 @@ class BlogSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # Only published blog posts - use status field instead of is_published property
-        # Option 1: Filter by status='published'
+        # Only published blog posts
         return Blog.objects.filter(status='published')
-        
-        # Option 2: If you also want to ensure published_at is set
-        # return Blog.objects.filter(status='published', published_at__isnull=False)
-        
-        # Option 3: If you want to order by publication date
-        # return Blog.objects.filter(status='published').order_by('-published_at')
 
     def lastmod(self, obj):
-        # Use updated_at if available, otherwise created_at
-        # Since your model has updated_at, we can use that
+        # Use updated_at for last modification date
         return obj.updated_at
 
     def location(self, obj):
