@@ -4100,7 +4100,7 @@ def recreate_campaign(request, campaign_id):
                     )
             
             messages.success(request, 'Campaign updated successfully!')
-            return redirect('view_campaign', campaign_id=existing_campaign.id)
+            return redirect('campaign_journey', campaign_id=existing_campaign.id)
         else:
             print(f"DEBUG - Form errors: {form.errors}")
             messages.error(request, 'There were errors in your form. Please correct them below.')
@@ -4743,7 +4743,7 @@ def profile_view(request, username):
                 'id': campaign.id,
                 'title': campaign.title,
                 'end_date': campaign.end_date or campaign.timestamp,
-                'follower_count': campaign.follower_count,
+               'follower_count': campaign.get_follower_count(),
                 'activity_count': activity_count,
                 'products': products,
             })

@@ -845,6 +845,40 @@ class Campaign(models.Model):
         except:
             return None
 
+    def is_day_locked(self, day_number):
+        """
+        Check if a specific day is locked (future day that hasn't been reached yet)
+        Returns True if the day is locked (cannot be posted yet)
+        """
+        try:
+            current_day = self.get_current_day()
+            # Day is locked if it's greater than the current real day
+            # But days can still be edited if they're already posted
+            return day_number > current_day
+        except:
+            return False
+    
+    def get_day_status(self, day_number):
+        """
+        Get the status of a specific day
+        Returns: 'locked', 'available', or 'completed'
+        """
+        try:
+            current_day = self.get_current_day()
+            
+            if day_number > current_day:
+                return 'locked'
+            elif day_number == current_day:
+                return 'available'
+            else:
+                return 'completed'
+        except:
+            return 'locked'
+
+
+
+
+
 
 # NEW: Campaign Follow through model
 class CampaignFollow(models.Model):
