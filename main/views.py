@@ -2148,27 +2148,35 @@ from django.http import JsonResponse
 import time
 import traceback
 
+
 @login_required
 def create_activity(request, campaign_id):
     """
     PROGRESSIVE ACTIVITY CREATION VIEW WITH DAY LOCKING AND VIDEO PROCESSING
-    FIXED: Added proper database connection handling and transaction management
     """
     
-    category_filter = request.GET.get('category', '')
+    print("=" * 50)
+    print("CREATE ACTIVITY CALLED")
+    print(f"Campaign ID: {campaign_id}")
+    print(f"User: {request.user}")
+    print(f"Method: {request.method}")
+    print(f"Is AJAX: {request.headers.get('X-Requested-With') == 'XMLHttpRequest'}")
+    
     user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    # 🔒 Ensure user owns the campaign
+    # Ensure user owns the campaign
     if campaign.user != user_profile:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
         messages.error(request, "You can only create activities for your own campaigns.")
         return redirect('activity_list', campaign_id=campaign_id)
 
-    # Get existing activities for this campaign, ordered by timestamp
+    # Get existing activities
     existing_activities = Activity.objects.filter(campaign=campaign).order_by('timestamp')
     existing_count = existing_activities.count()
     
-    # ===== REAL-TIME DAY CALCULATION =====
+    # Real-time day calculation
     current_real_day = campaign.get_current_day()
     next_available_day = existing_count + 1
     is_next_day_locked = next_available_day > current_real_day
@@ -2178,28 +2186,70 @@ def create_activity(request, campaign_id):
     else:
         days_until_unlock = 0
     
-    # Calculate how many forms to show
     MAX_FORMS = 10
     
-    if existing_count >= MAX_FORMS:
-        forms_to_show = MAX_FORMS
-        empty_forms = 0
-    else:
-        forms_to_show = existing_count + 1
-        empty_forms = 1
-    
-    # Create the formset
+    # Create formset
     ActivityFormSet = inlineformset_factory(
         Campaign,
         Activity,
         form=ActivityForm,
-        extra=empty_forms,
+        extra=1 if not is_next_day_locked and existing_count < MAX_FORMS else 0,
         can_delete=True,
         max_num=MAX_FORMS,
-        fields=['content', 'file', 'screenshot_count']
+        fields=['file', 'screenshot_count']
     )
 
+    # ===== HANDLE AJAX VIDEO UPLOAD (DIRECT) =====
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        print("Processing AJAX video upload")
+        
+        video_file = request.FILES.get('video_file')
+        screenshot_count = request.POST.get('screenshot_count', 5)
+        
+        if not video_file:
+            return JsonResponse({'success': False, 'error': 'No video file uploaded'}, status=400)
+        
+        # Check if day is locked
+        if campaign.is_day_locked(next_available_day):
+            return JsonResponse({'success': False, 'error': f'Day {next_available_day} is locked. Available in {days_until_unlock} days.'}, status=400)
+        
+        # Check file size
+        if video_file.size > 40 * 1024 * 1024:
+            return JsonResponse({'success': False, 'error': 'Video must be under 40MB'}, status=400)
+        
+        try:
+            # Create activity
+            activity = Activity.objects.create(
+                campaign=campaign,
+                file=video_file,
+                screenshot_count=int(screenshot_count),
+                is_video=True,
+                video_processed=False,
+                content=""
+            )
+            
+            print(f"Activity created: {activity.id}")
+            
+            # Process video in background
+            transaction.on_commit(lambda: process_videos_in_background([activity.id], request))
+            
+            return JsonResponse({
+                'success': True,
+                'activity_id': activity.id,
+                'message': 'Video uploaded successfully. Processing screenshots...',
+                'redirect_url': f'/campaign/{campaign_id}/activity_list/'
+            })
+            
+        except Exception as e:
+            print(f"Error creating activity: {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    # ===== HANDLE REGULAR FORMSET POST =====
     if request.method == 'POST':
+        print("Processing formset POST")
+        
         formset = ActivityFormSet(
             request.POST, 
             request.FILES, 
@@ -2209,7 +2259,6 @@ def create_activity(request, campaign_id):
         
         if formset.is_valid():
             try:
-                # Close any stale connections before starting
                 connection.close_if_unusable_or_obsolete()
                 
                 with transaction.atomic():
@@ -2218,82 +2267,43 @@ def create_activity(request, campaign_id):
                     saved_count = 0
                     new_count = 0
                     updated_count = 0
-                    video_activities = []  # Track activities that need video processing
-                    
-                    # Track if user tried to post a locked day
+                    video_activities = []
+                    new_activity_ids = []
                     locked_day_attempt = False
                     
                     for idx, instance in enumerate(instances):
-                        # Check if this is a new activity (no pk)
+                        # Check for locked day on new activities
                         if not instance.pk:
-                            # This is a new activity - check if its day is locked
                             activity_day = existing_count + 1
-                            
                             if campaign.is_day_locked(activity_day):
                                 locked_day_attempt = True
                                 continue
                         
-                        # Skip completely empty forms
-                        if not instance.content and not instance.file:
+                        # Skip empty forms
+                        if not instance.file:
                             if instance.pk:
                                 original = Activity.objects.get(pk=instance.pk)
-                                if (instance.content == original.content and 
-                                    str(instance.file) == str(original.file)):
+                                if str(instance.file) == str(original.file):
                                     continue
                             else:
                                 continue
-                            
-                        # If there's a file but no content, add default content
-                        if instance.file and not instance.content:
-                            instance.content = f"Shared a file for Day {activity_day if not instance.pk else 'update'}"
                         
-                        # ===== IMPROVED VIDEO DETECTION =====
+                        # Video detection
                         if instance.file:
-                            is_video = False
-                            
-                            # Method 1: Check if it's a Cloudinary video
-                            if hasattr(instance.file, 'resource_type'):
-                                is_video = instance.file.resource_type == 'video'
-                                print(f"Video detection - resource_type: {instance.file.resource_type} -> {is_video}")
-                            
-                            # Method 2: Check content type
-                            if not is_video and hasattr(instance.file, 'content_type'):
-                                content_type = instance.file.content_type
-                                is_video = content_type and content_type.startswith('video/')
-                                print(f"Video detection - content_type: {content_type} -> {is_video}")
-                            
-                            # Method 3: Check URL/file name
-                            if not is_video:
-                                try:
-                                    # Get string representation
-                                    file_str = str(instance.file).lower()
-                                    video_extensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
-                                    is_video = any(ext in file_str for ext in video_extensions)
-                                    print(f"Video detection - filename: {file_str} -> {is_video}")
-                                    
-                                    # Check URL if available
-                                    if not is_video and hasattr(instance.file, 'url'):
-                                        url = instance.file.url.lower()
-                                        is_video = any(ext in url for ext in video_extensions)
-                                        print(f"Video detection - URL: {url} -> {is_video}")
-                                except (AttributeError, TypeError):
-                                    pass
-                            
+                            is_video = self._detect_video(instance.file)
                             instance.is_video = is_video
+                            instance.content = ""
                             
                             if is_video:
                                 instance.video_processed = False
-                                
-                                # Get screenshot count from form data
                                 screenshot_count_key = f'form-{idx}-screenshot_count'
                                 if screenshot_count_key in request.POST:
                                     try:
                                         instance.screenshot_count = int(request.POST[screenshot_count_key])
-                                    except (ValueError, TypeError):
-                                        instance.screenshot_count = 5  # Default
+                                    except:
+                                        instance.screenshot_count = 5
                                 print(f"Video activity detected - screenshot count: {instance.screenshot_count}")
                         
-                        # Save the instance
                         instance.save()
                         saved_count += 1
                         
@@ -2301,12 +2311,13 @@ def create_activity(request, campaign_id):
                             new_count += 1
                             if instance.is_video:
                                 video_activities.append(instance.id)
+                                new_activity_ids.append(instance.id)
                         else:
                             updated_count += 1
                             if instance.is_video and not instance.video_processed:
                                 video_activities.append(instance.id)
                     
-                    # Handle deleted forms
+                    # Handle deletions
                     deleted_count = 0
                     for form in formset.deleted_forms:
                         if form.instance.pk:
@@ -2314,109 +2325,59 @@ def create_activity(request, campaign_id):
                                 form.instance.video_screenshots.all().delete()
                             form.instance.delete()
                             deleted_count += 1
-                    
-                    # IMPORTANT: The transaction is committed here automatically
-                    
-                # ===== VIDEO PROCESSING (AFTER TRANSACTION COMMIT) =====
-                # Use transaction.on_commit to ensure processing happens after commit
+                
+                # Process videos in background
                 if video_activities:
-                    # Process videos in a separate connection/transaction
                     transaction.on_commit(lambda: process_videos_in_background(video_activities, request))
-                    
-                    # Provide immediate feedback to user
-                    messages.info(request, "Video uploaded successfully. Screenshots will be created in the background and appear shortly.")
-                    
-                # Create appropriate messages
+                    messages.info(request, "Video uploaded. Screenshots will appear shortly.")
+                
                 if locked_day_attempt:
-                    messages.warning(
-                        request, 
-                        f"Day {next_available_day} is locked. It will be available in {days_until_unlock} day{'s' if days_until_unlock > 1 else ''}. Your other changes were saved."
-                    )
+                    messages.warning(request, f"Day {next_available_day} is locked. Available in {days_until_unlock} days.")
                 elif saved_count > 0 or deleted_count > 0:
-                    action_messages = []
-                    if new_count > 0:
-                        action_messages.append(f"Created Day {next_available_day - 1}")
-                    if updated_count > 0:
-                        action_messages.append(f"Updated {updated_count} existing day{'s' if updated_count > 1 else ''}")
-                    if deleted_count > 0:
-                        action_messages.append(f"Deleted {deleted_count} day{'s' if deleted_count > 1 else ''}")
-                    
-                    messages.success(request, ' • '.join(action_messages))
-                else:
-                    messages.info(request, 'No changes were made.')
+                    messages.success(request, 'Changes saved successfully.')
                 
                 return redirect('activity_list', campaign_id=campaign_id)
-                    
-            except (InternalError, OperationalError) as e:
-                if "idle-in-transaction" in str(e):
-                    messages.error(request, 'Database timeout occurred. Please try again.')
-                else:
-                    messages.error(request, f'Database error: {str(e)}')
-                print(f"Database error in create_activity: {e}")
-                traceback.print_exc()
+                
             except Exception as e:
-                messages.error(request, f'Error saving activities: {str(e)}')
-                print(f"Error in create_activity: {e}")
+                print(f"Error: {e}")
+                import traceback
                 traceback.print_exc()
+                messages.error(request, f'Error saving activities: {str(e)}')
+                return redirect('activity_list', campaign_id=campaign_id)
         else:
-            error_count = sum(len(form.errors) for form in formset)
-            messages.error(request, f'Please correct the {error_count} error{"s" if error_count > 1 else ""} below.')
-    else:
-        formset = ActivityFormSet(
-            instance=campaign,
-            queryset=existing_activities
-        )
-
-    # Calculate campaign progress information
+            errors = []
+            for form in formset:
+                for field, field_errors in form.errors.items():
+                    for error in field_errors:
+                        errors.append(f"{field}: {error}")
+            messages.error(request, f'Please correct the errors: {", ".join(errors)}')
+    
+    # ===== GET REQUEST - RENDER FORM =====
+    formset = ActivityFormSet(instance=campaign, queryset=existing_activities)
+    
+    # Calculate progress
     if campaign.duration and campaign.days_left is not None:
-        if campaign.duration_unit == 'days':
-            total_duration = campaign.duration
-            progress_percentage = (current_real_day / total_duration) * 100 if total_duration > 0 else 0
-        else:
-            total_duration = campaign.duration
-            progress_percentage = (current_real_day / total_duration) * 100 if total_duration > 0 else 0
+        progress_percentage = (current_real_day / campaign.duration) * 100 if campaign.duration > 0 else 0
     else:
-        progress_percentage = existing_count * 10
-        if progress_percentage > 100:
-            progress_percentage = 100
+        progress_percentage = min(existing_count * 10, 100)
     
     progress_percentage = min(progress_percentage, 100)
     
-    # Calculate if user is ahead/behind schedule
+    # Schedule status
     if campaign.duration and campaign.days_left is not None:
         if existing_count > current_real_day:
-            schedule_status = "ahead"
-            schedule_diff = existing_count - current_real_day
+            schedule_status, schedule_diff = "ahead", existing_count - current_real_day
         elif existing_count < current_real_day:
-            schedule_status = "behind"
-            schedule_diff = current_real_day - existing_count
+            schedule_status, schedule_diff = "behind", current_real_day - existing_count
         else:
-            schedule_status = "on_track"
-            schedule_diff = 0
+            schedule_status, schedule_diff = "on_track", 0
     else:
-        schedule_status = "ongoing"
-        schedule_diff = 0
-
-    next_day_status = campaign.get_day_status(next_available_day) if hasattr(campaign, 'get_day_status') else None
-
-    # Emojis
-    emojis = [
-        '📢', '🎉', '💼', '📊', '💡', '🔍', '📣', '🎯', '🔔', '📱', '💸', '⭐', '💥', '🌟', 
-        '🌳', '🌍', '🌱', '🌲', '🌿', '🍃', '🏞️', '🦋', '🐝', '🐞', '🦜', '🐢', '🐘', '🐆', '🐅', '🐬',
-        '💉', '❤️', '🩺', '🚑', '🏥', '🧬', '💊', '🩹', '🧑‍⚕️', '👨‍⚕️', '🩸', '🫁', '🫀', '🧠', '🦷', '👁️',
-        '📚', '🎓', '🏫', '🖊️', '📖', '✍️', '🧑‍🏫', '👨‍🏫', '📜', '🔖', '📕', '📝', '📋', '📑', '🧮', '🎒',
-        '🤝', '🗣️', '💬', '🏘️', '🏠', '👩‍🏫', '👨‍🏫', '🧑‍🎓', '👩‍🎓', '👨‍🎓', '🏘️', '🏡', '🏙️', '🚪', '🛠️', '🛏️',
-        '⚖️', '🕊️', '🏳️‍🌈', '🔒', '🛡️', '📜', '📛', '🤲', '✌️', '👐', '🙏', '🧑‍⚖️', '👨‍⚖️', '📝', '🪧', '🎗️',
-        '🐾', '🐕', '🐈', '🐅', '🐆', '🐘', '🐄', '🐑', '🐇', '🐿️', '🐦', '🦢', '🦉', '🐠', '🦑', '🦓', '🐅',
-    ]
-
-    initial_emojis = emojis[:10]
-
+        schedule_status, schedule_diff = "ongoing", 0
+    
     context = {
         'formset': formset,
         'campaign': campaign,
         'user_profile': user_profile,
-        'initial_emojis': initial_emojis,
         'existing_activities_count': existing_count,
         'max_forms': MAX_FORMS,
         'is_at_max': existing_count >= MAX_FORMS,
@@ -2427,13 +2388,25 @@ def create_activity(request, campaign_id):
         'progress_percentage': progress_percentage,
         'schedule_status': schedule_status,
         'schedule_diff': schedule_diff,
-        'next_day_status': next_day_status,
         'screenshot_count_options': [3, 5, 7, 10],
         'supported_video_formats': ['mp4', 'mov', 'avi', 'webm', 'mkv'],
     }
 
     return render(request, 'main/activity_create.html', context)
 
+
+def _detect_video(self, file):
+    """Helper method to detect if file is a video"""
+    try:
+        if hasattr(file, 'resource_type'):
+            return file.resource_type == 'video'
+        if hasattr(file, 'content_type'):
+            return file.content_type and file.content_type.startswith('video/')
+        file_str = str(file).lower()
+        video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
+        return any(ext in file_str for ext in video_exts)
+    except:
+        return False
 
 def process_videos_in_background(activity_ids, request=None):
     """
@@ -2549,6 +2522,52 @@ def debug_video_processing(request, activity_id):
         'screenshot_count': activity.screenshots.count(),
         'file_url': activity.file.url if activity.file else None
     })
+
+
+
+# ============================================================================
+# PROGRESS CHECKING ENDPOINTS
+# ============================================================================
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import Activity, VideoScreenshot
+
+@login_required
+def check_video_status(request, activity_id):
+    """Check if video processing is complete"""
+    try:
+        from .models import VideoScreenshot
+        
+        activity = get_object_or_404(Activity, id=activity_id)
+        
+        if activity.campaign.user.user != request.user:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+        screenshot_count = VideoScreenshot.objects.filter(activity=activity).count()
+        is_processed = activity.video_processed or screenshot_count > 0
+        
+        return JsonResponse({
+            'processed': is_processed,
+            'screenshot_count': screenshot_count,
+            'total_screenshots': activity.screenshot_count
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def check_upload_progress(request):
+    """Check upload progress (for large files)"""
+    # This can be extended with session-based progress tracking
+    return JsonResponse({'progress': 0})
+
+
+
+
+
+
+
+
 
 
 @login_required
@@ -3238,10 +3257,6 @@ def get_menu(request, campaign_id):
     except Exception as e:
         return HttpResponse(f'<div class="error">Error loading menu: {str(e)}</div>')
 
-
-# ============================================================================
-# CLONE JOURNEY
-# ============================================================================
 @login_required
 @require_POST
 def clone_journey(request, original_id):
@@ -3272,34 +3287,38 @@ def clone_journey(request, original_id):
         except:
             creator_username = "someone"
         
-        # Create new campaign
+        # Create new campaign - Copy media
         new_campaign = Campaign.objects.create(
             user=request.user.profile,
             title=f"My {original.title}",
-            content=f"Following {creator_username}'s journey",
+            content=f"Started {creator_username}'s journey",
             category=original.category,
             duration=original.duration,
             duration_unit=original.duration_unit,
             template=original,
             is_active=True,
+            # Copy media
+            poster=original.poster,
+            additional_images=original.additional_images.copy() if original.additional_images else [],
+            audio=original.audio,
         )
         
-        # Copy activities - Using correct field names from your model
+        # Copy activities - Only copy fields that exist in the database
+        # DO NOT copy day_number (it's a property, calculated automatically)
         for act in original.activity_set.all():
-            # Create activity with the correct fields
-            activity = Activity.objects.create(
-                campaign=new_campaign,
-                day_number=act.day_number,  # Make sure this field exists in your Activity model
-                content=act.content,  # This exists in your model
-                # Don't copy the file - each user should upload their own
-                # file=None,  # Don't copy files
-                is_active=True,
-            )
+            activity_data = {
+                'campaign': new_campaign,
+                'content': act.content,
+                'is_video': act.is_video,
+                'video_processed': act.video_processed,
+                'screenshot_count': act.screenshot_count,
+            }
             
-            # Note: We're NOT copying the file field because:
-            # 1. Files might be large
-            # 2. Each user should upload their own content
-            # 3. Copyright/ownership reasons
+            # Copy file if it exists
+            if act.file:
+                activity_data['file'] = act.file
+            
+            Activity.objects.create(**activity_data)
         
         return JsonResponse({
             'success': True,
@@ -3311,9 +3330,6 @@ def clone_journey(request, original_id):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
-
-# views.py - Add these new views
-
 
 
 # views.py - Simplified campaign_manager view

@@ -348,20 +348,13 @@ class CampaignForm(forms.ModelForm):
 class CampaignSearchForm(forms.Form):
     search_query = forms.CharField(label='Search', max_length=100)
 
-
-# ============================================================================
-# ACTIVITY FORMS
-# ============================================================================
-
 class ActivityForm(forms.ModelForm):
     file = forms.FileField(
         required=False,
-        label="Add Media (optional)",
-        help_text="Upload image, video or audio file (max 100MB for videos, 10MB for images)",
+        label="Upload Video",
         widget=forms.ClearableFileInput(attrs={
-            'accept': 'image/*,video/*,audio/*',
+            'accept': 'video/*',
             'class': 'file-input',
-            'multiple': False
         })
     )
     
@@ -371,121 +364,29 @@ class ActivityForm(forms.ModelForm):
         required=False,
         widget=forms.Select(attrs={
             'class': 'screenshot-count-select',
-            'style': 'display: none;'
         })
     )
     
     class Meta:
         model = Activity
-        fields = ['content', 'file', 'screenshot_count']
-        widgets = {
-            'content': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Share an update, ask for help, celebrate progress...',
-                'class': 'activity-content'
-            }),
-        }
-
+        fields = ['file', 'screenshot_count']
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'content' in self.fields:
+            del self.fields['content']
         if not self.instance.pk:
-            self.fields['content'].required = False
-            self.fields['content'].initial = ''
+            self.fields['file'].required = True
     
-    def _get_file_name(self, file):
-        """Safely get filename from any file type (regular file or Cloudinary)"""
-        try:
-            if hasattr(file, 'name'):
-                return file.name.lower()
-            elif hasattr(file, 'public_id'):
-                return file.public_id.lower()
-            elif hasattr(file, 'url'):
-                url_parts = str(file.url).split('/')
-                return url_parts[-1].lower() if url_parts else ""
-            else:
-                return str(file).lower()
-        except (AttributeError, TypeError):
-            return ""
-    
-    def _get_content_type(self, file):
-        """Safely get content type from any file type"""
-        try:
-            if hasattr(file, 'content_type'):
-                return file.content_type
-            elif hasattr(file, 'file') and hasattr(file.file, 'content_type'):
-                return file.file.content_type
-            elif hasattr(file, 'resource_type'):
-                return file.resource_type
-            return ""
-        except (AttributeError, TypeError):
-            return ""
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        content = cleaned_data.get('content')
-        file = cleaned_data.get('file')
-        
-        if not content and not file:
-            raise forms.ValidationError(
-                "Please provide either content or a media file for the activity."
-            )
-        return cleaned_data
-
-    def clean_content(self):
-        content = self.cleaned_data.get('content')
-        if content:
-            validate_no_long_words(content)
-        return content
-
     def clean_file(self):
         file = self.cleaned_data.get('file')
-        
         if file:
-            file_name = self._get_file_name(file)
-            content_type = self._get_content_type(file)
-            
-            is_video = False
-            is_image = False
-            
-            if content_type:
-                is_video = content_type.startswith('video/') or content_type == 'video'
-                is_image = content_type.startswith('image/') or content_type == 'image'
-            
-            if not (is_video or is_image):
-                video_exts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v', '.mpg', '.mpeg']
-                image_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
-                
-                is_video = any(file_name.endswith(ext) for ext in video_exts)
-                is_image = any(file_name.endswith(ext) for ext in image_exts)
-            
-            max_size = 500 * 1024 * 1024
-            size_limit_mb = 500
-            
-            if is_image:
-                max_size = 20 * 1024 * 1024
-                size_limit_mb = 20
-            elif is_video:
-                max_size = 500 * 1024 * 1024
-                size_limit_mb = 500
-            
-            if hasattr(file, 'size') and file.size:
-                if file.size > max_size:
-                    file_type = "Video" if is_video else "Image" if is_image else "File"
-                    raise forms.ValidationError(
-                        f'{file_type} size must be under {size_limit_mb}MB. '
-                        f'Current size: {file.size / (1024*1024):.1f}MB'
-                    )
-            
-            if not (is_video or is_image) and content_type and not content_type.startswith('audio/'):
-                audio_exts = ['.mp3', '.wav', '.ogg', '.m4a']
-                is_audio = any(file_name.endswith(ext) for ext in audio_exts) or content_type.startswith('audio/')
-                if not is_audio:
-                    raise forms.ValidationError('Only image, video, and audio files are allowed')
-            
-            self.cleaned_data['_is_video'] = is_video
-            self.cleaned_data['_is_image'] = is_image
-        
+            if file.size > 40 * 1024 * 1024:
+                raise forms.ValidationError('Video must be under 40MB')
+            if not file.content_type.startswith('video/'):
+                raise forms.ValidationError('Only video files are allowed')
         return file
+
 
 
 class ActivityCommentForm(forms.ModelForm):

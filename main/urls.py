@@ -235,6 +235,13 @@ path('profile/<str:username>/following/',views.following_causes_view, name='foll
     path('campaign/<int:campaign_id>/boost/recommendations/', views.get_boost_recommendations, name='boost_recommendations'),
   # In your urls.py
 path('check-paypal/', views.check_paypal_status, name='check_paypal'),
+
+
+# Progress tracking endpoints
+path('check-video-status/<int:activity_id>/', views.check_video_status, name='check_video_status'),
+path('check-upload-progress/', views.check_upload_progress, name='check_upload_progress'),
+
+
 ]
 
 

@@ -5,2310 +5,657 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journey Activity - Twitter Blue</title>
-    <!-- Font Awesome -->
+    <title>Journey Activity - Share Your Story</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <style>
-        /* ALL YOUR EXISTING STYLES - keeping them exactly as you had */
-        :root {
-            --twitter-blue: #1d9bf0;
-            --twitter-blue-hover: #1a8cd8;
-            --background-dark: #000000;
-            --card-dark: #16181c;
-            --card-darker: #0f1114;
-            --border-color: #2f3336;
-            --text-primary: #e7e9ea;
-            --text-secondary: #71767b;
-            --success-green: #00b87a;
-            --error-red: #f4212e;
-            --warning-yellow: #ffd400;
-            --border-radius-sm: clamp(12px, 3vw, 20px);
-            --border-radius-md: clamp(16px, 4vw, 24px);
-            --border-radius-lg: clamp(20px, 5vw, 32px);
-            --border-radius-xl: clamp(24px, 6vw, 40px);
-            --border-radius-full: 9999px;
-            --spacing-xs: clamp(4px, 1.5vw, 8px);
-            --spacing-sm: clamp(8px, 2vw, 12px);
-            --spacing-md: clamp(12px, 3vw, 16px);
-            --spacing-lg: clamp(16px, 4vw, 24px);
-            --spacing-xl: clamp(20px, 5vw, 32px);
-            --spacing-xxl: clamp(24px, 6vw, 40px);
-            --font-size-xs: clamp(12px, 3vw, 14px);
-            --font-size-sm: clamp(13px, 3.5vw, 15px);
-            --font-size-md: clamp(14px, 4vw, 16px);
-            --font-size-lg: clamp(16px, 4.5vw, 18px);
-            --font-size-xl: clamp(18px, 5vw, 20px);
-            --font-size-xxl: clamp(20px, 6vw, 24px);
-            --font-size-xxxl: clamp(24px, 7vw, 28px);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--background-dark);
-            background: radial-gradient(circle at 20% 20%, #1a2b3f, var(--background-dark) 80%);
+            font-family: 'Inter', sans-serif;
+            background: #000;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-md);
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            padding: 20px;
         }
-
         .activity-form-container {
             width: 100%;
-            max-width: min(800px, 95vw);
-            margin: 0 auto;
-            background: var(--card-darker);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+            max-width: 800px;
+            background: #0f1114;
+            border: 1px solid #2f3336;
+            border-radius: 24px;
             overflow: hidden;
-            transition: all 0.3s ease;
         }
-
         .activity-header {
-            padding: var(--spacing-xl);
-            background: var(--card-darker);
-            border-bottom: 1px solid var(--border-color);
+            padding: 24px;
+            background: #0f1114;
+            border-bottom: 1px solid #2f3336;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: var(--spacing-md);
         }
-
         .activity-header h1 {
-            font-size: var(--font-size-xxl);
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: var(--spacing-xs);
+            font-size: 24px;
+            color: #e7e9ea;
             display: flex;
             align-items: center;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            line-height: 1.3;
+            gap: 12px;
         }
-
-        .activity-header h1 i {
-            color: var(--twitter-blue);
-            font-size: var(--font-size-xxxl);
-        }
-
+        .activity-header h1 i { color: #1d9bf0; }
         .activity-subtitle {
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            line-height: 1.5;
-            word-break: break-word;
+            color: #71767b;
+            font-size: 14px;
+            margin-top: 4px;
         }
-
         .close-btn {
             background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            width: clamp(36px, 8vw, 44px);
-            height: clamp(36px, 8vw, 44px);
-            border-radius: var(--border-radius-full);
-            font-size: clamp(20px, 5vw, 28px);
+            border: 1px solid #2f3336;
+            color: #71767b;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 24px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
         }
-
-        .activity-body {
-            padding: var(--spacing-xl);
-        }
-
+        .activity-body { padding: 24px; }
+        
         /* Campaign Progress Card */
         .campaign-progress-card {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
+            background: #16181c;
+            border: 1px solid #2f3336;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
-
-        .campaign-progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-md);
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-
         .campaign-progress-title {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
+            font-size: 18px;
+            color: #e7e9ea;
+            margin-bottom: 12px;
         }
-
-        .campaign-progress-title i {
-            color: var(--twitter-blue);
-            font-size: var(--font-size-lg);
-        }
-
-        .schedule-badge {
-            padding: var(--spacing-xs) var(--spacing-md);
-            border-radius: var(--border-radius-full);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            background: var(--card-dark);
-            border: 1px solid;
-            white-space: nowrap;
-        }
-
-        .schedule-ahead {
-            border-color: #00b87a;
-            color: #00b87a;
-        }
-
-        .schedule-behind {
-            border-color: #ffd400;
-            color: #ffd400;
-        }
-
-        .schedule-ontrack {
-            border-color: #1d9bf0;
-            color: #1d9bf0;
-        }
-
-        .progress-bar-container {
-            margin-bottom: var(--spacing-md);
-        }
-
+        .progress-bar-container { margin-bottom: 16px; }
         .progress-bar-labels {
             display: flex;
             justify-content: space-between;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            margin-bottom: var(--spacing-xs);
-            flex-wrap: wrap;
-            gap: var(--spacing-xs);
+            color: #71767b;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
-
         .progress-bar-bg {
-            height: clamp(6px, 2vw, 8px);
-            background: var(--border-color);
-            border-radius: var(--border-radius-full);
+            height: 6px;
+            background: #2f3336;
+            border-radius: 999px;
             overflow: hidden;
         }
-
         .progress-bar-fill {
             height: 100%;
-            background: var(--twitter-blue);
-            border-radius: var(--border-radius-full);
+            background: #1d9bf0;
+            border-radius: 999px;
             transition: width 0.5s ease;
-            position: relative;
         }
-
         .campaign-time-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
-            gap: var(--spacing-md);
-            padding-top: var(--spacing-md);
-            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #2f3336;
         }
-
         .time-info-item {
             display: flex;
             align-items: center;
-            gap: var(--spacing-sm);
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            flex-wrap: wrap;
-        }
-
-        .time-info-item i {
-            color: var(--twitter-blue);
-            font-size: var(--font-size-md);
-            flex-shrink: 0;
-        }
-
-        .time-danger {
-            color: #f4212e;
-        }
-
-        .time-warning {
-            color: #ffd400;
-        }
-
-        .time-success {
-            color: #00b87a;
-        }
-
-        /* Video Info Banner */
-        .video-info-banner {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            border-left: 4px solid var(--twitter-blue);
-        }
-
-        .video-info-icon {
-            width: clamp(40px, 8vw, 48px);
-            height: clamp(40px, 8vw, 48px);
-            background: rgba(29, 155, 240, 0.1);
-            border-radius: var(--border-radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--twitter-blue);
-            font-size: var(--font-size-lg);
-            flex-shrink: 0;
-        }
-
-        .video-info-content {
-            color: var(--text-primary);
-            font-size: var(--font-size-sm);
-            line-height: 1.6;
-            word-break: break-word;
-        }
-
-        /* Form Sections */
-        .form-section {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            transition: all 0.2s ease;
-        }
-
-        .form-section.locked {
-            opacity: 0.8;
-            background: #0a0c0f;
-        }
-
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-md);
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-
-        .form-title {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            flex-wrap: wrap;
-            width: 100%;
-        }
-
-        @media (min-width: 641px) {
-            .form-title {
-                width: auto;
-            }
-        }
-
-        .activity-number {
-            width: clamp(32px, 6vw, 40px);
-            height: clamp(32px, 6vw, 40px);
-            background: var(--twitter-blue);
-            border-radius: var(--border-radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: var(--font-size-lg);
-            flex-shrink: 0;
-        }
-
-        .day-label {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            flex-wrap: wrap;
-        }
-
-        .target-info {
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            font-weight: 400;
-        }
-
-        .form-type-badge {
-            padding: var(--spacing-xs) var(--spacing-md);
-            border-radius: var(--border-radius-full);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            border: 1px solid;
-            white-space: nowrap;
-        }
-
-        .badge-existing {
-            background: rgba(0, 184, 122, 0.1);
-            border-color: rgba(0, 184, 122, 0.2);
-            color: #00b87a;
-        }
-
-        .badge-new {
-            background: rgba(29, 155, 240, 0.1);
-            border-color: rgba(29, 155, 240, 0.2);
-            color: #1d9bf0;
-        }
-
-        .timestamp {
-            color: var(--text-secondary);
-            font-size: var(--font-size-xs);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            flex-wrap: wrap;
-        }
-
-        .form-label {
-            display: block;
-            color: var(--text-primary);
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: clamp(14px, 3.8vw, 16px);
-        }
-
-        .form-textarea {
-            width: 100%;
-            padding: var(--spacing-md);
-            background: var(--card-darker);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
-            line-height: 1.6;
-            resize: vertical;
-            min-height: clamp(100px, 20vw, 140px);
-            transition: all 0.2s ease;
-        }
-
-        .form-textarea:focus {
-            outline: none;
-            border-color: var(--twitter-blue);
-            background: var(--card-dark);
-            box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.2);
-        }
-
-        .form-textarea.locked-input {
+            gap: 8px;
             color: #71767b;
-            background: #0a0c0f;
-            cursor: not-allowed;
-        }
-
-        .form-helper {
-            display: block;
-            color: var(--text-secondary);
-            font-size: var(--font-size-xs);
-            margin-top: var(--spacing-xs);
-            line-height: 1.5;
-        }
-
-        .form-helper.locked-helper {
-            color: #ffd400;
-        }
-
-        /* Emoji Section */
-        .emoji-section {
-            margin-top: var(--spacing-md);
-        }
-
-        .emoji-section-label {
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-        }
-
-        .emoji-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-xs);
-        }
-
-        .emoji-button {
-            background: var(--card-darker);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-full);
-            padding: var(--spacing-sm) var(--spacing-md);
-            font-size: clamp(1rem, 4vw, 1.2rem);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-width: clamp(44px, 12vw, 60px);
-            min-height: clamp(44px, 12vw, 50px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-
-        .emoji-button:hover {
-            background: var(--card-dark);
-            border-color: var(--twitter-blue);
-            transform: scale(1.1);
-        }
-
-        /* File Upload */
-        .file-upload-area {
-            background: var(--card-darker);
-            border: 2px dashed var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-xl);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: clamp(120px, 25vw, 160px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .file-upload-area:hover {
-            border-color: var(--twitter-blue);
-            background: rgba(29, 155, 240, 0.05);
-            transform: scale(1.02);
-        }
-
-        .file-upload-icon {
-            font-size: clamp(2rem, 8vw, 2.5rem);
-            color: var(--twitter-blue);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .file-upload-text {
-            color: var(--text-primary);
-            font-weight: 500;
-            margin-bottom: var(--spacing-xs);
-            font-size: var(--font-size-md);
-            word-break: break-word;
-        }
-
-        .file-input-hidden {
-            display: none;
-        }
-
-        /* File Preview */
-        .file-preview-container {
-            margin-top: var(--spacing-md);
-        }
-
-        .file-preview-wrapper {
-            position: relative;
-            width: 100%;
-            border-radius: var(--border-radius-md);
-            overflow: hidden;
-            background: var(--card-darker);
-            border: 1px solid var(--border-color);
-        }
-
-        .file-preview-item {
-            position: relative;
-            width: 100%;
-            max-height: 300px;
-            overflow: hidden;
-        }
-
-        .file-preview-item video,
-        .file-preview-item img {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
-            object-fit: contain;
-            background: #000;
-        }
-
-        .preview-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(4px);
-            z-index: 5;
-        }
-
-        .preview-badge i {
-            color: var(--twitter-blue);
-        }
-
-        .preview-badge.warning {
-            background: rgba(244, 33, 46, 0.9);
-        }
-
-        .preview-badge.warning i {
-            color: white;
-        }
-
-        .remove-file-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 36px;
-            height: 36px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--border-color);
-            border-radius: 9999px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 16px;
-            z-index: 10;
-        }
-
-        .remove-file-btn:hover {
-            background: #f4212e;
-            transform: scale(1.1);
-        }
-
-        .file-name {
-            padding: 8px 12px;
-            background: var(--card-darker);
-            border-top: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .file-size {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 11px;
-        }
-
-        .file-size.warning {
-            background: rgba(244, 33, 46, 0.2);
-            color: #f4212e;
-        }
-
-        /* Size Limit Banner */
-        .size-limit-banner {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-lg);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-
-        .size-limit-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(29, 155, 240, 0.1);
-            border-radius: var(--border-radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--twitter-blue);
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .size-limit-content {
-            color: var(--text-primary);
-            font-size: var(--font-size-sm);
-        }
-
-        .size-limit-content strong {
-            color: var(--twitter-blue);
-        }
-
-        /* Compression UI */
-        .compression-ui {
-            background: var(--card-dark);
-            border: 2px solid var(--twitter-blue);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-lg);
-            margin: 16px 0;
-            animation: slideDown 0.3s ease;
-        }
-
-        .compression-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--twitter-blue);
-            margin-bottom: 16px;
-        }
-
-        .compression-header i {
-            font-size: 24px;
-            animation: pulse 1.5s infinite;
-        }
-
-        .compression-details {
-            background: var(--card-darker);
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .compression-stat {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
             font-size: 14px;
-            color: var(--text-secondary);
         }
-
-        .compression-stat .stat-value {
-            color: var(--text-primary);
-            font-weight: 600;
+        .time-info-item i { color: #1d9bf0; }
+        
+        /* Video Upload Card */
+        .video-upload-card {
+            background: #16181c;
+            border: 2px solid #2f3336;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
-
-        .compression-progress {
-            margin: 15px 0 10px;
+        .video-upload-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-
-        .compression-progress .progress-bar-container {
-            height: 6px;
-            background: var(--border-color);
-            border-radius: 9999px;
-            overflow: hidden;
-            margin-bottom: 8px;
+        .video-upload-header h3 {
+            font-size: 20px;
+            color: #e7e9ea;
         }
-
-        .compression-progress .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--twitter-blue), var(--success-green));
-            transition: width 0.3s ease;
-            border-radius: 9999px;
-        }
-
-        .compression-progress .progress-text {
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .compression-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
+        .available-badge {
             background: #00b87a;
             color: white;
             padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            z-index: 10;
+            border-radius: 999px;
+            font-size: 12px;
         }
-
-        /* Video Status Indicator */
-        .video-status-indicator {
-            background: var(--card-darker);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-full);
-            padding: 10px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-        }
-
-        .video-status-indicator.processed {
-            border-left: 4px solid #00b87a;
-        }
-
-        .video-status-indicator.processing {
-            border-left: 4px solid #ffd400;
-        }
-
-        .video-status-indicator i.fa-check-circle {
-            color: #00b87a;
-        }
-
-        .video-status-indicator i.fa-spinner {
-            color: #ffd400;
-        }
-
-        /* Delete Checkbox */
-        .delete-checkbox {
-            background: rgba(244, 33, 46, 0.1);
-            border: 1px solid rgba(244, 33, 46, 0.2);
-            border-radius: var(--border-radius-md);
-            padding: 12px 16px;
-            margin-bottom: 20px;
-        }
-
-        .delete-checkbox label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #f4212e;
-            font-size: 14px;
-            font-weight: 500;
+        .video-upload-area {
+            background: #0f1114;
+            border: 2px dashed #2f3336;
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
             cursor: pointer;
+            transition: all 0.3s;
         }
-
-        .delete-checkbox input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #f4212e;
-        }
-
-        /* Screenshot Count Selector */
-        .screenshot-count-container {
-            margin-bottom: 20px;
-            padding: 16px;
-            background: var(--card-darker);
-            border-radius: var(--border-radius-md);
-            border: 1px solid var(--border-color);
-        }
-
-        .screenshot-count-select {
-            width: 100%;
-            padding: 12px;
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            margin-top: 8px;
-            cursor: pointer;
-        }
-
-        .screenshot-count-select:focus {
-            outline: none;
-            border-color: var(--twitter-blue);
-        }
-
-        /* Warning Messages */
-        .locked-day-warning,
-        .max-limit-warning,
-        .duration-limit-message {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-        }
-
-        .locked-icon-circle,
-        .duration-limit-icon {
-            width: clamp(44px, 10vw, 54px);
-            height: clamp(44px, 10vw, 54px);
-            border-radius: var(--border-radius-full);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--font-size-xl);
-            flex-shrink: 0;
-        }
-
-        .locked-icon-circle {
-            background: rgba(255, 212, 0, 0.1);
-            color: #ffd400;
-        }
-
-        .duration-limit-icon {
-            background: rgba(0, 184, 122, 0.1);
-            color: #00b87a;
-        }
-
-        .locked-content {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .locked-title {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            color: #ffd400;
-        }
-
-        .locked-description {
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            margin-top: 4px;
-        }
-
-        .locked-badge {
-            background: rgba(255, 212, 0, 0.1);
-            border: 1px solid rgba(255, 212, 0, 0.2);
-            color: #ffd400;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: var(--border-radius-full);
-            font-size: var(--font-size-sm);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-            white-space: nowrap;
-        }
-
-        .locked-badge-small {
-            background: rgba(255, 212, 0, 0.1);
-            border: 1px solid rgba(255, 212, 0, 0.2);
-            color: #ffd400;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            margin-left: 8px;
-        }
-
-        .campaign-complete-badge {
-            background: #00b87a;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .edit-only-note {
-            background: rgba(29, 155, 240, 0.1);
-            border: 1px solid rgba(29, 155, 240, 0.2);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .flexibility-note {
+        .video-upload-area:hover {
+            border-color: #1d9bf0;
             background: rgba(29, 155, 240, 0.05);
-            border: 1px solid rgba(29, 155, 240, 0.1);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
         }
-
-        .emotional-guidance {
-            background: var(--card-dark);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin-bottom: 24px;
+        .upload-icon {
+            font-size: 48px;
+            color: #1d9bf0;
+            margin-bottom: 16px;
         }
-
-        .guidance-header {
+        .upload-text {
+            color: #e7e9ea;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .upload-hint {
+            color: #71767b;
+            font-size: 12px;
+        }
+        .file-input-hidden { display: none; }
+        
+        .video-preview-container {
+            margin-top: 20px;
+        }
+        .file-preview-wrapper {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid #2f3336;
+        }
+        .file-preview-item video {
+            width: 100%;
+            max-height: 400px;
+        }
+        .remove-video-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            color: white;
+            cursor: pointer;
+        }
+        .file-name {
+            padding: 8px 12px;
+            background: #0f1114;
+            border-top: 1px solid #2f3336;
+            color: #71767b;
+            font-size: 12px;
             display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--twitter-blue);
-            font-size: 14px;
+            justify-content: space-between;
+        }
+        
+        /* Progress Indicator */
+        .upload-progress-container {
+            margin-top: 16px;
+            background: #0f1114;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2f3336;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 12px;
         }
-
-        .guidance-content {
-            color: var(--text-secondary);
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .video-upload-tip {
-            background: rgba(29, 155, 240, 0.1);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 20px;
-            border-left: 4px solid #1d9bf0;
+        .progress-title {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .video-upload-tip i {
-            color: #1d9bf0;
-            font-size: 20px;
-        }
-
-        .video-upload-tip span {
-            color: var(--text-primary);
+            gap: 8px;
+            color: #e7e9ea;
             font-size: 14px;
         }
-
-        .error-container {
-            background: rgba(244, 33, 46, 0.1);
-            border: 1px solid rgba(244, 33, 46, 0.2);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin-bottom: 24px;
-            color: #f4212e;
+        .progress-percentage {
+            color: #1d9bf0;
+            font-weight: 700;
         }
-
-        .error-container ul {
-            margin-left: 20px;
-            margin-top: 8px;
+        .progress-bar-wrapper {
+            height: 6px;
+            background: #2f3336;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 8px;
         }
-
+        .progress-bar-fill-animated {
+            height: 100%;
+            background: linear-gradient(90deg, #1d9bf0, #00b87a);
+            transition: width 0.3s;
+            width: 0%;
+        }
+        
         /* Submit Button */
         .submit-button {
             width: 100%;
-            padding: var(--spacing-lg);
-            background: var(--twitter-blue);
+            padding: 16px;
+            background: #1d9bf0;
             border: none;
-            border-radius: var(--border-radius-full);
+            border-radius: 999px;
             color: white;
             font-weight: 600;
-            font-size: var(--font-size-lg);
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: var(--spacing-sm);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin: var(--spacing-xl) 0 var(--spacing-lg);
-            min-height: clamp(50px, 10vw, 60px);
-            touch-action: manipulation;
-        }
-
-        .submit-button:hover:not(:disabled) {
-            background: var(--twitter-blue-hover);
-            transform: scale(1.02);
-        }
-
-        .submit-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .progress-note {
-            text-align: center;
-            margin-top: 20px;
-            color: #71767b;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .progress-note i {
-            color: #1d9bf0;
-        }
-
-        .progress-note strong {
-            color: #e7e9ea;
-        }
-
-        .celebration-note {
-            background: rgba(0, 184, 122, 0.1);
-            border: 1px solid rgba(0, 184, 122, 0.2);
-            border-radius: var(--border-radius-md);
-            padding: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
             gap: 12px;
-            color: #00b87a;
+            cursor: pointer;
+            margin-top: 24px;
         }
-
-        hr {
-            border: none;
-            border-top: 1px solid var(--border-color);
-            margin: 24px 0;
+        .btn-progress {
+            width: 24px;
+            height: 24px;
+            display: none;
         }
-
-        /* Notifications */
+        .btn-progress svg {
+            transform: rotate(-90deg);
+            width: 24px;
+            height: 24px;
+        }
+        .btn-progress circle {
+            fill: none;
+            stroke: white;
+            stroke-width: 2;
+            stroke-dasharray: 62.8;
+            stroke-dashoffset: 62.8;
+            transition: stroke-dashoffset 0.3s;
+        }
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 16px 24px;
-            background: #1d9bf0;
+            padding: 12px 20px;
+            border-radius: 999px;
             color: white;
-            border-radius: 9999px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
             z-index: 9999;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            animation: slideIn 0.3s ease;
-            max-width: 400px;
-            border: 1px solid var(--border-color);
+            animation: slideIn 0.3s;
         }
-
         .notification.success { background: #00b87a; }
         .notification.error { background: #f4212e; }
-        .notification.warning { background: #ffd400; color: #000; }
-
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
+        .locked-day-warning {
+            background: #16181c;
+            border: 1px solid #2f3336;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
         }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+        .locked-icon-circle {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 212, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd400;
+            font-size: 24px;
+            margin: 0 auto 12px;
         }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .locked-title { color: #ffd400; font-weight: 600; }
+        .video-info-banner {
+            background: #16181c;
+            border-left: 4px solid #1d9bf0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
         }
-
-        /* Responsive */
-        @media (max-width: 640px) {
-            .locked-day-warning,
-            .max-limit-warning,
-            .video-info-banner {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .locked-badge {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .form-type-badge {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .campaign-time-info {
-                grid-template-columns: 1fr;
-            }
+        .progress-note {
+            text-align: center;
+            margin-top: 20px;
+            color: #71767b;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <!-- MAIN CONTAINER -->
-    <div class="activity-form-container">
-        <div class="activity-header">
-            <div>
-                <h1>
-                    <i class="fas fa-tasks"></i>
-                    {% if existing_activities_count > 0 %}
-                        {% if campaign.duration and existing_activities_count >= campaign.duration %}
-                            Journey Complete! 🎉
-                        {% else %}
-                            Continue Your Journey
-                        {% endif %}
-                    {% else %}
-                        Start Your Journey
-                    {% endif %}
-                </h1>
-                <p class="activity-subtitle">
-                    {% if existing_activities_count > 0 %}
-                        {% if campaign.duration and existing_activities_count >= campaign.duration %}
-                            You've completed all {{ campaign.duration }} days of "{{ campaign.title }}"
-                        {% else %}
-                            Day {{ existing_activities_count }} of {{ campaign.title }}
-                        {% endif %}
-                    {% else %}
-                        Begin sharing your story for "{{ campaign.title }}"
-                    {% endif %}
-                </p>
-            </div>
-            <button class="close-btn" onclick="window.history.back()">&times;</button>
-        </div>
 
-        <div class="activity-body">
-            <!-- CAMPAIGN PROGRESS CARD -->
-            <div class="campaign-progress-card">
-                <div class="campaign-progress-header">
-                    <h4 class="campaign-progress-title">
-                        <i class="fas fa-flag-checkered"></i>
-                        {{ campaign.title }}
-                    </h4>
-                    
-                    {% if campaign.duration %}
-                        {% if schedule_status == 'ahead' %}
-                            <span class="schedule-badge schedule-ahead">
-                                <i class="fas fa-rocket"></i> {{ schedule_diff }} ahead
-                            </span>
-                        {% elif schedule_status == 'behind' %}
-                            <span class="schedule-badge schedule-behind">
-                                <i class="fas fa-exclamation-triangle"></i> {{ schedule_diff }} behind
-                            </span>
-                        {% else %}
-                            <span class="schedule-badge schedule-ontrack">
-                                <i class="fas fa-check-circle"></i> On track
-                            </span>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="progress-bar-container">
-                    <div class="progress-bar-labels">
-                        <span>
-                            <i class="fas fa-calendar-alt"></i> Day {{ existing_activities_count }}
-                            {% if campaign.duration %}
-                                / {{ campaign.duration }}
-                            {% endif %}
-                        </span>
-                        <span>{{ progress_percentage|floatformat:1 }}%</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: {{ progress_percentage }}%;"></div>
-                    </div>
-                </div>
-                
-                <!-- Time Remaining Info -->
-                <div class="campaign-time-info">
-                    {% if campaign.duration %}
-                        {% if campaign.days_left is not None %}
-                            <div class="time-info-item">
-                                <i class="far fa-hourglass-half {% if campaign.days_left < 3 %}time-danger{% elif campaign.days_left < 7 %}time-warning{% else %}time-success{% endif %}"></i>
-                                <span>
-                                    <strong class="{% if campaign.days_left < 3 %}time-danger{% elif campaign.days_left < 7 %}time-warning{% endif %}">{{ campaign.days_left }}</strong> 
-                                    {% if campaign.duration_unit == 'minutes' %}minutes{% else %}days{% endif %} left
-                                </span>
-                            </div>
-                        {% endif %}
-                        
-                        {% if campaign.end_date %}
-                            <div class="time-info-item">
-                                <i class="far fa-calendar-check"></i>
-                                <span>Ends: {{ campaign.end_date|date:"M d, Y" }}</span>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="time-info-item">
-                            <i class="fas fa-infinity time-success"></i>
-                            <span>Ongoing journey - no time limit</span>
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Current Real Day Indicator -->
-                    <div class="time-info-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Current day: <strong>Day {{ current_real_day|floatformat:0 }}</strong></span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- VIDEO PROCESSING INFO BANNER -->
-            <div class="video-info-banner">
-                <div class="video-info-icon">
-                    <i class="fas fa-video"></i>
-                </div>
-                <div class="video-info-content">
-                    <strong>Video Upload Feature:</strong> When you upload a video, we'll automatically extract HD screenshots to create a story carousel. Videos are limited to <strong>40MB maximum size</strong>.
-                </div>
-            </div>
-
-            <!-- SIZE LIMIT BANNER -->
-            <div class="size-limit-banner">
-                <div class="size-limit-icon">
-                    <i class="fas fa-weight-hanging"></i>
-                </div>
-                <div class="size-limit-content">
-                    <strong>40MB Video Limit:</strong> Videos larger than 40MB cannot be uploaded. The file size will be shown in the preview so you can check before submitting.
-                </div>
-            </div>
-            
-            <!-- DURATION LIMIT CHECK - IF USER HAS REACHED MAXIMUM CAMPAIGN DURATION -->
-            {% if campaign.duration and existing_activities_count >= campaign.duration %}
-                <!-- CAMPAIGN COMPLETE - CLEAR MESSAGE AND EDIT-ONLY MODE -->
-                <div class="duration-limit-message">
-                    <div class="duration-limit-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <div class="duration-limit-title">Journey Complete! 🎉</div>
-                    <div class="duration-limit-text">
-                        You've successfully completed all {{ campaign.duration }} days of "{{ campaign.title }}".
-                        Thank you for sharing your journey with us!
-                    </div>
-                    <span class="campaign-complete-badge">
-                        <i class="fas fa-check-circle"></i> 100% Complete
-                    </span>
-                </div>
-                
-                <div class="edit-only-note">
-                    <i class="fas fa-pencil-alt"></i>
-                    <div>
-                        <strong>Edit Mode Only:</strong> You've reached the maximum campaign duration. 
-                        No new days can be added, but you can still edit your existing entries below.
-                    </div>
-                </div>
-                
-                <!-- Display only existing forms for editing - NO NEW FORM -->
-                {% if formset %}
-                    <form method="post" enctype="multipart/form-data" id="activityForm">
-                        {% csrf_token %}
-                        
-                        {{ formset.management_form }}
-                        
-                        {% if formset.errors %}
-                            <div class="error-container">
-                                <strong>Please fix these errors:</strong>
-                                <ul>
-                                    {% for form in formset %}
-                                        {% for field in form %}
-                                            {% for error in field.errors %}
-                                                <li>
-                                                    {% if form.instance.pk %}
-                                                        Day {{ forloop.parentloop.parentloop.counter }}
-                                                    {% else %}
-                                                        New Day
-                                                    {% endif %}
-                                                    - {{ field.label }}: {{ error }}
-                                                </li>
-                                            {% endfor %}
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                        
-                        <!-- Loop through forms but only display existing ones -->
-                        {% for form in formset %}
-                            {% if form.instance.pk %}
-                                <div class="form-section existing-activity" 
-                                     id="activity-form-{{ forloop.counter0 }}" 
-                                     data-form-index="{{ forloop.counter0 }}">
-                                    
-                                    <!-- FORM HEADER -->
-                                    <div class="form-header">
-                                        <h3 class="form-title">
-                                            <span class="activity-number">{{ forloop.counter }}</span>
-                                            <span class="day-label">
-                                                Day {{ forloop.counter }}
-                                                {% if campaign.duration %}
-                                                    <span class="target-info">
-                                                        of {{ campaign.duration }}
-                                                    </span>
-                                                {% endif %}
-                                            </span>
-                                            <span class="form-type-badge badge-existing">
-                                                <i class="fas fa-check-circle"></i> Completed
-                                            </span>
-                                        </h3>
-                                        
-                                        <div class="timestamp">
-                                            <i class="far fa-clock"></i>
-                                            {{ form.instance.timestamp|date:"M d, Y" }}
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- VIDEO PROCESSING STATUS - for existing videos -->
-                                    {% if form.instance.is_video %}
-                                    <div class="video-status-indicator {% if form.instance.video_processed %}processed{% else %}processing{% endif %}">
-                                        <i class="fas {% if form.instance.video_processed %}fa-check-circle{% else %}fa-spinner fa-spin{% endif %}"></i>
-                                        <span>
-                                            {% if form.instance.video_processed %}
-                                                Video processed - {{ form.instance.screenshots.count }} screenshots created
-                                            {% else %}
-                                                Video processing in background - screenshots will appear soon
-                                            {% endif %}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <!-- HIDDEN FIELDS -->
-                                    {% for hidden in form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                    
-                                    <!-- DELETE CHECKBOX -->
-                                    {% if form.DELETE %}
-                                    <div class="delete-checkbox">
-                                        <label>
-                                            {{ form.DELETE }}
-                                            <i class="fas fa-trash-alt"></i>
-                                            Delete Day {{ forloop.counter }}
-                                        </label>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <!-- CONTENT FIELD -->
-                                    <div style="margin-bottom: 20px;">
-                                        <div style="width: 100%;">
-                                            <label class="form-label">
-                                                Update your Day {{ forloop.counter }} message (optional):
-                                            </label>
-                                            {{ form.content }}
-                                            <span class="form-helper">
-                                                Edit your message or leave as is
-                                            </span>
-                                        </div>
-                                        
-                                        <!-- EMOJI SECTION -->
-                                        <div class="emoji-section">
-                                            <div class="emoji-section-label">
-                                                <i class="fas fa-smile"></i>
-                                                Update feeling for Day {{ forloop.counter }} (optional)
-                                            </div>
-                                            
-                                            <div class="emoji-container" id="emojiContainer-{{ forloop.counter0 }}">
-                                                {% for emoji in initial_emojis %}
-                                                    <button type="button" 
-                                                            class="emoji-button" 
-                                                            onclick="addEmojiToField('{{ emoji }}', {{ forloop.counter0 }})">
-                                                        {{ emoji }}
-                                                    </button>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- MEDIA FIELD -->
-                                    <div>
-                                        <label class="form-label">
-                                            Update media for Day {{ forloop.counter }} (optional):
-                                        </label>
-                                        
-                                        <!-- FILE UPLOAD AREA -->
-                                        <div class="file-upload-area" id="drop-area-{{ forloop.counter0 }}" onclick="document.getElementById('file-input-{{ forloop.counter0 }}').click()">
-                                            <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                            <div class="file-upload-text">
-                                                {% if form.instance.file %}
-                                                    Replace current file
-                                                {% else %}
-                                                    Upload image, video, or audio
-                                                {% endif %}
-                                            </div>
-                                            <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
-                                            <input type="file" 
-                                                   class="file-input-hidden" 
-                                                   id="file-input-{{ forloop.counter0 }}"
-                                                   accept="image/*,video/*,audio/*"
-                                                   onchange="handleFileSelect({{ forloop.counter0 }})">
-                                        </div>
-                                        
-                                        <!-- HIDDEN DJANGO FILE FIELD -->
-                                        {{ form.file }}
-                                        
-                                        <!-- FILE PREVIEW AREA -->
-                                        <div id="file-preview-{{ forloop.counter0 }}" class="file-preview-container"></div>
-                                        
-                                        <!-- EXISTING FILE -->
-                                        {% if form.instance.file %}
-                                        <div id="existing-file-{{ forloop.counter0 }}" class="file-preview-container" style="margin-top: 10px;">
-                                            <div style="width: 100%;">
-                                                <div class="file-preview-item">
-                                                    {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
-                                                        <img src="{{ form.instance.file.url }}" alt="Day {{ forloop.counter }} image">
-                                                    {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
-                                                        <video controls style="width:100%;height:100%;">
-                                                            <source src="{{ form.instance.file.url }}">
-                                                        </video>
-                                                    {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
-                                                        <div class="audio-preview">
-                                                            <i class="fas fa-music" style="font-size: 24px; color: #1d9bf0;"></i>
-                                                            <audio controls style="width: 100%; margin-top: 8px;">
-                                                                <source src="{{ form.instance.file.url }}">
-                                                            </audio>
-                                                        </div>
-                                                    {% else %}
-                                                        <div class="audio-preview">
-                                                            <i class="fas fa-file" style="font-size: 24px; color: #71767b;"></i>
-                                                            <div style="font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }} file</div>
-                                                        </div>
-                                                    {% endif %}
-                                                    <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ forloop.counter0 }})">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="file-name">
-                                                    {% if form.instance.file.name|length > 20 %}
-                                                        {{ form.instance.file.name|slice:":17" }}...
-                                                    {% else %}
-                                                        {{ form.instance.file.name }}
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                {% if not forloop.last %}
-                                <hr>
-                                {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        
-                        <!-- SUBMIT BUTTON - EDIT ONLY -->
-                        <button type="submit" class="submit-button" id="submitBtn">
-                            <i class="fas fa-save"></i>
-                            Save Changes to Completed Journey
-                        </button>
-                        
-                        <div class="progress-note">
-                            <i class="fas fa-check-circle"></i>
-                            <strong>Journey complete!</strong> You can still edit your previous entries.
-                        </div>
-                    </form>
+<div class="activity-form-container">
+    <div class="activity-header">
+        <div>
+            <h1>
+                <i class="fas fa-video"></i>
+                {% if existing_activities_count > 0 %}
+                    Continue Your Journey
+                {% else %}
+                    Start Your Journey
                 {% endif %}
-                
-            {% else %}
-                <!-- NORMAL BEHAVIOR - CAMPAIGN STILL IN PROGRESS -->
-                
-                <!-- LOCKED DAY WARNING - Show if next day is locked -->
-                {% if is_next_day_locked %}
-                <div class="locked-day-warning">
-                    <div class="locked-icon-circle">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <div class="locked-content">
-                        <strong class="locked-title">Day {{ next_available_day }} is locked</strong>
-                        <p class="locked-description">
-                            This day will be available in <strong>{{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}</strong>. 
-                            You can only post updates for days that have actually arrived in real-time.
-                        </p>
-                    </div>
-                    <div class="locked-badge">
-                        <i class="far fa-clock"></i> {{ days_until_unlock }}d left
-                    </div>
-                </div>
+            </h1>
+            <p class="activity-subtitle">
+                {% if existing_activities_count > 0 %}
+                    Day {{ existing_activities_count }} of {{ campaign.title }}
+                {% else %}
+                    Share your first video for "{{ campaign.title }}"
                 {% endif %}
-                
-                <!-- MAX LIMIT WARNING - If we're approaching the limit -->
-                {% if is_at_max %}
-                <div class="max-limit-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <div>
-                        <strong>Maximum days reached ({{ max_forms }})</strong><br>
-                        You've completed your {{ max_forms }}-day journey. Congratulations! 🎉
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- FLEXIBILITY NOTE -->
-                <div class="flexibility-note">
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <strong>Real-time journey:</strong> You can only post for days that have actually arrived. 
-                        Future days are locked until their time comes.
-                    </div>
-                </div>
-                
-                <!-- GUIDANCE -->
-                <div class="emotional-guidance">
-                    <div class="guidance-header">
-                        <i class="fas fa-lightbulb"></i>
-                        <strong>How Your Journey Works</strong>
-                    </div>
-                    <div class="guidance-content">
-                        {% if existing_activities_count == 0 %}
-                            <strong>Today:</strong> Create Day 1 of your journey<br>
-                            <strong>Tomorrow:</strong> Day 2 becomes available<br>
-                            <strong>Each day:</strong> A new day unlocks in real-time
-                        {% elif is_next_day_locked %}
-                            <strong>Current day:</strong> Day {{ existing_activities_count }} completed<br>
-                            <strong>Next unlock:</strong> Day {{ next_available_day }} in {{ days_until_unlock }} days<br>
-                            <strong>Come back then:</strong> to continue your journey
-                        {% else %}
-                            <strong>Today's opportunity:</strong> Day {{ next_available_day }} is now available!<br>
-                            <strong>Share your update:</strong> before the next day arrives<br>
-                            <strong>Stay consistent:</strong> Each day builds your story
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- FORM START - Regular form with both existing and new forms -->
-                {% if formset %}
-                <form method="post" enctype="multipart/form-data" id="activityForm">
-                    {% csrf_token %}
-                    
-                    {{ formset.management_form }}
-                    
-                    {% if formset.errors %}
-                        <div class="error-container">
-                            <strong>Please fix these errors:</strong>
-                            <ul>
-                                {% for form in formset %}
-                                    {% for field in form %}
-                                        {% for error in field.errors %}
-                                            <li>
-                                                {% if form.instance.pk %}
-                                                    Day {{ forloop.parentloop.parentloop.counter }}
-                                                {% else %}
-                                                    New Day
-                                                {% endif %}
-                                                - {{ field.label }}: {{ error }}
-                                            </li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    
-                    <!-- FORMSET LOOP -->
-                    {% for form in formset %}
-                        {% with form_index=forloop.counter0 is_existing=form.instance.pk %}
-                        
-                        {% if is_existing %}
-                            <!-- EXISTING ACTIVITY -->
-                            <div class="form-section existing-activity" 
-                                 id="activity-form-{{ form_index }}" 
-                                 data-form-index="{{ form_index }}">
-                                
-                                <!-- FORM HEADER -->
-                                <div class="form-header">
-                                    <h3 class="form-title">
-                                        <span class="activity-number">{{ forloop.counter }}</span>
-                                        <span class="day-label">
-                                            Day {{ forloop.counter }}
-                                            {% if campaign.duration %}
-                                                <span class="target-info">
-                                                    of {{ campaign.duration }}
-                                                </span>
-                                            {% endif %}
-                                        </span>
-                                        <span class="form-type-badge badge-existing">
-                                            <i class="fas fa-check-circle"></i> Completed
-                                        </span>
-                                    </h3>
-                                    
-                                    <div class="timestamp">
-                                        <i class="far fa-clock"></i>
-                                        {{ form.instance.timestamp|date:"M d, Y" }}
-                                    </div>
-                                </div>
-                                
-                                <!-- VIDEO PROCESSING STATUS -->
-                                {% if form.instance.is_video %}
-                                <div class="video-status-indicator {% if form.instance.video_processed %}processed{% else %}processing{% endif %}">
-                                    <i class="fas {% if form.instance.video_processed %}fa-check-circle{% else %}fa-spinner fa-spin{% endif %}"></i>
-                                    <span>
-                                        {% if form.instance.video_processed %}
-                                            Video processed - {{ form.instance.screenshots.count }} screenshots created
-                                        {% else %}
-                                            Video processing in background - screenshots will appear soon
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                {% endif %}
-                                
-                                <!-- HIDDEN FIELDS -->
-                                {% for hidden in form.hidden_fields %}
-                                    {{ hidden }}
-                                {% endfor %}
-                                
-                                <!-- DELETE CHECKBOX -->
-                                {% if form.DELETE %}
-                                <div class="delete-checkbox">
-                                    <label>
-                                        {{ form.DELETE }}
-                                        <i class="fas fa-trash-alt"></i>
-                                        Delete Day {{ forloop.counter }}
-                                    </label>
-                                </div>
-                                {% endif %}
-                                
-                                <!-- CONTENT FIELD -->
-                                <div style="margin-bottom: 20px;">
-                                    <label class="form-label">
-                                        Update your Day {{ forloop.counter }} message (optional):
-                                    </label>
-                                    {{ form.content }}
-                                    <span class="form-helper">
-                                        Edit your message or leave as is
-                                    </span>
-                                    
-                                    <!-- EMOJI SECTION -->
-                                    <div class="emoji-section">
-                                        <div class="emoji-section-label">
-                                            <i class="fas fa-smile"></i>
-                                            Update feeling for Day {{ forloop.counter }} (optional)
-                                        </div>
-                                        
-                                        <div class="emoji-container" id="emojiContainer-{{ form_index }}">
-                                            {% for emoji in initial_emojis %}
-                                                <button type="button" 
-                                                        class="emoji-button" 
-                                                        onclick="addEmojiToField('{{ emoji }}', {{ form_index }})">
-                                                    {{ emoji }}
-                                                </button>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- MEDIA FIELD -->
-                                <div>
-                                    <label class="form-label">
-                                        Update media for Day {{ forloop.counter }} (optional):
-                                    </label>
-                                    
-                                    <!-- SCREENSHOT COUNT SELECTOR -->
-                                    <div class="screenshot-count-container" id="screenshot-container-{{ form_index }}" style="display: none;">
-                                        <label class="form-label screenshot-label">
-                                            <i class="fas fa-images"></i> Number of screenshots to extract:
-                                        </label>
-                                        {{ form.screenshot_count }}
-                                        <span class="form-helper">More screenshots = richer story carousel</span>
-                                    </div>
-                                    
-                                    <!-- FILE UPLOAD AREA -->
-                                    <div class="file-upload-area" id="drop-area-{{ form_index }}" onclick="document.getElementById('file-input-{{ form_index }}').click()">
-                                        <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                        <div class="file-upload-text">
-                                            {% if form.instance.file %}
-                                                Replace current file
-                                            {% else %}
-                                                Upload image, video, or audio
-                                            {% endif %}
-                                        </div>
-                                        <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
-                                        <input type="file" 
-                                               class="file-input-hidden" 
-                                               id="file-input-{{ form_index }}"
-                                               accept="image/*,video/*,audio/*"
-                                               onchange="handleFileSelect({{ form_index }})">
-                                    </div>
-                                    
-                                    <!-- HIDDEN DJANGO FILE FIELD -->
-                                    {{ form.file }}
-                                    
-                                    <!-- FILE PREVIEW AREA -->
-                                    <div id="file-preview-{{ form_index }}" class="file-preview-container"></div>
-                                    
-                                    <!-- EXISTING FILE -->
-                                    {% if form.instance.file %}
-                                    <div id="existing-file-{{ form_index }}" class="file-preview-container" style="margin-top: 10px;">
-                                        <div style="width: 100%;">
-                                            <div class="file-preview-item">
-                                                {% if form.instance.file.url|lower|slice:'-4:' in '.jpg,.jpeg,.png,.gif,.bmp,.webp' %}
-                                                    <img src="{{ form.instance.file.url }}" alt="Day {{ forloop.counter }} image">
-                                                {% elif form.instance.file.url|lower|slice:'-4:' in '.mp4,.mov,.avi,.webm,.mkv' %}
-                                                    <video controls style="width:100%;height:100%;">
-                                                        <source src="{{ form.instance.file.url }}">
-                                                    </video>
-                                                {% elif form.instance.file.url|lower|slice:'-4:' in '.mp3,.wav,.ogg,.m4a' %}
-                                                    <div class="audio-preview">
-                                                        <i class="fas fa-music" style="font-size: 24px; color: #1d9bf0;"></i>
-                                                        <audio controls style="width: 100%; margin-top: 8px;">
-                                                            <source src="{{ form.instance.file.url }}">
-                                                        </audio>
-                                                    </div>
-                                                {% else %}
-                                                    <div class="audio-preview">
-                                                        <i class="fas fa-file" style="font-size: 24px; color: #71767b;"></i>
-                                                        <div style="font-size: 12px; margin-top: 8px;">Day {{ forloop.counter }} file</div>
-                                                    </div>
-                                                {% endif %}
-                                                <button type="button" class="remove-file-btn" onclick="removeExistingFile({{ form_index }})">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <div class="file-name">
-                                                {% if form.instance.file.name|length > 20 %}
-                                                    {{ form.instance.file.name|slice:":17" }}...
-                                                {% else %}
-                                                    {{ form.instance.file.name }}
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                        {% else %}
-                            <!-- NEW ACTIVITY - Check if locked -->
-                            {% if is_next_day_locked %}
-                                <!-- LOCKED NEW ACTIVITY -->
-                                <div class="form-section locked" id="activity-form-{{ form_index }}">
-                                    <div class="form-header">
-                                        <h3 class="form-title">
-                                            <span class="activity-number">{{ forloop.counter }}</span>
-                                            <span class="day-label">
-                                                Day {{ next_available_day }}
-                                                <span class="locked-badge-small">
-                                                    <i class="fas fa-lock"></i> Locked
-                                                </span>
-                                            </span>
-                                            <span class="locked-form-type">
-                                                <i class="fas fa-hourglass-half"></i> Available in {{ days_until_unlock }}d
-                                            </span>
-                                        </h3>
-                                    </div>
-                                    
-                                    <!-- Disabled form fields -->
-                                    <div style="margin-bottom: 20px;">
-                                        <label class="form-label" style="color: #71767b;">
-                                            <i class="fas fa-lock"></i> Day {{ next_available_day }} is locked
-                                        </label>
-                                        <textarea disabled class="form-textarea locked-input" 
-                                                  placeholder="This day will be available in {{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}..."></textarea>
-                                        <span class="form-helper locked-helper">
-                                            <i class="fas fa-info-circle"></i> 
-                                            {% with unlock_date=campaign.start_date|date:"U"|add:next_available_day|add:"-1"|add:"86400" %}
-                                                {% with unlock_timestamp=unlock_date|floatformat:0 %}
-                                                    Unlocks on {{ unlock_timestamp|date:"M d, Y" }} ({{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %} from now)
-                                                {% endwith %}
-                                            {% endwith %}
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Disabled file upload -->
-                                    <div>
-                                        <label class="form-label" style="color: #71767b;">Add media (locked)</label>
-                                        <div class="file-upload-area" style="background: #0f1114; border-color: #2f3336; cursor: not-allowed;">
-                                            <i class="fas fa-cloud-upload-alt file-upload-icon" style="color: #71767b;"></i>
-                                            <div class="file-upload-text" style="color: #71767b;">Upload unavailable while locked</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hidden fields to prevent submission -->
-                                    {% for hidden in form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <!-- UNLOCKED NEW ACTIVITY -->
-                                <div class="form-section new-activity" 
-                                     id="activity-form-{{ form_index }}" 
-                                     data-form-index="{{ form_index }}">
-                                    
-                                    <div class="form-header">
-                                        <h3 class="form-title">
-                                            <span class="activity-number">{{ forloop.counter }}</span>
-                                            <span class="day-label">
-                                                Day {{ next_available_day }}
-                                                {% if campaign.duration %}
-                                                    <span class="target-info">
-                                                        of {{ campaign.duration }}
-                                                    </span>
-                                                {% endif %}
-                                            </span>
-                                            <span class="form-type-badge badge-new">
-                                                <i class="fas fa-plus"></i> Available Now
-                                            </span>
-                                        </h3>
-                                    </div>
-                                    
-                                    <!-- VIDEO UPLOAD TIP -->
-                                    <div class="video-upload-tip">
-                                        <i class="fas fa-lightbulb"></i>
-                                        <span><strong>Pro tip:</strong> Upload a video and we'll automatically create a photo carousel! Videos must be under <strong>40MB</strong>.</span>
-                                    </div>
-                                    
-                                    <!-- HIDDEN FIELDS -->
-                                    {% for hidden in form.hidden_fields %}
-                                        {{ hidden }}
-                                    {% endfor %}
-                                    
-                                    <!-- SCREENSHOT COUNT SELECTOR -->
-                                    <div class="screenshot-count-container" id="screenshot-container-{{ form_index }}" style="display: none;">
-                                        <label class="form-label screenshot-label">
-                                            <i class="fas fa-images"></i> How many photos should we extract from your video?
-                                        </label>
-                                        {{ form.screenshot_count }}
-                                        <span class="form-helper">
-                                            These will be displayed as a swipeable story. You can change this anytime.
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- CONTENT FIELD -->
-                                    <div style="margin-bottom: 20px;">
-                                        <label class="form-label">
-                                            What would you like to share for Day {{ next_available_day }}? (optional)
-                                        </label>
-                                        {{ form.content }}
-                                        <span class="form-helper">
-                                            Share your progress, thoughts, or updates
-                                        </span>
-                                        
-                                        <!-- EMOJI SECTION -->
-                                        <div class="emoji-section">
-                                            <div class="emoji-section-label">
-                                                <i class="fas fa-smile"></i>
-                                                Add feeling for Day {{ next_available_day }} (optional)
-                                            </div>
-                                            
-                                            <div class="emoji-container" id="emojiContainer-{{ form_index }}">
-                                                {% for emoji in initial_emojis %}
-                                                    <button type="button" 
-                                                            class="emoji-button" 
-                                                            onclick="addEmojiToField('{{ emoji }}', {{ form_index }})">
-                                                        {{ emoji }}
-                                                    </button>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- MEDIA FIELD -->
-                                    <div>
-                                        <label class="form-label">
-                                            Add media for Day {{ next_available_day }} (optional):
-                                        </label>
-                                        
-                                        <div class="file-upload-area" id="drop-area-{{ form_index }}" onclick="document.getElementById('file-input-{{ form_index }}').click()">
-                                            <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
-                                            <div class="file-upload-text">
-                                                Upload image, video, or audio
-                                            </div>
-                                            <span class="form-helper">Click or drag & drop (Max 40MB for videos)</span>
-                                            <input type="file" 
-                                                   class="file-input-hidden" 
-                                                   id="file-input-{{ form_index }}"
-                                                   accept="image/*,video/*,audio/*"
-                                                   onchange="handleFileSelect({{ form_index }})">
-                                        </div>
-                                        
-                                        <!-- HIDDEN DJANGO FILE FIELD -->
-                                        {{ form.file }}
-                                        
-                                        <!-- FILE PREVIEW AREA -->
-                                        <div id="file-preview-{{ form_index }}" class="file-preview-container"></div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endif %}
-                        
-                        {% endwith %}
-                        
-                        <!-- SEPARATOR (except last form) -->
-                        {% if not forloop.last %}
-                        <hr>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    <!-- SUBMIT BUTTON -->
-                    <button type="submit" class="submit-button" id="submitBtn" 
-                            {% if is_next_day_locked and not existing_activities_count > 0 %}disabled{% endif %}>
-                        <i class="fas fa-save"></i>
-                        {% if is_next_day_locked %}
-                            {% if existing_activities_count > 0 %}
-                                Save Changes to Previous Days
-                            {% else %}
-                                Waiting for Day 1 to Unlock...
-                            {% endif %}
-                        {% else %}
-                            {% if existing_activities_count > 0 %}
-                                Save Changes & Post Day {{ next_available_day }}
-                            {% else %}
-                                Begin Day 1 of Your Journey
-                            {% endif %}
-                        {% endif %}
-                    </button>
-                    
-                    <!-- JOURNEY PROGRESS NOTE -->
-                    <div class="progress-note">
-                        <i class="fas fa-sync-alt"></i>
-                        <strong>Real-time journey:</strong> 
-                        {% if existing_activities_count == 0 %}
-                            Start today, Day 2 unlocks tomorrow
-                        {% elif is_next_day_locked %}
-                            Day {{ next_available_day }} unlocks in {{ days_until_unlock }} days
-                        {% else %}
-                            Day {{ next_available_day }} is ready for your update
-                        {% endif %}
-                    </div>
-                </form>
-                {% endif %}
-            {% endif %}
+            </p>
         </div>
+        <button class="close-btn" onclick="window.history.back()">&times;</button>
     </div>
 
-    <!-- UPDATED SCRIPT WITH 40MB VIDEO LIMIT AND SIZE DISPLAY -->
-    <script>
-        // Constants
-        const MAX_VIDEO_SIZE = 40 * 1024 * 1024; // 40MB in bytes
+    <div class="activity-body">
+        <!-- CAMPAIGN PROGRESS CARD -->
+        <div class="campaign-progress-card">
+            <h4 class="campaign-progress-title">{{ campaign.title }}</h4>
+            <div class="progress-bar-container">
+                <div class="progress-bar-labels">
+                    <span>Day {{ existing_activities_count }}{% if campaign.duration %} / {{ campaign.duration }}{% endif %}</span>
+                    <span>{{ progress_percentage|floatformat:1 }}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: {{ progress_percentage }}%;"></div>
+                </div>
+            </div>
+            <div class="campaign-time-info">
+                {% if campaign.duration and campaign.days_left is not None %}
+                <div class="time-info-item">
+                    <i class="far fa-hourglass-half"></i>
+                    <span>{{ campaign.days_left }} days left</span>
+                </div>
+                {% endif %}
+                <div class="time-info-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Current day: Day {{ current_real_day|floatformat:0 }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIDEO INFO BANNER -->
+        <div class="video-info-banner">
+            <i class="fas fa-video" style="color: #1d9bf0; font-size: 24px;"></i>
+            <div>
+                <strong>Share Your Journey Moment</strong><br>
+                Upload a video to show your progress. <strong>Max 40MB</strong>
+            </div>
+        </div>
 
-        // ===== EMOJI HANDLING =====
-        function addEmojiToField(emoji, formIndex) {
-            const form = document.getElementById(`activity-form-${formIndex}`);
-            if (!form) return;
-            
-            const textarea = form.querySelector('textarea[name$="-content"]');
-            if (!textarea) return;
-            
-            const cursorPos = textarea.selectionStart;
-            const textBefore = textarea.value.substring(0, cursorPos);
-            const textAfter = textarea.value.substring(cursorPos);
-            
-            textarea.value = textBefore + emoji + textAfter;
-            textarea.focus();
-            textarea.selectionStart = cursorPos + emoji.length;
-            textarea.selectionEnd = cursorPos + emoji.length;
-            
-            textarea.dispatchEvent(new Event('input'));
-        }
+        <!-- LOCKED DAY WARNING -->
+        {% if is_next_day_locked %}
+        <div class="locked-day-warning">
+            <div class="locked-icon-circle"><i class="fas fa-lock"></i></div>
+            <strong class="locked-title">Day {{ next_available_day }} is locked</strong>
+            <p style="color: #71767b; margin-top: 8px;">Available in {{ days_until_unlock }} day{% if days_until_unlock > 1 %}s{% endif %}</p>
+        </div>
+        {% endif %}
 
-        // ===== FORMAT FILE SIZE =====
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // ===== HANDLE FILE SELECTION =====
-        function handleFileSelect(formIndex) {
-            const fileInput = document.getElementById(`file-input-${formIndex}`);
-            const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
-            const previewArea = document.getElementById(`file-preview-${formIndex}`);
-            const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
+        <!-- FORM -->
+        {% if not is_next_day_locked %}
+        <form method="post" enctype="multipart/form-data" id="activityForm">
+            {% csrf_token %}
             
-            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
-            
-            const file = fileInput.files[0];
-            
-            // Check file size for videos
-            const isVideo = file.type.startsWith('video/');
-            const fileSize = file.size;
-            const fileSizeFormatted = formatFileSize(fileSize);
-            
-            // Validate video size
-            if (isVideo && fileSize > MAX_VIDEO_SIZE) {
-                showNotification(`Video too large: ${fileSizeFormatted} (max 40MB)`, 'error');
-                fileInput.value = '';
-                return;
-            }
-            
-            // Update Django file input
-            if (djangoFileInput) {
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                djangoFileInput.files = dataTransfer.files;
-            }
-            
-            // Hide existing file if present
-            const existingFile = document.getElementById(`existing-file-${formIndex}`);
-            if (existingFile) {
-                existingFile.style.display = 'none';
-            }
-            
-            // Show screenshot selector for videos
-            if (screenshotContainer) {
-                screenshotContainer.style.display = isVideo ? 'block' : 'none';
-            }
-            
-            // Create preview
-            createFilePreview(file, formIndex, fileSizeFormatted, isVideo);
-        }
-
-        // ===== CREATE FILE PREVIEW =====
-        function createFilePreview(file, formIndex, fileSizeFormatted, isVideo) {
-            const previewArea = document.getElementById(`file-preview-${formIndex}`);
-            if (!previewArea) return;
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const isOverLimit = isVideo && file.size > MAX_VIDEO_SIZE;
-                const sizeWarningClass = isOverLimit ? ' warning' : '';
-                const sizeWarningIcon = isOverLimit ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-database"></i>';
+            <!-- NEW ACTIVITY -->
+            <div class="video-upload-card" id="new-activity-form">
+                <div class="video-upload-header">
+                    <h3><i class="fas fa-calendar-day"></i> Day {{ next_available_day }}</h3>
+                    <span class="available-badge">Available Now</span>
+                </div>
                 
-                let mediaHtml = '';
+                <div class="video-upload-area" id="drop-area" 
+                     onclick="document.getElementById('video-file').click()">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <div class="upload-text">Click or drag & drop video</div>
+                    <div class="upload-hint">MP4, MOV, WebM (Max 40MB)</div>
+                    <input type="file" 
+                           id="video-file"
+                           name="video_file"
+                           accept="video/*"
+                           style="display: none;"
+                           onchange="handleVideoSelect(this)">
+                </div>
                 
-                if (file.type.startsWith('image/')) {
-                    mediaHtml = `<img src="${e.target.result}" alt="Preview">`;
-                } else if (file.type.startsWith('video/')) {
-                    mediaHtml = `
-                        <video controls>
-                            <source src="${e.target.result}" type="${file.type}">
-                            Your browser does not support the video tag.
-                        </video>
-                    `;
-                } else if (file.type.startsWith('audio/')) {
-                    mediaHtml = `
-                        <div class="audio-preview">
-                            <i class="fas fa-music" style="font-size: 32px; color: #1d9bf0; margin-bottom: 8px;"></i>
-                            <audio controls style="width: 100%;">
-                                <source src="${e.target.result}" type="${file.type}">
-                            </audio>
-                        </div>
-                    `;
-                } else {
-                    mediaHtml = `
-                        <div style="padding: 20px; text-align: center;">
-                            <i class="fas fa-file" style="font-size: 32px; color: #71767b;"></i>
-                            <div style="margin-top: 8px;">${file.name}</div>
-                        </div>
-                    `;
-                }
+                <div id="video-preview" style="display: none;"></div>
                 
-                previewArea.innerHTML = `
-                    <div class="file-preview-wrapper">
-                        <div class="file-preview-item">
-                            ${mediaHtml}
-                            <div class="preview-badge ${sizeWarningClass}">
-                                ${sizeWarningIcon}
-                                <span>${fileSizeFormatted}</span>
+                <div id="progress-indicator" style="display: none;">
+                    <div class="upload-progress-container">
+                        <div class="progress-header">
+                            <div class="progress-title">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span id="progress-stage">Preparing...</span>
                             </div>
-                            <button type="button" class="remove-file-btn" onclick="removeFile(${formIndex})">
-                                <i class="fas fa-times"></i>
-                            </button>
+                            <div class="progress-percentage" id="progress-percentage">0%</div>
                         </div>
-                        <div class="file-name">
-                            <span>${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}</span>
-                            <span class="file-size ${isOverLimit ? 'warning' : ''}">${fileSizeFormatted}</span>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar-fill-animated" id="progress-bar"></div>
                         </div>
-                        ${isOverLimit ? `
-                            <div style="padding: 8px 12px; background: rgba(244, 33, 46, 0.1); color: #f4212e; font-size: 12px; border-top: 1px solid var(--border-color);">
-                                <i class="fas fa-exclamation-circle"></i> Video exceeds 40MB limit. Please choose a smaller file.
-                            </div>
-                        ` : ''}
+                        <div id="progress-details"><i class="fas fa-spinner fa-spin"></i> Waiting...</div>
                     </div>
-                `;
-            };
+                </div>
+                
+                <input type="hidden" name="screenshot_count" value="5">
+            </div>
             
-            reader.readAsDataURL(file);
-        }
+            <!-- SUBMIT BUTTON -->
+            <button type="submit" class="submit-button" id="submitBtn">
+                <div class="btn-progress" id="btnProgress">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="62.8" stroke-dashoffset="62.8" />
+                    </svg>
+                </div>
+                <i class="fas fa-calendar-day" id="btnIcon"></i>
+                <span id="btnText">Post Day {{ next_available_day }} Video</span>
+            </button>
+        </form>
+        {% endif %}
+        
+        <div class="progress-note">
+            <i class="fas fa-video"></i>
+            <span>Each day, upload a video showing your progress</span>
+        </div>
+    </div>
+</div>
 
-        // ===== REMOVE FILE =====
-        function removeFile(formIndex) {
-            const fileInput = document.getElementById(`file-input-${formIndex}`);
-            const djangoFileInput = document.querySelector(`#activity-form-${formIndex} input[name$="-file"]`);
-            const previewArea = document.getElementById(`file-preview-${formIndex}`);
-            const screenshotContainer = document.getElementById(`screenshot-container-${formIndex}`);
-            
-            if (fileInput) fileInput.value = '';
-            if (djangoFileInput) djangoFileInput.value = '';
-            if (previewArea) previewArea.innerHTML = '';
-            if (screenshotContainer) screenshotContainer.style.display = 'none';
-            
-            // Show existing file if any
-            const existingFile = document.getElementById(`existing-file-${formIndex}`);
-            if (existingFile) {
-                existingFile.style.display = 'block';
-            }
+<script>
+    const MAX_SIZE = 40 * 1024 * 1024;
+    let selectedFile = null;
+    let progressInterval = null;
+    
+    function showNotification(msg, type) {
+        const n = document.createElement('div');
+        n.className = `notification ${type}`;
+        n.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+        document.body.appendChild(n);
+        setTimeout(() => n.remove(), 3000);
+    }
+    
+    function updateButtonProgress(percent, stage) {
+        const btnProgress = document.getElementById('btnProgress');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnText = document.getElementById('btnText');
+        const circle = btnProgress?.querySelector('circle');
+        
+        if (btnProgress) btnProgress.style.display = 'inline-flex';
+        if (btnIcon) btnIcon.style.display = 'none';
+        if (circle) {
+            const dash = 62.8 - (percent / 100) * 62.8;
+            circle.style.strokeDashoffset = dash;
         }
-
-        // ===== REMOVE EXISTING FILE =====
-        function removeExistingFile(formIndex) {
-            const existingDiv = document.getElementById(`existing-file-${formIndex}`);
-            const clearCheckbox = document.querySelector(`#activity-form-${formIndex} input[name$="-file-clear"]`);
-            
-            if (existingDiv) existingDiv.style.display = 'none';
-            if (clearCheckbox) clearCheckbox.checked = true;
-            
-            showNotification('File marked for removal', 'info');
+        if (btnText) btnText.textContent = stage ? `${stage} ${Math.round(percent)}%` : `${Math.round(percent)}%`;
+    }
+    
+    function resetButton() {
+        const btnProgress = document.getElementById('btnProgress');
+        const btnIcon = document.getElementById('btnIcon');
+        const btnText = document.getElementById('btnText');
+        if (btnProgress) btnProgress.style.display = 'none';
+        if (btnIcon) btnIcon.style.display = 'inline-block';
+        if (btnText) btnText.textContent = 'Post Day {{ next_available_day }} Video';
+    }
+    
+    function handleVideoSelect(input) {
+        const file = input.files[0];
+        if (!file) return;
+        
+        if (!file.type.startsWith('video/')) {
+            showNotification('Please select a video file', 'error');
+            input.value = '';
+            return;
         }
-
-        // ===== NOTIFICATION SYSTEM =====
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                warning: 'fa-exclamation-triangle',
-                info: 'fa-info-circle'
-            };
-            
-            notification.innerHTML = `
-                <i class="fas ${icons[type] || icons.info}"></i>
-                <span>${message}</span>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }, 4000);
+        
+        if (file.size > MAX_SIZE) {
+            showNotification(`Video too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max 40MB)`, 'error');
+            input.value = '';
+            return;
         }
-
-        // ===== DRAG AND DROP =====
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.file-upload-area').forEach(dropArea => {
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, preventDefaults, false);
-                });
-                
-                function preventDefaults(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, highlight, false);
-                });
-                
-                ['dragleave', 'drop'].forEach(eventName => {
-                    dropArea.addEventListener(eventName, unhighlight, false);
-                });
-                
-                function highlight() {
-                    dropArea.style.borderColor = '#1d9bf0';
-                    dropArea.style.background = 'rgba(29, 155, 240, 0.1)';
-                }
-                
-                function unhighlight() {
-                    dropArea.style.borderColor = '#2f3336';
-                    dropArea.style.background = '#0f1114';
-                }
-                
-                dropArea.addEventListener('drop', function(e) {
-                    const dt = e.dataTransfer;
-                    const files = dt.files;
-                    const formIndex = this.id.replace('drop-area-', '');
-                    
-                    if (files.length > 0) {
-                        const fileInput = document.getElementById(`file-input-${formIndex}`);
-                        if (fileInput) {
-                            fileInput.files = files;
-                            handleFileSelect(parseInt(formIndex));
-                        }
+        
+        selectedFile = file;
+        
+        // Hide upload area, show preview
+        document.getElementById('drop-area').style.display = 'none';
+        
+        const preview = document.getElementById('video-preview');
+        const url = URL.createObjectURL(file);
+        preview.innerHTML = `
+            <div class="file-preview-wrapper">
+                <div class="file-preview-item">
+                    <video controls><source src="${url}" type="${file.type}"></video>
+                    <button class="remove-video-btn" onclick="removeVideo()">✕</button>
+                </div>
+                <div class="file-name">
+                    <span>${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}</span>
+                    <span>${(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                </div>
+            </div>
+        `;
+        preview.style.display = 'block';
+        
+        showNotification(`Video ready! ${(file.size / 1024 / 1024).toFixed(1)} MB`, 'success');
+    }
+    
+    function removeVideo() {
+        document.getElementById('video-file').value = '';
+        document.getElementById('video-preview').innerHTML = '';
+        document.getElementById('video-preview').style.display = 'none';
+        document.getElementById('drop-area').style.display = 'flex';
+        selectedFile = null;
+        showNotification('Video removed', 'info');
+    }
+    
+    function pollStatus(activityId) {
+        let attempts = 0;
+        return new Promise((resolve) => {
+            progressInterval = setInterval(async () => {
+                attempts++;
+                updateButtonProgress(70 + Math.min(attempts / 20 * 25, 25), 'Processing');
+                try {
+                    const res = await fetch(`/check-video-status/${activityId}/`);
+                    const data = await res.json();
+                    if (data.processed && data.screenshot_count > 0) {
+                        clearInterval(progressInterval);
+                        updateButtonProgress(100, 'Complete');
+                        setTimeout(() => resolve(true), 500);
+                    } else if (attempts >= 40) {
+                        clearInterval(progressInterval);
+                        resolve(false);
                     }
-                });
+                } catch(e) {
+                    if (attempts >= 40) { clearInterval(progressInterval); resolve(false); }
+                }
+            }, 3000);
+        });
+    }
+    
+    document.getElementById('activityForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (!selectedFile) {
+            showNotification('Please upload a video first', 'error');
+            return;
+        }
+        
+        resetButton();
+        updateButtonProgress(0, 'Starting');
+        
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrf-token]').content);
+        formData.append('video_file', selectedFile);
+        formData.append('screenshot_count', '5');
+        
+        let progress = 0;
+        const uploadInterval = setInterval(() => {
+            if (progress < 90) {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                updateButtonProgress(progress, 'Uploading');
+            }
+        }, 200);
+        
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
             
-            // Auto-resize textareas
-            document.querySelectorAll('textarea[name$="-content"]').forEach(textarea => {
-                textarea.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 200) + 'px';
-                });
-            });
+            clearInterval(uploadInterval);
+            updateButtonProgress(95, 'Processing');
             
-            // Scroll to new activity forms if unlocked
-            {% if not is_next_day_locked and not campaign.duration or existing_activities_count < campaign.duration %}
-            setTimeout(() => {
-                document.querySelectorAll('.new-activity').forEach(form => {
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                });
-            }, 500);
-            {% endif %}
+            const data = await response.json();
             
-            // Show celebration if user is ahead
-            {% if schedule_status == 'ahead' and schedule_diff > 0 %}
-            const celebrationDiv = document.createElement('div');
-            celebrationDiv.className = 'celebration-note';
-            celebrationDiv.innerHTML = `
-                <i class="fas fa-rocket"></i>
-                <div>
-                    <strong>You're {{ schedule_diff }} day{% if schedule_diff > 1 %}s{% endif %} ahead of schedule!</strong><br>
-                    Great job staying consistent with your journey.
-                </div>
-            `;
-            document.querySelector('.activity-body').insertBefore(celebrationDiv, document.querySelector('.flexibility-note'));
-            {% endif %}
-            
-            // Show warning if user is behind
-            {% if schedule_status == 'behind' and schedule_diff > 0 %}
-            const warningDiv = document.createElement('div');
-            warningDiv.className = 'max-limit-warning';
-            warningDiv.innerHTML = `
-                <i class="fas fa-exclamation-triangle"></i>
-                <div>
-                    <strong>You're {{ schedule_diff }} day{% if schedule_diff > 1 %}s{% endif %} behind schedule</strong><br>
-                    Don't worry - you can still catch up! Post your updates when each day unlocks.
-                </div>
-            `;
-            document.querySelector('.activity-body').insertBefore(warningDiv, document.querySelector('.flexibility-note'));
-            {% endif %}
-        });
-
-        // ===== FORM VALIDATION =====
-        document.getElementById('activityForm')?.addEventListener('submit', function(e) {
-            const submitBtn = document.getElementById('submitBtn');
-            let hasErrors = false;
-            
-            // Check for any oversized videos
-            const fileInputs = document.querySelectorAll('input[type="file"][id^="file-input-"]');
-            for (let input of fileInputs) {
-                if (input.files && input.files.length > 0) {
-                    const file = input.files[0];
-                    if (file.type.startsWith('video/') && file.size > MAX_VIDEO_SIZE) {
-                        e.preventDefault();
-                        showNotification('One or more videos exceed the 40MB limit. Please remove them before submitting.', 'error');
-                        return false;
+            if (data.success) {
+                if (data.activity_id) {
+                    const completed = await pollStatus(data.activity_id);
+                    if (completed) {
+                        updateButtonProgress(100, 'Complete');
+                        showNotification('Video processed! Redirecting...', 'success');
+                        setTimeout(() => window.location.href = `/campaign/{{ campaign.id }}/activity_list/`, 1500);
+                    } else {
+                        showNotification('Processing in background. Redirecting...', 'info');
+                        setTimeout(() => window.location.href = `/campaign/{{ campaign.id }}/activity_list/`, 2000);
                     }
+                } else {
+                    updateButtonProgress(100, 'Complete');
+                    setTimeout(() => window.location.href = `/campaign/{{ campaign.id }}/activity_list/`, 1000);
                 }
+            } else {
+                showNotification(data.error || 'Upload failed', 'error');
+                resetButton();
             }
-            
-            {% if is_next_day_locked %}
-            const hasLockedForms = document.querySelectorAll('.form-section.locked').length > 0;
-            if (hasLockedForms) {
-                e.preventDefault();
-                showNotification('Day {{ next_available_day }} is still locked. Please wait until it unlocks.', 'error');
-                return false;
-            }
-            {% endif %}
-            
-            if (hasErrors) {
-                e.preventDefault();
-                return false;
-            }
-            
-            // Show loading state
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving your journey...';
-            submitBtn.disabled = true;
-            
-            return true;
+        } catch(err) {
+            clearInterval(uploadInterval);
+            showNotification('Network error. Please try again.', 'error');
+            resetButton();
+        }
+    });
+    
+    // Drag and drop
+    const dropArea = document.getElementById('drop-area');
+    if (dropArea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+            dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
         });
-
-        // Keyboard shortcut (Ctrl+Enter)
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                const form = document.getElementById('activityForm');
-                if (form) {
-                    e.preventDefault();
-                    form.submit();
-                }
+        ['dragenter', 'dragover'].forEach(ev => {
+            dropArea.addEventListener(ev, () => { dropArea.style.borderColor = '#1d9bf0'; dropArea.style.background = 'rgba(29,155,240,0.05)'; });
+        });
+        ['dragleave', 'drop'].forEach(ev => {
+            dropArea.addEventListener(ev, () => { dropArea.style.borderColor = '#2f3336'; dropArea.style.background = '#0f1114'; });
+        });
+        dropArea.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                const input = document.getElementById('video-file');
+                input.files = files;
+                handleVideoSelect(input);
             }
         });
-    </script>
+    }
+</script>
 </body>
 </html>
