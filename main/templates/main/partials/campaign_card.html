@@ -245,3 +245,95 @@
 })();
 </script>
 </div>
+
+
+{% if campaign %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FundingCampaign",
+    "name": "{{ campaign.title|escapejs }}",
+    "description": "{{ campaign.content|escapejs|truncatechars:300 }}",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'view_campaign' campaign_id=campaign.id %}",
+    "image": "{{ campaign.poster.url|default:'https://rallynex.com/static/images/default-campaign.jpg' }}",
+    "fundedBy": {
+        "@type": "Organization",
+        "name": "RallyNex"
+    },
+    "fundingGoal": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": {{ campaign.funding_goal|default:0 }}
+    },
+    "totalDonations": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": {{ campaign.total_donations|default:0 }}
+    },
+    "donationCount": {{ campaign.get_donor_count|default:0 }},
+    "dateCreated": "{{ campaign.timestamp|date:'Y-m-d' }}",
+    "datePublished": "{{ campaign.timestamp|date:'Y-m-d' }}",
+    "dateModified": "{{ campaign.timestamp|date:'Y-m-d' }}",
+    "status": "{{ campaign.is_active|yesno:'Active,Ended' }}",
+    "potentialAction": {
+        "@type": "DonateAction",
+        "name": "Support this journey",
+        "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}{% url 'create_donation' campaign_id=campaign.id %}",
+            "inLanguage": "en-US",
+            "actionPlatform": [
+                "http://schema.org/DesktopWebPlatform",
+                "http://schema.org/MobileWebPlatform"
+            ]
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "{{ campaign.get_username|escapejs }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'profile_view' username=campaign.get_username %}"
+    },
+    "creator": {
+        "@type": "Person",
+        "name": "{{ campaign.get_username|escapejs }}"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "RallyNex",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-logo.png' %}"
+        }
+    },
+    "interactionStatistic": [
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": {{ campaign.get_love_count|default:0 }}
+        },
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/CommentAction",
+            "userInteractionCount": {{ campaign.get_comment_count|default:0 }}
+        },
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/ShareAction",
+            "userInteractionCount": {{ campaign.get_share_count|default:0 }}
+        }
+    ],
+    "video": {% if campaign.get_images %}[
+        {% for image in campaign.get_images %}
+        {
+            "@type": "VideoObject",
+            "name": "Day {{ forloop.counter }} update",
+            "description": "Daily update from {{ campaign.get_username }}'s journey",
+            "thumbnailUrl": "{{ image }}",
+            "contentUrl": "{{ image }}",
+            "uploadDate": "{{ campaign.timestamp|date:'Y-m-d' }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]{% else %}[]{% endif %}
+}
+</script>
+{% endif %}

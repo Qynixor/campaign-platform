@@ -113,6 +113,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                  'main.context_processors.featured_spot_processor',
+                'buskx.context_processors.seo_context',
+                'buskx.context_processors.notification_count',
+                'buskx.context_processors.site_config',
             ],
         },
     },
@@ -334,3 +337,11 @@ Q_CLUSTER = {
     'bulk': 1,
     'orm': 'default'
 }
+
+
+
+
+# SEO Verification Codes
+GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
+YANDEX_VERIFICATION = os.environ.get('YANDEX_VERIFICATION', '')
+BING_VERIFICATION = os.environ.get('BING_VERIFICATION', '')
