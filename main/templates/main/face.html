@@ -5918,74 +5918,40 @@ html {
 
 
 <style>
-/* Dark-optimized page loader */
-.page-loader {
+/* Premium loader that matches your brand */
+#page-loader {
     position: fixed;
     top: 0;
     left: 0;
-    width: 0;
+    width: 0%;
     height: 3px;
     background: linear-gradient(90deg, 
-        rgba(255, 255, 255, 0.4) 0%,
-        rgba(255, 255, 255, 0.9) 30%,
-        #ffffff 50%,
-        rgba(255, 255, 255, 0.9) 70%,
-        rgba(255, 255, 255, 0.4) 100%
+        #1DA1F2 0%, 
+        #4CAF50 50%, 
+        #1DA1F2 100%
     );
+    background-size: 200% 100%;
     z-index: 999999;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
+    box-shadow: 0 0 12px rgba(29, 161, 242, 0.6);
     border-radius: 0 2px 2px 0;
 }
 
-/* Optional: Add subtle shimmer animation */
-@keyframes loaderPulse {
+@keyframes gradientShift {
     0% {
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-    }
-    50% {
-        box-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
+        background-position: 100% 0;
     }
     100% {
-        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+        background-position: -100% 0;
     }
 }
 
-.page-loader {
-    animation: loaderPulse 1.5s ease-in-out infinite;
-}
-
-/* Optional: Loading hint text (if you want to show text) */
-.loader-hint {
-    position: fixed;
-    bottom: 30px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    z-index: 999999;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-    letter-spacing: 0.3px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    display: inline-block;
-    width: auto;
-    margin: 0 auto;
-    padding: 6px 16px;
-    border-radius: 20px;
-    max-width: 80%;
-    left: 50%;
-    transform: translateX(-50%);
-    white-space: nowrap;
+#page-loader.loading {
+    animation: gradientShift 1s linear infinite;
 }
 </style>
 
-<!-- Optional hint element - add this after your loader div -->
-<div id="loader-hint" class="loader-hint" style="opacity: 0;">Loading...</div>
 
 
 <style>
@@ -6516,10 +6482,9 @@ html {
 
 <body id="mainBody" >
 
+<!-- Add loader element RIGHT after body tag -->
+<div id="page-loader" style="width: 0%;"></div>
 
-<!-- Add this as the FIRST element inside <body> -->
-<div id="page-loader" class="page-loader"></div>
-<div id="loader-hint" class="loader-hint" style="opacity: 0;">Loading...</div>
 
 <header>
  
@@ -8512,134 +8477,6 @@ startCarousel(); // Start the carousel on page load
 
 </script>
 
-<script type="text/javascript">
-// Sophisticated loader with dark theme optimization
-class SyncedLoader {
-    constructor() {
-        this.loader = document.getElementById('page-loader');
-        this.phases = {
-            'initial': { target: 15, duration: 3000 },
-            'django_render': { target: 40, duration: 7000 },
-            'assets_load': { target: 70, duration: 5000 },
-            'data_fetch': { target: 90, duration: 5000 },
-            'complete': { target: 100, duration: 1000 }
-        };
-        this.currentPhase = 'initial';
-        this.startTime = performance.now();
-    }
-    
-    start() {
-        console.log('🚀 Rallynex loader started - optimized for dark theme');
-        this.animatePhase('initial');
-        
-        // Auto-progress with adjusted timing for better UX
-        setTimeout(() => this.animatePhase('django_render'), 3000);
-        setTimeout(() => this.animatePhase('assets_load'), 10000);
-        setTimeout(() => this.animatePhase('data_fetch'), 15000);
-        setTimeout(() => this.complete(), 20000);
-    }
-    
-    animatePhase(phase) {
-        if (!this.phases[phase]) return;
-        
-        this.currentPhase = phase;
-        const { target, duration } = this.phases[phase];
-        
-        // Add smooth easing for better visual feel
-        this.loader.style.transition = `width ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
-        this.loader.style.width = `${target}%`;
-        
-        // Optional: Update loader with phase description
-        this.updateLoaderHint(phase);
-        
-        console.log(`✨ Loader phase: ${phase} → ${target}% (${Math.round(performance.now() - this.startTime)}ms)`);
-    }
-    
-    updateLoaderHint(phase) {
-        // Optional: Show loading hints to users (can be removed if not needed)
-        const hints = {
-            'initial': 'Preparing your experience...',
-            'django_render': 'Building your feed...',
-            'assets_load': 'Loading media...',
-            'data_fetch': 'Fetching latest updates...',
-            'complete': 'Almost ready...'
-        };
-        
-        // You can display this hint in a small text element if you have one
-        const hintElement = document.getElementById('loader-hint');
-        if (hintElement && hints[phase]) {
-            hintElement.style.opacity = '0';
-            setTimeout(() => {
-                hintElement.textContent = hints[phase];
-                hintElement.style.opacity = '0.6';
-            }, 150);
-        }
-    }
-    
-    // Call these from your Django template at different stages
-    markDjangoReady() {
-        this.animatePhase('django_render');
-    }
-    
-    markAssetsLoaded() {
-        this.animatePhase('assets_load');
-    }
-    
-    markDataFetched() {
-        this.animatePhase('data_fetch');
-    }
-    
-    complete() {
-        this.animatePhase('complete');
-        
-        // Smooth fade out with better timing
-        setTimeout(() => {
-            this.loader.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-            this.loader.style.opacity = '0';
-            
-            setTimeout(() => {
-                this.loader.style.width = '0';
-                this.loader.style.opacity = '0.85'; // Reset for next time
-                
-                // Dispatch event that loading is complete
-                window.dispatchEvent(new CustomEvent('rallynex:loaded'));
-                console.log('✅ Rallynex fully loaded - ready for action');
-            }, 600);
-        }, 500);
-    }
-    
-    // Force complete if something goes wrong
-    forceComplete() {
-        console.warn('⚠️ Force completing loader (fallback)');
-        this.complete();
-    }
-}
-
-// Initialize and start the loader
-window.addEventListener('DOMContentLoaded', function() {
-    window.syncedLoader = new SyncedLoader();
-    window.syncedLoader.start();
-    
-    // Safety fallback - if page doesn't trigger completion in 25 seconds
-    setTimeout(() => {
-        if (window.syncedLoader && window.syncedLoader.currentPhase !== 'complete') {
-            window.syncedLoader.forceComplete();
-        }
-    }, 25000);
-});
-
-// Optional: Mark when critical assets are loaded
-if (document.readyState === 'complete') {
-    setTimeout(() => {
-        if (window.syncedLoader) window.syncedLoader.markAssetsLoaded();
-    }, 100);
-} else {
-    window.addEventListener('load', function() {
-        if (window.syncedLoader) window.syncedLoader.markAssetsLoaded();
-    });
-}
-</script>
-
 
 
 <!-- Add this before closing body tag in base.html -->
@@ -8778,18 +8615,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })();
 </script>
-<script type="text/javascript">
-  // Add this to your main JavaScript file
-if ('standalone' in window.navigator && window.navigator.standalone) {
-  // App is running in standalone mode on iOS
-  document.documentElement.classList.add('ios-standalone');
-  
-  // Optional: Adjust any iOS-specific UI
-  const statusBarHeight = window.innerHeight - document.documentElement.clientHeight;
-  document.documentElement.style.setProperty('--status-bar-height', statusBarHeight + 'px');
-}
-</script>
 
+
+<script>
+// Enhanced loader with better visibility
+(function() {
+    let loader = document.getElementById('page-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'page-loader';
+        document.body.appendChild(loader);
+    }
+    
+    loader.classList.add('loading');
+    let width = 0;
+    let interval = setInterval(() => {
+        if (width >= 90) {
+            clearInterval(interval);
+            return;
+        }
+        
+        // Slower, more visible progress
+        if (width < 30) width += 5;
+        else if (width < 60) width += 3;
+        else if (width < 80) width += 2;
+        else width += 0.5;
+        
+        width = Math.min(90, width);
+        loader.style.width = width + '%';
+    }, 150);
+    
+    function complete() {
+        clearInterval(interval);
+        loader.style.width = '100%';
+        loader.classList.remove('loading');
+        
+        setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.width = '0';
+                loader.style.opacity = '1';
+            }, 300);
+        }, 300);
+    }
+    
+    window.addEventListener('load', () => setTimeout(complete, 500));
+    setTimeout(complete, 8000); // Safety timeout
+})();
+</script>
 </body>
 </html>
 
