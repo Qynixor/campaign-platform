@@ -114,14 +114,30 @@
         </div>
 
         <!-- Caption -->
-        <div class="caption" id="caption-{{ campaign.id }}">
-            {{ campaign.content }}
-        </div>
-
+        <!-- Caption with Tags -->
+<!-- Caption with Tags -->
+<div class="caption" id="caption-{{ campaign.id }}">
+    <div id="caption-short-{{ campaign.id }}">
+        {% for tag in campaign.tags.all|slice:":3" %}
+            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+        {% endfor %}
         {% if campaign.content|length > 35 %}
-            <span class="more-link" id="moreLink-{{ campaign.id }}" onclick="toggleCaption({{ campaign.id }})">more</span>
+            {{ campaign.content|slice:":35" }}...
+        {% else %}
+            {{ campaign.content }}
         {% endif %}
-
+        {% if campaign.tags.count > 3 or campaign.content|length > 35 %}
+            <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> more</span>
+        {% endif %}
+    </div>
+    <div id="caption-full-{{ campaign.id }}" style="display: none;">
+        {% for tag in campaign.tags.all %}
+            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+        {% endfor %}
+        {{ campaign.content }}
+        <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> less</span>
+    </div>
+</div>
         <!-- Slide Controls -->
         {% if campaign.get_image_count > 1 %}
         <div class="slide-controls">

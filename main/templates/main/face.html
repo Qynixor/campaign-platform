@@ -95,20 +95,26 @@ Post a cause, share updates, and give supporters simple ways to donate, pledge, 
 <link rel="canonical" href="https://www.rallynex.com{% block canonical_path %}{% endblock %}">
 <meta name="google-site-verification" content="YOUR_ACTUAL_VERIFICATION_CODE_HERE">
 <meta name="msvalidate.01" content="2DF73531AC8292B0D47E7DEAE6EEF4CF">
-
 <!-- ==================== -->
-<!-- PWA & MOBILE CONFIG -->
+<!-- PWA & MOBILE CONFIG - TRANSPARENT STATUS BAR -->
 <!-- ==================== -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Rallynex">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Rallynex">
-<meta name="theme-color" content="#1DA1F2">
-<meta name="msapplication-TileColor" content="#1DA1F2">
+
+<!-- IMPORTANT: Set theme-color to transparent for modern browsers -->
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+
+<!-- For Chrome on Android with transparent status bar -->
+<meta name="msapplication-TileColor" content="#000000">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
 
+<!-- Add viewport optimization for full-screen immersive experience -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <!-- ==================== -->
 <!-- ICONS & MANIFEST -->
 <!-- ==================== -->
@@ -229,7 +235,74 @@ Post a cause, share updates, and give supporters simple ways to donate, pledge, 
 
 
   <style>
+  /* iOS standalone mode adjustments */
+.ios-standalone {
+  --status-bar-height: 20px;
+}
+
+.ios-standalone .content {
+  padding-top: var(--status-bar-height);
+}
+/* Ensure content extends under the status bar */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* For iOS devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
   
+  /* If you want certain elements to avoid the status bar area */
+  .status-bar-padding {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* For full-screen immersive elements like hero sections */
+  .full-bleed {
+    margin-top: calc(-1 * env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* For Android devices with display cutouts */
+@supports (padding-top: constant(safe-area-inset-top)) {
+  body {
+    padding-top: constant(safe-area-inset-top);
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-left: constant(safe-area-inset-left);
+    padding-right: constant(safe-area-inset-right);
+  }
+}
+
+/* Optional: Style for the status bar content area */
+.status-bar-content {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: transparent;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* If you want your navigation to be transparent and blur like TikTok */
+.transparent-nav {
+  position: sticky;
+  top: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 1000;
+}
+
+
+
 /* Desktop / web only */
 @media (min-width: 769px) {
   /* More targeted FOUC prevention */
@@ -8597,7 +8670,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })();
 </script>
-
+<script type="text/javascript">
+  // Add this to your main JavaScript file
+if ('standalone' in window.navigator && window.navigator.standalone) {
+  // App is running in standalone mode on iOS
+  document.documentElement.classList.add('ios-standalone');
+  
+  // Optional: Adjust any iOS-specific UI
+  const statusBarHeight = window.innerHeight - document.documentElement.clientHeight;
+  document.documentElement.style.setProperty('--status-bar-height', statusBarHeight + 'px');
+}
+</script>
 
 </body>
 </html>

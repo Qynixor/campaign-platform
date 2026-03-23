@@ -268,6 +268,7 @@ class Campaign(models.Model):
         help_text="Users following this campaign"
     )
 
+
     # ==================== META CLASS ====================
     class Meta:
         indexes = [
@@ -279,6 +280,31 @@ class Campaign(models.Model):
             models.Index(fields=['template']),
         ]
         ordering = ['-timestamp']
+
+    
+    # ADD THESE METHODS:
+    def get_display_tags(self, limit=3):
+        """Get limited number of tags for display"""
+        return self.tags.all()[:limit]
+    
+    def has_more_tags(self):
+        """Check if there are more than 3 tags"""
+        return self.tags.count() > 3
+    
+    def get_excess_tags_count(self):
+        """Get count of tags beyond the limit"""
+        return max(0, self.tags.count() - 3)
+    
+    def get_tags_string(self, limit=None):
+        """Get tags as formatted string with # symbols"""
+        tags = self.tags.all()
+        if limit:
+            tags = tags[:limit]
+        
+        if tags:
+            return ' '.join([f'#{tag.name}' for tag in tags])
+        return ''
+
 
     # ==================== STRING REPRESENTATION ====================
     def __str__(self):

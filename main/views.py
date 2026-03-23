@@ -3919,38 +3919,29 @@ def campaign_support(request, campaign_id):
 
 
 
-
-
-
 @login_required
 def recreate_campaign(request, campaign_id):
-
     
     # ================ SECURITY CHECK ================
-    # Get the campaign first to check ownership
     existing_campaign = get_object_or_404(Campaign, pk=campaign_id)
-    
-    # Check if user owns this campaign
     user_profile = get_object_or_404(Profile, user=request.user)
+    
     if existing_campaign.user != user_profile:
         messages.error(request, "You don't have permission to edit this campaign.")
         return redirect('index')
     
     categories = Campaign.CATEGORY_CHOICES
 
-    # Handle form submission
     if request.method == 'POST':
         form = CampaignForm(request.POST, request.FILES, instance=existing_campaign)
         if form.is_valid():
-            # Save campaign first to get ID
             campaign = form.save(commit=False)
             
-            # Handle Canva poster data (if provided)
+            # Handle Canva poster
             canva_poster_data = request.POST.get('canva_poster_data')
             if canva_poster_data:
                 try:
                     canva_data = json.loads(canva_poster_data)
-                    # Download and save the Canva poster
                     response = requests.get(canva_data['previewUrl'])
                     if response.status_code == 200:
                         img_name = f"canva_poster_{campaign.user.username}_{int(time.time())}.png"
@@ -3959,21 +3950,13 @@ def recreate_campaign(request, campaign_id):
                 except Exception as e:
                     print(f"Error processing Canva poster: {e}")
             
-            # =================== HANDLE IMAGE REMOVAL LOGIC ===================
-            # DEFAULT BEHAVIOR: All existing images are kept unless explicitly removed
-            
-            # Prepare lists for images to keep
-            images_to_keep = []
-            
-            # 1. Handle main poster
+            # Handle main poster
             remove_current_poster = request.POST.get('remove_current_poster') == 'on'
             new_main_poster = request.FILES.get('poster')
             
             if remove_current_poster:
-                # User wants to remove current main poster
                 campaign.poster = None
             elif new_main_poster:
-                # User uploaded new main poster - replace existing
                 try:
                     upload_result = cloudinary.uploader.upload(
                         new_main_poster,
@@ -3987,44 +3970,36 @@ def recreate_campaign(request, campaign_id):
                     campaign.poster = upload_result['secure_url']
                 except Exception as e:
                     print(f"Error uploading main poster: {e}")
-                    # Keep existing poster if upload fails
                     if existing_campaign.poster and not remove_current_poster:
                         campaign.poster = existing_campaign.poster
             else:
-                # User didn't check "remove" and didn't upload new - KEEP EXISTING
                 campaign.poster = existing_campaign.poster
             
-            # 2. Handle additional images
-            # Start with ALL existing additional images
+            # Handle additional images
             existing_additional = []
             if hasattr(existing_campaign, 'additional_images') and existing_campaign.additional_images:
                 existing_additional = list(existing_campaign.additional_images)
             
-            # Check which ones to remove
             images_to_remove_indices = []
             for i in range(len(existing_additional)):
-                remove_key = f'remove_existing_image_{i+1}'
-                if request.POST.get(remove_key) == 'on':
+                if request.POST.get(f'remove_existing_image_{i+1}') == 'on':
                     images_to_remove_indices.append(i)
             
-            # Also check "remove all additional" checkbox
             remove_all_additional = request.POST.get('remove_all_additional') == 'on'
             
             if remove_all_additional:
-                # Remove all additional images
                 images_to_keep = []
             else:
-                # Keep all except those marked for removal
                 images_to_keep = [
                     img for idx, img in enumerate(existing_additional)
                     if idx not in images_to_remove_indices
                 ]
             
-            # 3. Add NEW additional images uploaded by user
+            # Add new images
             new_additional_images = request.FILES.getlist('additional_images')
             new_image_urls = []
             
-            for idx, image in enumerate(new_additional_images[:4]):  # Limit to 4 new
+            for idx, image in enumerate(new_additional_images[:4]):
                 if image:
                     try:
                         upload_result = cloudinary.uploader.upload(
@@ -4041,27 +4016,22 @@ def recreate_campaign(request, campaign_id):
                     except Exception as e:
                         print(f"Error uploading additional image: {e}")
             
-            # Combine kept existing images with new ones (max 4 total)
             all_images = images_to_keep + new_image_urls
             campaign.additional_images = all_images[:4]
             
-            # 4. Fallback: If no main poster but we have additional images
-            # Use first additional image as main poster
+            # Fallback for main poster
             if not campaign.poster and campaign.additional_images:
                 campaign.poster = campaign.additional_images[0]
-                campaign.additional_images = campaign.additional_images[1:4]  # Keep next 3
+                campaign.additional_images = campaign.additional_images[1:4]
             
-            # 5. Handle audio
+            # Handle audio
             remove_current_audio = request.POST.get('remove_current_audio') == 'on'
             new_audio = request.FILES.get('audio')
             
             if remove_current_audio:
-                # User wants to remove current audio
                 campaign.audio = None
             elif new_audio:
-                # User uploaded new audio - replace existing
                 try:
-                    # Upload to Cloudinary
                     audio_upload_result = cloudinary.uploader.upload(
                         new_audio,
                         resource_type='auto',
@@ -4071,28 +4041,32 @@ def recreate_campaign(request, campaign_id):
                     campaign.audio = audio_upload_result['secure_url']
                 except Exception as e:
                     print(f"Error uploading audio: {e}")
-                    # Keep existing audio if upload fails
                     if existing_campaign.audio and not remove_current_audio:
                         campaign.audio = existing_campaign.audio
             else:
-                # No new audio and no removal requested - KEEP EXISTING
                 campaign.audio = existing_campaign.audio
             
             # =================== SAVE CAMPAIGN ===================
             campaign.save()
             
-            # =================== HANDLE TAGS ===================
+            # =================== HANDLE TAGS FOR RECREATE FORM ===================
             tags_input = form.cleaned_data.get('tags_input', '')
+            
+            # FIRST: Remove ALL existing CampaignTag relationships
+            CampaignTag.objects.filter(campaign=campaign).delete()
+            
+            # SECOND: Add new tags from the form input
             if tags_input:
                 tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
                 
-                # Clear existing tags and add new ones
-                campaign.tags.clear()
                 for tag_name in tag_names:
+                    # Get or create the Tag
                     tag, created = Tag.objects.get_or_create(
                         name=tag_name.lower(),
                         defaults={'slug': tag_name.lower().replace(' ', '-')}
                     )
+                    
+                    # Create the relationship (no duplicates because we deleted all first)
                     CampaignTag.objects.create(
                         campaign=campaign,
                         tag=tag,
@@ -4110,7 +4084,7 @@ def recreate_campaign(request, campaign_id):
         existing_tags = ', '.join([tag.name for tag in existing_campaign.tags.all()])
         form.fields['tags_input'].initial = existing_tags
 
-    # Trending campaigns
+    # Rest of your context remains the same...
     from django.db.models import Count
     from itertools import chain
     from collections import defaultdict
@@ -4120,25 +4094,19 @@ def recreate_campaign(request, campaign_id):
         .filter(love_count_annotated__gte=1) \
         .order_by('-love_count_annotated')[:10]
 
-    # Top Contributors logic
-    engaged_users = set()
-  
     love_pairs = Love.objects.values_list('user_id', 'campaign_id')
     comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
     view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
     activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
     activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
 
-    # Combine all engagement pairs
     all_pairs = chain(love_pairs, comment_pairs, view_pairs,
                       activity_love_pairs, activity_comment_pairs)
 
-    # Count number of unique campaigns each user engaged with
     user_campaign_map = defaultdict(set)
     for user_id, campaign_id in all_pairs:
         user_campaign_map[user_id].add(campaign_id)
 
-    # Build a list of contributors with their campaign engagement count
     contributor_data = []
     for user_id, campaign_set in user_campaign_map.items():
         try:
@@ -4151,13 +4119,9 @@ def recreate_campaign(request, campaign_id):
         except Profile.DoesNotExist:
             continue
 
-    # Sort contributors by campaign_count descending
     top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    # Notifications and follows
     unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
    
-    # Prepare existing images data for template
     existing_images = []
     if existing_campaign.poster:
         poster_url = existing_campaign.poster.url if hasattr(existing_campaign.poster, 'url') else existing_campaign.poster
@@ -4175,20 +4139,14 @@ def recreate_campaign(request, campaign_id):
                 'index': idx + 1
             })
     
-    # Convert to JSON for JavaScript
-    import json
     existing_images_json = json.dumps(existing_images)
-    
-    # Check if campaign has audio
     has_audio = bool(existing_campaign.audio)
 
     context = {
-     
         'form': form,
         'categories': categories,
         'user_profile': user_profile,
         'unread_notifications': unread_notifications,
-   
         'trending_campaigns': trending_campaigns,
         'top_contributors': top_contributors,
         'existing_campaign': existing_campaign,
@@ -4201,11 +4159,6 @@ def recreate_campaign(request, campaign_id):
     }
     
     return render(request, 'main/recreatecampaign_form.html', context)
-
-
-
-
-
 
 
 
