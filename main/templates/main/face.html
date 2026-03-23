@@ -5917,27 +5917,75 @@ html {
 </style>
 
 
-
-
-<style type="text/css">
-  .page-loader {
+<style>
+/* Dark-optimized page loader */
+.page-loader {
     position: fixed;
     top: 0;
     left: 0;
     width: 0;
     height: 3px;
     background: linear-gradient(90deg, 
-        rgba(255, 255, 255, 0.7) 0%,
-        rgba(255, 255, 255, 1) 50%,
-        rgba(255, 255, 255, 0.7) 100%
+        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0.9) 30%,
+        #ffffff 50%,
+        rgba(255, 255, 255, 0.9) 70%,
+        rgba(255, 255, 255, 0.4) 100%
     );
     z-index: 999999;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
     pointer-events: none;
+    border-radius: 0 2px 2px 0;
+}
+
+/* Optional: Add subtle shimmer animation */
+@keyframes loaderPulse {
+    0% {
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    }
+}
+
+.page-loader {
+    animation: loaderPulse 1.5s ease-in-out infinite;
+}
+
+/* Optional: Loading hint text (if you want to show text) */
+.loader-hint {
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: 999999;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    letter-spacing: 0.3px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    display: inline-block;
+    width: auto;
+    margin: 0 auto;
+    padding: 6px 16px;
+    border-radius: 20px;
+    max-width: 80%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
 }
 </style>
 
+<!-- Optional hint element - add this after your loader div -->
+<div id="loader-hint" class="loader-hint" style="opacity: 0;">Loading...</div>
 
 
 <style>
@@ -6471,7 +6519,7 @@ html {
 
 <!-- Add this as the FIRST element inside <body> -->
 <div id="page-loader" class="page-loader"></div>
-
+<div id="loader-hint" class="loader-hint" style="opacity: 0;">Loading...</div>
 
 <header>
  
@@ -8464,9 +8512,8 @@ startCarousel(); // Start the carousel on page load
 
 </script>
 
-
 <script type="text/javascript">
- // More sophisticated loader that matches your 20-second load
+// Sophisticated loader with dark theme optimization
 class SyncedLoader {
     constructor() {
         this.loader = document.getElementById('page-loader');
@@ -8478,17 +8525,18 @@ class SyncedLoader {
             'complete': { target: 100, duration: 1000 }
         };
         this.currentPhase = 'initial';
+        this.startTime = performance.now();
     }
     
     start() {
-        console.log('Loader started - expecting ~20 second load');
+        console.log('🚀 Rallynex loader started - optimized for dark theme');
         this.animatePhase('initial');
         
-        // Auto-progress (fallback if no events fire)
+        // Auto-progress with adjusted timing for better UX
         setTimeout(() => this.animatePhase('django_render'), 3000);
         setTimeout(() => this.animatePhase('assets_load'), 10000);
         setTimeout(() => this.animatePhase('data_fetch'), 15000);
-        setTimeout(() => this.animatePhase('complete'), 20000);
+        setTimeout(() => this.complete(), 20000);
     }
     
     animatePhase(phase) {
@@ -8497,10 +8545,35 @@ class SyncedLoader {
         this.currentPhase = phase;
         const { target, duration } = this.phases[phase];
         
-        this.loader.style.transition = `width ${duration}ms ease`;
+        // Add smooth easing for better visual feel
+        this.loader.style.transition = `width ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
         this.loader.style.width = `${target}%`;
         
-        console.log(`Loader phase: ${phase} → ${target}% in ${duration}ms`);
+        // Optional: Update loader with phase description
+        this.updateLoaderHint(phase);
+        
+        console.log(`✨ Loader phase: ${phase} → ${target}% (${Math.round(performance.now() - this.startTime)}ms)`);
+    }
+    
+    updateLoaderHint(phase) {
+        // Optional: Show loading hints to users (can be removed if not needed)
+        const hints = {
+            'initial': 'Preparing your experience...',
+            'django_render': 'Building your feed...',
+            'assets_load': 'Loading media...',
+            'data_fetch': 'Fetching latest updates...',
+            'complete': 'Almost ready...'
+        };
+        
+        // You can display this hint in a small text element if you have one
+        const hintElement = document.getElementById('loader-hint');
+        if (hintElement && hints[phase]) {
+            hintElement.style.opacity = '0';
+            setTimeout(() => {
+                hintElement.textContent = hints[phase];
+                hintElement.style.opacity = '0.6';
+            }, 150);
+        }
     }
     
     // Call these from your Django template at different stages
@@ -8518,12 +8591,27 @@ class SyncedLoader {
     
     complete() {
         this.animatePhase('complete');
+        
+        // Smooth fade out with better timing
         setTimeout(() => {
+            this.loader.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
             this.loader.style.opacity = '0';
+            
             setTimeout(() => {
                 this.loader.style.width = '0';
-            }, 1000);
+                this.loader.style.opacity = '0.85'; // Reset for next time
+                
+                // Dispatch event that loading is complete
+                window.dispatchEvent(new CustomEvent('rallynex:loaded'));
+                console.log('✅ Rallynex fully loaded - ready for action');
+            }, 600);
         }, 500);
+    }
+    
+    // Force complete if something goes wrong
+    forceComplete() {
+        console.warn('⚠️ Force completing loader (fallback)');
+        this.complete();
     }
 }
 
@@ -8531,8 +8619,29 @@ class SyncedLoader {
 window.addEventListener('DOMContentLoaded', function() {
     window.syncedLoader = new SyncedLoader();
     window.syncedLoader.start();
+    
+    // Safety fallback - if page doesn't trigger completion in 25 seconds
+    setTimeout(() => {
+        if (window.syncedLoader && window.syncedLoader.currentPhase !== 'complete') {
+            window.syncedLoader.forceComplete();
+        }
+    }, 25000);
 });
+
+// Optional: Mark when critical assets are loaded
+if (document.readyState === 'complete') {
+    setTimeout(() => {
+        if (window.syncedLoader) window.syncedLoader.markAssetsLoaded();
+    }, 100);
+} else {
+    window.addEventListener('load', function() {
+        if (window.syncedLoader) window.syncedLoader.markAssetsLoaded();
+    });
+}
 </script>
+
+
+
 <!-- Add this before closing body tag in base.html -->
 <div id="dm-toast-container" class="toast-container position-fixed bottom-0 end-0 p-3">
     <!-- Toast notifications will be inserted here by JavaScript -->
