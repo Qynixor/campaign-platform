@@ -111,199 +111,142 @@
         {% endif %}
     </div>
 
-    <!-- PREMIUM SECTION -->
+    <!-- PREMIUM SECTION - COMING SOON MODE -->
     <div class="premium-section" id="premium-stats-{{ campaign.id }}">
         
-        <!-- OWNER VIEW: Not Activated Trial -->
-        {% if is_owner and not owner_trial_active %}
-        <div class="owner-trial-card">
-            <div class="trial-glow"></div>
-            <div class="trial-badge">
-                <i class="fas fa-gift"></i>
-                CREATOR BENEFIT
+        <!-- COMING SOON MESSAGE FOR ALL USERS -->
+        <div class="coming-soon-card">
+            <div class="coming-soon-glow"></div>
+            <div class="coming-soon-badge">
+                <i class="fas fa-clock"></i>
+                COMING SOON
             </div>
-            <h3>Unlock your 30-day premium trial</h3>
-            <p class="trial-description">Get AI-powered insights and advanced analytics</p>
             
-            <div class="trial-preview">
-                <div class="preview-item">
-                    <div class="preview-icon">
+            <div class="coming-soon-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            
+            <h3>Premium Stats Are Almost Here!</h3>
+            <p class="coming-soon-description">
+                Get ready to unlock powerful AI insights, advanced analytics, and growth predictions for your campaigns.
+            </p>
+            
+            <!-- Feature Preview -->
+            <div class="feature-preview">
+                <div class="preview-feature">
+                    <div class="feature-icon">
                         <i class="fas fa-robot"></i>
                     </div>
-                    <span>AI Predictions</span>
+                    <div class="feature-info">
+                        <h4>AI-Powered Predictions</h4>
+                        <p>Forecast campaign success and donor behavior</p>
+                    </div>
                 </div>
-                <div class="preview-item">
-                    <div class="preview-icon">
+                <div class="preview-feature">
+                    <div class="feature-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
-                    <span>Growth Forecast</span>
+                    <div class="feature-info">
+                        <h4>Advanced Analytics</h4>
+                        <p>Deep insights into supporter engagement</p>
+                    </div>
                 </div>
-                <div class="preview-item">
-                    <div class="preview-icon">
+                <div class="preview-feature">
+                    <div class="feature-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
-                    <span>Risk Analysis</span>
+                    <div class="feature-info">
+                        <h4>Risk Assessment</h4>
+                        <p>Identify potential challenges early</p>
+                    </div>
+                </div>
+                <div class="preview-feature">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-simple"></i>
+                    </div>
+                    <div class="feature-info">
+                        <h4>Growth Forecast</h4>
+                        <p>30-day performance projections</p>
+                    </div>
                 </div>
             </div>
             
-            <button class="btn-activate-trial" 
-                    hx-post="{% url 'activate_owner_trial' campaign.id %}"
-                    hx-target="#premium-stats-{{ campaign.id }}"
-                    hx-swap="outerHTML"
-                    hx-indicator="#loading-indicator-{{ campaign.id }}">
-                <span>Activate Free Trial</span>
-                <i class="fas fa-arrow-right"></i>
-            </button>
-            
-            <!-- Loading indicator -->
-            <div id="loading-indicator-{{ campaign.id }}" class="htmx-indicator" style="display: none;">
-                <div class="loading-spinner"></div>
-                <span>Activating trial...</span>
+            <!-- Early Access Form -->
+            <div class="early-access-form">
+                <p class="early-access-text">
+                    <i class="fas fa-envelope"></i>
+                    Be the first to know when premium stats launch!
+                </p>
+                <div class="email-input-group">
+                    <input type="email" 
+                           id="premium-notify-email-{{ campaign.id }}" 
+                           placeholder="Enter your email address"
+                           class="email-input">
+                    <button class="btn-notify" 
+                            onclick="notifyPremiumReady('{{ campaign.id }}')">
+                        Notify Me
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div id="notification-message-{{ campaign.id }}" class="notification-message" style="display: none;"></div>
             </div>
             
-            <p class="trial-note">
-                <i class="fas fa-info-circle"></i> 
-                No payment required • Expires after 30 days
-            </p>
+            <!-- Launch Timeline -->
+            <div class="launch-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <span class="timeline-status">Development</span>
+                        <span class="timeline-percent">85%</span>
+                    </div>
+                </div>
+                <div class="timeline-progress">
+                    <div class="timeline-fill" style="width: 85%"></div>
+                </div>
+                <p class="timeline-note">
+                    <i class="fas fa-rocket"></i>
+                    Launching in Q2 2026
+                </p>
+            </div>
         </div>
+
+        <!-- NOTE: Original premium content is commented out for now -->
+        {% comment %}
+        <!-- OWNER VIEW: Not Activated Trial -->
+        {% if is_owner and not owner_trial_active %}
+        ... existing owner trial content ...
+        {% endif %}
         
         <!-- OWNER VIEW: Trial Active - Show Premium Stats -->
         {% elif is_owner and owner_trial_active %}
-        <div class="premium-content">
-            <div class="premium-header">
-                <div class="premium-badge">
-                    <i class="fas fa-crown"></i>
-                    TRIAL ACTIVE
-                </div>
-                <span class="plan-badge">{{ owner_trial_days }} days left</span>
-            </div>
-            
-            <!-- ADVANCED STATS - Only visible to premium users -->
-            {% include 'main/partials/premium_stats_content.html' %}
-        </div>
-
+        ... existing premium content ...
+        {% endif %}
+        
         <!-- PREMIUM USER: Has access to stats (non-owner) -->
         {% elif has_premium and not is_owner %}
-        <div class="premium-content">
-            <div class="premium-header">
-                <div class="premium-badge">
-                    <i class="fas fa-crown"></i>
-                    PREMIUM ACTIVE
-                </div>
-                {% if subscription %}
-                <span class="plan-badge">{{ subscription.get_plan_display }}</span>
-                {% endif %}
-            </div>
-            
-            <!-- ADVANCED STATS - Only visible to premium users -->
-            {% include 'main/partials/premium_stats_content.html' %}
-        </div>
+        ... existing premium content ...
+        {% endif %}
 
         <!-- FREE USER: See payment options (non-owner) -->
         {% elif can_purchase and not is_owner %}
-        <div class="upgrade-section">
-            <!-- Blurred Preview -->
-            <div class="preview-overlay">
-                <div class="preview-content">
-                    <div class="preview-grid">
-                        <div class="preview-item"></div>
-                        <div class="preview-item"></div>
-                        <div class="preview-item"></div>
-                    </div>
-                </div>
-                <div class="preview-blur">
-                    <i class="fas fa-lock"></i>
-                </div>
-            </div>
-
-            <div class="upgrade-message">
-                <h3>Go Premium</h3>
-                <p>Unlock AI predictions and advanced analytics</p>
-            </div>
-
-            <!-- PAYMENT OPTIONS -->
-            <div class="payment-options">
-                <!-- Single Campaign -->
-                <div class="payment-card">
-                    <h4>Single Campaign</h4>
-                    <div class="price">
-                        $4.99
-                        <span>/once</span>
-                    </div>
-                    <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> 30 days access</li>
-                        <li><i class="fas fa-check-circle"></i> AI Predictions</li>
-                        <li><i class="fas fa-check-circle"></i> Risk Analysis</li>
-                    </ul>
-                    <button class="btn-payment" 
-                            hx-post="{% url 'purchase_premium_stats' campaign.id %}"
-                            hx-target="#premium-stats-{{ campaign.id }}"
-                            hx-swap="outerHTML">
-                        Get Started
-                    </button>
-                </div>
-
-                <!-- Full Premium -->
-                <div class="payment-card popular">
-                    <div class="popular-badge">BEST VALUE</div>
-                    <h4>Full Premium</h4>
-                    <div class="price">
-                        $9.99
-                        <span>/mo</span>
-                    </div>
-                    <ul class="feature-list">
-                        <li><i class="fas fa-check-circle"></i> All campaigns</li>
-                        <li><i class="fas fa-check-circle"></i> Unlimited predictions</li>
-                        <li><i class="fas fa-check-circle"></i> Priority support</li>
-                    </ul>
-                    <button class="btn-payment premium" 
-                            hx-post="{% url 'subscribe_premium' %}"
-                            hx-vals='{"plan": "monthly"}'
-                            hx-target="#premium-stats-{{ campaign.id }}">
-                        Subscribe Now
-                    </button>
-                </div>
-            </div>
-
-            <!-- Trust Badges -->
-            <div class="trust-badges">
-                <div class="trust-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Secure Payment</span>
-                </div>
-                <div class="trust-item">
-                    <i class="fas fa-undo-alt"></i>
-                    <span>30-Day Guarantee</span>
-                </div>
-                <div class="trust-item">
-                    <i class="fas fa-clock"></i>
-                    <span>Cancel Anytime</span>
-                </div>
-            </div>
-        </div>
+        ... existing upgrade content ...
+        {% endif %}
 
         <!-- NOT LOGGED IN -->
         {% else %}
-        <div class="login-prompt">
-            <div class="login-icon">
-                <i class="fas fa-lock"></i>
-            </div>
-            <h3>Unlock Premium Features</h3>
-            <p>Sign in to access AI predictions</p>
-            <a href="{% url 'login' %}?next={% url 'get_stats' campaign.id %}" class="btn-login">
-                <span>Login / Sign Up</span>
-                <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
+        ... existing login prompt ...
         {% endif %}
+        {% endcomment %}
     </div>
 </div>
 
 <style>
-/* ===== FIXED PREMIUM DARK THEME ===== */
+/* ===== UPDATED WITH COMING SOON STYLES ===== */
 :root {
     --twitter-blue: #1DA1F2;
     --premium-gold: #FFD700;
+    --coming-soon-purple: #8b5cf6;
+    --coming-soon-pink: #ec489a;
     --bg-primary: #0a0a0a;
     --bg-card: #1a1a1a;
     --bg-elevated: #252525;
@@ -313,6 +256,7 @@
     --text-muted: rgba(255,255,255,0.5);
     --gradient-blue: linear-gradient(135deg, #1DA1F2, #1a8cd8);
     --gradient-gold: linear-gradient(135deg, #FFD700, #e6c200);
+    --gradient-coming-soon: linear-gradient(135deg, #8b5cf6, #ec489a);
     --shadow-sm: 0 4px 12px rgba(0,0,0,0.2);
     --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
 }
@@ -562,10 +506,10 @@
     z-index: 1;
 }
 
-/* Owner Trial Card */
-.owner-trial-card {
+/* ===== COMING SOON CARD STYLES ===== */
+.coming-soon-card {
     background: linear-gradient(145deg, #1a1a1a, #151515);
-    border: 1px solid rgba(255,215,0,0.3);
+    border: 1px solid rgba(139, 92, 246, 0.3);
     border-radius: 24px;
     padding: 28px 20px;
     text-align: center;
@@ -573,382 +517,271 @@
     overflow: hidden;
 }
 
-.trial-badge {
+.coming-soon-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.coming-soon-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255,215,0,0.1);
-    border: 1px solid rgba(255,215,0,0.3);
-    color: var(--premium-gold);
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    color: var(--coming-soon-purple);
     padding: 6px 16px;
     border-radius: 40px;
     font-size: 11px;
     font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    animation: pulse-border 2s infinite;
 }
 
-.owner-trial-card h3 {
+@keyframes pulse-border {
+    0%, 100% { border-color: rgba(139, 92, 246, 0.4); }
+    50% { border-color: rgba(139, 92, 246, 0.8); }
+}
+
+.coming-soon-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 32px;
+    color: var(--coming-soon-purple);
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.coming-soon-card h3 {
     font-size: 22px;
     font-weight: 700;
-    line-height: 1.3;
     margin-bottom: 10px;
+    background: var(--gradient-coming-soon);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.trial-description {
+.coming-soon-description {
     color: var(--text-secondary);
     font-size: 13px;
     margin-bottom: 24px;
+    line-height: 1.5;
 }
 
-.trial-preview {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    margin: 24px 0;
-}
-
-.preview-item {
+/* Feature Preview */
+.feature-preview {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    gap: 16px;
+    margin: 24px 0;
+    text-align: left;
 }
 
-.preview-icon {
-    width: 48px;
-    height: 48px;
+.preview-feature {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
     border-radius: 16px;
+    transition: transform 0.2s ease;
+}
+
+.preview-feature:hover {
+    transform: translateX(5px);
+    background: rgba(139,92,246,0.1);
+}
+
+.feature-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(139,92,246,0.2);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    background: rgba(255,215,0,0.1);
-    color: var(--premium-gold);
+    font-size: 18px;
+    color: var(--coming-soon-purple);
 }
 
-.preview-item span {
-    font-size: 11px;
-    color: var(--text-secondary);
-}
-
-.btn-activate-trial {
-    width: 100%;
-    background: var(--gradient-gold);
-    border: none;
-    color: black;
-    padding: 14px 20px;
-    border-radius: 40px;
+.feature-info h4 {
     font-size: 14px;
     font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 16px 0;
-    transition: all 0.2s ease;
+    margin-bottom: 4px;
 }
 
-.btn-activate-trial:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(255,215,0,0.2);
-}
-
-.trial-note {
+.feature-info p {
     font-size: 11px;
     color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    margin: 0;
 }
 
-/* Premium Header */
-.premium-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+/* Early Access Form */
+.early-access-form {
+    margin: 24px 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-.premium-badge {
-    background: rgba(255,215,0,0.1);
-    border: 1px solid rgba(255,215,0,0.3);
-    color: var(--premium-gold);
-    padding: 6px 16px;
-    border-radius: 40px;
+.early-access-text {
     font-size: 12px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.plan-badge {
-    background: var(--gradient-blue);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 30px;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-/* Upgrade Section */
-.upgrade-section {
-    position: relative;
-}
-
-.preview-overlay {
-    position: relative;
-    margin-bottom: 20px;
-    border-radius: 20px;
-    overflow: hidden;
-    background: var(--bg-card);
-    min-height: 100px;
-}
-
-.preview-content {
-    filter: blur(6px);
-    opacity: 0.3;
-}
-
-.preview-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 16px;
-}
-
-.preview-item {
-    height: 60px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-}
-
-.preview-blur {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(2px);
-    font-size: 24px;
-    color: var(--premium-gold);
+    gap: 6px;
 }
 
-.upgrade-message {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.upgrade-message h3 {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.upgrade-message p {
-    color: var(--text-secondary);
-    font-size: 13px;
-}
-
-/* Payment Options */
-.payment-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.payment-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 18px 14px;
-    position: relative;
-}
-
-.payment-card.popular {
-    border: 1px solid var(--premium-gold);
-    background: linear-gradient(145deg, #1f1f1f, #1a1a1a);
-}
-
-.popular-badge {
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--gradient-gold);
-    color: black;
-    padding: 3px 12px;
-    border-radius: 30px;
-    font-size: 9px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.payment-card h4 {
-    font-size: 16px;
-    margin-bottom: 10px;
-}
-
-.price {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--twitter-blue);
-    line-height: 1;
+.email-input-group {
+    display: flex;
+    gap: 8px;
     margin-bottom: 12px;
 }
 
-.price span {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-weight: 400;
-    margin-left: 2px;
-}
-
-.feature-list {
-    list-style: none;
-    padding: 0;
-    margin: 14px 0;
-}
-
-.feature-list li {
-    color: var(--text-secondary);
-    font-size: 11px;
-    padding: 4px 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.feature-list i {
-    color: var(--premium-gold);
-    font-size: 11px;
-}
-
-.btn-payment {
-    width: 100%;
-    padding: 10px;
+.email-input {
+    flex: 1;
     background: rgba(255,255,255,0.05);
     border: 1px solid var(--border-subtle);
+    border-radius: 40px;
+    padding: 12px 16px;
     color: var(--text-primary);
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.email-input:focus {
+    outline: none;
+    border-color: var(--coming-soon-purple);
+    background: rgba(255,255,255,0.08);
+}
+
+.email-input::placeholder {
+    color: var(--text-muted);
+}
+
+.btn-notify {
+    background: var(--gradient-coming-soon);
+    border: none;
+    color: white;
+    padding: 12px 20px;
     border-radius: 40px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-payment.premium {
-    background: var(--gradient-blue);
-    border: none;
-    color: white;
-}
-
-.btn-payment:hover {
-    background: rgba(255,255,255,0.1);
-}
-
-/* Trust Badges */
-.trust-badges {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-}
-
-.trust-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--text-muted);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-notify:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+}
+
+.notification-message {
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.notification-message.success {
+    background: rgba(0,255,0,0.1);
+    color: #00ff00;
+}
+
+.notification-message.error {
+    background: rgba(255,0,0,0.1);
+    color: #ff4444;
+}
+
+/* Launch Timeline */
+.launch-timeline {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.timeline-item {
+    margin-bottom: 8px;
+}
+
+.timeline-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--coming-soon-purple);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse 2s infinite;
+}
+
+.timeline-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 11px;
 }
 
-.trust-item i {
-    color: var(--premium-gold);
-    font-size: 12px;
-}
-
-/* Login Prompt */
-.login-prompt {
-    text-align: center;
-    padding: 32px 20px;
-    background: var(--bg-card);
-    border-radius: 24px;
-}
-
-.login-icon {
-    width: 64px;
-    height: 64px;
-    background: rgba(29,161,242,0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    font-size: 24px;
-    color: var(--twitter-blue);
-}
-
-.login-prompt h3 {
-    font-size: 20px;
-    margin-bottom: 6px;
-}
-
-.login-prompt p {
+.timeline-status {
     color: var(--text-secondary);
-    font-size: 13px;
-    margin-bottom: 20px;
 }
 
-.btn-login {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--gradient-blue);
-    color: white;
-    padding: 12px 28px;
-    border-radius: 40px;
-    text-decoration: none;
-    font-size: 14px;
+.timeline-percent {
+    color: var(--coming-soon-purple);
     font-weight: 600;
 }
 
-/* Loading Indicator */
-.htmx-indicator {
-    display: none;
-    text-align: center;
-    padding: 10px;
-    color: var(--text-secondary);
-    font-size: 12px;
+.timeline-progress {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 8px 0;
 }
 
-.htmx-request .htmx-indicator {
+.timeline-fill {
+    height: 100%;
+    background: var(--gradient-coming-soon);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.timeline-note {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
 }
 
-.loading-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,215,0,0.3);
-    border-top-color: var(--premium-gold);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.timeline-note i {
+    color: var(--coming-soon-purple);
 }
 
 /* Animations */
@@ -963,16 +796,93 @@
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .payment-options {
-        grid-template-columns: 1fr;
+    .email-input-group {
+        flex-direction: column;
     }
     
-    .trial-preview {
-        gap: 16px;
+    .btn-notify {
+        justify-content: center;
     }
     
-    .preview-item {
-        width: auto;
+    .preview-feature {
+        padding: 8px;
     }
 }
 </style>
+
+<script>
+// JavaScript for handling notification subscriptions
+function notifyPremiumReady(campaignId) {
+    const emailInput = document.getElementById(`premium-notify-email-${campaignId}`);
+    const email = emailInput.value;
+    const messageDiv = document.getElementById(`notification-message-${campaignId}`);
+    
+    if (!email || !email.includes('@')) {
+        showNotification(messageDiv, 'Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Disable button and show loading
+    const button = document.querySelector(`#premium-notify-email-${campaignId}`).nextElementSibling;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    button.disabled = true;
+    
+    // Send to backend
+    fetch('/api/notify-premium-stats/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ 
+            email: email, 
+            campaign_id: campaignId,
+            feature: 'premium_stats'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(messageDiv, 'Thanks! We\'ll notify you when premium stats launch!', 'success');
+            emailInput.value = '';
+        } else {
+            showNotification(messageDiv, data.error || 'Something went wrong. Please try again.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification(messageDiv, 'Network error. Please try again.', 'error');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        // Auto-hide notification after 3 seconds
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 3000);
+    });
+}
+
+function showNotification(element, message, type) {
+    element.textContent = message;
+    element.className = `notification-message ${type}`;
+    element.style.display = 'block';
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>

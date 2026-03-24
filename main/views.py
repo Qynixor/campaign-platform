@@ -2768,6 +2768,7 @@ import json
 from datetime import timedelta
 
 
+
 @login_required
 def get_stats(request, campaign_id):
     """Get stats popup HTML with premium integration"""
@@ -2784,50 +2785,53 @@ def get_stats(request, campaign_id):
     owner_trial_active = False
     owner_trial_days = 0
     
+    # FEATURE FLAG - Set to False to show "Coming Soon" message
+    PREMIUM_STATS_AVAILABLE = False  # Change to True when ready
+    
     if is_owner:
-        # Check if owner has activated trial - FIXED QUERY
-        owner_trial = OwnerTrial.objects.filter(
-            campaign=campaign,
-            owner=request.user,
-            is_active=True
-        ).first()
-        
-        if owner_trial:
-            # Check if expired
-            if owner_trial.expires_at <= timezone.now():
-                # Auto-expire if past date
-                owner_trial.is_active = False
-                owner_trial.save()
-                owner_trial_active = False
-                owner_trial_days = 0
-            else:
-                owner_trial_active = True
-                has_premium = True
-                can_purchase = False
-                owner_trial_days = owner_trial.days_remaining
-    else:
-        # Check subscription for non-owners
-        subscription = PremiumSubscription.get_user_subscription(request.user)
-        if subscription and subscription.is_active:
-            has_premium = True
-            can_purchase = False
-        else:
-            # Check one-time purchase
-            one_time = CampaignPremiumAccess.objects.filter(
+        if PREMIUM_STATS_AVAILABLE:
+            # Check if owner has activated trial
+            owner_trial = OwnerTrial.objects.filter(
                 campaign=campaign,
-                purchased_by=request.user,
-            ).filter(
-                Q(expiry_date__isnull=True) | Q(expiry_date__gt=timezone.now())
+                owner=request.user,
+                is_active=True
             ).first()
             
-            if one_time:
+            if owner_trial:
+                if owner_trial.expires_at <= timezone.now():
+                    owner_trial.is_active = False
+                    owner_trial.save()
+                    owner_trial_active = False
+                    owner_trial_days = 0
+                else:
+                    owner_trial_active = True
+                    has_premium = True
+                    can_purchase = False
+                    owner_trial_days = owner_trial.days_remaining
+    else:
+        if PREMIUM_STATS_AVAILABLE:
+            # Check subscription for non-owners
+            subscription = PremiumSubscription.get_user_subscription(request.user)
+            if subscription and subscription.is_active:
                 has_premium = True
                 can_purchase = False
+            else:
+                # Check one-time purchase
+                one_time = CampaignPremiumAccess.objects.filter(
+                    campaign=campaign,
+                    purchased_by=request.user,
+                ).filter(
+                    Q(expiry_date__isnull=True) | Q(expiry_date__gt=timezone.now())
+                ).first()
+                
+                if one_time:
+                    has_premium = True
+                    can_purchase = False
     
-    # Get premium data if user has access
+    # Get premium data if user has access AND feature is available
     prediction = None
     analytics = None
-    if has_premium:
+    if PREMIUM_STATS_AVAILABLE and has_premium:
         try:
             prediction = campaign.get_or_create_prediction()
         except Exception as e:
@@ -2843,8 +2847,8 @@ def get_stats(request, campaign_id):
         'is_owner': is_owner,
         'owner_trial_active': owner_trial_active,
         'owner_trial_days': owner_trial_days,
-        'has_premium': has_premium,
-        'can_purchase': can_purchase,
+        'has_premium': has_premium if PREMIUM_STATS_AVAILABLE else False,
+        'can_purchase': can_purchase if PREMIUM_STATS_AVAILABLE else False,
         'subscription': subscription,
         'prediction': prediction,
         'analytics': analytics,
@@ -2856,6 +2860,7 @@ def get_stats(request, campaign_id):
             (PremiumSubscription.PRICING['monthly'] * 12) - 
             PremiumSubscription.PRICING['yearly'], 2
         ),
+        'premium_stats_available': PREMIUM_STATS_AVAILABLE,  # Add this flag
     })
     
     return HttpResponse(html)
@@ -3333,7 +3338,6 @@ def clone_journey(request, original_id):
 
 
 # views.py - Simplified campaign_manager view
-
 @login_required
 def campaign_manager(request, campaign_id):
     """Main campaign management dashboard"""
@@ -3343,53 +3347,63 @@ def campaign_manager(request, campaign_id):
     if not (campaign.user and campaign.user.user == request.user):
         return HttpResponse("Unauthorized", status=403)
     
-    # Get active boosts for this campaign
-    active_boosts = BoostedJourney.objects.filter(
-        campaign=campaign,
-        status='active',
-        is_paid=True,
-        end_date__gte=timezone.now()
-    ).order_by('-created_at')
+    # FEATURE FLAG - Set to False to show "Coming Soon" message
+    BOOSTED_JOURNEY_AVAILABLE = False  # Change to True when ready
     
-    # Get boost history
-    boost_history = BoostedJourney.objects.filter(
-        campaign=campaign
-    ).exclude(
-        id__in=active_boosts.values_list('id', flat=True)
-    ).order_by('-created_at')[:10]
-    
-    # Get performance metrics
-    total_impressions = BoostedJourneyImpression.objects.filter(
-        boosted_journey__campaign=campaign
-    ).count()
-    
-    total_clicks = BoostedJourneyClick.objects.filter(
-        boosted_journey__campaign=campaign
-    ).count()
-    
-    ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
-    
-    # Get impressions by day for the last 7 days
+    # Get active boosts for this campaign (only if feature is available)
+    active_boosts = []
+    boost_history = []
+    total_impressions = 0
+    total_clicks = 0
+    ctr = 0
     impressions_by_day = []
     clicks_by_day = []
-    for i in range(7, 0, -1):
-        date = timezone.now().date() - timedelta(days=i)
-        day_impressions = BoostedJourneyImpression.objects.filter(
-            boosted_journey__campaign=campaign,
-            viewed_at__date=date
+    
+    if BOOSTED_JOURNEY_AVAILABLE:
+        active_boosts = BoostedJourney.objects.filter(
+            campaign=campaign,
+            status='active',
+            is_paid=True,
+            end_date__gte=timezone.now()
+        ).order_by('-created_at')
+        
+        # Get boost history
+        boost_history = BoostedJourney.objects.filter(
+            campaign=campaign
+        ).exclude(
+            id__in=active_boosts.values_list('id', flat=True)
+        ).order_by('-created_at')[:10]
+        
+        # Get performance metrics
+        total_impressions = BoostedJourneyImpression.objects.filter(
+            boosted_journey__campaign=campaign
         ).count()
-        day_clicks = BoostedJourneyClick.objects.filter(
-            boosted_journey__campaign=campaign,
-            clicked_at__date=date
+        
+        total_clicks = BoostedJourneyClick.objects.filter(
+            boosted_journey__campaign=campaign
         ).count()
-        impressions_by_day.append({
-            'date': date.strftime('%b %d'),
-            'count': day_impressions
-        })
-        clicks_by_day.append({
-            'date': date.strftime('%b %d'),
-            'count': day_clicks
-        })
+        
+        ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
+        
+        # Get impressions by day for the last 7 days
+        for i in range(7, 0, -1):
+            date = timezone.now().date() - timedelta(days=i)
+            day_impressions = BoostedJourneyImpression.objects.filter(
+                boosted_journey__campaign=campaign,
+                viewed_at__date=date
+            ).count()
+            day_clicks = BoostedJourneyClick.objects.filter(
+                boosted_journey__campaign=campaign,
+                clicked_at__date=date
+            ).count()
+            impressions_by_day.append({
+                'date': date.strftime('%b %d'),
+                'count': day_impressions
+            })
+            clicks_by_day.append({
+                'date': date.strftime('%b %d'),
+                'count': day_clicks
+            })
     
     # Get top activities (simplified - just get recent activities)
     top_activities = []
@@ -3399,18 +3413,17 @@ def campaign_manager(request, campaign_id):
     except:
         top_activities = []
     
-    # Simple weekly growth (without complex queries that might fail)
+    # Simple weekly growth
     followers_7d = 0
     try:
-        # Try to get followers count from the last 7 days if followed_at exists
         followers_7d = CampaignFollow.objects.filter(
             campaign=campaign
-        ).count()  # Just get total for now
+        ).count()
     except:
         followers_7d = 0
     
-    loves_7d = campaign.get_love_count()  # Total loves
-    donations_7d = float(campaign.total_donations)  # Total donations
+    loves_7d = campaign.get_love_count()
+    donations_7d = float(campaign.total_donations)
     
     weekly_growth = {
         'followers': followers_7d,
@@ -3439,8 +3452,10 @@ def campaign_manager(request, campaign_id):
         ]
     }
     
-    # Get available packages
-    packages = BoostedJourneyPackage.objects.filter(is_active=True)
+    # Get available packages (only if feature is available)
+    packages = []
+    if BOOSTED_JOURNEY_AVAILABLE:
+        packages = BoostedJourneyPackage.objects.filter(is_active=True)
     
     # Get campaign stats using your existing methods
     stats = {
@@ -3466,6 +3481,7 @@ def campaign_manager(request, campaign_id):
         'packages': packages,
         'stats': stats,
         'placement_choices': BoostedJourney.PLACEMENT_CHOICES,
+        'boosted_journey_available': BOOSTED_JOURNEY_AVAILABLE,  # Add this flag
     }
     
     # Check if HTMX request
@@ -3473,7 +3489,6 @@ def campaign_manager(request, campaign_id):
         return render(request, 'main/partials/campaign_manager.html', context)
     
     return render(request, 'main/campaign_manager_full.html', context)
-
 
 # views.py - Update your create_boost view
 
