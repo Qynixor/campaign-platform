@@ -1,4 +1,3 @@
-
 {% extends 'main/face.html' %}
 {% load static %}
 {% load custom_filters %}
@@ -1447,6 +1446,10 @@
 
   // ===== LAZY LOADING SYSTEM =====
   document.addEventListener('DOMContentLoaded', function() {
+    // Store user authentication state
+    const isUserAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    const userAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    
     // Sections that can be lazy loaded (order matters)
     const lazySections = [
       { id: 'rising-stars-section', url: '/section/rising/', loaded: false },
@@ -1535,17 +1538,17 @@
     
     // Function to attach click handlers to cards
     function attachCardClickHandlers(container) {
-      {% if user.is_authenticated %}
-      const cards = container.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
-      cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-          const campaignId = this.dataset.campaignId;
-          if (campaignId) {
-            window.location.href = `/journey/${campaignId}/`;
-          }
+      if (userAuthenticated) {
+        const cards = container.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
+        cards.forEach(card => {
+          card.addEventListener('click', function(e) {
+            const campaignId = this.dataset.campaignId;
+            if (campaignId) {
+              window.location.href = `/journey/${campaignId}/`;
+            }
+          });
         });
-      });
-      {% endif %}
+      }
     }
 
     // ===== CATEGORY FILTER =====
@@ -1555,65 +1558,65 @@
     if (chips.length > 0) {
       chips.forEach(chip => {
         chip.addEventListener('click', function(e) {
-          {% if user.is_authenticated %}
-          chips.forEach(c => c.classList.remove('active'));
-          this.classList.add('active');
-          
-          const selectedCategory = this.dataset.category;
-          
-          cards.forEach(card => {
-            if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
-              card.classList.remove('hidden');
-            } else {
-              card.classList.add('hidden');
-            }
-          });
-          
-          setTimeout(updateScrollIndicators, 100);
-          {% else %}
-          e.preventDefault();
-          showLoginModal();
-          {% endif %}
+          if (userAuthenticated) {
+            chips.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            
+            const selectedCategory = this.dataset.category;
+            
+            cards.forEach(card => {
+              if (selectedCategory === 'all' || card.dataset.category === selectedCategory) {
+                card.classList.remove('hidden');
+              } else {
+                card.classList.add('hidden');
+              }
+            });
+            
+            setTimeout(updateScrollIndicators, 100);
+          } else {
+            e.preventDefault();
+            showLoginModal();
+          }
         });
       });
     }
     
     // ===== UNAUTHENTICATED USER HANDLING =====
-    {% if not user.is_authenticated %}
-    const clickableElements = document.querySelectorAll('.journey-card, .wide-journey-card, .chip-item, .featured-card, .search-btn');
-    clickableElements.forEach(el => {
-      if (el) {
-        el.addEventListener('click', function(e) {
-          if (e.target.closest('.login-modal-close') || 
-              e.target.closest('.btn-login') || 
-              e.target.closest('.btn-signup') ||
-              e.target.closest('.btn-browse')) {
-            return;
-          }
-          e.preventDefault();
-          e.stopPropagation();
-          showLoginModal();
-        });
-      }
-    });
-    {% else %}
-    const allCards = document.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
-    allCards.forEach(card => {
-      card.addEventListener('click', function(e) {
-        const campaignId = this.dataset.campaignId;
-        if (campaignId) {
-          window.location.href = `/journey/${campaignId}/`;
+    if (!userAuthenticated) {
+      const clickableElements = document.querySelectorAll('.journey-card, .wide-journey-card, .chip-item, .featured-card, .search-btn');
+      clickableElements.forEach(el => {
+        if (el) {
+          el.addEventListener('click', function(e) {
+            if (e.target.closest('.login-modal-close') || 
+                e.target.closest('.btn-login') || 
+                e.target.closest('.btn-signup') ||
+                e.target.closest('.btn-browse')) {
+              return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            showLoginModal();
+          });
         }
       });
-    });
-    
-    const searchBtn = document.querySelector('.search-btn');
-    if (searchBtn) {
-      searchBtn.addEventListener('click', function() {
-        window.location.href = '/search/';
+    } else {
+      const allCards = document.querySelectorAll('.journey-card, .wide-journey-card, .featured-card');
+      allCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+          const campaignId = this.dataset.campaignId;
+          if (campaignId) {
+            window.location.href = `/journey/${campaignId}/`;
+          }
+        });
       });
+      
+      const searchBtn = document.querySelector('.search-btn');
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+          window.location.href = '/search/';
+        });
+      }
     }
-    {% endif %}
     
     // ===== ENSURE HORIZONTAL SCROLL ON MOBILE =====
     const chipScroll = document.querySelector('.chip-scroll');
@@ -2040,4 +2043,3 @@
     }
 </script>
 {% endblock %}
-```
