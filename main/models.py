@@ -18,7 +18,7 @@ from django.db import models, transaction
 from django.db.models import Q, Sum, Avg, Count
 from django.db.models.functions import TruncDate  # Add this line
 from django.core.cache import cache
-
+from django.utils.text import slugify
 # Add these imports at the top
 from django.db import transaction
 from django.db.models import Q
@@ -192,7 +192,7 @@ class Campaign(models.Model):
     premium_activated = models.BooleanField(default=False, help_text="Whether premium stats have been activated for this campaign")   
     template = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, 
                                 related_name='clones')
-    
+    slug = models.SlugField(max_length=100, unique=True, blank=True, null=True)
     # ==================== CATEGORY CHOICES ====================
     CATEGORY_CHOICES = (
         ('Personal Empowerment', 'Personal Empowerment'),
@@ -246,7 +246,7 @@ class Campaign(models.Model):
     duration_last_updated = models.DateTimeField(null=True, blank=True, help_text="When the duration was last changed")
     original_duration = models.PositiveIntegerField(null=True, blank=True, help_text="Original duration when campaign started")
     original_duration_unit = models.CharField(max_length=10, null=True, blank=True, help_text="Original duration unit when campaign started")
-    
+      
     # ==================== FUNDING FIELDS ====================
     funding_goal = models.DecimalField(
         max_digits=10, 
@@ -827,6 +827,17 @@ class Campaign(models.Model):
     # ==================== SAVE METHOD ====================
     
     def save(self, *args, **kwargs):
+        # Generate slug from title if not set
+        if not self.slug and self.title:
+            base_slug = slugify(self.title)
+            self.slug = base_slug
+            
+            # Ensure uniqueness
+            counter = 1
+            while Campaign.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
+                self.slug = f"{base_slug}-{counter}"
+                counter += 1
+        
         try:
             is_new = self.pk is None
             

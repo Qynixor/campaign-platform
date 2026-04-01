@@ -37,16 +37,15 @@ class CampaignSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # Fetch all active campaigns (no visibility field anymore)
-        return Campaign.objects.filter(is_active=True)
+        # Only include campaigns that have slugs
+        return Campaign.objects.filter(is_active=True, slug__isnull=False)
 
     def lastmod(self, obj):
-        # Return the timestamp of the last modification
         return obj.timestamp
 
     def location(self, obj):
-        # Generate the URL for the campaign journey page
-        return reverse('campaign_journey', args=[obj.id])
+        # Use the slug-based URL name
+        return reverse('campaign_journey', args=[obj.slug])
 
 
 class ProfileSitemap(Sitemap):

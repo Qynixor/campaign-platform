@@ -2659,13 +2659,12 @@ from .models import (
     Campaign, Love, CampaignFollow, Comment, 
     CampaignSave, Activity
 )
-
 # ============================================================================
 # JOURNEY FEED VIEW
 # ============================================================================
 
 @login_required
-def journey(request, campaign_id=None):
+def journey(request, campaign_id=None, campaign_slug=None):
     """Journey feed - shows followed campaigns first, then all campaigns"""
     try:
         # Check if this is a saved campaigns request
@@ -2676,9 +2675,14 @@ def journey(request, campaign_id=None):
             'user', 'user__user'
         )
         
-        # If specific campaign requested
+        # If specific campaign requested (by ID or slug)
         if campaign_id:
             campaign = get_object_or_404(campaigns_query, id=campaign_id)
+            campaigns = [campaign]
+            followed_ids = []
+            saved_ids = []
+        elif campaign_slug:
+            campaign = get_object_or_404(campaigns_query, slug=campaign_slug)
             campaigns = [campaign]
             followed_ids = []
             saved_ids = []
@@ -2709,8 +2713,8 @@ def journey(request, campaign_id=None):
         for campaign in campaigns:
             # Create a copy with additional attributes
             campaign.user_loved = campaign.loves.filter(user=request.user).exists()
-            campaign.user_following = campaign.id in followed_ids if not campaign_id else False
-            campaign.user_saved = campaign.id in saved_ids if not campaign_id else False
+            campaign.user_following = campaign.id in followed_ids if not campaign_id and not campaign_slug else False
+            campaign.user_saved = campaign.id in saved_ids if not campaign_id and not campaign_slug else False
             campaign_list.append(campaign)
         
         # Check if this is an HTMX request for loading more
@@ -2733,7 +2737,7 @@ def journey(request, campaign_id=None):
         return render(request, 'main/journey.html', {
             'campaigns': campaign_list[:20],
             'total_campaigns': len(campaign_list),
-            'is_single_campaign': campaign_id is not None,
+            'is_single_campaign': campaign_id is not None or campaign_slug is not None,
             'is_saved_view': show_saved,  # Add this flag for template
         })
         

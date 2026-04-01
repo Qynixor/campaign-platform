@@ -198,7 +198,8 @@ path('debug-video/<int:activity_id>/', views.debug_video_processing, name='debug
 path('journey/', views.journey, name='journey'),
 path('journey/saved/', views.journey, name='saved_journeys'),  # NEW: Saved campaigns only
 path('journey/<int:campaign_id>/', views.journey, name='campaign_journey'),
-
+    # Add new slug-based URL for SEO-friendly links
+path('journey/<slug:campaign_slug>/', views.journey, name='campaign_journey'),
 # Interaction URLs (using regular JSON responses for reliability)
 path('campaign/<int:campaign_id>/toggle-love/', views.toggle_love, name='toggle_love'),
 path('campaign/<int:campaign_id>/toggle-follow/', views.toggle_follow, name='toggle_follow'),
