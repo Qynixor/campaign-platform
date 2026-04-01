@@ -1060,512 +1060,544 @@
             </div>
         {% endif %}
     </div>
+<script>
+    // ========== UTILITIES ==========
+    function setVhProperty() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    window.addEventListener('resize', setVhProperty);
+    window.addEventListener('orientationchange', setVhProperty);
+    setVhProperty();
 
-    <script>
-        // ========== UTILITIES ==========
-        function setVhProperty() {
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        }
+    // Get CSRF token
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]').content;
+    }
+
+    // Configure HTMX
+    document.body.addEventListener('htmx:configRequest', function(evt) {
+        evt.detail.headers['X-CSRFToken'] = getCSRFToken();
+    });
+
+    // ========== POPUP FUNCTIONS ==========
+    function closeAllPopups() {
+        document.getElementById('statsPopup').classList.remove('active');
+        document.getElementById('menuPopup').classList.remove('active');
+        document.getElementById('commentsModal').classList.remove('active');
+        document.getElementById('donationModal').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    function closeStatsPopup() {
+        document.getElementById('statsPopup').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    function closeMenuPopup() {
+        document.getElementById('menuPopup').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    function closeCommentsModal() {
+        document.getElementById('commentsModal').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    function closeDonationModal() {
+        document.getElementById('donationModal').classList.remove('active');
+        document.getElementById('popupBackdrop').classList.remove('active');
+    }
+
+    // ========== STATS POPUP ==========
+    window.openStatsPopup = function(campaignId) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
         
-        window.addEventListener('resize', setVhProperty);
-        window.addEventListener('orientationchange', setVhProperty);
-        setVhProperty();
-
-        // Get CSRF token
-        function getCSRFToken() {
-            return document.querySelector('meta[name="csrf-token"]').content;
-        }
-
-        // Configure HTMX
-        document.body.addEventListener('htmx:configRequest', function(evt) {
-            evt.detail.headers['X-CSRFToken'] = getCSRFToken();
+        const statsContent = document.getElementById('statsContent');
+        const statsPopup = document.getElementById('statsPopup');
+        const backdrop = document.getElementById('popupBackdrop');
+        
+        statsContent.innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
+        statsPopup.classList.add('active');
+        backdrop.classList.add('active');
+        statsPopup.classList.add('htmx-request');
+        
+        htmx.ajax('GET', `/campaign/${campaignId}/get-stats/`, {
+            target: '#statsContent',
+            swap: 'innerHTML'
+        }).then(() => {
+            statsPopup.classList.remove('htmx-request');
         });
+    };
 
-        // ========== POPUP FUNCTIONS ==========
-        function closeAllPopups() {
-            document.getElementById('statsPopup').classList.remove('active');
-            document.getElementById('menuPopup').classList.remove('active');
-            document.getElementById('commentsModal').classList.remove('active');
-            document.getElementById('donationModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
+    // ========== PREMIUM FEATURES EVENT HANDLERS ==========
+    document.body.addEventListener('premiumSubscribed', function(evt) {
+        alert(evt.detail.message);
+        closeAllPopups();
+    });
+
+    document.body.addEventListener('premiumPurchased', function(evt) {
+        alert('Premium access unlocked!');
+        closeStatsPopup();
+        setTimeout(() => {
+            openStatsPopup(evt.detail.campaignId);
+        }, 300);
+    });
+
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        if (evt.detail.xhr.status === 403) {
+            alert('Please login to access premium features');
+            window.location.href = '/login/?next=' + window.location.pathname;
         }
+        document.getElementById('statsPopup').classList.remove('htmx-request');
+    });
 
-        function closeStatsPopup() {
-            document.getElementById('statsPopup').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function closeMenuPopup() {
-            document.getElementById('menuPopup').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function closeCommentsModal() {
-            document.getElementById('commentsModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        function closeDonationModal() {
-            document.getElementById('donationModal').classList.remove('active');
-            document.getElementById('popupBackdrop').classList.remove('active');
-        }
-
-        // ========== STATS POPUP WITH PREMIUM SUPPORT ==========
-        window.openStatsPopup = function(campaignId) {
-            const statsContent = document.getElementById('statsContent');
-            const statsPopup = document.getElementById('statsPopup');
-            const backdrop = document.getElementById('popupBackdrop');
-            
-            // Show loading state
-            statsContent.innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
-            
-            // Show popup
-            statsPopup.classList.add('active');
-            backdrop.classList.add('active');
-            
-            // Add loading class for indicator
-            statsPopup.classList.add('htmx-request');
-            
-            // Use HTMX to load the stats
-            htmx.ajax('GET', `/campaign/${campaignId}/get-stats/`, {
-                target: '#statsContent',
-                swap: 'innerHTML'
-            }).then(() => {
-                statsPopup.classList.remove('htmx-request');
-            });
-        };
-
-        // ========== PREMIUM FEATURES EVENT HANDLERS ==========
-        document.body.addEventListener('premiumSubscribed', function(evt) {
-            alert(evt.detail.message);
-            closeAllPopups();
-            // Optionally refresh to update premium status
-            // location.reload();
-        });
-
-        document.body.addEventListener('premiumPurchased', function(evt) {
-            alert('Premium access unlocked!');
-            closeStatsPopup();
-            setTimeout(() => {
-                openStatsPopup(evt.detail.campaignId);
-            }, 300);
-        });
-
-        document.body.addEventListener('htmx:responseError', function(evt) {
-            if (evt.detail.xhr.status === 403) {
-                alert('Please login to access premium features');
-                window.location.href = '/login/?next=' + window.location.pathname;
-            }
-            // Remove loading class on error
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'statsContent') {
             document.getElementById('statsPopup').classList.remove('htmx-request');
-        });
+        }
+    });
 
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === 'statsContent') {
-                document.getElementById('statsPopup').classList.remove('htmx-request');
-            }
-        });
-
-        // ========== MENU POPUP ==========
-        window.openMenuPopup = function(campaignId) {
-            document.getElementById('menuContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-            document.getElementById('menuPopup').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-            
-            fetch(`/campaign/${campaignId}/get-menu/`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('menuContent').innerHTML = html;
-                })
-                .catch(error => {
-                    document.getElementById('menuContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading menu</div>';
-                });
-        };
-
-        // ========== COMMENTS ==========
-        window.openComments = function(campaignId) {
-            document.getElementById('commentsContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
-            document.getElementById('commentsModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-            window.currentCommentCampaignId = campaignId;
-            
-            fetch(`/campaign/${campaignId}/get-comments/`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('commentsContent').innerHTML = html;
-                    const count = (html.match(/comment-item/g) || []).length;
-                    document.getElementById('commentCount').textContent = count;
-                })
-                .catch(error => {
-                    document.getElementById('commentsContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading comments</div>';
-                });
-        };
-
-        window.postComment = function() {
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            const campaignId = window.currentCommentCampaignId;
-            
-            if (!text || !campaignId) return;
-            
-            const btn = document.getElementById('postCommentBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            
-            const formData = new FormData();
-            formData.append('text', text);
-            formData.append('csrfmiddlewaretoken', getCSRFToken());
-            
-            fetch(`/campaign/${campaignId}/post-comment/`, {
-                method: 'POST',
-                body: formData
+    // ========== MENU POPUP ==========
+    window.openMenuPopup = function(campaignId) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        document.getElementById('menuContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        document.getElementById('menuPopup').classList.add('active');
+        document.getElementById('popupBackdrop').classList.add('active');
+        
+        fetch(`/campaign/${campaignId}/get-menu/`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('menuContent').innerHTML = html;
             })
+            .catch(error => {
+                document.getElementById('menuContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading menu</div>';
+            });
+    };
+
+    // ========== COMMENTS ==========
+    window.openComments = function(campaignId) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        document.getElementById('commentsContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
+        document.getElementById('commentsModal').classList.add('active');
+        document.getElementById('popupBackdrop').classList.add('active');
+        window.currentCommentCampaignId = campaignId;
+        
+        fetch(`/campaign/${campaignId}/get-comments/`)
             .then(response => response.text())
             .then(html => {
                 document.getElementById('commentsContent').innerHTML = html;
-                input.value = '';
                 const count = (html.match(/comment-item/g) || []).length;
                 document.getElementById('commentCount').textContent = count;
             })
             .catch(error => {
-                alert('Failed to post comment');
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = 'Post';
+                document.getElementById('commentsContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading comments</div>';
             });
-        };
+    };
 
-        // ========== LOVE TOGGLE ==========
-        window.toggleLove = function(campaignId, btn) {
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-            
-            fetch(`/campaign/${campaignId}/toggle-love/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.button_html;
-                    const newBtn = tempDiv.firstElementChild;
-                    btn.parentNode.replaceChild(newBtn, btn);
-                } else {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+    window.postComment = function() {
+        const input = document.getElementById('commentInput');
+        const text = input.value.trim();
+        const campaignId = window.currentCommentCampaignId;
+        
+        if (!text || !campaignId) return;
+        
+        const btn = document.getElementById('postCommentBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('csrfmiddlewaretoken', getCSRFToken());
+        
+        fetch(`/campaign/${campaignId}/post-comment/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('commentsContent').innerHTML = html;
+            input.value = '';
+            const count = (html.match(/comment-item/g) || []).length;
+            document.getElementById('commentCount').textContent = count;
+        })
+        .catch(error => {
+            alert('Failed to post comment');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Post';
+        });
+    };
+
+    // ========== LOVE TOGGLE ==========
+    window.toggleLove = function(campaignId, btn) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
+        
+        fetch(`/campaign/${campaignId}/toggle-love/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.button_html;
+                const newBtn = tempDiv.firstElementChild;
+                btn.parentNode.replaceChild(newBtn, btn);
+            } else {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-            });
-        };
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    };
 
-        // ========== FOLLOW TOGGLE ==========
-        window.toggleFollow = function(campaignId, btn) {
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-            
-            fetch(`/campaign/${campaignId}/toggle-follow/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.button_html;
-                    const newBtn = tempDiv.firstElementChild;
-                    btn.parentNode.replaceChild(newBtn, btn);
-                } else {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+    // ========== FOLLOW TOGGLE ==========
+    window.toggleFollow = function(campaignId, btn) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
+        
+        fetch(`/campaign/${campaignId}/toggle-follow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.button_html;
+                const newBtn = tempDiv.firstElementChild;
+                btn.parentNode.replaceChild(newBtn, btn);
+            } else {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-            });
-        };
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    };
 
-        // ========== SAVE TOGGLE ==========
-        window.toggleSave = function(campaignId, btn) {
-            const originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-            
-            fetch(`/campaign/${campaignId}/toggle-save/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.button_html;
-                    const newBtn = tempDiv.firstElementChild;
-                    btn.parentNode.replaceChild(newBtn, btn);
-                } else {
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+    // ========== SAVE TOGGLE ==========
+    window.toggleSave = function(campaignId, btn) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
+        
+        fetch(`/campaign/${campaignId}/toggle-save/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.button_html;
+                const newBtn = tempDiv.firstElementChild;
+                btn.parentNode.replaceChild(newBtn, btn);
+            } else {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-            });
-        };
-
-        // ========== DONATION ==========
-        window.openDonationModal = function(campaignId, title) {
-            document.getElementById('donationTitle').textContent = title;
-            document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId);
-            document.getElementById('donationModal').classList.add('active');
-            document.getElementById('popupBackdrop').classList.add('active');
-        };
-
-        window.proceedToDonation = function() {
-            const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id');
-            closeDonationModal();
-            window.location.href = `/campaign/${campaignId}/donate/`;
-        };
-
-        // ========== SHARE ==========
-        window.handleShare = function(campaignId) {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Check out this cause',
-                    url: window.location.origin + `/journey/${campaignId}/`
-                });
-            } else {
-                prompt('Copy link:', window.location.origin + `/journey/${campaignId}/`);
             }
-        };
-
-        // ========== CAPTION TOGGLE ==========
-        window.toggleCaption = function(campaignId) {
-            const caption = document.getElementById(`caption-${campaignId}`);
-            const moreLink = document.getElementById(`moreLink-${campaignId}`);
-            
-            if (caption.classList.contains('expanded')) {
-                caption.classList.remove('expanded');
-                moreLink.textContent = 'more';
-            } else {
-                caption.classList.add('expanded');
-                moreLink.textContent = 'less';
-            }
-        };
-
-        // ========== SLIDESHOW ==========
-        window.goToSlide = function(campaignId, index) {
-            const container = document.getElementById(`slidesContainer-${campaignId}`);
-            if (!container) return;
-            
-            container.style.transform = `translateX(-${index * 100}%)`;
-            
-            const indicators = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`);
-            indicators.forEach((dot, i) => {
-                dot.classList.toggle('active', i === index);
-            });
-            
-            const currentEl = document.getElementById(`currentSlide-${campaignId}`);
-            if (currentEl) currentEl.textContent = index + 1;
-        };
-
-        window.toggleAutoplay = function(campaignId) {
-            const btn = document.getElementById(`autoplayBtn-${campaignId}`);
-            const isPlaying = btn.classList.contains('playing');
-            
-            if (isPlaying) {
-                btn.innerHTML = '<i class="fas fa-play"></i>';
-                btn.classList.remove('playing');
-                if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
-                    clearInterval(window.slideshowTimers[campaignId]);
-                }
-            } else {
-                btn.innerHTML = '<i class="fas fa-pause"></i>';
-                btn.classList.add('playing');
-                
-                const totalSlides = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
-                if (totalSlides > 1) {
-                    if (!window.slideshowTimers) window.slideshowTimers = {};
-                    window.slideshowTimers[campaignId] = setInterval(() => {
-                        const container = document.getElementById(`slidesContainer-${campaignId}`);
-                        if (!container) return;
-                        
-                        const currentIndex = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1') - 1;
-                        const nextIndex = (currentIndex + 1) % totalSlides;
-                        goToSlide(campaignId, nextIndex);
-                    }, 3000);
-                }
-            }
-        };
-
-        // Initialize slideshows
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('[id^="totalSlides-"]').forEach(el => {
-                const campaignId = el.id.replace('totalSlides-', '');
-                const total = parseInt(el.textContent || '0');
-                if (total > 1) {
-                    setTimeout(() => {
-                        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
-                        if (btn) {
-                            btn.click();
-                        }
-                    }, 1000);
-                }
-            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
         });
+    };
 
-        // ========== SCROLLING ==========
-        function scrollToPrev() {
-            const container = document.getElementById('campaignsContainer');
-            if (container) {
-                container.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+    // ========== DONATION ==========
+    window.openDonationModal = function(campaignId, title) {
+        document.getElementById('donationTitle').textContent = title;
+        document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId);
+        document.getElementById('donationModal').classList.add('active');
+        document.getElementById('popupBackdrop').classList.add('active');
+    };
+
+    window.proceedToDonation = function() {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id');
+        closeDonationModal();
+        window.location.href = `/campaign/${campaignId}/donate/`;
+    };
+
+    // ========== SHARE ==========
+    window.handleShare = function(campaignId) {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Check out this cause',
+                url: window.location.origin + `/journey/${campaignId}/`
+            });
+        } else {
+            prompt('Copy link:', window.location.origin + `/journey/${campaignId}/`);
+        }
+    };
+
+    // ========== CAPTION TOGGLE ==========
+    window.toggleCaption = function(campaignId) {
+        const caption = document.getElementById(`caption-${campaignId}`);
+        const moreLink = document.getElementById(`moreLink-${campaignId}`);
+        
+        if (caption.classList.contains('expanded')) {
+            caption.classList.remove('expanded');
+            moreLink.textContent = 'more';
+        } else {
+            caption.classList.add('expanded');
+            moreLink.textContent = 'less';
+        }
+    };
+
+    // ========== SLIDESHOW ==========
+    window.goToSlide = function(campaignId, index) {
+        const container = document.getElementById(`slidesContainer-${campaignId}`);
+        if (!container) return;
+        
+        container.style.transform = `translateX(-${index * 100}%)`;
+        
+        const indicators = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`);
+        indicators.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        
+        const currentEl = document.getElementById(`currentSlide-${campaignId}`);
+        if (currentEl) currentEl.textContent = index + 1;
+    };
+
+    window.toggleAutoplay = function(campaignId) {
+        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+        const isPlaying = btn.classList.contains('playing');
+        
+        if (isPlaying) {
+            btn.innerHTML = '<i class="fas fa-play"></i>';
+            btn.classList.remove('playing');
+            if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
+                clearInterval(window.slideshowTimers[campaignId]);
+            }
+        } else {
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            btn.classList.add('playing');
+            
+            const totalSlides = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
+            if (totalSlides > 1) {
+                if (!window.slideshowTimers) window.slideshowTimers = {};
+                window.slideshowTimers[campaignId] = setInterval(() => {
+                    const container = document.getElementById(`slidesContainer-${campaignId}`);
+                    if (!container) return;
+                    
+                    const currentIndex = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1') - 1;
+                    const nextIndex = (currentIndex + 1) % totalSlides;
+                    goToSlide(campaignId, nextIndex);
+                }, 3000);
             }
         }
+    };
 
-        function scrollToNext() {
-            const container = document.getElementById('campaignsContainer');
-            if (container) {
-                container.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
-            }
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (window.innerWidth <= 768) return;
-            
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                scrollToPrev();
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                scrollToNext();
-            } else if (e.key === 'Escape') {
-                closeAllPopups();
+    // Initialize slideshows
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[id^="totalSlides-"]').forEach(el => {
+            const campaignId = el.id.replace('totalSlides-', '');
+            const total = parseInt(el.textContent || '0');
+            if (total > 1) {
+                setTimeout(() => {
+                    const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+                    if (btn) {
+                        btn.click();
+                    }
+                }, 1000);
             }
         });
+    });
 
-        // ========== INFINITE SCROLL ==========
-        let isLoading = false;
-        let hasMore = true;
-        let currentOffset = 20;
-        const totalCampaigns = {{ total_campaigns|default:0 }};
-
-        window.addEventListener('scroll', function() {
-            if (isLoading || !hasMore) return;
-            
-            const container = document.getElementById('campaignsContainer');
-            if (!container) return;
-            
-            const scrollBottom = container.scrollTop + container.clientHeight;
-            const scrollThreshold = container.scrollHeight - 200;
-            
-            if (scrollBottom >= scrollThreshold && currentOffset < totalCampaigns) {
-                loadMoreCampaigns();
-            }
-        });
-
-        function loadMoreCampaigns() {
-            isLoading = true;
-            document.getElementById('loadingSpinner').classList.add('active');
-            
-            fetch(`/journey/?load-more=true&offset=${currentOffset}`, {
-                headers: {
-                    'HX-Request': 'true'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                if (html.trim()) {
-                    document.getElementById('campaignsContainer').insertAdjacentHTML('beforeend', html);
-                    currentOffset += 5;
-                    hasMore = currentOffset < totalCampaigns;
-                } else {
-                    hasMore = false;
-                }
-            })
-            .catch(error => console.error('Error loading more:', error))
-            .finally(() => {
-                isLoading = false;
-                document.getElementById('loadingSpinner').classList.remove('active');
-            });
+    // ========== SCROLLING ==========
+    function scrollToPrev() {
+        const container = document.getElementById('campaignsContainer');
+        if (container) {
+            container.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
         }
+    }
 
-        // ========== START JOURNEY FUNCTION ==========
-        window.startThisJourney = function(originalId, btn) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
+    function scrollToNext() {
+        const container = document.getElementById('campaignsContainer');
+        if (container) {
+            container.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+        }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (window.innerWidth <= 768) return;
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            scrollToPrev();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            scrollToNext();
+        } else if (e.key === 'Escape') {
+            closeAllPopups();
+        }
+    });
+
+    // ========== INFINITE SCROLL ==========
+    let isLoading = false;
+    let hasMore = true;
+    let currentOffset = 20;
+    const totalCampaigns = {{ total_campaigns|default:0 }};
+
+    window.addEventListener('scroll', function() {
+        if (isLoading || !hasMore) return;
+        
+        const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
+        const scrollBottom = container.scrollTop + container.clientHeight;
+        const scrollThreshold = container.scrollHeight - 200;
+        
+        if (scrollBottom >= scrollThreshold && currentOffset < totalCampaigns) {
+            loadMoreCampaigns();
+        }
+    });
+
+    function loadMoreCampaigns() {
+        isLoading = true;
+        document.getElementById('loadingSpinner').classList.add('active');
+        
+        fetch(`/journey/?load-more=true&offset=${currentOffset}`, {
+            headers: {
+                'HX-Request': 'true'
             }
-            
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-            btn.disabled = true;
-            
-            fetch(`/journey/${originalId}/clone/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    if (data.already_exists) {
-                        if (confirm('You already started this journey! Would you like to continue where you left off?')) {
-                            window.location.href = data.redirect_url;
-                        } else {
-                            btn.innerHTML = originalText;
-                            btn.disabled = false;
-                        }
-                    } else {
+        })
+        .then(response => response.text())
+        .then(html => {
+            if (html.trim()) {
+                document.getElementById('campaignsContainer').insertAdjacentHTML('beforeend', html);
+                currentOffset += 5;
+                hasMore = currentOffset < totalCampaigns;
+            } else {
+                hasMore = false;
+            }
+        })
+        .catch(error => console.error('Error loading more:', error))
+        .finally(() => {
+            isLoading = false;
+            document.getElementById('loadingSpinner').classList.remove('active');
+        });
+    }
+
+    // ========== START JOURNEY FUNCTION ==========
+    window.startThisJourney = function(originalId, btn) {
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        btn.disabled = true;
+        
+        fetch(`/journey/${originalId}/clone/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (data.already_exists) {
+                    if (confirm('You already started this journey! Would you like to continue where you left off?')) {
                         window.location.href = data.redirect_url;
+                    } else {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
                     }
                 } else {
-                    alert('Error: ' + (data.error || 'Something went wrong'));
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    window.location.href = data.redirect_url;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Network error. Please try again.');
+            } else {
+                alert('Error: ' + (data.error || 'Something went wrong'));
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-            });
-        };
-    </script>
- <!-- ADD THIS AT THE VERY BOTTOM -->
-    <script>
-    // Campaign Manager Functions
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error. Please try again.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    };
+
+    // ========== CAMPAIGN MANAGER FUNCTIONS ==========
     function openCampaignManager(campaignId) {
-        // Create modal container if it doesn't exist
+        {% if not user.is_authenticated %}
+            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+            return;
+        {% endif %}
+        
         let modalContainer = document.getElementById('campaign-manager-modal');
         if (!modalContainer) {
             modalContainer = document.createElement('div');
@@ -1587,7 +1619,6 @@
             document.body.appendChild(modalContainer);
         }
         
-        // Show loading state
         modalContainer.innerHTML = `
             <div style="background: #1a1a1a; border-radius: 16px; width: 90%; max-width: 1200px; max-height: 90vh; overflow-y: auto; padding: 24px; position: relative;">
                 <div style="text-align: center; padding: 50px;">
@@ -1597,10 +1628,8 @@
             </div>
         `;
         
-        // Show modal
         setTimeout(() => modalContainer.style.opacity = '1', 10);
         
-        // Load manager content
         fetch(`/campaign/${campaignId}/manager/`, {
             headers: {
                 'HX-Request': 'true'
@@ -1629,7 +1658,6 @@
         }
     }
 
-    // Close modal when clicking outside
     document.addEventListener('click', function(e) {
         const modal = document.getElementById('campaign-manager-modal');
         if (modal && e.target === modal) {
@@ -1637,14 +1665,12 @@
         }
     });
 
-    // Close with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeCampaignManager();
         }
     });
 
-    // Helper function for CSRF token
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -1659,8 +1685,319 @@
         }
         return cookieValue;
     }
-    </script>
 
+    // Store campaign ID globally for campaign manager
+    window.currentCampaignId = null;
+    window.openCampaignManager = openCampaignManager;
+    window.closeCampaignManager = closeCampaignManager;
+    window.getCookie = getCookie;
+    
+    window.showManagerTab = function(tabName) {
+        const contents = ['overview', 'boosts', 'analytics', 'packages'];
+        contents.forEach(content => {
+            const el = document.getElementById(content + '-content');
+            if (el) el.style.display = 'none';
+        });
+        
+        const selected = document.getElementById(tabName + '-content');
+        if (selected) selected.style.display = 'block';
+        
+        contents.forEach(content => {
+            const btn = document.getElementById('tab-' + content + '-btn');
+            if (btn) {
+                btn.style.color = '#aaa';
+                btn.style.borderBottom = 'none';
+            }
+        });
+        
+        const activeBtn = document.getElementById('tab-' + tabName + '-btn');
+        if (activeBtn) {
+            activeBtn.style.color = 'white';
+            activeBtn.style.borderBottom = '2px solid #4CAF50';
+        }
+    };
+
+    window.createBoost = function() {
+        if (!window.currentCampaignId) {
+            alert('Error: Campaign ID not found.');
+            return;
+        }
+        window.showBoostForm();
+    };
+
+    window.showBoostForm = function() {
+        if (!window.currentCampaignId) {
+            alert('Error: Campaign ID not found.');
+            return;
+        }
+        
+        let boostModal = document.getElementById('boost-creation-modal');
+        if (!boostModal) {
+            boostModal = document.createElement('div');
+            boostModal.id = 'boost-creation-modal';
+            boostModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.95);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10001;
+            `;
+            document.body.appendChild(boostModal);
+        }
+        
+        boostModal.innerHTML = `
+            <div style="background: #1a1a1a; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+                <div style="padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: white; margin: 0;">Create New Boost</h2>
+                        <button onclick="window.closeBoostForm()" style="background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer;">&times;</button>
+                    </div>
+                    
+                    <form id="create-boost-form">
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: white; display: block; margin-bottom: 8px;">Boost Type</label>
+                            <select name="placement_type" id="boost-type" onchange="window.updateBoostForm()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                                <option value="featured">Featured Section (Right Sidebar)</option>
+                                <option value="search">Search Results Top Spot</option>
+                                <option value="category">Category Page Spotlight</option>
+                                <option value="bundle">All Placements Bundle</option>
+                            </select>
+                        </div>
+                        
+                        <div id="search-fields" style="display: none;">
+                            <div style="margin-bottom: 20px;">
+                                <label style="color: white; display: block; margin-bottom: 8px;">Keywords (comma-separated)</label>
+                                <input type="text" name="keywords" placeholder="e.g., help, support, community" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                                <small style="color: #aaa;">Keywords help your campaign appear in relevant searches</small>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="color: white; display: block; margin-bottom: 8px;">Bid Amount ($)</label>
+                                <input type="number" name="bid_amount" value="5.00" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                                <small style="color: #aaa;">Higher bids get better placement in search results</small>
+                            </div>
+                        </div>
+                        
+                        <div id="category-fields" style="display: none;">
+                            <div style="margin-bottom: 20px;">
+                                <label style="color: white; display: block; margin-bottom: 8px;">Category</label>
+                                <select name="category" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                                    <option value="Personal Empowerment">Personal Empowerment</option>
+                                    <option value="Health & Wellbeing Causes">Health & Wellbeing Causes</option>
+                                    <option value="Economic Support & Financial Causes">Economic Support & Financial Causes</option>
+                                    <option value="Creative & Cultural Causes">Creative & Cultural Causes</option>
+                                    <option value="Mental Health & Emotional Support">Mental Health & Emotional Support</option>
+                                    <option value="Career, Work & Opportunity">Career, Work & Opportunity</option>
+                                    <option value="Housing, Living & Stability">Housing, Living & Stability</option>
+                                    <option value="Community & Social Impact">Community & Social Impact</option>
+                                    <option value="Education & Skill Building">Education & Skill Building</option>
+                                    <option value="Exploration, Sports & Challenges">Exploration, Sports & Challenges</option>
+                                    <option value="Religious & Spiritual Causes">Religious & Spiritual Causes</option>
+                                    <option value="Other Causes">Other Causes</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="flat-fee-fields">
+                            <div style="margin-bottom: 20px;">
+                                <label style="color: white; display: block; margin-bottom: 8px;">Price ($)</label>
+                                <input type="number" name="flat_fee" id="flat-fee" value="9.99" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: white; display: block; margin-bottom: 8px;">Duration (days)</label>
+                            <select name="duration_days" id="boost-duration" onchange="window.updateBoostSummary()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
+                                <option value="3">3 days</option>
+                                <option value="7" selected>7 days</option>
+                                <option value="14">14 days</option>
+                                <option value="30">30 days</option>
+                            </select>
+                        </div>
+                        
+                        <div style="background: #222; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                            <div style="color: white; margin-bottom: 8px;">Summary</div>
+                            <div id="price-summary" style="color: #4CAF50; font-size: 24px; font-weight: bold;">$9.99</div>
+                            <div id="duration-summary" style="color: #aaa; font-size: 12px;">for 7 days</div>
+                        </div>
+                        
+                        <button type="submit" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                            Create Boost & Proceed to Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        const form = document.getElementById('create-boost-form');
+        if (form) {
+            form.addEventListener('submit', window.submitBoostCreation);
+        }
+        
+        window.updateBoostForm();
+    };
+
+    window.closeBoostForm = function() {
+        const modal = document.getElementById('boost-creation-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+
+    window.updateBoostForm = function() {
+        const boostType = document.getElementById('boost-type').value;
+        const searchFields = document.getElementById('search-fields');
+        const categoryFields = document.getElementById('category-fields');
+        const flatFeeFields = document.getElementById('flat-fee-fields');
+        const flatFeeInput = document.getElementById('flat-fee');
+        
+        if (searchFields) searchFields.style.display = 'none';
+        if (categoryFields) categoryFields.style.display = 'none';
+        if (flatFeeFields) flatFeeFields.style.display = 'block';
+        
+        if (boostType === 'search') {
+            if (searchFields) searchFields.style.display = 'block';
+            if (flatFeeInput) flatFeeInput.value = '5.00';
+        } else if (boostType === 'category') {
+            if (categoryFields) categoryFields.style.display = 'block';
+            if (flatFeeInput) flatFeeInput.value = '7.99';
+        } else if (boostType === 'featured') {
+            if (flatFeeInput) flatFeeInput.value = '9.99';
+        } else if (boostType === 'bundle') {
+            if (flatFeeInput) flatFeeInput.value = '19.99';
+        }
+        
+        window.updateBoostSummary();
+    };
+
+    window.updateBoostSummary = function() {
+        const flatFee = document.getElementById('flat-fee');
+        const duration = document.getElementById('boost-duration');
+        if (flatFee && duration) {
+            const price = parseFloat(flatFee.value).toFixed(2);
+            const days = duration.value;
+            const summaryPrice = document.getElementById('price-summary');
+            const summaryDuration = document.getElementById('duration-summary');
+            if (summaryPrice) summaryPrice.innerHTML = `$${price}`;
+            if (summaryDuration) summaryDuration.innerHTML = `for ${days} days`;
+        }
+    };
+
+    window.submitBoostCreation = function(event) {
+        event.preventDefault();
+        
+        const form = document.getElementById('create-boost-form');
+        if (!form) {
+            alert('Form not found');
+            return;
+        }
+        
+        const formData = new FormData(form);
+        const campaignId = window.currentCampaignId;
+        
+        if (!campaignId) {
+            alert('Error: Could not find campaign ID.');
+            return;
+        }
+        
+        const data = {
+            placement_type: formData.get('placement_type'),
+            duration_days: parseInt(formData.get('duration_days')),
+            flat_fee: parseFloat(formData.get('flat_fee')) || 0,
+            bid_amount: parseFloat(formData.get('bid_amount')) || 0,
+            keywords: formData.get('keywords') || '',
+            categories: formData.get('category') || '',
+        };
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = 'Creating...';
+        submitBtn.disabled = true;
+        
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+        
+        fetch(`/campaign/${campaignId}/boost/create/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+        .then(async response => {
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Invalid response from server');
+            }
+            if (!response.ok) {
+                throw new Error(result.error || `HTTP ${response.status}`);
+            }
+            return result;
+        })
+        .then(result => {
+            if (result.success) {
+                alert('Boost created successfully!');
+                window.closeBoostForm();
+                window.closeCampaignManager();
+                window.location.reload();
+            } else {
+                alert('Error: ' + (result.error || 'Unknown error'));
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    };
+
+    window.purchasePackage = function(packageId) {
+        alert(`Package ${packageId} selected. Payment integration coming soon!`);
+    };
+</script>
+
+<style>
+.loading-spinner {
+    border: 4px solid #333;
+    border-top: 4px solid #4CAF50;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<script type="text/javascript">
+    function toggleFullContent(campaignId) {
+        const short = document.getElementById(`caption-short-${campaignId}`);
+        const full = document.getElementById(`caption-full-${campaignId}`);
+        if (short.style.display === 'none') {
+            short.style.display = 'block';
+            full.style.display = 'none';
+        } else {
+            short.style.display = 'none';
+            full.style.display = 'block';
+        }
+    }
+</script>
     <style>
     .loading-spinner {
         border: 4px solid #333;
@@ -1677,458 +2014,5 @@
         100% { transform: rotate(360deg); }
     }
     </style>
-
-
-
-<script>
-// ============================================
-// CAMPAIGN MANAGER FUNCTIONS
-// ============================================
-
-// Store campaign ID globally
-window.currentCampaignId = null;
-
-// Function to open campaign manager
-window.openCampaignManager = function(campaignId) {
-    console.log('Opening campaign manager for campaign:', campaignId);
-    
-    // Store campaign ID globally
-    window.currentCampaignId = campaignId;
-    console.log('Stored campaign ID:', window.currentCampaignId);
-    
-    // Create modal container
-    let modalContainer = document.getElementById('campaign-manager-modal');
-    if (!modalContainer) {
-        modalContainer = document.createElement('div');
-        modalContainer.id = 'campaign-manager-modal';
-        modalContainer.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        `;
-        document.body.appendChild(modalContainer);
-    }
-    
-    // Show loading
-    modalContainer.innerHTML = `
-        <div style="background: #1a1a1a; border-radius: 16px; padding: 40px;">
-            <div style="text-align: center;">
-                <div class="loading-spinner"></div>
-                <p style="color: #aaa; margin-top: 20px;">Loading campaign manager...</p>
-            </div>
-        </div>
-    `;
-    
-    // Load content
-    fetch(`/campaign/${campaignId}/manager/`, {
-        headers: {
-            'HX-Request': 'true'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        return response.text();
-    })
-    .then(html => {
-        modalContainer.innerHTML = html;
-    })
-    .catch(error => {
-        console.error('Error loading manager:', error);
-        modalContainer.innerHTML = `
-            <div style="background: #1a1a1a; border-radius: 16px; padding: 24px;">
-                <h3 style="color: #ff4444;">Error Loading Manager</h3>
-                <p style="color: #aaa;">${error.message}</p>
-                <button onclick="window.closeCampaignManager()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 16px; cursor: pointer;">Close</button>
-            </div>
-        `;
-    });
-};
-
-// Function to close campaign manager
-window.closeCampaignManager = function() {
-    const modal = document.getElementById('campaign-manager-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
-
-// Function to show tabs
-window.showManagerTab = function(tabName) {
-    console.log('Showing tab:', tabName);
-    
-    // Hide all content divs
-    const contents = ['overview', 'boosts', 'analytics', 'packages'];
-    contents.forEach(content => {
-        const el = document.getElementById(content + '-content');
-        if (el) el.style.display = 'none';
-    });
-    
-    // Show selected content
-    const selected = document.getElementById(tabName + '-content');
-    if (selected) selected.style.display = 'block';
-    
-    // Update button styles
-    contents.forEach(content => {
-        const btn = document.getElementById('tab-' + content + '-btn');
-        if (btn) {
-            btn.style.color = '#aaa';
-            btn.style.borderBottom = 'none';
-        }
-    });
-    
-    // Highlight active button
-    const activeBtn = document.getElementById('tab-' + tabName + '-btn');
-    if (activeBtn) {
-        activeBtn.style.color = 'white';
-        activeBtn.style.borderBottom = '2px solid #4CAF50';
-    }
-};
-
-// Function to create boost (opens form)
-window.createBoost = function() {
-    console.log('Create boost called');
-    console.log('Current campaign ID:', window.currentCampaignId);
-    
-    if (!window.currentCampaignId) {
-        alert('Error: Campaign ID not found. Please close and reopen the campaign manager.');
-        return;
-    }
-    window.showBoostForm();
-};
-
-// Function to show boost creation form
-window.showBoostForm = function() {
-    console.log('Showing boost creation form for campaign:', window.currentCampaignId);
-    
-    // Check if we have campaign ID
-    if (!window.currentCampaignId) {
-        alert('Error: Campaign ID not found. Please refresh and try again.');
-        return;
-    }
-    
-    // Create modal for boost creation
-    let boostModal = document.getElementById('boost-creation-modal');
-    if (!boostModal) {
-        boostModal = document.createElement('div');
-        boostModal.id = 'boost-creation-modal';
-        boostModal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10001;
-        `;
-        document.body.appendChild(boostModal);
-    }
-    
-    boostModal.innerHTML = `
-        <div style="background: #1a1a1a; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-            <div style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: white; margin: 0;">Create New Boost</h2>
-                    <button onclick="window.closeBoostForm()" style="background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer;">&times;</button>
-                </div>
-                
-                <form id="create-boost-form">
-                    <div style="margin-bottom: 20px;">
-                        <label style="color: white; display: block; margin-bottom: 8px;">Boost Type</label>
-                        <select name="placement_type" id="boost-type" onchange="window.updateBoostForm()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                            <option value="featured">Featured Section (Right Sidebar)</option>
-                            <option value="search">Search Results Top Spot</option>
-                            <option value="category">Category Page Spotlight</option>
-                            <option value="bundle">All Placements Bundle</option>
-                        </select>
-                    </div>
-                    
-                    <div id="search-fields" style="display: none;">
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Keywords (comma-separated)</label>
-                            <input type="text" name="keywords" placeholder="e.g., help, support, community" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                            <small style="color: #aaa;">Keywords help your campaign appear in relevant searches</small>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Bid Amount ($)</label>
-                            <input type="number" name="bid_amount" value="5.00" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                            <small style="color: #aaa;">Higher bids get better placement in search results</small>
-                        </div>
-                    </div>
-                    
-                    <div id="category-fields" style="display: none;">
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Category</label>
-                            <select name="category" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                <option value="Personal Empowerment">Personal Empowerment</option>
-                                <option value="Health & Wellbeing Causes">Health & Wellbeing Causes</option>
-                                <option value="Economic Support & Financial Causes">Economic Support & Financial Causes</option>
-                                <option value="Creative & Cultural Causes">Creative & Cultural Causes</option>
-                                <option value="Mental Health & Emotional Support">Mental Health & Emotional Support</option>
-                                <option value="Career, Work & Opportunity">Career, Work & Opportunity</option>
-                                <option value="Housing, Living & Stability">Housing, Living & Stability</option>
-                                <option value="Community & Social Impact">Community & Social Impact</option>
-                                <option value="Education & Skill Building">Education & Skill Building</option>
-                                <option value="Exploration, Sports & Challenges">Exploration, Sports & Challenges</option>
-                                <option value="Religious & Spiritual Causes">Religious & Spiritual Causes</option>
-                                <option value="Other Causes">Other Causes</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div id="flat-fee-fields">
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Price ($)</label>
-                            <input type="number" name="flat_fee" id="flat-fee" value="9.99" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label style="color: white; display: block; margin-bottom: 8px;">Duration (days)</label>
-                        <select name="duration_days" id="boost-duration" onchange="window.updateBoostSummary()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                            <option value="3">3 days</option>
-                            <option value="7" selected>7 days</option>
-                            <option value="14">14 days</option>
-                            <option value="30">30 days</option>
-                        </select>
-                    </div>
-                    
-                    <div style="background: #222; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                        <div style="color: white; margin-bottom: 8px;">Summary</div>
-                        <div id="price-summary" style="color: #4CAF50; font-size: 24px; font-weight: bold;">$9.99</div>
-                        <div id="duration-summary" style="color: #aaa; font-size: 12px;">for 7 days</div>
-                    </div>
-                    
-                    <button type="submit" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
-                        Create Boost & Proceed to Payment
-                    </button>
-                </form>
-            </div>
-        </div>
-    `;
-    
-    // Add event listener to form
-    const form = document.getElementById('create-boost-form');
-    if (form) {
-        form.addEventListener('submit', window.submitBoostCreation);
-    }
-    
-    // Initialize form based on default selection
-    window.updateBoostForm();
-};
-
-// Function to close boost form
-window.closeBoostForm = function() {
-    const modal = document.getElementById('boost-creation-modal');
-    if (modal) {
-        modal.remove();
-    }
-};
-
-// Function to update form based on boost type
-window.updateBoostForm = function() {
-    const boostType = document.getElementById('boost-type').value;
-    const searchFields = document.getElementById('search-fields');
-    const categoryFields = document.getElementById('category-fields');
-    const flatFeeFields = document.getElementById('flat-fee-fields');
-    const flatFeeInput = document.getElementById('flat-fee');
-    
-    // Hide all first
-    if (searchFields) searchFields.style.display = 'none';
-    if (categoryFields) categoryFields.style.display = 'none';
-    if (flatFeeFields) flatFeeFields.style.display = 'block';
-    
-    // Show relevant fields and set prices
-    if (boostType === 'search') {
-        if (searchFields) searchFields.style.display = 'block';
-        if (flatFeeInput) flatFeeInput.value = '5.00';
-    } else if (boostType === 'category') {
-        if (categoryFields) categoryFields.style.display = 'block';
-        if (flatFeeInput) flatFeeInput.value = '7.99';
-    } else if (boostType === 'featured') {
-        if (flatFeeInput) flatFeeInput.value = '9.99';
-    } else if (boostType === 'bundle') {
-        if (flatFeeInput) flatFeeInput.value = '19.99';
-    }
-    
-    // Update summary
-    window.updateBoostSummary();
-};
-
-// Function to update price summary
-window.updateBoostSummary = function() {
-    const flatFee = document.getElementById('flat-fee');
-    const duration = document.getElementById('boost-duration');
-    if (flatFee && duration) {
-        const price = parseFloat(flatFee.value).toFixed(2);
-        const days = duration.value;
-        const summaryPrice = document.getElementById('price-summary');
-        const summaryDuration = document.getElementById('duration-summary');
-        if (summaryPrice) summaryPrice.innerHTML = `$${price}`;
-        if (summaryDuration) summaryDuration.innerHTML = `for ${days} days`;
-    }
-};
-
-// Function to submit boost creation
-window.submitBoostCreation = function(event) {
-    event.preventDefault();
-    console.log('Submitting boost creation...');
-    
-    const form = document.getElementById('create-boost-form');
-    if (!form) {
-        alert('Form not found');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    const campaignId = window.currentCampaignId;
-    
-    console.log('Campaign ID:', campaignId);
-    
-    if (!campaignId) {
-        alert('Error: Could not find campaign ID. Please close and reopen the campaign manager.');
-        return;
-    }
-    
-    const data = {
-        placement_type: formData.get('placement_type'),
-        duration_days: parseInt(formData.get('duration_days')),
-        flat_fee: parseFloat(formData.get('flat_fee')) || 0,
-        bid_amount: parseFloat(formData.get('bid_amount')) || 0,
-        keywords: formData.get('keywords') || '',
-        categories: formData.get('category') || '',
-    };
-    
-    console.log('Boost data:', data);
-    console.log('Sending to URL:', `/campaign/${campaignId}/boost/create/`);
-    
-    // Show loading state
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = 'Creating...';
-    submitBtn.disabled = true;
-    
-    // Get CSRF token
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || window.getCookie('csrftoken');
-    console.log('CSRF token found:', !!csrftoken);
-    
-    // Send to server
-    fetch(`/campaign/${campaignId}/boost/create/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(data)
-    })
-    .then(async response => {
-        console.log('Response status:', response.status);
-        const text = await response.text();
-        console.log('Response text:', text);
-        
-        let result;
-        try {
-            result = JSON.parse(text);
-        } catch (e) {
-            console.error('Failed to parse JSON:', e);
-            throw new Error('Invalid response from server');
-        }
-        
-        if (!response.ok) {
-            throw new Error(result.error || `HTTP ${response.status}`);
-        }
-        
-        return result;
-    })
-    .then(result => {
-        console.log('Success:', result);
-        if (result.success) {
-            alert('Boost created successfully!');
-            window.closeBoostForm();
-            window.closeCampaignManager();
-            // Reload to show the new boost
-            window.location.reload();
-        } else {
-            alert('Error: ' + (result.error || 'Unknown error'));
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error: ' + error.message);
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-};
-
-// Helper function to get CSRF token from cookies
-window.getCookie = function(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-};
-
-// Function to purchase package
-window.purchasePackage = function(packageId) {
-    alert(`Package ${packageId} selected. Payment integration coming soon!`);
-};
-
-// Add loading spinner styles
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #333;
-        border-top: 4px solid #4CAF50;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-    }
-`;
-document.head.appendChild(style);
-</script>
-
-<script type="text/javascript">
-    function toggleFullContent(campaignId) {
-    const short = document.getElementById(`caption-short-${campaignId}`);
-    const full = document.getElementById(`caption-full-${campaignId}`);
-    if (short.style.display === 'none') {
-        short.style.display = 'block';
-        full.style.display = 'none';
-    } else {
-        short.style.display = 'none';
-        full.style.display = 'block';
-    }
-}
-</script>
-
 </body>
 </html>

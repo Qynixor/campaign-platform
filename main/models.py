@@ -912,8 +912,17 @@ class Campaign(models.Model):
         except:
             return 'locked'
 
-
-
+    def get_meta_description(self):
+        """Generate SEO-friendly meta description"""
+        # Clean and truncate content
+        description = self.content.strip()[:150]
+        if len(self.content) > 150:
+            description = description + "..."
+        return f"Follow {self.title} on RallyNex. {description}"
+    
+    def get_meta_title(self):
+        """Generate SEO-friendly meta title"""
+        return f"{self.title} | RallyNex Journey"
 
 
 

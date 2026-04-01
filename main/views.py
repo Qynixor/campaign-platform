@@ -2663,10 +2663,32 @@ from .models import (
 # JOURNEY FEED VIEW
 # ============================================================================
 
-@login_required
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, Http404
+from django.template.loader import render_to_string
+from django.contrib.auth.decorators import login_required
+from .models import Campaign, CampaignFollow, CampaignSave
+# ============================================================================
+# JOURNEY FEED VIEW
+# ============================================================================
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, Http404
+from django.template.loader import render_to_string
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
+from .models import Campaign, CampaignFollow, CampaignSave
+
 def journey(request, campaign_id=None, campaign_slug=None):
     """Journey feed - shows followed campaigns first, then all campaigns"""
     try:
+        # === REDIRECT LOGIC: Redirect old ID-based URLs to new slug-based URLs ===
+        if campaign_id:
+            campaign = get_object_or_404(Campaign, id=campaign_id, is_active=True)
+            if campaign.slug:
+                # Permanent 301 redirect for SEO
+                return redirect('campaign_journey', campaign_slug=campaign.slug, permanent=True)
+        
         # Check if this is a saved campaigns request
         show_saved = request.path.endswith('saved/')
         
@@ -2687,6 +2709,28 @@ def journey(request, campaign_id=None, campaign_slug=None):
             followed_ids = []
             saved_ids = []
         else:
+            # FOR FEED VIEW - REQUIRE LOGIN
+            if not request.user.is_authenticated:
+                # Redirect to login or show public feed?
+                # Option 1: Redirect to login
+                return redirect('account_login')
+                # Option 2: Show public feed (recommended)
+                # Show only public campaigns without personalization
+                campaigns = campaigns_query.order_by('-timestamp')[:20]
+                campaign_list = list(campaigns)
+                
+                context = {
+                    'campaigns': campaign_list[:20],
+                    'total_campaigns': len(campaign_list),
+                    'is_single_campaign': False,
+                    'is_saved_view': False,
+                    'seo_meta': {
+                        'title': 'Journey Feed | RallyNex',
+                        'description': 'Discover inspiring journeys and support creators on RallyNex',
+                    }
+                }
+                return render(request, 'main/journey.html', context)
+            
             # Get IDs of campaigns this user follows
             followed_ids = list(CampaignFollow.objects.filter(
                 user=request.user
@@ -2698,9 +2742,10 @@ def journey(request, campaign_id=None, campaign_slug=None):
             ).values_list('campaign_id', flat=True))
             
             if show_saved:
-                # ONLY show saved campaigns
+                # ONLY show saved campaigns (requires login)
+                if not request.user.is_authenticated:
+                    return redirect('account_login')
                 campaigns = campaigns_query.filter(id__in=saved_ids).order_by('-timestamp')
-                # For the template to know it's saved view
                 campaigns = list(campaigns)
             else:
                 # Followed campaigns first, then all others
@@ -2708,13 +2753,18 @@ def journey(request, campaign_id=None, campaign_slug=None):
                 others = campaigns_query.exclude(id__in=followed_ids).order_by('-timestamp')
                 campaigns = list(followed) + list(others)
         
-        # Add user-specific flags to each campaign
+        # Add user-specific flags to each campaign (only for authenticated users)
         campaign_list = []
         for campaign in campaigns:
-            # Create a copy with additional attributes
-            campaign.user_loved = campaign.loves.filter(user=request.user).exists()
-            campaign.user_following = campaign.id in followed_ids if not campaign_id and not campaign_slug else False
-            campaign.user_saved = campaign.id in saved_ids if not campaign_id and not campaign_slug else False
+            if request.user.is_authenticated:
+                campaign.user_loved = campaign.loves.filter(user=request.user).exists()
+                campaign.user_following = campaign.id in followed_ids if not campaign_id and not campaign_slug else False
+                campaign.user_saved = campaign.id in saved_ids if not campaign_id and not campaign_slug else False
+            else:
+                # Anonymous users don't have these flags
+                campaign.user_loved = False
+                campaign.user_following = False
+                campaign.user_saved = False
             campaign_list.append(campaign)
         
         # Check if this is an HTMX request for loading more
@@ -2727,19 +2777,34 @@ def journey(request, campaign_id=None, campaign_slug=None):
                 html = render_to_string('main/partials/campaign_cards.html', {
                     'campaigns': next_batch,
                     'offset': offset + len(next_batch),
-                    'total_campaigns': len(campaign_list)
+                    'total_campaigns': len(campaign_list),
+                    'user_authenticated': request.user.is_authenticated,
                 })
                 return HttpResponse(html)
             else:
                 return HttpResponse('')
         
-        # Full page load - initial 20 campaigns
-        return render(request, 'main/journey.html', {
+        # Prepare context for template
+        context = {
             'campaigns': campaign_list[:20],
             'total_campaigns': len(campaign_list),
             'is_single_campaign': campaign_id is not None or campaign_slug is not None,
-            'is_saved_view': show_saved,  # Add this flag for template
-        })
+            'is_saved_view': show_saved,
+            'user_authenticated': request.user.is_authenticated,
+        }
+        
+        # If this is a single campaign view, add SEO metadata
+        if campaign_slug and not campaign_id:
+            campaign = get_object_or_404(Campaign, slug=campaign_slug, is_active=True)
+            context['seo_meta'] = {
+                'title': campaign.get_meta_title(),
+                'description': campaign.get_meta_description(),
+                'canonical_url': f"https://rallynex.com/journey/{campaign.slug}/",
+                'og_image': campaign.get_images()[0] if campaign.get_images() else None,
+            }
+        
+        # Full page load - initial 20 campaigns
+        return render(request, 'main/journey.html', context)
         
     except Http404:
         raise
@@ -2752,6 +2817,11 @@ def journey(request, campaign_id=None, campaign_slug=None):
             'total_campaigns': 0,
             'is_single_campaign': False,
             'is_saved_view': False,
+            'user_authenticated': request.user.is_authenticated,
+            'seo_meta': {
+                'title': 'Journey Feed | RallyNex',
+                'description': 'Discover inspiring journeys and support creators on RallyNex',
+            }
         })
 
 
