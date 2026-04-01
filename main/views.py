@@ -215,12 +215,8 @@ from .models import (
 
 def robots_txt(request):
     content = """User-agent: *
+
 Allow: /
-
-Disallow: /admin/
-Disallow: /accounts/
-Disallow: /tinymce/
-
 
 Sitemap: https://rallynex.com/sitemap.xml
 
