@@ -58,3 +58,17 @@ class DatabaseHealthMiddleware:
         
         response = self.get_response(request)
         return response
+
+
+
+# buskx/middleware.py
+class ForceRemoveNoindexMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        # Completely remove X-Robots-Tag if it exists
+        if 'X-Robots-Tag' in response:
+            del response['X-Robots-Tag']
+        return response

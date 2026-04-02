@@ -89,7 +89,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
     'allauth.account.middleware.AccountMiddleware',
-
+    'buskx.middleware.ForceRemoveNoindexMiddleware',  # Add this FIRST
     'buskx.middlewares.LegalLinksMiddleware',
     'buskx.middlewares.WWWRedirectMiddleware',  # 🔧 MUST be 301
   
@@ -345,3 +345,6 @@ Q_CLUSTER = {
 GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
 YANDEX_VERIFICATION = os.environ.get('YANDEX_VERIFICATION', '')
 BING_VERIFICATION = os.environ.get('BING_VERIFICATION', '')
+
+
+
