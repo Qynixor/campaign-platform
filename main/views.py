@@ -212,16 +212,30 @@ from .models import (
 
 
 
+# In main/views.py, update your robots_txt function:
 
 def robots_txt(request):
-    content = """User-agent: *
+    return HttpResponse(
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Sitemap: https://rallynex.com/sitemap.xml\n",
+        content_type="text/plain"
+    )
 
-Allow: /
 
-Sitemap: https://rallynex.com/sitemap.xml
 
-"""
-    return HttpResponse(content, content_type="text/plain")
+
+
+
+
+
+
+
+
+
+
+
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
