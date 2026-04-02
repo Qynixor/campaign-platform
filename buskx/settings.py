@@ -78,6 +78,7 @@ CRONJOBS = [
 # MIDDLEWARE
 # =====================================================
 MIDDLEWARE = [
+ 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -89,7 +90,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
     'allauth.account.middleware.AccountMiddleware',
-    'buskx.middleware.ForceRemoveNoindexMiddleware',  # Add this FIRST
+ 
     'buskx.middlewares.LegalLinksMiddleware',
     'buskx.middlewares.WWWRedirectMiddleware',  # 🔧 MUST be 301
   

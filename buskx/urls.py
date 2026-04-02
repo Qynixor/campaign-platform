@@ -26,6 +26,8 @@ from accounts import views as accounts_views
 from django.contrib.sitemaps.views import sitemap
 from django.views.generic import RedirectView
 from main.views import custom_signup_view  # Add this import
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET
 
 sitemaps = {
     'static': StaticViewSitemap,
@@ -34,7 +36,13 @@ sitemaps = {
     'blogs': BlogSitemap,
 }
 
-
+# ADD THIS FUNCTION
+@require_GET
+@never_cache
+def sitemap_fixed(request, *args, **kwargs):
+    response = sitemap(request, *args, **kwargs)
+    response['X-Robots-Tag'] = 'index, follow'
+    return response
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,7 +52,7 @@ urlpatterns = [
     path('', include('accounts.urls')),
     path('', include('main.urls')),
     path('tinymce/', include('tinymce.urls')),
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('sitemap.xml', sitemap_fixed, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('', accounts_views.index, name='index'),
     path('privacy-policy/', main_views.privacy_policy, name='privacy_policy'),
     path('terms-of-service/', main_views.terms_of_service, name='terms_of_service'),
