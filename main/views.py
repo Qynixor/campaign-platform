@@ -214,6 +214,12 @@ from .models import (
 
 # In main/views.py, update your robots_txt function:
 
+
+
+
+
+
+
 def robots_txt(request):
     return HttpResponse(
         "User-agent: *\n"
@@ -221,13 +227,6 @@ def robots_txt(request):
         "Sitemap: https://rallynex.com/sitemap.xml\n",
         content_type="text/plain"
     )
-
-
-
-
-
-
-
 
 
 
