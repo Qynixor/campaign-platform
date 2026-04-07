@@ -6,22 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Journey · Reel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    
-    <!-- HTMX for dynamic content loading -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #000;
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,23 +23,18 @@
             width: 100%;
             height: 100%;
         }
-
-        :root {
-            --vh: 1vh;
-            --donate-green: #4CAF50;
-            --save-yellow: #FFD700;
-        }
-
+        :root { --vh: 1vh; }
         .reel-container {
             width: 100%;
-            max-width: 430px;
+            max-width: 400px;
             height: 100vh;
             height: calc(var(--vh, 1vh) * 100);
-            background: #000;
+            background: #000000;
             position: relative;
             overflow: hidden;
+            border-radius: 0;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
         }
-
         .campaigns-container {
             position: absolute;
             top: 0;
@@ -60,23 +47,16 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
-
-        .campaigns-container::-webkit-scrollbar {
-            display: none;
-        }
-
+        .campaigns-container::-webkit-scrollbar { display: none; }
         .campaign-item {
             min-height: 100vh;
             min-height: calc(var(--vh, 1vh) * 100);
             height: 100vh;
-            height: calc(var(--vh, 1vh) * 100);
             scroll-snap-align: start;
             position: relative;
             overflow: hidden;
-            background: #000;
+            background: #000000;
         }
-
-        /* Image Slideshow */
         .image-slideshow {
             position: absolute;
             top: 0;
@@ -85,360 +65,377 @@
             bottom: 0;
             z-index: 1;
             overflow: hidden;
+            background: #0a0a0a;
         }
-
-        .slides-container {
-            display: flex;
-            height: 100%;
-            width: 100%;
-            transition: transform 0.3s ease-out;
-        }
-
-        .slide-item {
-            flex: 0 0 100%;
-            height: 100%;
-        }
-
-        .slide-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* Gradients */
-        .gradient-top {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 180px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        .gradient-bottom {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 380px;
-            background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        /* Top Bar */
-        .top-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 50px 16px 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 20;
-            background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
-        }
-
-        .left-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-/* Fixed back arrow for web - stays on top-left */
-.web-back-arrow {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    width: 48px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+        .slides-container { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-out; }
+        .slide-item { flex: 0 0 100%; height: 100%; }
+        .slide-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gradient-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 180px;
+    background: transparent;
+    z-index: 5;
+    pointer-events: none;
+}
+  .gradient-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 280px;
+    background: transparent;
+    z-index: 5;
+    pointer-events: none;
+}
+   .top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 50px 16px 10px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    z-index: 10000;
-    transition: all 0.2s ease;
+    z-index: 20;
+    background: transparent;
 }
-
-.web-back-arrow:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-}
-
-/* Hide mobile back arrow on desktop */
-.mobile-back-arrow {
-    display: none;
-}
-
-/* Show web back arrow on desktop, hide on mobile */
-@media (max-width: 768px) {
-    .web-back-arrow {
-        display: none;
-    }
-    .mobile-back-arrow {
-        display: flex;
-    }
-}
-
-        .stats-icon {
+        .left-group { display: flex; align-items: center; gap: 12px; }
+        
+        .stats-icon { display: none; }
+        
+        .back-arrow {
             width: 44px;
             height: 44px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 50%;
-            display: flex;
+            background: transparent;
+            border: none;
+            display: none;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 20px;
+            font-size: 24px;
             cursor: pointer;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
-
-        /* Journey Link */
-        .journey-center-link {
-            position: absolute;
-            top: 52%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 30;
-            text-align: center;
-            white-space: nowrap;
+        
+        @media (max-width: 768px) {
+            .back-arrow {
+                display: flex;
+            }
         }
-
-        .journey-link {
-            display: inline-block;
-            padding: 12px 28px;
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(6px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 40px;
-            color: white;
-            font-weight: 500;
-            font-size: 16px;
-            text-decoration: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        
+        .web-back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 10000;
+            transition: transform 0.15s;
         }
-
-        .journey-link i {
-            margin-right: 8px;
-        }
-
-        /* Action Buttons */
+        .web-back-arrow:active { transform: scale(0.9); }
+        @media (max-width: 768px) { .web-back-arrow { display: none; } }
+        
         .action-buttons {
             position: absolute;
             right: 12px;
-            bottom: 80px;
+            bottom: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 22px;
             z-index: 40;
         }
-
+        @media (min-width: 769px) {
+            .action-buttons {
+                display: none !important;
+            }
+        }
+        
         .action-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            color: white;
-            background: none;
+            gap: 5px;
+            background: transparent;
             border: none;
             cursor: pointer;
-            min-width: 60px;
             padding: 0;
         }
-
-        .action-btn i {
-            font-size: 28px;
-            transition: transform 0.2s;
-        }
-
-        .action-btn i:active {
-            transform: scale(0.9);
-        }
-
-        .action-btn span {
-            font-size: 12px;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-
+        .action-btn i { font-size: 30px; color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .action-btn span { font-size: 11px; font-weight: 600; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .action-btn:active { transform: scale(0.92); }
+        .action-btn.loved i { color: #ff3b30; }
+        .action-btn.following i { color: #4CAF50; }
+        .action-btn.saved i { color: #FFD700; }
         .action-profile {
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            border: 3px solid white;
+            border: 2px solid white;
             object-fit: cover;
             cursor: pointer;
             margin-bottom: 8px;
         }
-
-        .action-btn.loved i { color: #ff3b30; }
-        .action-btn.following i { color: #4CAF50; }
-        .action-btn.saved i { color: #FFD700; }
-
-        /* Info Panel */
+        
         .info-panel {
             position: absolute;
-            bottom: 30px;
-            left: 16px;
-            right: 80px;
+            bottom: 28px;
+            left: 20px;
+            right: 85px;
             z-index: 20;
-            color: white;
+            color: #ffffff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
-
-        .username-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-
-        .username {
-            font-weight: 700;
-            font-size: 16px;
-            color: white;
-            text-decoration: none;
-        }
-
-        .verified {
-            color: #1DA1F2;
-            font-size: 14px;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: rgba(255,255,255,0.8);
-        }
-
+        .username-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .username { font-weight: 700; font-size: 16px; color: #ffffff; text-decoration: none; }
+        .verified { color: #1DA1F2; font-size: 13px; }
+        .timestamp { font-size: 12px; color: rgba(255,255,255,0.75); }
         .caption {
             font-size: 15px;
-            line-height: 1.4;
+            line-height: 1.45;
             margin-bottom: 8px;
+            color: #ffffff;
+            font-weight: 500;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
-
-        .caption.expanded {
-            -webkit-line-clamp: unset;
-        }
-
-        .more-link {
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-
+        .caption.expanded { -webkit-line-clamp: unset; }
+        .more-link { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); cursor: pointer; display: inline-block; margin-bottom: 10px; }
         .slide-controls {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(4px);
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.15);
+            gap: 10px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+            padding: 5px 14px;
+            border-radius: 40px;
             margin: 8px 0;
         }
-
-        .slide-indicators {
-            display: flex;
-            gap: 4px;
-        }
-
+        .slide-indicators { display: flex; gap: 6px; }
         .indicator-dot {
-            width: 4px;
-            height: 4px;
+            width: 5px;
+            height: 5px;
             background: rgba(255,255,255,0.5);
             border: none;
-            border-radius: 2px;
+            border-radius: 10px;
             cursor: pointer;
-            padding: 0;
             transition: all 0.2s;
         }
-
-        .indicator-dot.active {
-            background: white;
-            width: 16px;
-        }
-
+        .indicator-dot.active { background: #ffffff; width: 20px; }
         .autoplay-btn {
             background: transparent;
             border: none;
             color: white;
             font-size: 12px;
             cursor: pointer;
-            border-left: 1px solid rgba(255,255,255,0.2);
-            padding-left: 8px;
+            border-left: 1px solid rgba(255,255,255,0.3);
+            padding-left: 10px;
         }
-
-        .meta-row {
-            display: flex;
-            gap: 16px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.9);
-            margin: 8px 0;
-        }
-
-        .media-stats-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 8px 0;
-        }
-
+        .meta-row { display: flex; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.9); margin: 8px 0; }
+        .media-stats-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
         .media-counter, .slide-counter {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.4);
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
             backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        /* Popups */
+        
+        .campaign-title-overlay {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 26;
+            text-align: center;
+            width: auto;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            padding: 10px 24px;
+            border-radius: 60px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 480px) {
+            .campaign-title-overlay {
+                white-space: normal;
+                max-width: 85%;
+                padding: 8px 18px;
+            }
+        }
+        
+        .campaign-title { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: #000000; 
+            letter-spacing: -0.3px;
+            line-height: 1.3;
+            margin: 0;
+            padding: 0;
+        }
+        
+        @media (max-width: 480px) {
+            .campaign-title {
+                font-size: 16px;
+            }
+        }
+        
+        .external-actions-right {
+            position: fixed;
+            right: calc(50% + 220px);
+            transform: translateX(50%);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 2000;
+            background: transparent;
+            padding: 0;
+            margin-right: 20px;
+            align-items: center;
+        }
+        .external-progress-left {
+            position: fixed;
+            left: calc(50% + 220px);
+            transform: translateX(-50%);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 2000;
+            background: transparent;
+            padding: 0;
+            margin-left: 20px;
+        }
+        @media (max-width: 768px) {
+            .external-actions-right, .external-progress-left { display: none; }
+        }
+        
+        .external-action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s;
+        }
+        .external-action-item i { font-size: 30px; color: #000000; }
+        .external-action-item span { font-size: 11px; font-weight: 600; color: #1a1a1a; }
+        .external-action-item:active { transform: scale(0.92); }
+        
+        .external-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
+            transition: transform 0.15s;
+        }
+        .external-profile img {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e0e0e0;
+        }
+        .external-profile:active { transform: scale(0.92); }
+        
+        .stats-trigger {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
+            transition: transform 0.15s;
+        }
+        .stats-trigger i { font-size: 30px; color: #000000; }
+        .stats-trigger span {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a1a1a;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+        .stats-trigger:active { transform: scale(0.92); }
+        
+        .scroll-arrows {
+            position: fixed;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            z-index: 100;
+        }
+        .scroll-arrow {
+            width: 48px;
+            height: 48px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000000;
+            font-size: 28px;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .scroll-arrow:active { transform: scale(0.9); }
+        @media (max-width: 768px) { .scroll-arrows { display: none; } }
+        
+        /* POPUP STYLES */
         .popup-backdrop {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
             z-index: 999999;
             display: none;
-            backdrop-filter: blur(5px);
         }
-
-        .popup-backdrop.active {
-            display: block;
-        }
-
+        .popup-backdrop.active { display: block; }
+        
         .stats-popup, .menu-popup, .comments-modal {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: #1a1a1a;
+            background: #ffffff;
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             max-width: 430px;
@@ -446,50 +443,40 @@
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
             z-index: 1000000;
-            color: white;
+            color: #000000;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
         }
-
-        .stats-popup.active, .menu-popup.active, .comments-modal.active {
-            transform: translateY(0);
-        }
-
+        .stats-popup.active, .menu-popup.active, .comments-modal.active { transform: translateY(0); }
+        
         .popup-handle {
             width: 40px;
             height: 5px;
-            background: #444;
+            background: #ddd;
             border-radius: 3px;
             margin: 12px auto 8px;
         }
-
+        
         .popup-header {
             padding: 8px 20px 16px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .popup-header h3 {
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .popup-header h3 { font-size: 20px; font-weight: 700; color: #000; }
+        
         .popup-content {
             padding: 20px;
             overflow-y: auto;
             flex: 1;
         }
-
+        
         .close-btn {
-            background: #333;
+            background: #f0f0f0;
             border: none;
-            color: white;
+            color: #111;
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -499,66 +486,42 @@
             align-items: center;
             justify-content: center;
         }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .stat-item {
-            background: #252525;
-            border-radius: 16px;
-            padding: 20px 12px;
-            text-align: center;
-            border: 1px solid #333;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: white;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Comments */
+        
+        /* COMMENTS STYLES */
         .comments-list {
             padding: 16px 20px;
             overflow-y: auto;
             flex: 1;
         }
-
+        
         .comment-item {
             display: flex;
             gap: 12px;
             margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
         }
-
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         .comment-avatar {
             width: 44px;
             height: 44px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #333;
+            flex-shrink: 0;
         }
-
+        
         .comment-content {
             flex: 1;
-            background: #252525;
+            background: #f5f5f5;
             padding: 12px 16px;
             border-radius: 18px;
-            border: 1px solid #333;
+            border: 1px solid #eee;
         }
-
+        
         .comment-header {
             display: flex;
             align-items: center;
@@ -566,45 +529,58 @@
             margin-bottom: 6px;
             flex-wrap: wrap;
         }
-
+        
         .comment-username {
-            color: white;
-            font-weight: 600;
+            color: #000;
+            font-weight: 700;
             font-size: 14px;
             text-decoration: none;
         }
-
+        
+        .comment-username:hover {
+            text-decoration: underline;
+        }
+        
         .comment-time {
             color: #888;
-            font-size: 12px;
+            font-size: 11px;
         }
-
+        
         .comment-text {
-            color: white;
+            color: #333;
             font-size: 14px;
             line-height: 1.5;
             word-break: break-word;
         }
-
+        
         .add-comment {
             padding: 16px 20px 24px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #eee;
             display: flex;
             gap: 12px;
-            background: #1a1a1a;
+            background: #ffffff;
         }
-
+        
         .add-comment input {
             flex: 1;
-            background: #252525;
-            border: 1px solid #333;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
             border-radius: 30px;
             padding: 12px 18px;
-            color: white;
-            font-size: 15px;
+            color: #000;
+            font-size: 14px;
             outline: none;
+            transition: border 0.2s;
         }
-
+        
+        .add-comment input:focus {
+            border-color: #1DA1F2;
+        }
+        
+        .add-comment input::placeholder {
+            color: #aaa;
+        }
+        
         .add-comment button {
             background: #1DA1F2;
             border: none;
@@ -613,15 +589,24 @@
             color: white;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s;
         }
-
-        /* Menu Items */
+        
+        .add-comment button:hover {
+            background: #0c85d0;
+        }
+        
+        .add-comment button:active {
+            transform: scale(0.96);
+        }
+        
+        /* MENU ITEMS STYLES */
         .menu-item {
             padding: 16px 24px;
             display: flex;
             align-items: center;
             gap: 16px;
-            color: white;
+            color: #000;
             text-decoration: none;
             font-size: 16px;
             cursor: pointer;
@@ -629,64 +614,17 @@
             background: transparent;
             width: 100%;
             text-align: left;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
         }
-
-        .menu-item i {
-            width: 28px;
-            color: #1DA1F2;
-            font-size: 20px;
-        }
-
-        .menu-item.report i {
-            color: #ff4444;
-        }
-
-        /* Loading */
-        .loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            z-index: 1000;
-            display: none;
-        }
-
-        .loading-spinner.active {
-            display: block;
-        }
-
-        /* No Campaigns */
-        .no-campaigns {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-            z-index: 10;
-        }
-
-        .no-campaigns i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .no-campaigns a {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #1DA1F2;
-            color: white;
-            text-decoration: none;
-            border-radius: 30px;
+        .menu-item:hover { background: #f5f5f5; }
+        .menu-item i { width: 28px; color: #1DA1F2; font-size: 20px; }
+        .menu-item.report i { color: #ff4444; }
+        
+        .start-journey-btn, .manage-campaign-btn {
             font-weight: 600;
         }
-
-        /* Donation Modal */
+        
         .donation-modal {
             position: fixed;
             top: 50%;
@@ -697,391 +635,223 @@
             max-width: 400px;
             display: none;
         }
-
-        .donation-modal.active {
-            display: block;
+        .donation-modal.active { display: block; }
+        .donation-content { background: #ffffff; border-radius: 24px; padding: 24px; }
+        .donation-header { text-align: center; margin-bottom: 24px; }
+        .donation-header h3 { color: #000; font-size: 20px; }
+        .donate-btn-large { background: #4CAF50; color: white; border: none; border-radius: 30px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; }
+        
+        .loading-spinner { display: none; }
+        .no-campaigns { color: #fff; text-align: center; padding: 40px; }
+        
+        .journey-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            z-index: 3998;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.25s ease;
         }
-
-        .donation-content {
-            background: #1a1a1a;
-            border-radius: 24px;
-            padding: 24px;
-            border: 1px solid #333;
-        }
-
-        .donation-header {
+        .journey-overlay.active { opacity: 1; visibility: visible; }
+        
+        .journey-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #ffffff;
+            border-radius: 32px;
+            width: 85%;
+            max-width: 300px;
+            padding: 32px 24px 28px;
             text-align: center;
-            margin-bottom: 24px;
+            z-index: 3999;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
-
-        .donation-header h3 {
-            color: white;
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .donate-btn-large {
-            background: #4CAF50;
-            color: white;
+        .journey-popup.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+        .journey-popup-icon { font-size: 52px; margin-bottom: 16px; color: #000; }
+        .journey-popup h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #000; }
+        .journey-popup p { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 24px; }
+        .journey-popup-button {
+            background: #000;
             border: none;
-            border-radius: 30px;
-            padding: 16px;
-            font-size: 16px;
+            padding: 12px 20px;
+            border-radius: 40px;
+            color: #fff;
             font-weight: 600;
+            font-size: 15px;
             cursor: pointer;
             width: 100%;
-            margin: 16px 0;
+            transition: all 0.2s;
         }
-
-        /* Scroll Arrows */
-        .scroll-arrows {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 10001;
-        }
-
-        .scroll-arrow {
-            width: 48px;
-            height: 48px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
+        .journey-popup-button:active { transform: scale(0.96); }
+        .journey-popup-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        @media (max-width: 768px) {
-            .scroll-arrows {
-                display: none;
-            }
-        }
-
-        /* Campaign Title Overlay */
-        .campaign-title-overlay {
-            position: absolute;
-            top: 26%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 30;
-            text-align: center;
-            pointer-events: none;
-            width: 90%;
-            max-width: 350px;
-            padding-right: 80px;
-            box-sizing: border-box;
-        }
-
-        .campaign-title {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.2;
-            color: white;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-            margin-bottom: 12px;
-            letter-spacing: -0.2px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            hyphens: auto;
-            width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* ===== PREMIUM FEATURES STYLES ===== */
-        .htmx-indicator {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .htmx-request .htmx-indicator {
-            display: block !important;
-        }
-
-        .htmx-request .popup-content {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .premium-badge {
-            background: linear-gradient(135deg, #fdc830, #f37335);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-left: 8px;
-            display: inline-block;
-        }
-
-        .premium-upgrade-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            background: transparent;
             border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
+            border-radius: 50%;
             cursor: pointer;
-            margin: 15px 0;
-            width: 100%;
-            transition: transform 0.2s;
-        }
-
-        .premium-upgrade-btn:hover {
-            transform: scale(1.02);
-        }
-
-        .premium-card {
-            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
-            border: 1px solid #fdc830;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 10px 0;
-        }
-
-        .price-tag {
-            font-size: 24px;
-            font-weight: 700;
-            color: #fdc830;
-        }
-
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0;
-        }
-
-        .feature-list li {
-            padding: 5px 0;
-            color: #ddd;
-            font-size: 13px;
-        }
-
-        .feature-list li i {
-            color: #4CAF50;
-            margin-right: 8px;
-        }
-
-        .premium-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 15px 0;
-        }
-
-        .premium-grid-item {
-            background: #252525;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            border: 1px solid #333;
-        }
-
-        .premium-grid-item .value {
+            color: #999;
             font-size: 20px;
-            font-weight: 700;
-            color: #fdc830;
-            display: block;
         }
-
-        .premium-grid-item .label {
-            font-size: 11px;
-            color: #aaa;
+        
+        .stats-progress-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: #ffffff;
+            border-radius: 44px;
+            max-width: 340px;
+            width: 85%;
+            padding: 32px 28px;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.15);
+            text-align: center;
         }
-
-        .progress-meter {
-            height: 6px;
-            background: #333;
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 10px 0;
+        .stats-progress-popup.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+        .popup-close-stats {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 22px;
+            cursor: pointer;
+            color: #888;
+            background: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            border-radius: 3px;
-            transition: width 0.3s ease;
+        .stats-progress-content h3 { font-size: 24px; margin-bottom: 20px; color: #000000; }
+        .progress-bar-bg { height: 8px; background: #e8ecf0; border-radius: 10px; overflow: hidden; margin: 12px 0 8px; }
+        .progress-fill { height: 100%; background: #000000; width: 0%; border-radius: 10px; }
+        .overlay-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 2999;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
         }
-
-        .recommendation-item {
-            background: #252525;
-            border-left: 3px solid #fdc830;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 0 8px 8px 0;
-            font-size: 13px;
-        }
-
-        .stats-popup .popup-content {
-            max-height: calc(80vh - 80px);
-            overflow-y: auto;
-            padding: 0;
-        }
-
-.back-arrow {
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 50%;
-    display: none; /* hide by default (desktop) */
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 22px;
-    cursor: pointer;
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-/* Show only on mobile */
-@media (max-width: 768px) {
-    .back-arrow {
-        display: flex;
-    }
-}
-/* Remove mobile tap highlight */
-* {
-    -webkit-tap-highlight-color: transparent;
-}
+        .overlay-backdrop.active { opacity: 1; visibility: visible; }
     </style>
 </head>
 <body>
-    <!-- Web Desktop Back Arrow - Top Left -->
-<div class="web-back-arrow" onclick="window.location.href='/'">
-    <i class="fas fa-arrow-left"></i>
-</div>
-    <!-- Backdrop -->
-    <div class="popup-backdrop" id="popupBackdrop" onclick="closeAllPopups()"></div>
 
-    <!-- Stats Popup -->
-    <div class="stats-popup" id="statsPopup">
-        <div class="popup-handle"></div>
-        <div class="popup-header">
-            <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
-            <button class="close-btn" onclick="closeStatsPopup()">✕</button>
-        </div>
-        <div class="htmx-indicator">
-            <i class="fas fa-spinner fa-spin"></i> Loading...
-        </div>
-        <div class="popup-content" id="statsContent">
-            <!-- Stats will load here via HTMX -->
-        </div>
-    </div>
+<div class="web-back-arrow" onclick="window.location.href='/'"><i class="fas fa-arrow-left"></i></div>
+<div class="scroll-arrows"><button class="scroll-arrow" onclick="scrollToPrev()"><i class="fas fa-chevron-up"></i></button><button class="scroll-arrow" onclick="scrollToNext()"><i class="fas fa-chevron-down"></i></button></div>
 
-    <!-- Menu Popup -->
-    <div class="menu-popup" id="menuPopup">
-        <div class="popup-handle"></div>
-        <div class="popup-header">
-            <h3><i class="fas fa-bars"></i> Menu</h3>
-            <button class="close-btn" onclick="closeMenuPopup()">✕</button>
-        </div>
-        <div class="popup-content" id="menuContent">
-            Loading...
-        </div>
-    </div>
-
-    <!-- Comments Modal -->
-    <div class="comments-modal" id="commentsModal">
-        <div class="popup-handle"></div>
-        <div class="popup-header">
-            <h3>Comments (<span id="commentCount">0</span>)</h3>
-            <button class="close-btn" onclick="closeCommentsModal()">✕</button>
-        </div>
-        <div id="commentsContent" class="comments-list">
-            Loading...
-        </div>
-    </div>
-
-    <!-- Donation Modal -->
-    <div class="donation-modal" id="donationModal">
-        <div class="donation-content">
-            <button class="close-btn" style="position: absolute; top: 16px; right: 16px;" onclick="closeDonationModal()">✕</button>
-            <div class="donation-header">
-                <h3 id="donationTitle">Support this Cause</h3>
-                <p>Make a difference today</p>
-            </div>
-            <button class="donate-btn-large" onclick="proceedToDonation()">
-                <i class="fas fa-hand-holding-heart"></i> Continue to Donation
-            </button>
-            <div style="text-align: center; font-size: 12px; color: #888;">
-                <i class="fas fa-lock"></i> Secure donation
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Container -->
-    <div class="reel-container">
-        <div class="loading-spinner" id="loadingSpinner">
-            <i class="fas fa-spinner fa-spin"></i>
-        </div>
-
+<div class="reel-container">
+    <div class="campaigns-container" id="campaignsContainer">
         {% if campaigns %}
-            <div class="campaigns-container" id="campaignsContainer">
-                {% for campaign in campaigns %}
-                    {% include "main/partials/campaign_card.html" with campaign=campaign %}
-                {% endfor %}
-                
-                {% if not is_single_campaign and total_campaigns > 20 %}
-                <div id="infiniteScrollTrigger" 
-                     data-offset="20"
-                     data-total="{{ total_campaigns }}">
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Scroll arrows for desktop -->
-            <div class="scroll-arrows">
-                <button class="scroll-arrow" onclick="scrollToPrev()" id="prevArrow">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-                <button class="scroll-arrow" onclick="scrollToNext()" id="nextArrow">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </div>
-
+            {% for campaign in campaigns %}
+                {% include "main/partials/campaign_card.html" with campaign=campaign %}
+            {% endfor %}
         {% else %}
-            <div class="no-campaigns">
-                <i class="fas fa-compass"></i>
-                <p>No journeys to explore yet</p>
-                <a href="{% url 'create_campaign' %}">Start Your Journey</a>
-            </div>
+            <div class="no-campaigns"><i class="fas fa-compass"></i><p>No journeys to explore yet</p><a href="{% url 'create_campaign' %}">Start Your Journey</a></div>
         {% endif %}
     </div>
+</div>
+
+<div id="externalActionsRight" class="external-actions-right"></div>
+<div id="externalProgressLeft" class="external-progress-left"></div>
+
+<div class="popup-backdrop" id="popupBackdrop" onclick="closeAllPopups()"></div>
+
+<div class="stats-popup" id="statsPopup">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+        <h3><i class="fas fa-chart-pie"></i> Journey Stats</h3>
+        <button class="close-btn" onclick="closeStatsPopup()">✕</button>
+    </div>
+    <div class="htmx-indicator"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+    <div class="popup-content" id="statsContent"></div>
+</div>
+
+<div class="menu-popup" id="menuPopup">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+        <h3><i class="fas fa-bars"></i> Menu</h3>
+        <button class="close-btn" onclick="closeMenuPopup()">✕</button>
+    </div>
+    <div class="popup-content" id="menuContent">Loading...</div>
+</div>
+
+<div class="comments-modal" id="commentsModal">
+    <div class="popup-handle"></div>
+    <div class="popup-header">
+        <h3>Comments (<span id="commentCount">0</span>)</h3>
+        <button class="close-btn" onclick="closeCommentsModal()">✕</button>
+    </div>
+    <div id="commentsContent" class="comments-list">Loading...</div>
+    <div class="add-comment" id="addCommentSection">
+      
+    </div>
+</div>
+
+<div class="donation-modal" id="donationModal">
+    <div class="donation-content">
+        <button class="close-btn" style="position: absolute; top: 16px; right: 16px;" onclick="closeDonationModal()">✕</button>
+        <div class="donation-header">
+            <h3 id="donationTitle">Support this Cause</h3>
+            <p>Make a difference today</p>
+        </div>
+        <button class="donate-btn-large" onclick="proceedToDonation()"><i class="fas fa-hand-holding-heart"></i> Continue to Donation</button>
+    </div>
+</div>
+
+<div class="overlay-backdrop" id="statsBackdrop"></div>
+<div class="stats-progress-popup" id="statsProgressPopup">
+    <button class="popup-close-stats" id="closeStatsPopupBtn">×</button>
+    <div class="stats-progress-content" id="statsProgressContent">
+        <h3>📊 Journey Progress</h3>
+        <div class="progress-stat-item">
+            <span>Completion</span>
+            <div class="progress-bar-bg"><div class="progress-fill" id="statsFill"></div></div>
+            <span id="statsPercent">0%</span>
+        </div>
+        <p id="statsExtra"></p>
+    </div>
+</div>
+
+<div id="journeyOverlay" class="journey-overlay"></div>
+<div class="journey-popup" id="journeyPopup">
+    <button class="journey-popup-close" id="closeJourneyPopupBtn">✕</button>
+    <div class="journey-popup-icon"><i class="fas fa-compass"></i></div>
+    <h3>View Journey</h3>
+    <p id="journeyPopupText">Continue your impact story and track progress</p>
+    <button class="journey-popup-button" id="journeyConfirmBtn">Continue Journey →</button>
+</div>
+
 <script>
-    // ========== UTILITIES ==========
-    function setVhProperty() {
-        let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-    }
+    function setVhProperty() { let vh = window.innerHeight * 0.01; document.documentElement.style.setProperty('--vh', `${vh}px`); }
+    window.addEventListener('resize', setVhProperty); setVhProperty();
+    function getCSRFToken() { return document.querySelector('meta[name="csrf-token"]').content; }
     
-    window.addEventListener('resize', setVhProperty);
-    window.addEventListener('orientationchange', setVhProperty);
-    setVhProperty();
-
-    // Get CSRF token
-    function getCSRFToken() {
-        return document.querySelector('meta[name="csrf-token"]').content;
-    }
-
-    // Configure HTMX
-    document.body.addEventListener('htmx:configRequest', function(evt) {
-        evt.detail.headers['X-CSRFToken'] = getCSRFToken();
-    });
-
-    // ========== POPUP FUNCTIONS ==========
+    function scrollToPrev() { document.getElementById('campaignsContainer').scrollBy({ top: -window.innerHeight, behavior: 'smooth' }); }
+    function scrollToNext() { document.getElementById('campaignsContainer').scrollBy({ top: window.innerHeight, behavior: 'smooth' }); }
+    
     function closeAllPopups() {
         document.getElementById('statsPopup').classList.remove('active');
         document.getElementById('menuPopup').classList.remove('active');
@@ -1089,462 +859,66 @@
         document.getElementById('donationModal').classList.remove('active');
         document.getElementById('popupBackdrop').classList.remove('active');
     }
-
-    function closeStatsPopup() {
-        document.getElementById('statsPopup').classList.remove('active');
-        document.getElementById('popupBackdrop').classList.remove('active');
-    }
-
-    function closeMenuPopup() {
-        document.getElementById('menuPopup').classList.remove('active');
-        document.getElementById('popupBackdrop').classList.remove('active');
-    }
-
-    function closeCommentsModal() {
-        document.getElementById('commentsModal').classList.remove('active');
-        document.getElementById('popupBackdrop').classList.remove('active');
-    }
-
-    function closeDonationModal() {
-        document.getElementById('donationModal').classList.remove('active');
-        document.getElementById('popupBackdrop').classList.remove('active');
-    }
-
-    // ========== STATS POPUP ==========
+    function closeStatsPopup() { document.getElementById('statsPopup').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
+    function closeMenuPopup() { document.getElementById('menuPopup').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
+    function closeCommentsModal() { document.getElementById('commentsModal').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
+    function closeDonationModal() { document.getElementById('donationModal').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
+    
     window.openStatsPopup = function(campaignId) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
         const statsContent = document.getElementById('statsContent');
         const statsPopup = document.getElementById('statsPopup');
         const backdrop = document.getElementById('popupBackdrop');
-        
         statsContent.innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
         statsPopup.classList.add('active');
         backdrop.classList.add('active');
-        statsPopup.classList.add('htmx-request');
-        
-        htmx.ajax('GET', `/campaign/${campaignId}/get-stats/`, {
-            target: '#statsContent',
-            swap: 'innerHTML'
-        }).then(() => {
-            statsPopup.classList.remove('htmx-request');
-        });
+        htmx.ajax('GET', `/campaign/${campaignId}/get-stats/`, { target: '#statsContent', swap: 'innerHTML' });
     };
-
-    // ========== PREMIUM FEATURES EVENT HANDLERS ==========
-    document.body.addEventListener('premiumSubscribed', function(evt) {
-        alert(evt.detail.message);
-        closeAllPopups();
-    });
-
-    document.body.addEventListener('premiumPurchased', function(evt) {
-        alert('Premium access unlocked!');
-        closeStatsPopup();
-        setTimeout(() => {
-            openStatsPopup(evt.detail.campaignId);
-        }, 300);
-    });
-
-    document.body.addEventListener('htmx:responseError', function(evt) {
-        if (evt.detail.xhr.status === 403) {
-            alert('Please login to access premium features');
-            window.location.href = '/login/?next=' + window.location.pathname;
-        }
-        document.getElementById('statsPopup').classList.remove('htmx-request');
-    });
-
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'statsContent') {
-            document.getElementById('statsPopup').classList.remove('htmx-request');
-        }
-    });
-
-    // ========== MENU POPUP ==========
+    
     window.openMenuPopup = function(campaignId) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
         document.getElementById('menuContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
         document.getElementById('menuPopup').classList.add('active');
         document.getElementById('popupBackdrop').classList.add('active');
-        
+        window.currentMenuCampaignId = campaignId;
         fetch(`/campaign/${campaignId}/get-menu/`)
             .then(response => response.text())
             .then(html => {
                 document.getElementById('menuContent').innerHTML = html;
+                attachMenuButtonHandlers();
             })
             .catch(error => {
                 document.getElementById('menuContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading menu</div>';
             });
     };
-
-    // ========== COMMENTS ==========
-    window.openComments = function(campaignId) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
-        document.getElementById('commentsContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
-        document.getElementById('commentsModal').classList.add('active');
-        document.getElementById('popupBackdrop').classList.add('active');
-        window.currentCommentCampaignId = campaignId;
-        
-        fetch(`/campaign/${campaignId}/get-comments/`)
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('commentsContent').innerHTML = html;
-                const count = (html.match(/comment-item/g) || []).length;
-                document.getElementById('commentCount').textContent = count;
-            })
-            .catch(error => {
-                document.getElementById('commentsContent').innerHTML = '<div style="color: #ff4444; text-align: center; padding: 30px;">Error loading comments</div>';
-            });
-    };
-
-    window.postComment = function() {
-        const input = document.getElementById('commentInput');
-        const text = input.value.trim();
-        const campaignId = window.currentCommentCampaignId;
-        
-        if (!text || !campaignId) return;
-        
-        const btn = document.getElementById('postCommentBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        const formData = new FormData();
-        formData.append('text', text);
-        formData.append('csrfmiddlewaretoken', getCSRFToken());
-        
-        fetch(`/campaign/${campaignId}/post-comment/`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('commentsContent').innerHTML = html;
-            input.value = '';
-            const count = (html.match(/comment-item/g) || []).length;
-            document.getElementById('commentCount').textContent = count;
-        })
-        .catch(error => {
-            alert('Failed to post comment');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = 'Post';
-        });
-    };
-
-    // ========== LOVE TOGGLE ==========
-    window.toggleLove = function(campaignId, btn) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-        
-        fetch(`/campaign/${campaignId}/toggle-love/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = data.button_html;
-                const newBtn = tempDiv.firstElementChild;
-                btn.parentNode.replaceChild(newBtn, btn);
-            } else {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-        });
-    };
-
-    // ========== FOLLOW TOGGLE ==========
-    window.toggleFollow = function(campaignId, btn) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-        
-        fetch(`/campaign/${campaignId}/toggle-follow/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = data.button_html;
-                const newBtn = tempDiv.firstElementChild;
-                btn.parentNode.replaceChild(newBtn, btn);
-            } else {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-        });
-    };
-
-    // ========== SAVE TOGGLE ==========
-    window.toggleSave = function(campaignId, btn) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>...</span>';
-        
-        fetch(`/campaign/${campaignId}/toggle-save/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = data.button_html;
-                const newBtn = tempDiv.firstElementChild;
-                btn.parentNode.replaceChild(newBtn, btn);
-            } else {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            btn.innerHTML = originalHtml;
-            btn.disabled = false;
-        });
-    };
-
-    // ========== DONATION ==========
-    window.openDonationModal = function(campaignId, title) {
-        document.getElementById('donationTitle').textContent = title;
-        document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId);
-        document.getElementById('donationModal').classList.add('active');
-        document.getElementById('popupBackdrop').classList.add('active');
-    };
-
-    window.proceedToDonation = function() {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
-            return;
-        {% endif %}
-        
-        const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id');
-        closeDonationModal();
-        window.location.href = `/campaign/${campaignId}/donate/`;
-    };
-
-    // ========== SHARE ==========
-    window.handleShare = function(campaignId) {
-        if (navigator.share) {
-            navigator.share({
-                title: 'Check out this cause',
-                url: window.location.origin + `/journey/${campaignId}/`
-            });
-        } else {
-            prompt('Copy link:', window.location.origin + `/journey/${campaignId}/`);
+    
+    function attachMenuButtonHandlers() {
+        const startJourneyBtn = document.querySelector('#menuContent .start-journey-btn');
+        if (startJourneyBtn && window.currentMenuCampaignId) {
+            const newBtn = startJourneyBtn.cloneNode(true);
+            startJourneyBtn.parentNode.replaceChild(newBtn, startJourneyBtn);
+            newBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                startThisJourney(window.currentMenuCampaignId, this);
+            };
         }
-    };
-
-    // ========== CAPTION TOGGLE ==========
-    window.toggleCaption = function(campaignId) {
-        const caption = document.getElementById(`caption-${campaignId}`);
-        const moreLink = document.getElementById(`moreLink-${campaignId}`);
         
-        if (caption.classList.contains('expanded')) {
-            caption.classList.remove('expanded');
-            moreLink.textContent = 'more';
-        } else {
-            caption.classList.add('expanded');
-            moreLink.textContent = 'less';
-        }
-    };
-
-    // ========== SLIDESHOW ==========
-    window.goToSlide = function(campaignId, index) {
-        const container = document.getElementById(`slidesContainer-${campaignId}`);
-        if (!container) return;
-        
-        container.style.transform = `translateX(-${index * 100}%)`;
-        
-        const indicators = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`);
-        indicators.forEach((dot, i) => {
-            dot.classList.toggle('active', i === index);
-        });
-        
-        const currentEl = document.getElementById(`currentSlide-${campaignId}`);
-        if (currentEl) currentEl.textContent = index + 1;
-    };
-
-    window.toggleAutoplay = function(campaignId) {
-        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
-        const isPlaying = btn.classList.contains('playing');
-        
-        if (isPlaying) {
-            btn.innerHTML = '<i class="fas fa-play"></i>';
-            btn.classList.remove('playing');
-            if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
-                clearInterval(window.slideshowTimers[campaignId]);
-            }
-        } else {
-            btn.innerHTML = '<i class="fas fa-pause"></i>';
-            btn.classList.add('playing');
-            
-            const totalSlides = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
-            if (totalSlides > 1) {
-                if (!window.slideshowTimers) window.slideshowTimers = {};
-                window.slideshowTimers[campaignId] = setInterval(() => {
-                    const container = document.getElementById(`slidesContainer-${campaignId}`);
-                    if (!container) return;
-                    
-                    const currentIndex = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1') - 1;
-                    const nextIndex = (currentIndex + 1) % totalSlides;
-                    goToSlide(campaignId, nextIndex);
-                }, 3000);
-            }
-        }
-    };
-
-    // Initialize slideshows
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('[id^="totalSlides-"]').forEach(el => {
-            const campaignId = el.id.replace('totalSlides-', '');
-            const total = parseInt(el.textContent || '0');
-            if (total > 1) {
-                setTimeout(() => {
-                    const btn = document.getElementById(`autoplayBtn-${campaignId}`);
-                    if (btn) {
-                        btn.click();
-                    }
-                }, 1000);
-            }
-        });
-    });
-
-    // ========== SCROLLING ==========
-    function scrollToPrev() {
-        const container = document.getElementById('campaignsContainer');
-        if (container) {
-            container.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+        const manageBtn = document.querySelector('#menuContent .manage-campaign-btn');
+        if (manageBtn && window.currentMenuCampaignId) {
+            const newManageBtn = manageBtn.cloneNode(true);
+            manageBtn.parentNode.replaceChild(newManageBtn, manageBtn);
+            newManageBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openCampaignManager(window.currentMenuCampaignId);
+            };
         }
     }
-
-    function scrollToNext() {
-        const container = document.getElementById('campaignsContainer');
-        if (container) {
-            container.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
-        }
-    }
-
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-        if (window.innerWidth <= 768) return;
-        
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            scrollToPrev();
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            scrollToNext();
-        } else if (e.key === 'Escape') {
-            closeAllPopups();
-        }
-    });
-
-    // ========== INFINITE SCROLL ==========
-    let isLoading = false;
-    let hasMore = true;
-    let currentOffset = 20;
-    const totalCampaigns = {{ total_campaigns|default:0 }};
-
-    window.addEventListener('scroll', function() {
-        if (isLoading || !hasMore) return;
-        
-        const container = document.getElementById('campaignsContainer');
-        if (!container) return;
-        
-        const scrollBottom = container.scrollTop + container.clientHeight;
-        const scrollThreshold = container.scrollHeight - 200;
-        
-        if (scrollBottom >= scrollThreshold && currentOffset < totalCampaigns) {
-            loadMoreCampaigns();
-        }
-    });
-
-    function loadMoreCampaigns() {
-        isLoading = true;
-        document.getElementById('loadingSpinner').classList.add('active');
-        
-        fetch(`/journey/?load-more=true&offset=${currentOffset}`, {
-            headers: {
-                'HX-Request': 'true'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            if (html.trim()) {
-                document.getElementById('campaignsContainer').insertAdjacentHTML('beforeend', html);
-                currentOffset += 5;
-                hasMore = currentOffset < totalCampaigns;
-            } else {
-                hasMore = false;
-            }
-        })
-        .catch(error => console.error('Error loading more:', error))
-        .finally(() => {
-            isLoading = false;
-            document.getElementById('loadingSpinner').classList.remove('active');
-        });
-    }
-
-    // ========== START JOURNEY FUNCTION ==========
+    
     window.startThisJourney = function(originalId, btn) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+        const isAuthenticated = {{ user.is_authenticated|lower }};
+        if (!isAuthenticated) {
+            window.location.href = '/login/?next=' + window.location.pathname;
             return;
-        {% endif %}
-        
-        if (event) {
-            event.preventDefault();
-            event.stopPropagation();
         }
         
         const originalText = btn.innerHTML;
@@ -1559,12 +933,7 @@
             },
             body: JSON.stringify({})
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
                 if (data.already_exists) {
@@ -1590,13 +959,13 @@
             btn.disabled = false;
         });
     };
-
-    // ========== CAMPAIGN MANAGER FUNCTIONS ==========
-    function openCampaignManager(campaignId) {
-        {% if not user.is_authenticated %}
-            window.location.href = '{% url "account_login" %}?next=' + window.location.pathname;
+    
+    window.openCampaignManager = function(campaignId) {
+        const isAuthenticated = {{ user.is_authenticated|lower }};
+        if (!isAuthenticated) {
+            window.location.href = '/login/?next=' + window.location.pathname;
             return;
-        {% endif %}
+        }
         
         let modalContainer = document.getElementById('campaign-manager-modal');
         if (!modalContainer) {
@@ -1631,9 +1000,7 @@
         setTimeout(() => modalContainer.style.opacity = '1', 10);
         
         fetch(`/campaign/${campaignId}/manager/`, {
-            headers: {
-                'HX-Request': 'true'
-            }
+            headers: { 'HX-Request': 'true' }
         })
         .then(response => response.text())
         .then(html => {
@@ -1648,371 +1015,159 @@
                 </div>
             `;
         });
-    }
-
-    function closeCampaignManager() {
+    };
+    
+    window.closeCampaignManager = function() {
         const modal = document.getElementById('campaign-manager-modal');
         if (modal) {
             modal.style.opacity = '0';
             setTimeout(() => modal.remove(), 300);
         }
-    }
-
-    document.addEventListener('click', function(e) {
-        const modal = document.getElementById('campaign-manager-modal');
-        if (modal && e.target === modal) {
-            closeCampaignManager();
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeCampaignManager();
-        }
-    });
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Store campaign ID globally for campaign manager
-    window.currentCampaignId = null;
-    window.openCampaignManager = openCampaignManager;
-    window.closeCampaignManager = closeCampaignManager;
-    window.getCookie = getCookie;
+    };
     
-    window.showManagerTab = function(tabName) {
-        const contents = ['overview', 'boosts', 'analytics', 'packages'];
-        contents.forEach(content => {
-            const el = document.getElementById(content + '-content');
-            if (el) el.style.display = 'none';
-        });
-        
-        const selected = document.getElementById(tabName + '-content');
-        if (selected) selected.style.display = 'block';
-        
-        contents.forEach(content => {
-            const btn = document.getElementById('tab-' + content + '-btn');
-            if (btn) {
-                btn.style.color = '#aaa';
-                btn.style.borderBottom = 'none';
-            }
-        });
-        
-        const activeBtn = document.getElementById('tab-' + tabName + '-btn');
-        if (activeBtn) {
-            activeBtn.style.color = 'white';
-            activeBtn.style.borderBottom = '2px solid #4CAF50';
-        }
+    window.openComments = function(campaignId) {
+        document.getElementById('commentsContent').innerHTML = '<div style="text-align: center; padding: 30px;"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
+        document.getElementById('commentsModal').classList.add('active');
+        document.getElementById('popupBackdrop').classList.add('active');
+        window.currentCommentCampaignId = campaignId;
+        fetch(`/campaign/${campaignId}/get-comments/`)
+            .then(r=>r.text())
+            .then(html=>{
+                document.getElementById('commentsContent').innerHTML = html;
+                const count = (html.match(/comment-item/g) || []).length;
+                document.getElementById('commentCount').textContent = count;
+            });
     };
-
-    window.createBoost = function() {
-        if (!window.currentCampaignId) {
-            alert('Error: Campaign ID not found.');
-            return;
-        }
-        window.showBoostForm();
-    };
-
-    window.showBoostForm = function() {
-        if (!window.currentCampaignId) {
-            alert('Error: Campaign ID not found.');
-            return;
-        }
+    
+    window.postComment = function() {
+        const input = document.getElementById('commentInput');
+        const text = input.value.trim();
+        const campaignId = window.currentCommentCampaignId;
         
-        let boostModal = document.getElementById('boost-creation-modal');
-        if (!boostModal) {
-            boostModal = document.createElement('div');
-            boostModal.id = 'boost-creation-modal';
-            boostModal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.95);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10001;
-            `;
-            document.body.appendChild(boostModal);
-        }
+        if (!text || !campaignId) return;
         
-        boostModal.innerHTML = `
-            <div style="background: #1a1a1a; border-radius: 16px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-                <div style="padding: 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 style="color: white; margin: 0;">Create New Boost</h2>
-                        <button onclick="window.closeBoostForm()" style="background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer;">&times;</button>
-                    </div>
-                    
-                    <form id="create-boost-form">
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Boost Type</label>
-                            <select name="placement_type" id="boost-type" onchange="window.updateBoostForm()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                <option value="featured">Featured Section (Right Sidebar)</option>
-                                <option value="search">Search Results Top Spot</option>
-                                <option value="category">Category Page Spotlight</option>
-                                <option value="bundle">All Placements Bundle</option>
-                            </select>
-                        </div>
-                        
-                        <div id="search-fields" style="display: none;">
-                            <div style="margin-bottom: 20px;">
-                                <label style="color: white; display: block; margin-bottom: 8px;">Keywords (comma-separated)</label>
-                                <input type="text" name="keywords" placeholder="e.g., help, support, community" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                <small style="color: #aaa;">Keywords help your campaign appear in relevant searches</small>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="color: white; display: block; margin-bottom: 8px;">Bid Amount ($)</label>
-                                <input type="number" name="bid_amount" value="5.00" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                <small style="color: #aaa;">Higher bids get better placement in search results</small>
-                            </div>
-                        </div>
-                        
-                        <div id="category-fields" style="display: none;">
-                            <div style="margin-bottom: 20px;">
-                                <label style="color: white; display: block; margin-bottom: 8px;">Category</label>
-                                <select name="category" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                    <option value="Personal Empowerment">Personal Empowerment</option>
-                                    <option value="Health & Wellbeing Causes">Health & Wellbeing Causes</option>
-                                    <option value="Economic Support & Financial Causes">Economic Support & Financial Causes</option>
-                                    <option value="Creative & Cultural Causes">Creative & Cultural Causes</option>
-                                    <option value="Mental Health & Emotional Support">Mental Health & Emotional Support</option>
-                                    <option value="Career, Work & Opportunity">Career, Work & Opportunity</option>
-                                    <option value="Housing, Living & Stability">Housing, Living & Stability</option>
-                                    <option value="Community & Social Impact">Community & Social Impact</option>
-                                    <option value="Education & Skill Building">Education & Skill Building</option>
-                                    <option value="Exploration, Sports & Challenges">Exploration, Sports & Challenges</option>
-                                    <option value="Religious & Spiritual Causes">Religious & Spiritual Causes</option>
-                                    <option value="Other Causes">Other Causes</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div id="flat-fee-fields">
-                            <div style="margin-bottom: 20px;">
-                                <label style="color: white; display: block; margin-bottom: 8px;">Price ($)</label>
-                                <input type="number" name="flat_fee" id="flat-fee" value="9.99" min="1" step="0.50" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="color: white; display: block; margin-bottom: 8px;">Duration (days)</label>
-                            <select name="duration_days" id="boost-duration" onchange="window.updateBoostSummary()" style="width: 100%; padding: 12px; background: #222; border: 1px solid #333; color: white; border-radius: 8px;">
-                                <option value="3">3 days</option>
-                                <option value="7" selected>7 days</option>
-                                <option value="14">14 days</option>
-                                <option value="30">30 days</option>
-                            </select>
-                        </div>
-                        
-                        <div style="background: #222; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-                            <div style="color: white; margin-bottom: 8px;">Summary</div>
-                            <div id="price-summary" style="color: #4CAF50; font-size: 24px; font-weight: bold;">$9.99</div>
-                            <div id="duration-summary" style="color: #aaa; font-size: 12px;">for 7 days</div>
-                        </div>
-                        
-                        <button type="submit" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
-                            Create Boost & Proceed to Payment
-                        </button>
-                    </form>
-                </div>
-            </div>
-        `;
+        const btn = document.getElementById('postCommentBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        const form = document.getElementById('create-boost-form');
-        if (form) {
-            form.addEventListener('submit', window.submitBoostCreation);
-        }
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('csrfmiddlewaretoken', getCSRFToken());
         
-        window.updateBoostForm();
-    };
-
-    window.closeBoostForm = function() {
-        const modal = document.getElementById('boost-creation-modal');
-        if (modal) {
-            modal.remove();
-        }
-    };
-
-    window.updateBoostForm = function() {
-        const boostType = document.getElementById('boost-type').value;
-        const searchFields = document.getElementById('search-fields');
-        const categoryFields = document.getElementById('category-fields');
-        const flatFeeFields = document.getElementById('flat-fee-fields');
-        const flatFeeInput = document.getElementById('flat-fee');
-        
-        if (searchFields) searchFields.style.display = 'none';
-        if (categoryFields) categoryFields.style.display = 'none';
-        if (flatFeeFields) flatFeeFields.style.display = 'block';
-        
-        if (boostType === 'search') {
-            if (searchFields) searchFields.style.display = 'block';
-            if (flatFeeInput) flatFeeInput.value = '5.00';
-        } else if (boostType === 'category') {
-            if (categoryFields) categoryFields.style.display = 'block';
-            if (flatFeeInput) flatFeeInput.value = '7.99';
-        } else if (boostType === 'featured') {
-            if (flatFeeInput) flatFeeInput.value = '9.99';
-        } else if (boostType === 'bundle') {
-            if (flatFeeInput) flatFeeInput.value = '19.99';
-        }
-        
-        window.updateBoostSummary();
-    };
-
-    window.updateBoostSummary = function() {
-        const flatFee = document.getElementById('flat-fee');
-        const duration = document.getElementById('boost-duration');
-        if (flatFee && duration) {
-            const price = parseFloat(flatFee.value).toFixed(2);
-            const days = duration.value;
-            const summaryPrice = document.getElementById('price-summary');
-            const summaryDuration = document.getElementById('duration-summary');
-            if (summaryPrice) summaryPrice.innerHTML = `$${price}`;
-            if (summaryDuration) summaryDuration.innerHTML = `for ${days} days`;
-        }
-    };
-
-    window.submitBoostCreation = function(event) {
-        event.preventDefault();
-        
-        const form = document.getElementById('create-boost-form');
-        if (!form) {
-            alert('Form not found');
-            return;
-        }
-        
-        const formData = new FormData(form);
-        const campaignId = window.currentCampaignId;
-        
-        if (!campaignId) {
-            alert('Error: Could not find campaign ID.');
-            return;
-        }
-        
-        const data = {
-            placement_type: formData.get('placement_type'),
-            duration_days: parseInt(formData.get('duration_days')),
-            flat_fee: parseFloat(formData.get('flat_fee')) || 0,
-            bid_amount: parseFloat(formData.get('bid_amount')) || 0,
-            keywords: formData.get('keywords') || '',
-            categories: formData.get('category') || '',
-        };
-        
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = 'Creating...';
-        submitBtn.disabled = true;
-        
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
-        
-        fetch(`/campaign/${campaignId}/boost/create/`, {
+        fetch(`/campaign/${campaignId}/post-comment/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(data)
+            body: formData
         })
-        .then(async response => {
-            const text = await response.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                throw new Error('Invalid response from server');
-            }
-            if (!response.ok) {
-                throw new Error(result.error || `HTTP ${response.status}`);
-            }
-            return result;
-        })
-        .then(result => {
-            if (result.success) {
-                alert('Boost created successfully!');
-                window.closeBoostForm();
-                window.closeCampaignManager();
-                window.location.reload();
-            } else {
-                alert('Error: ' + (result.error || 'Unknown error'));
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('commentsContent').innerHTML = html;
+            input.value = '';
+            const count = (html.match(/comment-item/g) || []).length;
+            document.getElementById('commentCount').textContent = count;
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            alert('Failed to post comment');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Post';
         });
     };
-
-    window.purchasePackage = function(packageId) {
-        alert(`Package ${packageId} selected. Payment integration coming soon!`);
+    
+    window.toggleLove = function(campaignId, btn) {
+        fetch(`/campaign/${campaignId}/toggle-love/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
+        .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
     };
-</script>
-
-<style>
-.loading-spinner {
-    border: 4px solid #333;
-    border-top: 4px solid #4CAF50;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-</style>
-
-<script type="text/javascript">
-    function toggleFullContent(campaignId) {
-        const short = document.getElementById(`caption-short-${campaignId}`);
-        const full = document.getElementById(`caption-full-${campaignId}`);
-        if (short.style.display === 'none') {
-            short.style.display = 'block';
-            full.style.display = 'none';
-        } else {
-            short.style.display = 'none';
-            full.style.display = 'block';
+    window.toggleFollow = function(campaignId, btn) {
+        fetch(`/campaign/${campaignId}/toggle-follow/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
+        .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
+    };
+    window.toggleSave = function(campaignId, btn) {
+        fetch(`/campaign/${campaignId}/toggle-save/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
+        .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
+    };
+    
+    window.openDonationModal = function(campaignId, title) { document.getElementById('donationTitle').textContent = title; document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId); document.getElementById('donationModal').classList.add('active'); document.getElementById('popupBackdrop').classList.add('active'); };
+    window.proceedToDonation = function() { const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id'); closeDonationModal(); window.location.href = `/campaign/${campaignId}/donate/`; };
+    window.handleShare = function(campaignId) { if(navigator.share){navigator.share({title:'Check out this cause',url:window.location.origin+`/journey/${campaignId}/`});}else{prompt('Copy link:',window.location.origin+`/journey/${campaignId}/`);} };
+    window.toggleCaption = function(campaignId) { const cap = document.getElementById(`caption-${campaignId}`); const link = event.target; cap.classList.toggle('expanded'); link.textContent = cap.classList.contains('expanded') ? 'less' : 'more'; };
+    
+    window.goToSlide = function(campaignId, index) { const container = document.getElementById(`slidesContainer-${campaignId}`); if(container) container.style.transform = `translateX(-${index * 100}%)`; const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); dots.forEach((dot,i)=>dot.classList.toggle('active',i===index)); };
+    window.toggleAutoplay = function(campaignId) { const btn = document.getElementById(`autoplayBtn-${campaignId}`); if(btn.classList.contains('playing')){ btn.innerHTML='<i class="fas fa-play"></i>'; btn.classList.remove('playing'); if(window.slideshowTimers && window.slideshowTimers[campaignId]) clearInterval(window.slideshowTimers[campaignId]); } else { btn.innerHTML='<i class="fas fa-pause"></i>'; btn.classList.add('playing'); const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0'); if(total>1){ if(!window.slideshowTimers) window.slideshowTimers={}; window.slideshowTimers[campaignId]=setInterval(()=>{ const cur = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1')-1; const next = (cur+1)%total; goToSlide(campaignId,next); },3000); } } };
+    
+    function updateExternalSidebars() {
+        if(window.innerWidth <= 768) return;
+        let container = document.getElementById('campaignsContainer');
+        let items = document.querySelectorAll('.campaign-item');
+        let scrollTop = container.scrollTop;
+        let activeIndex = 0;
+        for(let i=0;i<items.length;i++) { if(scrollTop >= items[i].offsetTop - 150) activeIndex = i; }
+        let active = items[activeIndex];
+        if(!active) return;
+        let campaignId = active.getAttribute('data-campaign-id');
+        let profileImage = active.querySelector('.action-profile')?.src || '';
+        
+        let rightContainer = document.getElementById('externalActionsRight');
+        let mobileActions = active.querySelector('.action-buttons');
+        if(mobileActions && rightContainer) {
+            let btns = mobileActions.querySelectorAll('.action-btn');
+            rightContainer.innerHTML = '';
+            
+            if(profileImage) {
+                let profileBtn = document.createElement('button');
+                profileBtn.className = 'external-profile';
+                profileBtn.innerHTML = `<img src="${profileImage}" alt="profile">`;
+                let username = active.querySelector('.username')?.innerText || '';
+                profileBtn.onclick = () => { window.location.href = `/profile/${username.replace('@', '')}/`; };
+                rightContainer.appendChild(profileBtn);
+            }
+            
+            btns.forEach(btn => {
+                if(btn.querySelector('.action-profile')) return;
+                let newBtn = document.createElement('button');
+                newBtn.className = 'external-action-item';
+                let icon = btn.querySelector('i').cloneNode(true);
+                let span = btn.querySelector('span').cloneNode(true);
+                newBtn.appendChild(icon); newBtn.appendChild(span);
+                let onclickAttr = btn.getAttribute('onclick');
+                if(onclickAttr) newBtn.setAttribute('onclick', onclickAttr);
+                rightContainer.appendChild(newBtn);
+            });
         }
+        
+        let leftContainer = document.getElementById('externalProgressLeft');
+        leftContainer.innerHTML = `<div class="stats-trigger" id="statsIconTriggerWeb"><i class="fas fa-chart-bar"></i><span>Stats</span></div>`;
+        let statsTrigger = document.getElementById('statsIconTriggerWeb');
+        if(statsTrigger) {
+            statsTrigger.onclick = () => { openStatsPopup(campaignId); };
+        }
+        window.currentJourneyId = campaignId;
+        window.currentJourneyTitle = active.getAttribute('data-campaign-title');
     }
+    
+    let journeyPopup = document.getElementById('journeyPopup'), journeyOverlay = document.getElementById('journeyOverlay'), journeyTimeout = null;
+    function showJourneyPopup() {
+        let title = window.currentJourneyTitle || 'Journey';
+        document.getElementById('journeyPopupText').innerHTML = `Continue "${title}" and see your impact.`;
+        journeyPopup.classList.add('active'); journeyOverlay.classList.add('active');
+        if(journeyTimeout) clearTimeout(journeyTimeout);
+        journeyTimeout = setTimeout(() => { hideJourneyPopup(); }, 7000);
+    }
+    function hideJourneyPopup() { journeyPopup.classList.remove('active'); journeyOverlay.classList.remove('active'); if(journeyTimeout) clearTimeout(journeyTimeout); }
+    document.getElementById('closeJourneyPopupBtn').onclick = hideJourneyPopup;
+    journeyOverlay.onclick = hideJourneyPopup;
+    document.getElementById('journeyConfirmBtn').onclick = () => { if(window.currentJourneyId) window.location.href = `/journey/${window.currentJourneyId}/`; else alert('Journey link ready'); hideJourneyPopup(); };
+    
+    function closeStatsProgress() { document.getElementById('statsProgressPopup').classList.remove('active'); document.getElementById('statsBackdrop').classList.remove('active'); }
+    document.getElementById('closeStatsPopupBtn').onclick = closeStatsProgress;
+    document.getElementById('statsBackdrop').onclick = closeStatsProgress;
+    
+    let scrollContainer = document.getElementById('campaignsContainer'), scrollTimer = null;
+    scrollContainer.addEventListener('scroll', () => { updateExternalSidebars(); if(scrollTimer) clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); });
+    window.addEventListener('resize', () => { updateExternalSidebars(); });
+    document.addEventListener('DOMContentLoaded', () => { updateExternalSidebars(); setTimeout(() => { showJourneyPopup(); }, 2000); });
+    
+    document.body.addEventListener('htmx:configRequest', function(evt) { evt.detail.headers['X-CSRFToken'] = getCSRFToken(); });
 </script>
-    <style>
-    .loading-spinner {
-        border: 4px solid #333;
-        border-top: 4px solid #4CAF50;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    </style>
 </body>
 </html>

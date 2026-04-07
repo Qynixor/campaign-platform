@@ -209,56 +209,28 @@
                 </p>
             </div>
         </div>
-
-        <!-- NOTE: Original premium content is commented out for now -->
-        {% comment %}
-        <!-- OWNER VIEW: Not Activated Trial -->
-        {% if is_owner and not owner_trial_active %}
-        ... existing owner trial content ...
-        {% endif %}
-        
-        <!-- OWNER VIEW: Trial Active - Show Premium Stats -->
-        {% elif is_owner and owner_trial_active %}
-        ... existing premium content ...
-        {% endif %}
-        
-        <!-- PREMIUM USER: Has access to stats (non-owner) -->
-        {% elif has_premium and not is_owner %}
-        ... existing premium content ...
-        {% endif %}
-
-        <!-- FREE USER: See payment options (non-owner) -->
-        {% elif can_purchase and not is_owner %}
-        ... existing upgrade content ...
-        {% endif %}
-
-        <!-- NOT LOGGED IN -->
-        {% else %}
-        ... existing login prompt ...
-        {% endif %}
-        {% endcomment %}
     </div>
 </div>
 
 <style>
-/* ===== UPDATED WITH COMING SOON STYLES ===== */
+/* ===== WHITE THEME STYLES ===== */
 :root {
     --twitter-blue: #1DA1F2;
-    --premium-gold: #FFD700;
-    --coming-soon-purple: #8b5cf6;
+    --premium-gold: #FFB800;
+    --coming-soon-purple: #7c3aed;
     --coming-soon-pink: #ec489a;
-    --bg-primary: #0a0a0a;
-    --bg-card: #1a1a1a;
-    --bg-elevated: #252525;
-    --border-subtle: rgba(255,255,255,0.08);
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255,255,255,0.7);
-    --text-muted: rgba(255,255,255,0.5);
-    --gradient-blue: linear-gradient(135deg, #1DA1F2, #1a8cd8);
-    --gradient-gold: linear-gradient(135deg, #FFD700, #e6c200);
-    --gradient-coming-soon: linear-gradient(135deg, #8b5cf6, #ec489a);
-    --shadow-sm: 0 4px 12px rgba(0,0,0,0.2);
-    --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
+    --bg-primary: #ffffff;
+    --bg-card: #f8f9fa;
+    --bg-elevated: #ffffff;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --gradient-blue: linear-gradient(135deg, #1DA1F2, #0d8bd9);
+    --gradient-gold: linear-gradient(135deg, #FFB800, #e6a600);
+    --gradient-coming-soon: linear-gradient(135deg, #7c3aed, #ec489a);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* Main Container */
@@ -274,12 +246,12 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Background Orbs */
+/* Background Orbs - Lighter for white theme */
 .bg-orb {
     position: absolute;
     width: 200px;
     height: 200px;
-    background: radial-gradient(circle, rgba(29,161,242,0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(29,161,242,0.08) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(40px);
     top: -50px;
@@ -288,7 +260,7 @@
 }
 
 .bg-orb.orb-2 {
-    background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255,184,0,0.06) 0%, transparent 70%);
     bottom: -50px;
     left: -50px;
     top: auto;
@@ -319,6 +291,7 @@
     font-size: 16px;
     font-weight: 600;
     margin: 0;
+    color: var(--text-primary);
 }
 
 .stats-title i {
@@ -330,7 +303,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.04);
     padding: 4px 10px;
     border-radius: 30px;
     font-size: 11px;
@@ -340,7 +313,7 @@
 .pulse-dot {
     width: 6px;
     height: 6px;
-    background: #00ff88;
+    background: #10b981;
     border-radius: 50%;
     animation: pulse 2s infinite;
 }
@@ -354,6 +327,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    color: white;
 }
 
 /* Stats Grid */
@@ -372,6 +346,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .stat-icon {
@@ -386,11 +366,11 @@
     color: var(--twitter-blue);
 }
 
-.stat-icon.loves { background: rgba(255,77,77,0.1); color: #ff4d4d; }
-.stat-icon.comments { background: rgba(0,200,255,0.1); color: #00c8ff; }
-.stat-icon.saves { background: rgba(255,215,0,0.1); color: var(--premium-gold); }
-.stat-icon.donors { background: rgba(0,255,150,0.1); color: #00ff96; }
-.stat-icon.days { background: rgba(255,159,28,0.1); color: #ff9f1c; }
+.stat-icon.loves { background: rgba(239,68,68,0.1); color: #ef4444; }
+.stat-icon.comments { background: rgba(6,182,212,0.1); color: #06b6d4; }
+.stat-icon.saves { background: rgba(255,184,0,0.1); color: #d97706; }
+.stat-icon.donors { background: rgba(16,185,129,0.1); color: #10b981; }
+.stat-icon.days { background: rgba(249,115,22,0.1); color: #f97316; }
 
 .stat-content {
     flex: 1;
@@ -401,6 +381,7 @@
     font-size: 18px;
     font-weight: 700;
     line-height: 1.2;
+    color: var(--text-primary);
 }
 
 .stat-label {
@@ -412,8 +393,8 @@
 
 /* Funding Section */
 .funding-section {
-    background: var(--bg-card);
-    border: 1px solid rgba(255,215,0,0.2);
+    background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+    border: 1px solid rgba(255,184,0,0.2);
     border-radius: 20px;
     padding: 16px;
 }
@@ -431,6 +412,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    color: var(--text-primary);
 }
 
 .funding-header h4 i {
@@ -439,8 +421,8 @@
 }
 
 .funding-badge {
-    background: rgba(255,215,0,0.1);
-    color: var(--premium-gold);
+    background: rgba(255,184,0,0.15);
+    color: #b45309;
     padding: 2px 10px;
     border-radius: 30px;
     font-size: 11px;
@@ -457,7 +439,7 @@
 .funding-raised {
     font-size: 24px;
     font-weight: 800;
-    color: var(--premium-gold);
+    color: #d97706;
 }
 
 .funding-goal {
@@ -467,21 +449,21 @@
 
 .progress-bar-container {
     padding: 2px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 20px;
     margin: 10px 0;
 }
 
 .progress-bar {
     height: 8px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 20px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    background: var(--gradient-blue);
+    background: var(--gradient-gold);
     border-radius: 20px;
     transition: width 0.3s ease;
 }
@@ -504,17 +486,19 @@
     padding: 20px;
     position: relative;
     z-index: 1;
+    background: var(--bg-primary);
 }
 
-/* ===== COMING SOON CARD STYLES ===== */
+/* ===== COMING SOON CARD STYLES - WHITE THEME ===== */
 .coming-soon-card {
-    background: linear-gradient(145deg, #1a1a1a, #151515);
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: linear-gradient(145deg, #f8f9fa, #ffffff);
+    border: 1px solid rgba(124, 58, 237, 0.2);
     border-radius: 24px;
     padding: 28px 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
 .coming-soon-glow {
@@ -523,7 +507,7 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(124,58,237,0.05) 0%, transparent 70%);
     animation: rotate 20s linear infinite;
     pointer-events: none;
 }
@@ -537,8 +521,8 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(139, 92, 246, 0.2);
-    border: 1px solid rgba(139, 92, 246, 0.4);
+    background: rgba(124, 58, 237, 0.1);
+    border: 1px solid rgba(124, 58, 237, 0.3);
     color: var(--coming-soon-purple);
     padding: 6px 16px;
     border-radius: 40px;
@@ -549,14 +533,14 @@
 }
 
 @keyframes pulse-border {
-    0%, 100% { border-color: rgba(139, 92, 246, 0.4); }
-    50% { border-color: rgba(139, 92, 246, 0.8); }
+    0%, 100% { border-color: rgba(124, 58, 237, 0.3); }
+    50% { border-color: rgba(124, 58, 237, 0.6); }
 }
 
 .coming-soon-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.2));
+    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(236,72,153,0.1));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -602,20 +586,20 @@
     display: flex;
     gap: 12px;
     padding: 12px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(124, 58, 237, 0.03);
     border-radius: 16px;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .preview-feature:hover {
     transform: translateX(5px);
-    background: rgba(139,92,246,0.1);
+    background: rgba(124, 58, 237, 0.08);
 }
 
 .feature-icon {
     width: 40px;
     height: 40px;
-    background: rgba(139,92,246,0.2);
+    background: rgba(124, 58, 237, 0.1);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -628,6 +612,7 @@
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
+    color: var(--text-primary);
 }
 
 .feature-info p {
@@ -640,7 +625,7 @@
 .early-access-form {
     margin: 24px 0;
     padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .early-access-text {
@@ -661,8 +646,8 @@
 
 .email-input {
     flex: 1;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border-subtle);
+    background: #f8f9fa;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 40px;
     padding: 12px 16px;
     color: var(--text-primary);
@@ -673,7 +658,8 @@
 .email-input:focus {
     outline: none;
     border-color: var(--coming-soon-purple);
-    background: rgba(255,255,255,0.08);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
 }
 
 .email-input::placeholder {
@@ -698,7 +684,7 @@
 
 .btn-notify:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+    box-shadow: 0 4px 12px rgba(124,58,237,0.3);
 }
 
 .notification-message {
@@ -709,20 +695,20 @@
 }
 
 .notification-message.success {
-    background: rgba(0,255,0,0.1);
-    color: #00ff00;
+    background: rgba(16,185,129,0.1);
+    color: #059669;
 }
 
 .notification-message.error {
-    background: rgba(255,0,0,0.1);
-    color: #ff4444;
+    background: rgba(239,68,68,0.1);
+    color: #dc2626;
 }
 
 /* Launch Timeline */
 .launch-timeline {
     margin-top: 24px;
     padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .timeline-item {
@@ -757,7 +743,7 @@
 
 .timeline-progress {
     height: 4px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 10px;
     overflow: hidden;
     margin: 8px 0;
