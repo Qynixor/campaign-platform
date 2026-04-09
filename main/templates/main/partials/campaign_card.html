@@ -1,5 +1,5 @@
 {% load static %}
-<div class="campaign-item" id="campaign-{{ campaign.id }}" data-campaign-id="{{ campaign.id }}" data-campaign-title="{{ campaign.title }}" data-progress="{{ campaign.progress_percentage|default:0|floatformat:0 }}">
+<div class="campaign-item" id="campaign-{{ campaign.id }}" data-campaign-id="{{ campaign.id }}">
     <!-- Audio trigger (click anywhere on image to toggle audio) -->
     <div class="audio-trigger" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer;"></div>
     
@@ -14,14 +14,15 @@
         </div>
     </div>
 
-    <!-- Gradients (soft for white text readability) -->
+    <!-- Gradients -->
     <div class="gradient-top"></div>
     <div class="gradient-bottom"></div>
 
-    <!-- Title Overlay - White background with black text -->
-    <div class="campaign-title-overlay">
-        <h1 class="campaign-title">{{ campaign.title }}</h1>
-    </div>
+<!-- ===== ADD THIS TITLE OVERLAY SECTION ===== -->
+<div class="campaign-title-overlay">
+    <h1 class="campaign-title">{{ campaign.title }}</h1>
+</div>
+<!-- ===== END TITLE OVERLAY ===== -->
 
     <!-- Top Bar -->
     <div class="top-bar">
@@ -35,7 +36,14 @@
         </div>
     </div>
 
-    <!-- Action Buttons (Mobile - inside reel) -->
+    <!-- Journey Link -->
+    <div class="journey-center-link">
+      <a href="/campaign/{{ campaign.id }}/activity_list/" class="journey-link" onclick="event.stopPropagation()">
+    <i class="fas fa-compass"></i> view journey
+</a>
+    </div>
+
+    <!-- Action Buttons -->
     <div class="action-buttons">
         <!-- Profile Image -->
         <img src="{{ campaign.get_profile_image }}" 
@@ -76,7 +84,7 @@
 
         <!-- Donate Button -->
         <button class="action-btn" onclick="openDonationModal({{ campaign.id }}, '{{ campaign.title|escapejs }}')">
-            <i class="fas fa-hand-holding-heart"></i>
+            <i class="fas fa-hand-holding-heart" style="color: #4CAF50;"></i>
             <span>{{ campaign.get_donor_count }}</span>
         </button>
 
@@ -105,30 +113,31 @@
             <span class="timestamp">• {{ campaign.time_ago }}</span>
         </div>
 
+        <!-- Caption -->
         <!-- Caption with Tags -->
-        <div class="caption" id="caption-{{ campaign.id }}">
-            <div id="caption-short-{{ campaign.id }}">
-                {% for tag in campaign.tags.all|slice:":3" %}
-                    <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
-                {% endfor %}
-                {% if campaign.content|length > 35 %}
-                    {{ campaign.content|slice:":35" }}...
-                {% else %}
-                    {{ campaign.content }}
-                {% endif %}
-                {% if campaign.tags.count > 3 or campaign.content|length > 35 %}
-                    <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> more</span>
-                {% endif %}
-            </div>
-            <div id="caption-full-{{ campaign.id }}" style="display: none;">
-                {% for tag in campaign.tags.all %}
-                    <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
-                {% endfor %}
-                {{ campaign.content }}
-                <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> less</span>
-            </div>
-        </div>
-
+<!-- Caption with Tags -->
+<div class="caption" id="caption-{{ campaign.id }}">
+    <div id="caption-short-{{ campaign.id }}">
+        {% for tag in campaign.tags.all|slice:":3" %}
+            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+        {% endfor %}
+        {% if campaign.content|length > 35 %}
+            {{ campaign.content|slice:":35" }}...
+        {% else %}
+            {{ campaign.content }}
+        {% endif %}
+        {% if campaign.tags.count > 3 or campaign.content|length > 35 %}
+            <span class="more-link" onclick="toggleCaption('{{ campaign.id }}', this)">more</span>
+        {% endif %}
+    </div>
+    <div id="caption-full-{{ campaign.id }}" style="display: none;">
+        {% for tag in campaign.tags.all %}
+            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+        {% endfor %}
+        {{ campaign.content }}
+        <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> less</span>
+    </div>
+</div>
         <!-- Slide Controls -->
         {% if campaign.get_image_count > 1 %}
         <div class="slide-controls">
@@ -169,7 +178,7 @@
 
         <!-- Donation Progress -->
         {% if campaign.funding_goal and campaign.funding_goal > 0 %}
-        <div class="donation-progress" style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); border-radius: 20px;">
+        <div class="donation-progress" style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #ddd;">
                 <span class="raised-amount" style="font-weight: 600; color: #4CAF50;">${{ campaign.total_donations|floatformat:0 }}</span>
                 <span>raised of ${{ campaign.funding_goal|floatformat:0 }}</span>
@@ -185,36 +194,44 @@
         {% endif %}
     </div>
 
-    <!-- Audio Element -->
-    <audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
-</div>
+   <!-- Audio Element -->
+<audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
 
 <script>
 (function() {
+    // Get elements for THIS specific campaign only
     const campaignId = {{ campaign.id }};
     const audio = document.getElementById(`bgAudio-${campaignId}`);
     const trigger = document.querySelector(`#campaign-${campaignId} .audio-trigger`);
     
     if (!audio || !trigger) return;
     
+    // Simple toggle function
     function toggleAudio(e) {
         e.preventDefault();
         e.stopPropagation();
         
         if (audio.paused) {
+            // Pause ALL other audio first
             document.querySelectorAll('.bg-audio').forEach(otherAudio => {
                 if (!otherAudio.paused && otherAudio !== audio) {
                     otherAudio.pause();
                 }
             });
-            audio.play().catch(err => console.log('Audio play failed:', err));
+            
+            // Play this audio
+            audio.play().catch(err => {
+                console.log('Audio play failed:', err);
+            });
         } else {
             audio.pause();
         }
     }
     
+    // Add click listener
     trigger.addEventListener('click', toggleAudio);
     
+    // Pause when campaign scrolls out of view
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (!entry.isIntersecting && !audio.paused) {
@@ -224,8 +241,11 @@
     }, { threshold: 0.1 });
     
     observer.observe(document.getElementById(`campaign-${campaignId}`));
+    
 })();
 </script>
+</div>
+
 
 {% if campaign %}
 <script type="application/ld+json">
@@ -236,16 +256,84 @@
     "description": "{{ campaign.content|escapejs|truncatechars:300 }}",
     "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'view_campaign' campaign_id=campaign.id %}",
     "image": "{{ campaign.poster.url|default:'https://rallynex.com/static/images/default-campaign.jpg' }}",
-    "fundingGoal": {"@type": "MonetaryAmount", "currency": "USD", "value": {{ campaign.funding_goal|default:0 }}},
-    "totalDonations": {"@type": "MonetaryAmount", "currency": "USD", "value": {{ campaign.total_donations|default:0 }}},
+    "fundedBy": {
+        "@type": "Organization",
+        "name": "RallyNex"
+    },
+    "fundingGoal": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": {{ campaign.funding_goal|default:0 }}
+    },
+    "totalDonations": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": {{ campaign.total_donations|default:0 }}
+    },
     "donationCount": {{ campaign.get_donor_count|default:0 }},
     "dateCreated": "{{ campaign.timestamp|date:'Y-m-d' }}",
+    "datePublished": "{{ campaign.timestamp|date:'Y-m-d' }}",
+    "dateModified": "{{ campaign.timestamp|date:'Y-m-d' }}",
     "status": "{{ campaign.is_active|yesno:'Active,Ended' }}",
-    "author": {"@type": "Person", "name": "{{ campaign.get_username|escapejs }}"},
+    "potentialAction": {
+        "@type": "DonateAction",
+        "name": "Support this journey",
+        "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}{% url 'create_donation' campaign_id=campaign.id %}",
+            "inLanguage": "en-US",
+            "actionPlatform": [
+                "http://schema.org/DesktopWebPlatform",
+                "http://schema.org/MobileWebPlatform"
+            ]
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "{{ campaign.get_username|escapejs }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'profile_view' username=campaign.get_username %}"
+    },
+    "creator": {
+        "@type": "Person",
+        "name": "{{ campaign.get_username|escapejs }}"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "RallyNex",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-logo.png' %}"
+        }
+    },
     "interactionStatistic": [
-        {"@type": "InteractionCounter", "interactionType": "https://schema.org/LikeAction", "userInteractionCount": {{ campaign.get_love_count|default:0 }}},
-        {"@type": "InteractionCounter", "interactionType": "https://schema.org/CommentAction", "userInteractionCount": {{ campaign.get_comment_count|default:0 }}}
-    ]
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": {{ campaign.get_love_count|default:0 }}
+        },
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/CommentAction",
+            "userInteractionCount": {{ campaign.get_comment_count|default:0 }}
+        },
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/ShareAction",
+            "userInteractionCount": {{ campaign.get_share_count|default:0 }}
+        }
+    ],
+    "video": {% if campaign.get_images %}[
+        {% for image in campaign.get_images %}
+        {
+            "@type": "VideoObject",
+            "name": "Day {{ forloop.counter }} update",
+            "description": "Daily update from {{ campaign.get_username }}'s journey",
+            "thumbnailUrl": "{{ image }}",
+            "contentUrl": "{{ image }}",
+            "uploadDate": "{{ campaign.timestamp|date:'Y-m-d' }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]{% else %}[]{% endif %}
 }
 </script>
 {% endif %}

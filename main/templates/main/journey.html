@@ -435,32 +435,33 @@
             backdrop-filter: blur(4px);
         }
         
-        .campaign-title-overlay {
-            position: absolute;
-            top: 18%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 26;
-            text-align: center;
-            width: auto;
-            max-width: 85%;
-            pointer-events: none;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(4px);
-            padding: 8px 20px;
-            border-radius: 60px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: inline-block;
-            white-space: nowrap;
-        }
-        
-        @media (max-width: 480px) {
-            .campaign-title-overlay {
-                white-space: normal;
-                max-width: 85%;
-                padding: 6px 16px;
-            }
-        }
+     .campaign-title-overlay {
+    position: absolute;
+    top: 18%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 26;
+    text-align: center;
+    width: auto;
+    max-width: 85%;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    padding: 8px 20px;
+    border-radius: 12px;  /* Changed from 60px to 12px for rectangular look */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: inline-block;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .campaign-title-overlay {
+        white-space: normal;
+        max-width: 85%;
+        padding: 6px 16px;
+        border-radius: 10px;  /* Slightly smaller radius for mobile */
+    }
+}
         
         .campaign-title { 
             font-size: 16px; 
@@ -1222,7 +1223,81 @@
         if (container) {
             container.scrollTop = 0;
         }
+        initializeAllSlides();
+        startAutoplayForActiveSlide(); // Start autoplay for the first visible slide
     });
+    
+    // Initialize slides for all campaigns
+    function initializeAllSlides() {
+        document.querySelectorAll('.campaign-item').forEach(item => {
+            const campaignId = item.getAttribute('data-campaign-id');
+            if (campaignId) {
+                updateSlideIndicators(campaignId, 0);
+            }
+        });
+    }
+    
+    // Start autoplay for the currently active/visible slide
+    function startAutoplayForActiveSlide() {
+        const container = document.getElementById('campaignsContainer');
+        const items = document.querySelectorAll('.campaign-item');
+        const scrollTop = container.scrollTop;
+        
+        let activeCampaignId = null;
+        for (let i = 0; i < items.length; i++) {
+            if (scrollTop >= items[i].offsetTop - 150) {
+                activeCampaignId = items[i].getAttribute('data-campaign-id');
+            }
+        }
+        
+        if (activeCampaignId) {
+            // Check if this campaign has multiple slides
+            const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
+            if (total > 1) {
+                startAutoplay(activeCampaignId);
+            }
+        }
+    }
+    
+    // Helper function to start autoplay for a specific campaign
+    function startAutoplay(campaignId) {
+        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+        if (!btn) return;
+        
+        // Only start if not already playing
+        if (btn.classList.contains('playing')) return;
+        
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
+        btn.classList.add('playing');
+        
+        const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
+        if (total > 1) {
+            if (!window.slideshowTimers) window.slideshowTimers = {};
+            // Clear any existing timer
+            if (window.slideshowTimers[campaignId]) {
+                clearInterval(window.slideshowTimers[campaignId]);
+            }
+            window.slideshowTimers[campaignId] = setInterval(() => {
+                const currentSlide = parseInt(document.querySelector(`#currentSlide-${campaignId}`)?.textContent || '1') - 1;
+                const nextIndex = (currentSlide + 1) % total;
+                goToSlide(campaignId, nextIndex);
+            }, 3000);
+        }
+    }
+    
+    // Helper function to stop autoplay for a specific campaign
+    function stopAutoplay(campaignId) {
+        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-play"></i>';
+            btn.classList.remove('playing');
+        }
+        
+        if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
+            clearInterval(window.slideshowTimers[campaignId]);
+            delete window.slideshowTimers[campaignId];
+        }
+    }
     
     function getCSRFToken() { 
         return document.querySelector('meta[name="csrf-token"]').content; 
@@ -1519,40 +1594,107 @@
         }
     };
     
-    window.toggleCaption = function(campaignId) { 
-        const cap = document.getElementById(`caption-${campaignId}`); 
-        const link = event.target; 
-        cap.classList.toggle('expanded'); 
-        link.textContent = cap.classList.contains('expanded') ? 'less' : 'more'; 
+    // Toggle caption for the structure with short and full divs
+    window.toggleCaption = function(campaignId, element) { 
+        const shortDiv = document.getElementById(`caption-short-${campaignId}`);
+        const fullDiv = document.getElementById(`caption-full-${campaignId}`);
+        
+        if (shortDiv && fullDiv) {
+            if (fullDiv.style.display === 'none') {
+                shortDiv.style.display = 'none';
+                fullDiv.style.display = 'block';
+                if (element) {
+                    element.textContent = 'less';
+                }
+            } else {
+                shortDiv.style.display = 'block';
+                fullDiv.style.display = 'none';
+                if (element) {
+                    element.textContent = 'more';
+                }
+            }
+        }
     };
     
+    // Toggle full content (called from the "less" link)
+    window.toggleFullContent = function(campaignId) {
+        const shortDiv = document.getElementById(`caption-short-${campaignId}`);
+        const fullDiv = document.getElementById(`caption-full-${campaignId}`);
+        
+        if (shortDiv && fullDiv) {
+            shortDiv.style.display = 'block';
+            fullDiv.style.display = 'none';
+        }
+    };
+    
+    // Update slide indicators
+    function updateSlideIndicators(campaignId, currentIndex) {
+        const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); 
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
+        
+        const currentSlideSpan = document.querySelector(`#currentSlide-${campaignId}`);
+        if (currentSlideSpan) {
+            currentSlideSpan.textContent = currentIndex + 1;
+        }
+    }
+    
+    // Go to specific slide
     window.goToSlide = function(campaignId, index) { 
         const container = document.getElementById(`slidesContainer-${campaignId}`); 
-        if(container) container.style.transform = `translateX(-${index * 100}%)`; 
-        const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); 
-        dots.forEach((dot,i)=>dot.classList.toggle('active',i===index)); 
+        if (container) {
+            container.style.transform = `translateX(-${index * 100}%)`;
+            updateSlideIndicators(campaignId, index);
+        }
     };
     
+    // Toggle autoplay (user control)
     window.toggleAutoplay = function(campaignId) { 
         const btn = document.getElementById(`autoplayBtn-${campaignId}`); 
-        if(btn.classList.contains('playing')){ 
-            btn.innerHTML='<i class="fas fa-play"></i>'; 
-            btn.classList.remove('playing'); 
-            if(window.slideshowTimers && window.slideshowTimers[campaignId]) clearInterval(window.slideshowTimers[campaignId]); 
+        if (!btn) return;
+        
+        if (btn.classList.contains('playing')) { 
+            stopAutoplay(campaignId);
         } else { 
-            btn.innerHTML='<i class="fas fa-pause"></i>'; 
-            btn.classList.add('playing'); 
-            const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0'); 
-            if(total>1){ 
-                if(!window.slideshowTimers) window.slideshowTimers={}; 
-                window.slideshowTimers[campaignId]=setInterval(()=>{ 
-                    const cur = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1')-1; 
-                    const next = (cur+1)%total; 
-                    goToSlide(campaignId,next); 
-                },3000); 
-            } 
+            startAutoplay(campaignId);
         } 
     };
+    
+    // Clean up autoplay when scrolling away
+    function handleScrollAutoplay() {
+        const container = document.getElementById('campaignsContainer');
+        const items = document.querySelectorAll('.campaign-item');
+        const scrollTop = container.scrollTop;
+        
+        let activeCampaignId = null;
+        
+        items.forEach((item) => {
+            const campaignId = item.getAttribute('data-campaign-id');
+            const isActive = scrollTop >= item.offsetTop - 150 && scrollTop < item.offsetTop + item.offsetHeight - 150;
+            
+            if (isActive) {
+                activeCampaignId = campaignId;
+            } else {
+                // Stop autoplay for inactive slides
+                if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
+                    stopAutoplay(campaignId);
+                }
+            }
+        });
+        
+        // Start autoplay for the newly active slide if it has multiple images
+        if (activeCampaignId) {
+            const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
+            if (total > 1) {
+                // Check if it's already playing
+                const btn = document.getElementById(`autoplayBtn-${activeCampaignId}`);
+                if (btn && !btn.classList.contains('playing')) {
+                    startAutoplay(activeCampaignId);
+                }
+            }
+        }
+    }
     
     function updateExternalSidebars() {
         if(window.innerWidth <= 768) return;
@@ -1641,6 +1783,7 @@
     let scrollContainer = document.getElementById('campaignsContainer'), scrollTimer = null;
     scrollContainer.addEventListener('scroll', () => { 
         updateExternalSidebars(); 
+        handleScrollAutoplay(); // Handle autoplay on scroll
         if(scrollTimer) clearTimeout(scrollTimer); 
         scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); 
     });
@@ -1648,7 +1791,11 @@
     window.addEventListener('resize', () => { updateExternalSidebars(); });
     document.addEventListener('DOMContentLoaded', () => { 
         updateExternalSidebars(); 
-        setTimeout(() => { showJourneyPopup(); }, 2000); 
+        initializeAllSlides();
+        setTimeout(() => { 
+            showJourneyPopup(); 
+            startAutoplayForActiveSlide(); // Start autoplay after a short delay
+        }, 500); 
     });
     
     document.body.addEventListener('htmx:configRequest', function(evt) { 
