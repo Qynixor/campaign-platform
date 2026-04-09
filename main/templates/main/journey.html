@@ -10,7 +10,13 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
             background: #f0f2f5;
@@ -23,7 +29,13 @@
             width: 100%;
             height: 100%;
         }
-        :root { --vh: 1vh; }
+        
+        :root { 
+            --vh: 1vh; 
+            --safe-area-top: env(safe-area-inset-top, 0px);
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
         .reel-container {
             width: 100%;
             max-width: 400px;
@@ -35,6 +47,7 @@
             border-radius: 0;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
         }
+        
         .campaigns-container {
             position: absolute;
             top: 0;
@@ -47,16 +60,23 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
-        .campaigns-container::-webkit-scrollbar { display: none; }
+        
+        .campaigns-container::-webkit-scrollbar { 
+            display: none; 
+        }
+        
         .campaign-item {
             min-height: 100vh;
             min-height: calc(var(--vh, 1vh) * 100);
             height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
             scroll-snap-align: start;
+            scroll-snap-stop: always;
             position: relative;
             overflow: hidden;
             background: #000000;
         }
+        
         .image-slideshow {
             position: absolute;
             top: 0;
@@ -67,9 +87,25 @@
             overflow: hidden;
             background: #0a0a0a;
         }
-        .slides-container { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-out; }
-        .slide-item { flex: 0 0 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        
+        .slides-container { 
+            display: flex; 
+            height: 100%; 
+            width: 100%; 
+            transition: transform 0.3s ease-out; 
+        }
+        
+        .slide-item { 
+            flex: 0 0 100%; 
+            height: 100%; 
+        }
+        
+        .slide-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block; 
+        }
         
         .gradient-top {
             position: absolute;
@@ -77,7 +113,7 @@
             left: 0;
             right: 0;
             height: 180px;
-            background: transparent;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%);
             z-index: 5;
             pointer-events: none;
         }
@@ -88,18 +124,21 @@
             left: 0;
             right: 0;
             height: 280px;
-            background: transparent;
+            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
             z-index: 5;
             pointer-events: none;
         }
         
-        /* MOBILE TOP BAR - Fixed positioning */
+        /* TOP BAR - Mobile Optimized */
         .top-bar {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            padding: 50px 16px 10px;
+            padding-top: calc(12px + var(--safe-area-top));
+            padding-left: 8px;
+            padding-right: 16px;
+            padding-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -107,29 +146,41 @@
             background: transparent;
         }
         
-        .left-group { display: flex; align-items: center; gap: 12px; }
+        .left-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
         
-        .stats-icon { display: none; }
+        .stats-icon { 
+            display: none; 
+        }
         
-        /* MOBILE BACK ARROW - Fixed to always show on mobile */
+        /* BACK ARROW - Extreme top left for mobile */
         .back-arrow {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: transparent;
             border: none;
             display: none;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            padding: 0;
+            margin: 0;
         }
         
         @media (max-width: 768px) {
             .back-arrow {
                 display: flex !important;
             }
+        }
+        
+        .back-arrow:active {
+            opacity: 0.7;
         }
         
         /* WEB BACK ARROW - Keep as is */
@@ -150,107 +201,188 @@
             z-index: 10000;
             transition: transform 0.15s;
         }
-        .web-back-arrow:active { transform: scale(0.9); }
-        @media (max-width: 768px) { .web-back-arrow { display: none; } }
         
-/* MOBILE ACTION BUTTONS - Adjusted padding and bottom spacing */
-.action-buttons {
-    position: absolute;
-    right: 12px;
-    bottom: 80px;  /* Reduced from 100px to bring buttons up */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;  /* Reduced from 20px for tighter spacing */
-    z-index: 40;
-}
-
-@media (min-width: 769px) {
-    .action-buttons {
-        display: none !important;
-    }
-}
-
-.action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 8px;  /* Added padding for larger touch area */
-    min-width: 48px;  /* Ensure minimum touch target size */
-    min-height: 48px;  /* Ensure minimum touch target size */
-}
-
-.action-btn i { 
-    font-size: 30px;  /* Slightly reduced from 32px */
-    color: #ffffff; 
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3); 
-}
-
-.action-btn span { 
-    font-size: 11px;  /* Slightly reduced from 12px */
-    font-weight: 600; 
-    color: #ffffff; 
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3); 
-}
-
-.action-btn:active { 
-    transform: scale(0.92); 
-    background: rgba(255, 255, 255, 0.1);  /* Added subtle feedback on tap */
-    border-radius: 12px;  /* Rounded corners for the tap feedback */
-}
-
-.action-profile {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 2px solid white;
-    object-fit: cover;
-    cursor: pointer;
-    margin-bottom: 4px;  /* Reduced from 8px */
-    padding: 0;  /* No extra padding needed for image */
-}
-.info-panel {
-    position: absolute;
-    bottom: 20px;  /* Reduced from 28px to balance with buttons moving up */
-    left: 16px;
-    right: 80px;  /* Slightly reduced from 85px to give more text space */
-    z-index: 20;
-    color: #ffffff;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-        .username-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
-        .username { font-weight: 700; font-size: 16px; color: #ffffff; text-decoration: none; }
-        .verified { color: #1DA1F2; font-size: 13px; }
-        .timestamp { font-size: 12px; color: rgba(255,255,255,0.75); }
+        .web-back-arrow:active { 
+            transform: scale(0.9); 
+        }
+        
+        @media (max-width: 768px) { 
+            .web-back-arrow { 
+                display: none; 
+            } 
+        }
+        
+        /* ACTION BUTTONS - Mobile Optimized for all screen sizes */
+        .action-buttons {
+            position: absolute;
+            right: 8px;
+            bottom: 70px;
+            bottom: calc(70px + var(--safe-area-bottom));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 40;
+        }
+        
+        @media (min-width: 769px) {
+            .action-buttons {
+                display: none !important;
+            }
+        }
+        
+        /* For very small screens like Samsung S7 (360x640) */
+        @media (max-height: 640px) {
+            .action-buttons {
+                bottom: 60px;
+                gap: 8px;
+            }
+        }
+        
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            min-width: 44px;
+            min-height: 44px;
+            transition: all 0.15s;
+        }
+        
+        .action-btn i { 
+            font-size: 28px; 
+            color: #ffffff; 
+            text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+        
+        .action-btn span { 
+            font-size: 10px; 
+            font-weight: 600; 
+            color: #ffffff; 
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            letter-spacing: -0.2px;
+        }
+        
+        .action-btn:active { 
+            transform: scale(0.88); 
+        }
+        
+        .action-btn.loved i { 
+            color: #ff3b30; 
+        }
+        
+        .action-btn.following i { 
+            color: #4CAF50; 
+        }
+        
+        .action-btn.saved i { 
+            color: #FFD700; 
+        }
+        
+        .action-profile {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+            object-fit: cover;
+            cursor: pointer;
+            margin-bottom: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        /* INFO PANEL - Adjusted for better mobile spacing */
+        .info-panel {
+            position: absolute;
+            bottom: 16px;
+            bottom: calc(16px + var(--safe-area-bottom));
+            left: 12px;
+            right: 75px;
+            z-index: 20;
+            color: #ffffff;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+        
+        /* For very small screens */
+        @media (max-height: 640px) {
+            .info-panel {
+                bottom: 12px;
+            }
+        }
+        
+        .username-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            margin-bottom: 6px; 
+            flex-wrap: wrap; 
+        }
+        
+        .username { 
+            font-weight: 700; 
+            font-size: 15px; 
+            color: #ffffff; 
+            text-decoration: none; 
+        }
+        
+        .verified { 
+            color: #1DA1F2; 
+            font-size: 12px; 
+        }
+        
+        .timestamp { 
+            font-size: 11px; 
+            color: rgba(255,255,255,0.75); 
+        }
+        
         .caption {
-            font-size: 15px;
-            line-height: 1.45;
-            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 6px;
             color: #ffffff;
             font-weight: 500;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
         }
-        .caption.expanded { -webkit-line-clamp: unset; }
-        .more-link { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); cursor: pointer; display: inline-block; margin-bottom: 10px; }
+        
+        .caption.expanded { 
+            -webkit-line-clamp: unset; 
+        }
+        
+        .more-link { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: rgba(255,255,255,0.9); 
+            cursor: pointer; 
+            display: inline-block; 
+            margin-bottom: 8px;
+            padding: 2px 0;
+        }
+        
         .slide-controls {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: rgba(0,0,0,0.4);
             backdrop-filter: blur(8px);
-            padding: 5px 14px;
+            padding: 4px 12px;
             border-radius: 40px;
-            margin: 8px 0;
+            margin: 6px 0;
         }
-        .slide-indicators { display: flex; gap: 6px; }
+        
+        .slide-indicators { 
+            display: flex; 
+            gap: 5px; 
+        }
+        
         .indicator-dot {
             width: 5px;
             height: 5px;
@@ -259,42 +391,63 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            padding: 0;
         }
-        .indicator-dot.active { background: #ffffff; width: 20px; }
+        
+        .indicator-dot.active { 
+            background: #ffffff; 
+            width: 18px; 
+        }
+        
         .autoplay-btn {
             background: transparent;
             border: none;
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             border-left: 1px solid rgba(255,255,255,0.3);
-            padding-left: 10px;
+            padding-left: 8px;
         }
-        .meta-row { display: flex; gap: 16px; font-size: 12px; color: rgba(255,255,255,0.9); margin: 8px 0; }
-        .media-stats-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+        
+        .meta-row { 
+            display: flex; 
+            gap: 14px; 
+            font-size: 11px; 
+            color: rgba(255,255,255,0.9); 
+            margin: 6px 0; 
+        }
+        
+        .media-stats-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            margin: 6px 0; 
+        }
+        
         .media-counter, .slide-counter {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             background: rgba(0,0,0,0.4);
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             backdrop-filter: blur(4px);
         }
         
         .campaign-title-overlay {
             position: absolute;
-            top: 20%;
+            top: 18%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 26;
             text-align: center;
             width: auto;
+            max-width: 85%;
             pointer-events: none;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(4px);
-            padding: 10px 24px;
+            padding: 8px 20px;
             border-radius: 60px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: inline-block;
@@ -305,12 +458,12 @@
             .campaign-title-overlay {
                 white-space: normal;
                 max-width: 85%;
-                padding: 8px 18px;
+                padding: 6px 16px;
             }
         }
         
         .campaign-title { 
-            font-size: 18px; 
+            font-size: 16px; 
             font-weight: 800; 
             color: #000000; 
             letter-spacing: -0.3px;
@@ -321,7 +474,7 @@
         
         @media (max-width: 480px) {
             .campaign-title {
-                font-size: 16px;
+                font-size: 14px;
             }
         }
         
@@ -341,6 +494,7 @@
             margin-right: 20px;
             align-items: center;
         }
+        
         .external-progress-left {
             position: fixed;
             left: calc(50% + 220px);
@@ -355,8 +509,11 @@
             padding: 0;
             margin-left: 20px;
         }
+        
         @media (max-width: 768px) {
-            .external-actions-right, .external-progress-left { display: none; }
+            .external-actions-right, .external-progress-left { 
+                display: none; 
+            }
         }
         
         .external-action-item {
@@ -370,9 +527,21 @@
             padding: 0;
             transition: transform 0.15s;
         }
-        .external-action-item i { font-size: 30px; color: #000000; }
-        .external-action-item span { font-size: 11px; font-weight: 600; color: #1a1a1a; }
-        .external-action-item:active { transform: scale(0.92); }
+        
+        .external-action-item i { 
+            font-size: 30px; 
+            color: #000000; 
+        }
+        
+        .external-action-item span { 
+            font-size: 11px; 
+            font-weight: 600; 
+            color: #1a1a1a; 
+        }
+        
+        .external-action-item:active { 
+            transform: scale(0.92); 
+        }
         
         .external-profile {
             display: flex;
@@ -385,6 +554,7 @@
             padding: 0;
             transition: transform 0.15s;
         }
+        
         .external-profile img {
             width: 52px;
             height: 52px;
@@ -392,7 +562,10 @@
             object-fit: cover;
             border: 2px solid #e0e0e0;
         }
-        .external-profile:active { transform: scale(0.92); }
+        
+        .external-profile:active { 
+            transform: scale(0.92); 
+        }
         
         .stats-trigger {
             display: flex;
@@ -405,7 +578,12 @@
             padding: 0;
             transition: transform 0.15s;
         }
-        .stats-trigger i { font-size: 30px; color: #000000; }
+        
+        .stats-trigger i { 
+            font-size: 30px; 
+            color: #000000; 
+        }
+        
         .stats-trigger span {
             font-size: 12px;
             font-weight: 700;
@@ -414,7 +592,10 @@
             padding: 2px 8px;
             border-radius: 30px;
         }
-        .stats-trigger:active { transform: scale(0.92); }
+        
+        .stats-trigger:active { 
+            transform: scale(0.92); 
+        }
         
         .scroll-arrows {
             position: fixed;
@@ -426,6 +607,7 @@
             gap: 18px;
             z-index: 100;
         }
+        
         .scroll-arrow {
             width: 48px;
             height: 48px;
@@ -439,8 +621,16 @@
             cursor: pointer;
             transition: transform 0.15s;
         }
-        .scroll-arrow:active { transform: scale(0.9); }
-        @media (max-width: 768px) { .scroll-arrows { display: none; } }
+        
+        .scroll-arrow:active { 
+            transform: scale(0.9); 
+        }
+        
+        @media (max-width: 768px) { 
+            .scroll-arrows { 
+                display: none; 
+            } 
+        }
         
         /* POPUP STYLES - Keep as is */
         .popup-backdrop {
@@ -454,7 +644,10 @@
             z-index: 999999;
             display: none;
         }
-        .popup-backdrop.active { display: block; }
+        
+        .popup-backdrop.active { 
+            display: block; 
+        }
         
         .stats-popup, .menu-popup, .comments-modal {
             position: fixed;
@@ -474,7 +667,10 @@
             display: flex;
             flex-direction: column;
         }
-        .stats-popup.active, .menu-popup.active, .comments-modal.active { transform: translateY(0); }
+        
+        .stats-popup.active, .menu-popup.active, .comments-modal.active { 
+            transform: translateY(0); 
+        }
         
         .popup-handle {
             width: 40px;
@@ -491,7 +687,12 @@
             justify-content: space-between;
             align-items: center;
         }
-        .popup-header h3 { font-size: 20px; font-weight: 700; color: #000; }
+        
+        .popup-header h3 { 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: #000; 
+        }
         
         .popup-content {
             padding: 20px;
@@ -643,9 +844,20 @@
             border-bottom: 1px solid #f0f0f0;
             transition: background 0.2s;
         }
-        .menu-item:hover { background: #f5f5f5; }
-        .menu-item i { width: 28px; color: #1DA1F2; font-size: 20px; }
-        .menu-item.report i { color: #ff4444; }
+        
+        .menu-item:hover { 
+            background: #f5f5f5; 
+        }
+        
+        .menu-item i { 
+            width: 28px; 
+            color: #1DA1F2; 
+            font-size: 20px; 
+        }
+        
+        .menu-item.report i { 
+            color: #ff4444; 
+        }
         
         .start-journey-btn, .manage-campaign-btn {
             font-weight: 600;
@@ -661,18 +873,55 @@
             max-width: 400px;
             display: none;
         }
-        .donation-modal.active { display: block; }
-        .donation-content { background: #ffffff; border-radius: 24px; padding: 24px; }
-        .donation-header { text-align: center; margin-bottom: 24px; }
-        .donation-header h3 { color: #000; font-size: 20px; }
-        .donate-btn-large { background: #4CAF50; color: white; border: none; border-radius: 30px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; }
         
-        .loading-spinner { display: none; }
-        .no-campaigns { color: #fff; text-align: center; padding: 40px; }
+        .donation-modal.active { 
+            display: block; 
+        }
+        
+        .donation-content { 
+            background: #ffffff; 
+            border-radius: 24px; 
+            padding: 24px; 
+        }
+        
+        .donation-header { 
+            text-align: center; 
+            margin-bottom: 24px; 
+        }
+        
+        .donation-header h3 { 
+            color: #000; 
+            font-size: 20px; 
+        }
+        
+        .donate-btn-large { 
+            background: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 30px; 
+            padding: 16px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+        }
+        
+        .loading-spinner { 
+            display: none; 
+        }
+        
+        .no-campaigns { 
+            color: #fff; 
+            text-align: center; 
+            padding: 40px; 
+        }
         
         .journey-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             z-index: 3998;
@@ -680,7 +929,11 @@
             visibility: hidden;
             transition: 0.25s ease;
         }
-        .journey-overlay.active { opacity: 1; visibility: visible; }
+        
+        .journey-overlay.active { 
+            opacity: 1; 
+            visibility: visible; 
+        }
         
         .journey-popup {
             position: fixed;
@@ -699,10 +952,33 @@
             transition: 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
-        .journey-popup.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
-        .journey-popup-icon { font-size: 52px; margin-bottom: 16px; color: #000; }
-        .journey-popup h3 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #000; }
-        .journey-popup p { font-size: 14px; color: #666; line-height: 1.4; margin-bottom: 24px; }
+        
+        .journey-popup.active { 
+            opacity: 1; 
+            visibility: visible; 
+            transform: translate(-50%, -50%) scale(1); 
+        }
+        
+        .journey-popup-icon { 
+            font-size: 52px; 
+            margin-bottom: 16px; 
+            color: #000; 
+        }
+        
+        .journey-popup h3 { 
+            font-size: 24px; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            color: #000; 
+        }
+        
+        .journey-popup p { 
+            font-size: 14px; 
+            color: #666; 
+            line-height: 1.4; 
+            margin-bottom: 24px; 
+        }
+        
         .journey-popup-button {
             background: #000;
             border: none;
@@ -715,7 +991,11 @@
             width: 100%;
             transition: all 0.2s;
         }
-        .journey-popup-button:active { transform: scale(0.96); }
+        
+        .journey-popup-button:active { 
+            transform: scale(0.96); 
+        }
+        
         .journey-popup-close {
             position: absolute;
             top: 12px;
@@ -750,7 +1030,13 @@
             box-shadow: 0 30px 50px rgba(0,0,0,0.15);
             text-align: center;
         }
-        .stats-progress-popup.active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+        
+        .stats-progress-popup.active { 
+            opacity: 1; 
+            visibility: visible; 
+            transform: translate(-50%, -50%) scale(1); 
+        }
+        
         .popup-close-stats {
             position: absolute;
             top: 18px;
@@ -767,12 +1053,34 @@
             justify-content: center;
             border-radius: 50%;
         }
-        .stats-progress-content h3 { font-size: 24px; margin-bottom: 20px; color: #000000; }
-        .progress-bar-bg { height: 8px; background: #e8ecf0; border-radius: 10px; overflow: hidden; margin: 12px 0 8px; }
-        .progress-fill { height: 100%; background: #000000; width: 0%; border-radius: 10px; }
+        
+        .stats-progress-content h3 { 
+            font-size: 24px; 
+            margin-bottom: 20px; 
+            color: #000000; 
+        }
+        
+        .progress-bar-bg { 
+            height: 8px; 
+            background: #e8ecf0; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin: 12px 0 8px; 
+        }
+        
+        .progress-fill { 
+            height: 100%; 
+            background: #000000; 
+            width: 0%; 
+            border-radius: 10px; 
+        }
+        
         .overlay-backdrop {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(4px);
             z-index: 2999;
@@ -780,7 +1088,34 @@
             visibility: hidden;
             transition: 0.2s;
         }
-        .overlay-backdrop.active { opacity: 1; visibility: visible; }
+        
+        .overlay-backdrop.active { 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        
+        /* Fix for very small screens */
+        @media (max-width: 360px) {
+            .action-btn i {
+                font-size: 26px;
+            }
+            .action-btn span {
+                font-size: 9px;
+            }
+            .action-profile {
+                width: 36px;
+                height: 36px;
+            }
+            .info-panel {
+                right: 70px;
+            }
+            .username {
+                font-size: 14px;
+            }
+            .caption {
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -871,16 +1206,17 @@
 </div>
 
 <script>
-    // Fix for mobile viewport - ensures screen starts from top
+    // Fix for mobile viewport height
     function setVhProperty() { 
         let vh = window.innerHeight * 0.01; 
         document.documentElement.style.setProperty('--vh', `${vh}px`); 
     }
     
     window.addEventListener('resize', setVhProperty); 
+    window.addEventListener('orientationchange', setVhProperty);
     setVhProperty();
     
-    // Force scroll to top on mobile load
+    // Force scroll to top on load
     window.addEventListener('load', function() {
         const container = document.getElementById('campaignsContainer');
         if (container) {
@@ -888,10 +1224,23 @@
         }
     });
     
-    function getCSRFToken() { return document.querySelector('meta[name="csrf-token"]').content; }
+    function getCSRFToken() { 
+        return document.querySelector('meta[name="csrf-token"]').content; 
+    }
     
-    function scrollToPrev() { document.getElementById('campaignsContainer').scrollBy({ top: -window.innerHeight, behavior: 'smooth' }); }
-    function scrollToNext() { document.getElementById('campaignsContainer').scrollBy({ top: window.innerHeight, behavior: 'smooth' }); }
+    function scrollToPrev() { 
+        document.getElementById('campaignsContainer').scrollBy({ 
+            top: -window.innerHeight, 
+            behavior: 'smooth' 
+        }); 
+    }
+    
+    function scrollToNext() { 
+        document.getElementById('campaignsContainer').scrollBy({ 
+            top: window.innerHeight, 
+            behavior: 'smooth' 
+        }); 
+    }
     
     function closeAllPopups() {
         document.getElementById('statsPopup').classList.remove('active');
@@ -900,10 +1249,26 @@
         document.getElementById('donationModal').classList.remove('active');
         document.getElementById('popupBackdrop').classList.remove('active');
     }
-    function closeStatsPopup() { document.getElementById('statsPopup').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
-    function closeMenuPopup() { document.getElementById('menuPopup').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
-    function closeCommentsModal() { document.getElementById('commentsModal').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
-    function closeDonationModal() { document.getElementById('donationModal').classList.remove('active'); document.getElementById('popupBackdrop').classList.remove('active'); }
+    
+    function closeStatsPopup() { 
+        document.getElementById('statsPopup').classList.remove('active'); 
+        document.getElementById('popupBackdrop').classList.remove('active'); 
+    }
+    
+    function closeMenuPopup() { 
+        document.getElementById('menuPopup').classList.remove('active'); 
+        document.getElementById('popupBackdrop').classList.remove('active'); 
+    }
+    
+    function closeCommentsModal() { 
+        document.getElementById('commentsModal').classList.remove('active'); 
+        document.getElementById('popupBackdrop').classList.remove('active'); 
+    }
+    
+    function closeDonationModal() { 
+        document.getElementById('donationModal').classList.remove('active'); 
+        document.getElementById('popupBackdrop').classList.remove('active'); 
+    }
     
     window.openStatsPopup = function(campaignId) {
         const statsContent = document.getElementById('statsContent');
@@ -1119,22 +1484,75 @@
         fetch(`/campaign/${campaignId}/toggle-love/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
         .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
     };
+    
     window.toggleFollow = function(campaignId, btn) {
         fetch(`/campaign/${campaignId}/toggle-follow/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
         .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
     };
+    
     window.toggleSave = function(campaignId, btn) {
         fetch(`/campaign/${campaignId}/toggle-save/`, { method:'POST', headers:{'X-CSRFToken':getCSRFToken(),'Content-Type':'application/json'} })
         .then(r=>r.json()).then(data=>{if(data.success){const temp=document.createElement('div');temp.innerHTML=data.button_html;btn.parentNode.replaceChild(temp.firstElementChild,btn);}});
     };
     
-    window.openDonationModal = function(campaignId, title) { document.getElementById('donationTitle').textContent = title; document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId); document.getElementById('donationModal').classList.add('active'); document.getElementById('popupBackdrop').classList.add('active'); };
-    window.proceedToDonation = function() { const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id'); closeDonationModal(); window.location.href = `/campaign/${campaignId}/donate/`; };
-    window.handleShare = function(campaignId) { if(navigator.share){navigator.share({title:'Check out this cause',url:window.location.origin+`/journey/${campaignId}/`});}else{prompt('Copy link:',window.location.origin+`/journey/${campaignId}/`);} };
-    window.toggleCaption = function(campaignId) { const cap = document.getElementById(`caption-${campaignId}`); const link = event.target; cap.classList.toggle('expanded'); link.textContent = cap.classList.contains('expanded') ? 'less' : 'more'; };
+    window.openDonationModal = function(campaignId, title) { 
+        document.getElementById('donationTitle').textContent = title; 
+        document.getElementById('donationModal').setAttribute('data-campaign-id', campaignId); 
+        document.getElementById('donationModal').classList.add('active'); 
+        document.getElementById('popupBackdrop').classList.add('active'); 
+    };
     
-    window.goToSlide = function(campaignId, index) { const container = document.getElementById(`slidesContainer-${campaignId}`); if(container) container.style.transform = `translateX(-${index * 100}%)`; const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); dots.forEach((dot,i)=>dot.classList.toggle('active',i===index)); };
-    window.toggleAutoplay = function(campaignId) { const btn = document.getElementById(`autoplayBtn-${campaignId}`); if(btn.classList.contains('playing')){ btn.innerHTML='<i class="fas fa-play"></i>'; btn.classList.remove('playing'); if(window.slideshowTimers && window.slideshowTimers[campaignId]) clearInterval(window.slideshowTimers[campaignId]); } else { btn.innerHTML='<i class="fas fa-pause"></i>'; btn.classList.add('playing'); const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0'); if(total>1){ if(!window.slideshowTimers) window.slideshowTimers={}; window.slideshowTimers[campaignId]=setInterval(()=>{ const cur = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1')-1; const next = (cur+1)%total; goToSlide(campaignId,next); },3000); } } };
+    window.proceedToDonation = function() { 
+        const campaignId = document.getElementById('donationModal').getAttribute('data-campaign-id'); 
+        closeDonationModal(); 
+        window.location.href = `/campaign/${campaignId}/donate/`; 
+    };
+    
+    window.handleShare = function(campaignId) { 
+        if(navigator.share){
+            navigator.share({
+                title:'Check out this cause',
+                url:window.location.origin+`/journey/${campaignId}/`
+            });
+        } else {
+            prompt('Copy link:', window.location.origin+`/journey/${campaignId}/`);
+        }
+    };
+    
+    window.toggleCaption = function(campaignId) { 
+        const cap = document.getElementById(`caption-${campaignId}`); 
+        const link = event.target; 
+        cap.classList.toggle('expanded'); 
+        link.textContent = cap.classList.contains('expanded') ? 'less' : 'more'; 
+    };
+    
+    window.goToSlide = function(campaignId, index) { 
+        const container = document.getElementById(`slidesContainer-${campaignId}`); 
+        if(container) container.style.transform = `translateX(-${index * 100}%)`; 
+        const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); 
+        dots.forEach((dot,i)=>dot.classList.toggle('active',i===index)); 
+    };
+    
+    window.toggleAutoplay = function(campaignId) { 
+        const btn = document.getElementById(`autoplayBtn-${campaignId}`); 
+        if(btn.classList.contains('playing')){ 
+            btn.innerHTML='<i class="fas fa-play"></i>'; 
+            btn.classList.remove('playing'); 
+            if(window.slideshowTimers && window.slideshowTimers[campaignId]) clearInterval(window.slideshowTimers[campaignId]); 
+        } else { 
+            btn.innerHTML='<i class="fas fa-pause"></i>'; 
+            btn.classList.add('playing'); 
+            const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0'); 
+            if(total>1){ 
+                if(!window.slideshowTimers) window.slideshowTimers={}; 
+                window.slideshowTimers[campaignId]=setInterval(()=>{ 
+                    const cur = parseInt(document.getElementById(`currentSlide-${campaignId}`)?.textContent || '1')-1; 
+                    const next = (cur+1)%total; 
+                    goToSlide(campaignId,next); 
+                },3000); 
+            } 
+        } 
+    };
     
     function updateExternalSidebars() {
         if(window.innerWidth <= 768) return;
@@ -1142,7 +1560,9 @@
         let items = document.querySelectorAll('.campaign-item');
         let scrollTop = container.scrollTop;
         let activeIndex = 0;
-        for(let i=0;i<items.length;i++) { if(scrollTop >= items[i].offsetTop - 150) activeIndex = i; }
+        for(let i=0;i<items.length;i++) { 
+            if(scrollTop >= items[i].offsetTop - 150) activeIndex = i; 
+        }
         let active = items[activeIndex];
         if(!active) return;
         let campaignId = active.getAttribute('data-campaign-id');
@@ -1187,6 +1607,7 @@
     }
     
     let journeyPopup = document.getElementById('journeyPopup'), journeyOverlay = document.getElementById('journeyOverlay'), journeyTimeout = null;
+    
     function showJourneyPopup() {
         let title = window.currentJourneyTitle || 'Journey';
         document.getElementById('journeyPopupText').innerHTML = `Continue "${title}" and see your impact.`;
@@ -1194,21 +1615,45 @@
         if(journeyTimeout) clearTimeout(journeyTimeout);
         journeyTimeout = setTimeout(() => { hideJourneyPopup(); }, 7000);
     }
-    function hideJourneyPopup() { journeyPopup.classList.remove('active'); journeyOverlay.classList.remove('active'); if(journeyTimeout) clearTimeout(journeyTimeout); }
+    
+    function hideJourneyPopup() { 
+        journeyPopup.classList.remove('active'); 
+        journeyOverlay.classList.remove('active'); 
+        if(journeyTimeout) clearTimeout(journeyTimeout); 
+    }
+    
     document.getElementById('closeJourneyPopupBtn').onclick = hideJourneyPopup;
     journeyOverlay.onclick = hideJourneyPopup;
-    document.getElementById('journeyConfirmBtn').onclick = () => { if(window.currentJourneyId) window.location.href = `/journey/${window.currentJourneyId}/`; else alert('Journey link ready'); hideJourneyPopup(); };
+    document.getElementById('journeyConfirmBtn').onclick = () => { 
+        if(window.currentJourneyId) window.location.href = `/journey/${window.currentJourneyId}/`; 
+        else alert('Journey link ready'); 
+        hideJourneyPopup(); 
+    };
     
-    function closeStatsProgress() { document.getElementById('statsProgressPopup').classList.remove('active'); document.getElementById('statsBackdrop').classList.remove('active'); }
+    function closeStatsProgress() { 
+        document.getElementById('statsProgressPopup').classList.remove('active'); 
+        document.getElementById('statsBackdrop').classList.remove('active'); 
+    }
+    
     document.getElementById('closeStatsPopupBtn').onclick = closeStatsProgress;
     document.getElementById('statsBackdrop').onclick = closeStatsProgress;
     
     let scrollContainer = document.getElementById('campaignsContainer'), scrollTimer = null;
-    scrollContainer.addEventListener('scroll', () => { updateExternalSidebars(); if(scrollTimer) clearTimeout(scrollTimer); scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); });
-    window.addEventListener('resize', () => { updateExternalSidebars(); });
-    document.addEventListener('DOMContentLoaded', () => { updateExternalSidebars(); setTimeout(() => { showJourneyPopup(); }, 2000); });
+    scrollContainer.addEventListener('scroll', () => { 
+        updateExternalSidebars(); 
+        if(scrollTimer) clearTimeout(scrollTimer); 
+        scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); 
+    });
     
-    document.body.addEventListener('htmx:configRequest', function(evt) { evt.detail.headers['X-CSRFToken'] = getCSRFToken(); });
+    window.addEventListener('resize', () => { updateExternalSidebars(); });
+    document.addEventListener('DOMContentLoaded', () => { 
+        updateExternalSidebars(); 
+        setTimeout(() => { showJourneyPopup(); }, 2000); 
+    });
+    
+    document.body.addEventListener('htmx:configRequest', function(evt) { 
+        evt.detail.headers['X-CSRFToken'] = getCSRFToken(); 
+    });
 </script>
 </body>
 </html>
