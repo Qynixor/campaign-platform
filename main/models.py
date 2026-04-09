@@ -1308,6 +1308,8 @@ class CommentLike(models.Model):
 
 from django.db import models, transaction
 
+
+
 class Activity(models.Model):
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
     content = models.TextField(default='content')
@@ -1324,6 +1326,10 @@ class Activity(models.Model):
     is_video = models.BooleanField(default=False, help_text="Whether this activity contains a video")
     video_processed = models.BooleanField(default=False, help_text="Whether video screenshots have been processed")
     screenshot_count = models.IntegerField(default=5, help_text="Number of screenshots to extract from video")
+    
+    # NEW: Database field for day number (filterable)
+    day_number_field = models.PositiveIntegerField(default=1, editable=False, db_index=True, 
+                                                   help_text="Calculated day number based on timestamp")
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1360,8 +1366,37 @@ class Activity(models.Model):
         
         return False
     
+    def _calculate_day_number(self):
+        """Calculate the day number based on timestamp and campaign start date"""
+        if not self.campaign:
+            return 1
+
+        start_date = self.campaign.journey_start_date or self.campaign.timestamp
+
+        if not start_date:
+            return 1
+
+        # Use the activity's timestamp or current time for new activities
+        activity_time = self.timestamp if self.pk else timezone.now()
+        time_since_start = activity_time - start_date
+
+        if self.campaign.duration_unit == 'minutes':
+            minutes_since = int(time_since_start.total_seconds() / 60)
+            day_num = minutes_since + 1
+        else:
+            days_since = time_since_start.days
+            day_num = days_since + 1
+
+        if self.campaign.duration and day_num > self.campaign.duration:
+            return self.campaign.duration
+
+        return max(1, day_num)
+    
     def save(self, *args, **kwargs):
         is_new = self.pk is None
+        
+        # Calculate and set day_number_field
+        self.day_number_field = self._calculate_day_number()
         
         file_changed = False
         if self.pk and hasattr(self, '_original_file'):
@@ -1390,7 +1425,7 @@ class Activity(models.Model):
                 message_owner = f"An activity was added to your cause '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
                 Notification.objects.create(user=self.campaign.user.user, message=message_owner)
                 
-                # UPDATED: Send notifications to campaign followers instead of profile followers
+                # Send notifications to campaign followers
                 campaign_followers = self.campaign.followers.all()
                 for follower in campaign_followers:
                     message_follower = f"New activity in a campaign you're following: '{self.campaign.title}'. <a href='{reverse('view_campaign', kwargs={'campaign_id': self.campaign.pk})}'>View Cause</a>"
@@ -1418,27 +1453,22 @@ class Activity(models.Model):
     
     @property
     def day_number(self):
-        if not self.campaign:
-            return 1
+        """Property that returns the day_number_field (for backward compatibility)"""
+        return self.day_number_field
+    
+    class Meta:
+        ordering = ['timestamp']
+        indexes = [
+            models.Index(fields=['campaign', 'day_number_field']),
+            models.Index(fields=['campaign', 'timestamp']),
+            models.Index(fields=['day_number_field']),
+        ]
+    
+    def __str__(self):
+        return f"Activity Day {self.day_number_field} - {self.campaign.title}"
 
-        start_date = self.campaign.journey_start_date or self.campaign.timestamp
 
-        if not start_date:
-            return 1
 
-        time_since_start = self.timestamp - start_date
-
-        if self.campaign.duration_unit == 'minutes':
-            minutes_since = int(time_since_start.total_seconds() / 60)
-            day_num = minutes_since + 1
-        else:
-            days_since = time_since_start.days
-            day_num = days_since + 1
-
-        if self.campaign.duration and day_num > self.campaign.duration:
-            return self.campaign.duration
-
-        return max(1, day_num)
 
 
 class VideoScreenshot(models.Model):

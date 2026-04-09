@@ -1,4388 +1,1059 @@
-{% load custom_filters %}
 {% load static %}
+{% load campaign_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Journey Reels · Swipe images</title>
-    <!-- Font Awesome -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>{{ campaign.title }} · Journey Progress</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-       * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: #000;
-    color: #fff;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-    height: 100vh;
-    height: 100dvh;
-}
-
-/* Desktop Layout */
-@media (min-width: 768px) {
-    body {
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        min-height: 100vh;
-        background: #111;
-        padding: 20px;
-        overflow: auto;
-    }
-
-    .desktop-layout {
-        display: grid;
-        grid-template-columns: minmax(380px, 450px) 340px;
-        gap: 20px;
-        max-width: 1300px;
-        width: 100%;
-        margin: 0 auto;
-        align-items: flex-start;
-    }
-
-    .reels-container {
-        height: 85vh !important;
-        max-height: 800px;
-        min-height: 600px;
-        border-radius: 24px;
-        border: 1px solid #222;
-        overflow: hidden;
-        position: sticky;
-        top: 20px;
-    }
-
-    .sidebar {
-        background: #111;
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid #222;
-        height: 85vh;
-        max-height: 800px;
-        min-height: 600px;
-        overflow-y: auto;
-        display: block !important;
-        color: #fff;
-        position: sticky;
-        top: 20px;
-    }
-}
-
-/* Mobile Layout */
-@media (max-width: 767px) {
-    .sidebar { 
-        display: none; 
-    }
-}
-
-/* Common Styles (both mobile & desktop) */
-.reels-container {
-    height: 100vh;
-    height: 100dvh;
-    width: 100%;
-    position: relative;
-    background: #000;
-    overflow: hidden;
-}
-
-.reels-track {
-    height: 100%;
-    overflow-y: auto;
-    scroll-snap-type: y mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    position: relative;
-    z-index: 1;
-}
-
-.reels-track::-webkit-scrollbar { 
-    display: none; 
-}
-
-.reel {
-    position: relative;
-    height: 100%;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    background: #000;
-    overflow: hidden;
-}
-
-/* Gradient overlay - below UI elements */
-.reel::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40%;
-    background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 40%, transparent 100%);
-    pointer-events: none;
-    z-index: 5;
-}
-
-/* Media container - bottom layer */
-.reel-media {
-    position: absolute;
-    inset: 0;
-    background: #000;
-    z-index: 1;
-}
-
-/* Optimize MAIN image rendering with brightness and contrast enhancements */
-.reel-media img,
-.carousel-slide img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    -ms-interpolation-mode: bicubic;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    will-change: transform;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    
-    /* ENHANCED: Add brightness and contrast for more vibrant images */
-    filter: brightness(1.08) contrast(1.12) saturate(1.1);
-    -webkit-filter: brightness(1.08) contrast(1.12) saturate(1.1);
-}
-
-.reel-media img.loaded,
-.carousel-slide img.loaded {
-    opacity: 1;
-}
-
-/* High-DPI screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .reel-media img,
-    .carousel-slide img {
-        image-rendering: -webkit-optimize-contrast;
-    }
-}
-
-/* Story Carousel - same layer as media */
-.story-carousel {
-    position: relative;
-    height: 100%;
-    width: 100%;
-    z-index: 1;
-}
-
-.carousel-track {
-    display: flex;
-    height: 100%;
-    width: 100%;
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-    cursor: grab;
-    z-index: 1;
-}
-
-.carousel-track.dragging {
-    transition: none;
-    cursor: grabbing;
-}
-
-.carousel-slide {
-    flex: 0 0 100%;
-    height: 100%;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.carousel-slide img,
-.carousel-slide video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
-    display: block;
-    z-index: 1;
-}
-
-/* Header - above media */
-.header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 20;
-    padding: max(env(safe-area-inset-top, 12px), 12px) 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    pointer-events: none;
-}
-
-.back-btn {
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    border-radius: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    text-decoration: none;
-    font-size: 18px;
-    pointer-events: auto;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.progress {
-    flex: 1;
-    display: flex;
-    gap: 4px;
-    height: 2px;
-    pointer-events: auto;
-}
-
-.progress-bar {
-    flex: 1;
-    height: 2px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 2px;
-    transition: all 0.2s ease;
-}
-
-.progress-bar.active { 
-    background: #fff; 
-}
-
-/* Carousel controls - above media but below actions */
-.carousel-dots {
-    position: absolute;
-    top: max(env(safe-area-inset-top, 60px), 60px);
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
-    z-index: 15;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    padding: 8px 16px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    pointer-events: auto;
-}
-
-.dot {
-    width: 24px;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.4);
-    border: none;
-    border-radius: 3px;
-    padding: 0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.dot.active {
-    background: #fff;
-    width: 32px;
-}
-
-/* Media counter - not needed anymore since it's in info panel */
-.media-counter {
-    display: none;
-}
-
-/* Video preview - clean without filters */
-.video-preview-container {
-    position: absolute;
-    top: 120px;
-    left: 20px;
-    width: 140px;
-    height: 190px;
-    border-radius: 24px;
-    overflow: hidden;
-    z-index: 25;
-    cursor: pointer;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    transition: all 0.2s ease;
-    pointer-events: auto;
-}
-
-/* Adjust for mobile - INCREASED SIZES */
-@media (max-width: 767px) {
-    .video-preview-container {
-        top: 120px;
-        left: 16px;
-        width: 120px;        /* Increased from 90px */
-        height: 160px;       /* Increased from 120px */
-        border-radius: 20px;
-        border-width: 2.5px;
-    }
-}
-
-/* Adjust for small mobile - INCREASED SIZES */
-@media (max-width: 380px) {
-    .video-preview-container {
-        top: 100px;
-        left: 12px;
-        width: 100px;         /* Increased from 80px */
-        height: 135px;        /* Increased from 108px */
-        border-radius: 18px;
-    }
-}
-
-/* Adjust for desktop if needed */
-@media (min-width: 768px) {
-    .video-preview-container {
-        top: 130px;
-        left: 30px;
-        width: 160px;
-        height: 215px;
-    }
-}
-
-/* Extra large desktop screens */
-@media (min-width: 1440px) {
-    .video-preview-container {
-        top: 150px;
-        left: 40px;
-        width: 180px;
-        height: 240px;
-        border-radius: 28px;
-        border-width: 3.5px;
-        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8);
-    }
-}
-
-.video-preview-container:hover {
-    transform: scale(1.05);
-    border-color: #fff;
-}
-
-
-/* Audio indicator */
-.audio-indicator {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    border-radius: 30px;
-    padding: 6px 10px;
-    color: #fff;
-    font-size: 11px;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    border: 1px solid rgba(255,255,255,0.15);
-    pointer-events: none;
-    opacity: 0.8;
-}
-
-/* Info panel */
-.info-panel {
-    position: absolute;
-    left: 16px;
-    color: #fff;
-    z-index: 20;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.7);
-    pointer-events: none;
-}
-
-/* Desktop info panel */
-@media (min-width: 768px) {
-    .info-panel {
-        bottom: 30px;
-        right: 90px;
-    }
-}
-
-/* Mobile info panel */
-@media (max-width: 767px) {
-    .info-panel {
-        bottom: 120px;
-        left: 16px;
-        right: 70px;
-        max-width: calc(100% - 90px);
-        z-index: 25;
-    }
-}
-
-.username {
-    font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 4px;
-    display: inline-block;
-    text-decoration: none;
-    color: #fff;
-    pointer-events: auto;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
-
-.caption {
-    font-size: 15px;
-    line-height: 1.4;
-    opacity: 0.95;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin: 4px 0 2px;
-    pointer-events: auto;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-.caption.expanded { 
-    -webkit-line-clamp: unset; 
-}
-
-.more-link {
-    font-size: 13px;
-    font-weight: 600;
-    opacity: 0.9;
-    cursor: pointer;
-    display: inline-block;
-    pointer-events: auto;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-.meta {
-    font-size: 12px;
-    opacity: 0.8;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    pointer-events: auto;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    margin-bottom: 8px;
-}
-
-/* Media counter - inside info panel */
-.info-panel .media-counter {
-    position: relative;
-    top: auto;
-    right: auto;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    font-weight: 500;
-    margin: 4px 0 6px;
-    pointer-events: auto;
-}
-
-/* Thumbnail strip - inside info panel - NO FILTERS */
-.info-panel .thumbnail-strip {
-    position: relative;
-    bottom: auto;
-    left: auto;
-    right: auto;
-    display: flex;
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 4px 0;
-    margin: 8px 0 4px;
-    z-index: 26;
-    pointer-events: auto;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-
-.info-panel .thumbnail-strip::-webkit-scrollbar {
-    display: none;
-}
-
-.info-panel .thumbnail-item {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    opacity: 0.8;
-    pointer-events: auto;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    flex-shrink: 0;
-}
-
-.info-panel .thumbnail-item:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.info-panel .thumbnail-item.active {
-    opacity: 1;
-    border-color: #fff;
-    transform: scale(1.1);
-}
-
-.info-panel .thumbnail-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    image-rendering: -webkit-optimize-contrast;
-    /* NO FILTERS - keep thumbnails original */
-}
-
-/* Slide counter - inside info panel */
-.info-panel .slide-counter {
-    position: relative;
-    bottom: auto;
-    left: auto;
-    transform: none;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    display: inline-flex;
-    width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    margin: 8px 0 0;
-    font-weight: 500;
-    pointer-events: auto;
-}
-
-/* Swipe indicator */
-.swipe-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(12px);
-    padding: 16px 32px;
-    border-radius: 60px;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 16px;
-    font-weight: 600;
-    z-index: 30;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: fadeOut 2s ease forwards 3s;
-    pointer-events: none;
-}
-
-@keyframes fadeOut {
-    0% { opacity: 1; }
-    70% { opacity: 1; }
-    100% { opacity: 0; visibility: hidden; }
-}
-
-/* FAB */
-.fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 56px;
-    height: 56px;
-    background: #fff;
-    border-radius: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #000;
-    font-size: 24px;
-    text-decoration: none;
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: all 0.2s ease;
-}
-
-.fab:hover {
-    transform: scale(1.1);
-    background: #f0f0f0;
-}
-
-@media (max-width: 767px) {
-    .fab {
-        bottom: 16px;
-        right: 16px;
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-    }
-}
-
-/* Modal */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    z-index: 1000;
-    display: none;
-}
-
-.modal.show { 
-    display: block; 
-}
-
-.modal-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: max(env(safe-area-inset-top, 20px), 20px) 20px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 1001;
-    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
-}
-
-.modal-btn {
-    width: 44px;
-    height: 44px;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(8px);
-    border-radius: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
-    cursor: pointer;
-}
-
-.modal-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #000;
-}
-
-/* Sidebar styles */
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    background: #1a1a1a;
-    border-radius: 16px;
-    padding: 16px;
-}
-
-.stat-number { 
-    font-size: 24px; 
-    font-weight: 700; 
-    color: #0a84ff; 
-}
-
-.stat-label { 
-    font-size: 12px; 
-    opacity: 0.6; 
-    margin-top: 4px; 
-}
-
-.preview-item {
-    display: flex;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 16px;
-    background: #1a1a1a;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.preview-item:hover { 
-    background: #222; 
-}
-
-.preview-image {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background-size: cover;
-    background-position: center;
-    background-color: #222;
-    flex-shrink: 0;
-}
-
-.journey-progress {
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #1a1a1a;
-    border-radius: 16px;
-}
-
-.background-audio {
-    display: none;
-}
-
-/* Action buttons - positioned in middle right */
-.actions {
-    position: absolute;
-    right: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    z-index: 30;
-    pointer-events: none;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-/* Desktop action buttons */
-@media (min-width: 768px) {
-    .actions {
-        right: 20px;
-    }
-}
-
-/* Mobile action buttons */
-@media (max-width: 767px) {
-    .actions {
-        right: 8px;
-        gap: 15px;
-    }
-}
-
-.action {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: #fff;
-    text-decoration: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    pointer-events: auto;
-    min-width: 60px;
-}
-
-.action i { 
-    font-size: 28px; 
-    color: #ffffff;
-    text-shadow: none;
-}
-
-.action span { 
-    font-size: 12px; 
-    font-weight: 600;
-    color: #ffffff;
-    text-shadow: none;
-}
-
-.action-profile {
-    width: 44px;
-    height: 44px;
-    border-radius: 44px;
-    border: 2px solid #ffffff;
-    object-fit: cover;
-    margin-bottom: 4px;
-    box-shadow: none;
-}
-
-.action.loved i { 
-    color: #ff3b30;
-}
-
-/* Small mobile adjustments */
-@media (max-width: 380px) {
-    .info-panel {
-        bottom: 100px;
-        left: 12px;
-        right: 65px;
-    }
-    
-    .info-panel .thumbnail-item {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .action i {
-        font-size: 24px;
-    }
-    
-    .action {
-        min-width: 48px;
-    }
-    
-    .action-profile {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .thumbnail-item {
-        width: 36px;
-        height: 36px;
-    }
-}
-
-.video-preview-player {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    
-    /* Video-specific enhancements - gentler than image filters */
-    filter: brightness(1.05) contrast(1.08) saturate(1.05) blur(0.3px);
-    -webkit-filter: brightness(1.05) contrast(1.08) saturate(1.05) blur(0.3px);
-    
-    /* Anti-aliasing improvements */
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-    
-    /* Improve video rendering quality */
-    image-rendering: crisp-edges; /* Changed from -webkit-optimize-contrast */
-    
-    /* Ensure smooth playback */
-    will-change: transform;
-}
-.video-preview-container {
-    position: absolute;
-    top: 130px;
-    left: 30px;
-    width: 160px;
-    height: 215px;
-    border-radius: 24px;
-    overflow: hidden;
-    z-index: 25;
-    cursor: pointer;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    transition: all 0.2s ease;
-    pointer-events: auto;
-}
-
-/* Add a subtle overlay to improve perceived sharpness */
-.video-preview-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 2;
-    border-radius: 24px;
-    mix-blend-mode: overlay;
-}
-
-/* Comment Modal Styles */
-.comment-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2000;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-@media (min-width: 768px) {
-    .comment-modal {
-        align-items: center;
-    }
-}
-
-.comment-modal.show {
-    display: flex;
-}
-
-.comment-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.2s ease;
-}
-
-.comment-modal-container {
-    position: relative;
-    width: 100%;
-    max-width: 500px;
-    background: #1a1a1a;
-    border-radius: 24px 24px 0 0;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
-    animation: slideUp 0.3s ease;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #333;
-}
-
-@media (min-width: 768px) {
-    .comment-modal-container {
-        border-radius: 24px;
-        animation: fadeScale 0.3s ease;
-    }
-}
-
-.comment-modal-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.comment-modal-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-}
-
-.comment-modal-close {
-    width: 36px;
-    height: 36px;
-    border-radius: 36px;
-    background: #333;
-    border: none;
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.comment-modal-close:hover {
-    background: #444;
-}
-
-.comment-modal-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    min-height: 300px;
-    max-height: calc(80vh - 130px);
-}
-
-.comments-loading {
-    text-align: center;
-    padding: 40px;
-    color: #888;
-}
-
-.comments-loading i {
-    margin-right: 8px;
-}
-
-.comment-item {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-    animation: fadeIn 0.3s ease;
-}
-
-.comment-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 40px;
-    background: #333;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.comment-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.comment-content {
-    flex: 1;
-}
-
-.comment-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    flex-wrap: wrap;
-}
-
-.comment-username {
-    font-weight: 600;
-    font-size: 14px;
-    color: #fff;
-    text-decoration: none;
-}
-
-.comment-username:hover {
-    text-decoration: underline;
-}
-
-.comment-timestamp {
-    font-size: 11px;
-    color: #888;
-}
-
-.comment-text {
-    font-size: 14px;
-    color: #ddd;
-    line-height: 1.5;
-    margin-bottom: 8px;
-    word-break: break-word;
-}
-
-.comment-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.comment-like-btn {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 0;
-}
-
-.comment-like-btn i {
-    font-size: 14px;
-}
-
-.comment-like-btn.liked {
-    color: #ff3b30;
-}
-
-.comment-like-btn.liked i {
-    color: #ff3b30;
-}
-
-.comment-reply-btn {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 0;
-}
-
-.reply-count {
-    font-size: 12px;
-    color: #888;
-    margin-left: 4px;
-}
-
-.comment-replies {
-    margin-left: 52px;
-    margin-top: 12px;
-    padding-left: 12px;
-    border-left: 2px solid #333;
-}
-
-.reply-item {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    animation: fadeIn 0.3s ease;
-}
-
-.reply-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 32px;
-    background: #333;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.reply-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.reply-content {
-    flex: 1;
-}
-
-.reply-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    flex-wrap: wrap;
-}
-
-.reply-username {
-    font-weight: 600;
-    font-size: 13px;
-    color: #fff;
-    text-decoration: none;
-}
-
-.reply-timestamp {
-    font-size: 10px;
-    color: #888;
-}
-
-.reply-text {
-    font-size: 13px;
-    color: #ddd;
-    line-height: 1.5;
-    margin-bottom: 4px;
-}
-
-.reply-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.reply-like-btn {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 11px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 0;
-}
-
-.reply-like-btn i {
-    font-size: 12px;
-}
-
-.reply-like-btn.liked {
-    color: #ff3b30;
-}
-
-.reply-like-btn.liked i {
-    color: #ff3b30;
-}
-
-.view-replies-btn {
-    background: none;
-    border: none;
-    color: #0a84ff;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 4px 0;
-    margin-top: 4px;
-}
-
-.comment-modal-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
-    border-radius: 0 0 24px 24px;
-}
-
-.comment-form {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.comment-input {
-    flex: 1;
-    background: #333;
-    border: 1px solid #444;
-    border-radius: 24px;
-    padding: 12px 16px;
-    color: #fff;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.comment-input:focus {
-    border-color: #0a84ff;
-}
-
-.comment-submit {
-    width: 44px;
-    height: 44px;
-    border-radius: 44px;
-    background: #0a84ff;
-    border: none;
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.comment-submit:hover {
-    background: #0066cc;
-}
-
-.comment-submit:disabled {
-    background: #444;
-    cursor: not-allowed;
-}
-
-/* Share Modal Styles */
-.share-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.share-modal.show {
-    display: flex;
-}
-
-.share-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.2s ease;
-}
-
-.share-modal-container {
-    position: relative;
-    width: 90%;
-    max-width: 400px;
-    background: #1a1a1a;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    animation: fadeScale 0.3s ease;
-    border: 1px solid #333;
-}
-
-.share-modal-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.share-modal-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-}
-
-.share-modal-close {
-    width: 36px;
-    height: 36px;
-    border-radius: 36px;
-    background: #333;
-    border: none;
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.share-modal-close:hover {
-    background: #444;
-}
-
-.share-modal-body {
-    padding: 20px;
-}
-
-.share-options {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.share-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 8px;
-    background: #222;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.share-option:hover {
-    background: #333;
-}
-
-.share-option i {
-    font-size: 24px;
-}
-
-.share-option span {
-    font-size: 12px;
-    color: #fff;
-}
-
-/* Store Modal Styles (NEW) */
-.store-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2000;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-@media (min-width: 768px) {
-    .store-modal {
-        display: none !important; /* Never show on desktop */
-    }
-}
-
-.store-modal.show {
-    display: flex;
-}
-
-.store-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    animation: fadeIn 0.2s ease;
-}
-
-.store-modal-container {
-    position: relative;
-    width: 100%;
-    max-width: 430px;
-    background: #1a1a1a;
-    border-radius: 24px 24px 0 0;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
-    animation: slideUp 0.3s ease;
-    max-height: 80vh;
-    overflow-y: auto;
-    border: 1px solid #333;
-}
-
-.store-modal-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #1a1a1a;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.store-modal-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.store-modal-header h3 i {
-    color: #FFD700;
-}
-
-.store-modal-close {
-    width: 36px;
-    height: 36px;
-    border-radius: 36px;
-    background: #333;
-    border: none;
-    color: #fff;
-    font-size: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
-
-.store-modal-close:hover {
-    background: #444;
-}
-
-.store-modal-body {
-    padding: 20px;
-}
-
-.store-product {
-    background: #222;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: all 0.2s ease;
-    border: 1px solid #333;
-}
-
-.store-product:hover {
-    transform: translateY(-2px);
-    border-color: #0a84ff;
-}
-
-.store-product-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.store-product-icon.blueprint {
-    background: rgba(10, 132, 255, 0.15);
-}
-
-.store-product-icon.video {
-    background: rgba(255, 59, 48, 0.15);
-}
-
-.store-product-icon.coaching {
-    background: rgba(50, 215, 75, 0.15);
-}
-
-.store-product-icon.bundle {
-    background: rgba(255, 215, 0, 0.15);
-}
-
-.store-product-icon i {
-    font-size: 28px;
-}
-
-.store-product-icon.blueprint i {
-    color: #0a84ff;
-}
-
-.store-product-icon.video i {
-    color: #ff3b30;
-}
-
-.store-product-icon.coaching i {
-    color: #32d74b;
-}
-
-.store-product-icon.bundle i {
-    color: #FFD700;
-}
-
-.store-product-info {
-    flex: 1;
-}
-
-.store-product-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 4px;
-    color: #fff;
-}
-
-.store-product-desc {
-    font-size: 12px;
-    color: #888;
-    margin: 0;
-}
-
-.store-product-price {
-    font-size: 18px;
-    font-weight: 700;
-    color: #FFD700;
-    margin-right: 12px;
-}
-
-.store-product-btn {
-    background: #0a84ff;
-    border: none;
-    border-radius: 30px;
-    padding: 8px 20px;
-    color: white;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.store-product-btn:hover {
-    background: #0066cc;
-    transform: scale(1.05);
-}
-
-.store-product-btn.bundle {
-    background: #FFD700;
-    color: #000;
-}
-
-.store-product-btn.bundle:hover {
-    background: #e6c200;
-}
-
-.store-bundle-badge {
-    position: absolute;
-    top: -8px;
-    right: 16px;
-    background: #FFD700;
-    color: #000;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
-    text-transform: uppercase;
-}
-
-.store-footer {
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid #333;
-    text-align: center;
-    font-size: 11px;
-    color: #666;
-}
-
-.store-footer i {
-    color: #0a84ff;
-    margin-right: 4px;
-}
-
-/* Sidebar Journey Store Section (NEW) */
-.sidebar-store {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid #333;
-}
-
-.sidebar-store h3 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.sidebar-store h3 i {
-    color: #FFD700;
-}
-
-.sidebar-product {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border: 1px solid #333;
-    transition: all 0.2s ease;
-}
-
-.sidebar-product:hover {
-    border-color: #0a84ff;
-}
-
-.sidebar-product-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.sidebar-product-icon.blueprint {
-    background: rgba(10, 132, 255, 0.15);
-}
-
-.sidebar-product-icon.video {
-    background: rgba(255, 59, 48, 0.15);
-}
-
-.sidebar-product-icon.coaching {
-    background: rgba(50, 215, 75, 0.15);
-}
-
-.sidebar-product-icon i {
-    font-size: 20px;
-}
-
-.sidebar-product-icon.blueprint i {
-    color: #0a84ff;
-}
-
-.sidebar-product-icon.video i {
-    color: #ff3b30;
-}
-
-.sidebar-product-icon.coaching i {
-    color: #32d74b;
-}
-
-.sidebar-product-info {
-    flex: 1;
-}
-
-.sidebar-product-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 2px;
-}
-
-.sidebar-product-price {
-    font-size: 13px;
-    font-weight: 700;
-    color: #FFD700;
-}
-
-.sidebar-product-btn {
-    background: transparent;
-    border: 1px solid #444;
-    border-radius: 20px;
-    padding: 4px 12px;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.sidebar-product-btn:hover {
-    background: #0a84ff;
-    border-color: #0a84ff;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-    to {
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeScale {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-/* ===== NEW: Loading spinner for infinite scroll ===== */
-.loading-spinner {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 40px;
-    font-size: 14px;
-    z-index: 10000;
-    display: none;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.loading-spinner i {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* ===== NEW: Infinite scroll sentinel (invisible) ===== */
-.infinite-scroll-sentinel {
-    width: 100%;
-    height: 10px;
-    background: transparent;
-    pointer-events: none;
-}
-
-/* ===== ENHANCED EMPTY STATE STYLES ===== */
-.empty-state {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-    background: linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 100%);
-    z-index: 10;
-    animation: fadeIn 0.5s ease;
-}
-
-.empty-icon {
-    width: 120px;
-    height: 120px;
-    background: linear-gradient(135deg, #2a2a2a 0%, #222 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 24px;
-    border: 3px solid #333;
-    box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5);
-    animation: pulse 2s infinite ease-in-out;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5); }
-    50% { transform: scale(1.05); box-shadow: 0 25px 35px -8px rgba(10,132,255,0.3); }
-    100% { transform: scale(1); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5); }
-}
-
-.empty-icon i {
-    font-size: 48px;
-    color: #0a84ff;
-    opacity: 0.9;
-    filter: drop-shadow(0 5px 10px rgba(10,132,255,0.3));
-}
-
-.empty-state h3 {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #fff 0%, #ccc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.5px;
-}
-
-.empty-state p {
-    font-size: 16px;
-    color: #888;
-    margin-bottom: 32px;
-    max-width: 280px;
-    line-height: 1.6;
-}
-
-.empty-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 14px 32px;
-    background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 40px;
-    font-weight: 600;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 10px 20px -5px rgba(10,132,255,0.4);
-    position: relative;
-    overflow: hidden;
-}
-
-.empty-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.empty-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 15px 25px -5px rgba(10,132,255,0.6);
-}
-
-.empty-btn:hover::before {
-    left: 100%;
-}
-
-.empty-btn i {
-    font-size: 18px;
-    transition: transform 0.3s ease;
-}
-
-.empty-btn:hover i {
-    transform: rotate(90deg);
-}
-
-/* Mobile adjustments for empty state */
-@media (max-width: 767px) {
-    .empty-icon {
-        width: 100px;
-        height: 100px;
-    }
-    
-    .empty-icon i {
-        font-size: 40px;
-    }
-    
-    .empty-state h3 {
-        font-size: 24px;
-    }
-    
-    .empty-state p {
-        font-size: 14px;
-        max-width: 240px;
-    }
-    
-    .empty-btn {
-        padding: 12px 28px;
-        font-size: 15px;
-    }
-}
-
-/* For very small screens */
-@media (max-width: 380px) {
-    .empty-icon {
-        width: 90px;
-        height: 90px;
-        margin-bottom: 20px;
-    }
-    
-    .empty-icon i {
-        font-size: 36px;
-    }
-    
-    .empty-state h3 {
-        font-size: 22px;
-    }
-    
-    .empty-btn {
-        padding: 10px 24px;
-        font-size: 14px;
-    }
-}
-
-/* Desktop adjustments */
-@media (min-width: 768px) {
-    .empty-icon {
-        width: 140px;
-        height: 140px;
-    }
-    
-    .empty-icon i {
-        font-size: 56px;
-    }
-    
-    .empty-state h3 {
-        font-size: 32px;
-    }
-    
-    .empty-state p {
-        font-size: 18px;
-        max-width: 320px;
-    }
-    
-    .empty-btn {
-        padding: 16px 40px;
-        font-size: 18px;
-    }
-}
-
-    </style>
-</head>
-<body>
-<!-- ===== NEW: Loading spinner for infinite scroll ===== -->
-<div class="loading-spinner" id="loadingSpinner">
-    <i class="fas fa-spinner fa-spin"></i> Loading more...
-</div>
-
-<div class="desktop-layout">
-    <!-- Main Reels Container -->
-    <div class="reels-container">
-        <div class="reels-track" id="reelsTrack">
-            <!-- Fixed Header -->
-            <div class="header">
-                <a href="javascript:history.back()" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-                <div class="progress">
-                    {% for activity in activities %}
-                    <div class="progress-bar {% if forloop.first %}active{% endif %}"></div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            {% if activities %}
-                {% for activity in activities %}
-                <!-- Reel Item - ADDED data-activity-cursor for cursor-based loading -->
-                <div class="reel" data-index="{{ forloop.counter0 }}" data-activity-id="{{ activity.id }}" data-activity-cursor="{{ activity.id }}">
-                    <!-- Media Container -->
-                    <div class="reel-media">
-                        {% if activity.is_video and activity.has_screenshots_var %}
-                            <!-- Carousel with screenshots -->
-                            <div class="story-carousel" 
-                                 id="carousel-{{ activity.id }}" 
-                                 data-activity-id="{{ activity.id }}"
-                                 data-initialized="false">
-                                
-                                <!-- Image track with HD optimized images - ADDED loading="lazy" -->
-                                <div class="carousel-track" id="track-{{ activity.id }}">
-                                    {% for screenshot in activity.screenshots_list %}
-                                    <div class="carousel-slide">
-                                        <picture>
-                                            <!-- WebP with multiple resolutions for different screen sizes -->
-                                            <source 
-                                                srcset="{{ screenshot.image.url }}?w=400&h=800&fit=crop&q=95&f=webp 400w,
-                                                        {{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=90&f=webp 800w,
-                                                        {{ screenshot.image.url }}?w=1200&h=2400&fit=crop&q=85&f=webp 1200w"
-                                                sizes="(max-width: 767px) 100vw, 450px"
-                                                type="image/webp">
-                                            <!-- Fallback JPEG with high quality - ADDED loading="lazy" -->
-                                            <img 
-                                                src="{{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=95&f=auto" 
-                                                srcset="{{ screenshot.image.url }}?w=400&h=800&fit=crop&q=95&f=auto 400w,
-                                                        {{ screenshot.image.url }}?w=800&h=1600&fit=crop&q=90&f=auto 800w,
-                                                        {{ screenshot.image.url }}?w=1200&h=2400&fit=crop&q=85&f=auto 1200w"
-                                                sizes="(max-width: 767px) 100vw, 450px"
-                                                loading="lazy"
-                                                alt="Day {{ activity.day_number }}"
-                                                draggable="false"
-                                                class="carousel-image"
-                                                style="width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast;">
-                                        </picture>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                
-                                <!-- Hidden audio from video - plays in background only -->
-                                <audio class="background-audio" 
-                                       id="audio-{{ activity.id }}"
-                                       src="{{ activity.file.url }}" 
-                                       loop
-                                       preload="none"
-                                       data-activity-id="{{ activity.id }}">
-                                </audio>
-                                
-                                <!-- Clean video preview - no filters, just original -->
-                                <div class="video-preview-container" id="preview-{{ activity.id }}" data-activity-id="{{ activity.id }}" onclick="openVideoModal('{{ activity.id }}')">
-                                    <video class="video-preview-player" 
-                                           src="{{ activity.file.url }}" 
-                                           muted
-                                           loop
-                                           playsinline
-                                           autoplay
-                                           preload="auto"
-                                           poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=320&h=430&fit=crop&q=90{% endif %}"
-                                           width="160"
-                                           height="215">
-                                    </video>
-                                </div>
-                                
-                                <!-- Audio indicator - subtle -->
-                                <div class="audio-indicator" id="indicator-{{ activity.id }}" style="display: none;">
-                                    <i class="fas fa-music"></i>
-                                    <span>Audio</span>
-                                </div>
-                                
-                                <!-- Navigation dots 
-                                {% if activity.screenshot_count_total > 1 %}
-                                <div class="carousel-dots">
-                                    {% for screenshot in activity.screenshots_list %}
-                                    <button class="dot {% if forloop.first %}active{% endif %}" 
-                                            data-carousel="{{ activity.id }}"
-                                            data-index="{{ forloop.counter0 }}">
-                                    </button>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}-->
-                                
-                                <!-- Swipe indicator -->
-                               
-                            </div>
-                            
-                        {% elif activity.file %}
-                            {% if activity.file.resource_type == 'video' or activity.file.url|lower|slice:'-4:' == '.mp4' %}
-                                <!-- Single video -->
-                                <video src="{{ activity.file.url }}" loop playsinline controls
-                                       poster="{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=800&h=1600&fit=crop&q=80{% endif %}">
-                                </video>
-                            {% else %}
-                                <!-- Single image with HD optimization and brightness - ADDED loading="lazy" -->
-                                <picture>
-                                    <source 
-                                        srcset="{{ activity.file.url }}?w=400&h=800&fit=crop&q=95&f=webp 400w,
-                                                {{ activity.file.url }}?w=800&h=1600&fit=crop&q=90&f=webp 800w,
-                                                {{ activity.file.url }}?w=1200&h=2400&fit=crop&q=85&f=webp 1200w"
-                                        sizes="(max-width: 767px) 100vw, 450px"
-                                        type="image/webp">
-                                    <img 
-                                        src="{{ activity.file.url }}?w=800&h=1600&fit=crop&q=95&f=auto" 
-                                        srcset="{{ activity.file.url }}?w=400&h=800&fit=crop&q=95&f=auto 400w,
-                                                {{ activity.file.url }}?w=800&h=1600&fit=crop&q=90&f=auto 800w,
-                                                {{ activity.file.url }}?w=1200&h=2400&fit=crop&q=85&f=auto 1200w"
-                                        sizes="(max-width: 767px) 100vw, 450px"
-                                        loading="lazy" 
-                                        alt="Day {{ activity.day_number }}"
-                                        class="carousel-image"
-                                        style="width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast;">
-                                </picture>
-                            {% endif %}
-                        {% else %}
-                            <!-- Text update -->
-                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #1a1a1a;">
-                                <div style="text-align: center;">
-                                    <i class="fas fa-pencil-alt fa-3x" style="opacity: 0.3;"></i>
-                                    <div style="margin-top: 16px;">Day {{ activity.day_number }} Update</div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Action buttons -->
-                    <div class="actions">
-                      <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="action">
-    <img src="{{ campaign.user.image.url|cloudinary_optimize_avatar:48 }}" 
-         srcset="{{ campaign.user.image.url|cloudinary_optimize_avatar:96 }} 2x"
-         class="action-profile" 
-         loading="lazy" 
-         alt="Profile"
-         width="48" 
-         height="48">
-</a>
-                        
-                        <button class="action {% if user in activity.loves.all %}loved{% endif %}" 
-                                onclick="handleLove('{{ activity.id }}', event)" id="love-{{ activity.id }}">
-                            <i class="{% if user in activity.loves.all %}fas{% else %}far{% endif %} fa-heart"></i>
-                            <span id="love-count-{{ activity.id }}">{{ activity.loves.count|k_format }}</span>
-                        </button>
-                        
-                        <button class="action" onclick="openComments('{{ activity.id }}', event)">
-                            <i class="far fa-comment"></i>
-                            <span>{{ activity.comment_count|k_format}}</span>
-                        </button>
-                        
-                        <button class="action" onclick="openShareMenu('{{ activity.id }}', event)">
-                            <i class="fas fa-share-alt"></i>
-                            <span></span>
-                        </button>
-                        
-                        <!-- NEW: Journey Store Button (mobile only) -->
-                        {% if journey_completed %}
-                        <button class="action" onclick="openStoreModal()" style="display: none;" id="mobileStoreBtn">
-                            <i class="fas fa-store" style="color: #FFD700;"></i>
-                            <span>Store</span>
-                        </button>
-                        {% endif %}
-                    </div>
-
-                    <!-- Info panel with media controls properly ordered -->
-                    <div class="info-panel">
-                        <a href="{% url 'profile_view' username=campaign.user.user.username %}" class="username">@{{ campaign.user.user.username }}</a>
-                        
-                        <div class="meta">
-                            <span><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</span>
-                            <span><i class="fas fa-calendar"></i> Day {{ activity.day_number }}</span>
-                        </div>
-                    
-                        
-                        <!-- Thumbnails - ORIGINAL QUALITY, NO FILTERS -->
-                        {% if activity.screenshot_count_total > 1 %}
-                        <div class="thumbnail-strip" id="strip-{{ activity.id }}">
-                            {% for screenshot in activity.screenshots_list %}
-                            <div class="thumbnail-item {% if forloop.first %}active{% endif %}" 
-                                 data-carousel="{{ activity.id }}"
-                                 data-index="{{ forloop.counter0 }}">
-                              <img 
-    src="{{ screenshot.image.url|cloudinary_optimize:80 }}" 
-    srcset="{{ screenshot.image.url|cloudinary_optimize:80 }} 1x,
-            {{ screenshot.image.url|cloudinary_optimize:160 }} 2x"
-    loading="lazy" 
-    alt="thumb"
-    width="80"
-    height="80"
-    style="image-rendering: -webkit-optimize-contrast;">
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                            
-                        <!-- Media counter -->
-                        <div class="media-counter">
-                            <i class="fas fa-images"></i>
-                            <span>{{ activity.screenshot_count_total }}</span>
-                        </div>
-                        <!-- Slide counter -->
-                        {% if activity.screenshot_count_total > 1 %}
-                        <div class="slide-counter" id="counter-{{ activity.id }}">
-                            <span id="current-{{ activity.id }}">1</span>/{{ activity.screenshot_count_total }}
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Video modal -->
-                    <div class="modal" id="modal-{{ activity.id }}">
-                        <div class="modal-header">
-                            <button class="modal-btn" onclick="closeModal('{{ activity.id }}')"><i class="fas fa-arrow-left"></i></button>
-                            
-                        </div>
-                        <video class="modal-video" controls playsinline loop>
-                            <source src="{{ activity.file.url }}" type="video/mp4">
-                        </video>
-                    </div>
-                </div>
-                {% endfor %}
-                
-                <!-- ===== NEW: Sentinel for infinite scroll ===== -->
-                <div class="infinite-scroll-sentinel" id="infiniteScrollSentinel"></div>
-                
-            {% else %}
-                <!-- ===== ENHANCED EMPTY STATE WITH BEAUTIFUL DESIGN ===== -->
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-camera"></i>
-                    </div>
-                    <h3>No posts yet</h3>
-                    <p>This journey is waiting for its first story. Be the one to start the adventure!</p>
-                    {% if user == campaign.user.user %}
-                    <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="empty-btn">
-                        <i class="fas fa-plus-circle"></i>
-                        Create Activity
-                    </a>
-                    {% else %}
-                    <div class="empty-btn" style="background: linear-gradient(135deg, #444 0%, #333 100%); cursor: default; box-shadow: none;">
-                        <i class="fas fa-hourglass-half"></i>
-                        Coming Soon
-                    </div>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-
-        <!-- FAB -->
-        {% if user == campaign.user.user %}
-        <a href="{% url 'create_activity' campaign_id=campaign.id %}" class="fab"><i class="fas fa-plus"></i></a>
-        {% endif %}
-    </div>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2 style="font-size:24px; font-weight:700; margin-bottom:24px;">{{ campaign.title }}</h2>
-        
-        {% if campaign.duration %}
-        <div class="journey-progress">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span>Progress</span>
-                <span>{{ activities|length }}/{{ campaign.duration }} days</span>
-            </div>
-            <div style="height:6px; background:#333; border-radius:6px; overflow:hidden;">
-                <div style="height:100%; background:#0a84ff; width:{% widthratio activities|length campaign.duration 100 %}%;"></div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number">{{ activities|length }}</div>
-                <div class="stat-label">Posts</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ campaign.duration|default:'∞' }}</div>
-                <div class="stat-label">Days</div>
-            </div>
-        </div>
-
-   <!-- NEW: Journey Store Section (Desktop only) -->
-{% if journey_completed %}
-<div class="sidebar-store">
-    <h3><i class="fas fa-crown" style="color: #FFD700;"></i> Journey Store</h3>
-    
-    <!-- COMING SOON OVERLAY -->
-    <div class="store-coming-soon-banner">
-        <div class="banner-content">
-            <i class="fas fa-clock"></i>
-            <span>Marketplace Coming Soon</span>
-        </div>
-        <div class="banner-progress">
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: 70%"></div>
-            </div>
-            <span class="progress-text">Launching Q2 2026</span>
-        </div>
-    </div>
-    
-    <!-- Blueprint - Coming Soon Version -->
-    <div class="sidebar-product coming-soon-product">
-        <div class="sidebar-product-icon blueprint">
-            <i class="fas fa-file-pdf"></i>
-        </div>
-        <div class="sidebar-product-info">
-            <div class="sidebar-product-title">The Blueprint</div>
-            <div class="sidebar-product-price">$9.99</div>
-            <div class="coming-soon-tag">
-                <i class="fas fa-hourglass-half"></i> Soon
-            </div>
-        </div>
-        <button class="sidebar-product-btn disabled" onclick="showStoreComingSoon()" disabled>
-            Coming Soon
-        </button>
-    </div>
-    
-    <!-- Behind Scenes - Coming Soon Version -->
-    <div class="sidebar-product coming-soon-product">
-        <div class="sidebar-product-icon video">
-            <i class="fas fa-video"></i>
-        </div>
-        <div class="sidebar-product-info">
-            <div class="sidebar-product-title">Behind Scenes</div>
-            <div class="sidebar-product-price">$19.99</div>
-            <div class="coming-soon-tag">
-                <i class="fas fa-hourglass-half"></i> Soon
-            </div>
-        </div>
-        <button class="sidebar-product-btn disabled" onclick="showStoreComingSoon()" disabled>
-            Coming Soon
-        </button>
-    </div>
-    
-    <!-- Coaching - Coming Soon Version -->
-    <div class="sidebar-product coming-soon-product">
-        <div class="sidebar-product-icon coaching">
-            <i class="fas fa-user-tie"></i>
-        </div>
-        <div class="sidebar-product-info">
-            <div class="sidebar-product-title">1-on-1 Coaching</div>
-            <div class="sidebar-product-price">$49.99</div>
-            <div class="coming-soon-tag">
-                <i class="fas fa-hourglass-half"></i> Soon
-            </div>
-        </div>
-        <button class="sidebar-product-btn disabled" onclick="showStoreComingSoon()" disabled>
-            Coming Soon
-        </button>
-    </div>
-    
-    <!-- Bundle - Coming Soon Version -->
-    <div class="sidebar-product coming-soon-product bundle-product" style="border-color: #FFD700; margin-top: 12px;">
-        <div class="sidebar-product-icon bundle">
-            <i class="fas fa-gem"></i>
-        </div>
-        <div class="sidebar-product-info">
-            <div class="sidebar-product-title">Complete Bundle</div>
-            <div class="sidebar-product-price">$69.99</div>
-            <div class="coming-soon-tag premium">
-                <i class="fas fa-star"></i> Coming Soon
-            </div>
-        </div>
-        <button class="sidebar-product-btn bundle disabled" onclick="showStoreComingSoon()" disabled>
-            Notify Me
-        </button>
-    </div>
-    
-    <!-- Early Access Notice -->
-    <div class="early-access-notice">
-        <i class="fas fa-envelope"></i>
-        <div class="notice-content">
-            <strong>Be the first to shop!</strong>
-            <p>Get early access and exclusive launch discounts</p>
-        </div>
-        <button class="notify-btn" onclick="notifyStoreLaunch()">
-            Notify Me
-        </button>
-    </div>
-</div>
-
-<style>
-/* Journey Store Coming Soon Styles */
-.sidebar-store {
-    position: relative;
-    background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-    border-radius: 16px;
-    padding: 20px;
-    margin-top: 20px;
-    border: 1px solid rgba(255,215,0,0.2);
-    overflow: hidden;
-}
-
-.sidebar-store h3 {
-    color: white;
-    margin-bottom: 20px;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Coming Soon Banner */
-.store-coming-soon-banner {
-    background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1));
-    border: 1px solid rgba(139,92,246,0.3);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.banner-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.banner-content i {
-    color: #8b5cf6;
-    font-size: 14px;
-    animation: pulse 2s infinite;
-}
-
-.banner-content span {
-    color: #8b5cf6;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.banner-progress {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.banner-progress .progress-bar {
-    flex: 1;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.banner-progress .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #8b5cf6, #ec489a);
-    border-radius: 10px;
-    transition: width 0.3s ease;
-}
-
-.banner-progress .progress-text {
-    font-size: 10px;
-    color: #8b5cf6;
-    font-weight: 500;
-}
-
-/* Coming Soon Product Cards */
-.sidebar-product {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    margin-bottom: 10px;
-    transition: all 0.2s ease;
-    position: relative;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.sidebar-product.coming-soon-product {
-    opacity: 0.8;
-    filter: blur(0.5px);
-}
-
-.sidebar-product.coming-soon-product:hover {
-    transform: translateX(5px);
-    background: rgba(139,92,246,0.1);
-    border-color: rgba(139,92,246,0.3);
-}
-
-.sidebar-product-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.sidebar-product-icon.blueprint {
-    background: linear-gradient(135deg, #ff6b6b, #ff4757);
-}
-
-.sidebar-product-icon.video {
-    background: linear-gradient(135deg, #4ecdc4, #44bdac);
-}
-
-.sidebar-product-icon.coaching {
-    background: linear-gradient(135deg, #a8e6cf, #7fcd91);
-}
-
-.sidebar-product-icon.bundle {
-    background: linear-gradient(135deg, #ffd700, #ffb347);
-}
-
-.sidebar-product-info {
-    flex: 1;
-}
-
-.sidebar-product-title {
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.sidebar-product-price {
-    color: #ffd700;
-    font-weight: 700;
-    font-size: 14px;
-}
-
-.coming-soon-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 9px;
-    color: #8b5cf6;
-    background: rgba(139,92,246,0.2);
-    padding: 2px 6px;
-    border-radius: 20px;
-    margin-top: 4px;
-    width: fit-content;
-}
-
-.coming-soon-tag.premium {
-    background: rgba(255,215,0,0.2);
-    color: #ffd700;
-}
-
-.sidebar-product-btn {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.sidebar-product-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: rgba(255,255,255,0.05);
-}
-
-.sidebar-product-btn.bundle {
-    background: rgba(255,215,0,0.2);
-    border-color: #ffd700;
-    color: #ffd700;
-}
-
-/* Early Access Notice */
-.early-access-notice {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    padding: 12px;
-    background: rgba(139,92,246,0.1);
-    border-radius: 12px;
-    border: 1px solid rgba(139,92,246,0.2);
-}
-
-.early-access-notice i {
-    font-size: 20px;
-    color: #8b5cf6;
-}
-
-.notice-content {
-    flex: 1;
-}
-
-.notice-content strong {
-    display: block;
-    color: white;
-    font-size: 12px;
-    margin-bottom: 2px;
-}
-
-.notice-content p {
-    color: #aaa;
-    font-size: 10px;
-    margin: 0;
-}
-
-.notify-btn {
-    background: linear-gradient(135deg, #8b5cf6, #ec489a);
-    border: none;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.notify-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139,92,246,0.4);
-}
-
-/* Animations */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .sidebar-store {
-        margin: 10px;
-        padding: 15px;
-    }
-    
-    .sidebar-product {
-        padding: 10px;
-    }
-    
-    .sidebar-product-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-    
-    .sidebar-product-title {
-        font-size: 12px;
-    }
-    
-    .sidebar-product-price {
-        font-size: 12px;
-    }
-    
-    .early-access-notice {
-        flex-wrap: wrap;
-    }
-    
-    .notify-btn {
-        width: 100%;
-        margin-top: 8px;
-    }
-}
-
-/* Remove mobile tap highlight */
-* {
-    -webkit-tap-highlight-color: transparent;
-}
-</style>
-
-<script>
-// JavaScript for Journey Store Coming Soon
-function showStoreComingSoon() {
-    // Create toast notification
-    const toast = document.createElement('div');
-    toast.className = 'store-toast';
-    toast.innerHTML = `
-        <div style="position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #8b5cf6, #ec489a); color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; animation: slideIn 0.3s ease;">
-            <i class="fas fa-rocket"></i> The Journey Store is coming soon! Sign up to be notified.
-        </div>
-    `;
-    document.body.appendChild(toast);
-    
-    // Scroll to early access notice
-    const notice = document.querySelector('.early-access-notice');
-    if (notice) {
-        notice.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        notice.style.animation = 'pulse 0.5s ease';
-        setTimeout(() => {
-            notice.style.animation = '';
-        }, 500);
-    }
-    
-    // Remove toast after 3 seconds
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
-}
-
-function notifyStoreLaunch() {
-    // Create modal for email input
-    const modal = document.createElement('div');
-    modal.className = 'store-modal';
-    modal.innerHTML = `
-        <div class="store-modal-content">
-            <div class="store-modal-header">
-                <i class="fas fa-gift"></i>
-                <h3>Get Early Access</h3>
-                <button class="modal-close" onclick="this.closest('.store-modal').remove()">&times;</button>
-            </div>
-            <div class="store-modal-body">
-                <p>Be the first to know when the Journey Store launches and get exclusive launch discounts!</p>
-                <input type="email" id="store-notify-email" placeholder="Enter your email address" class="store-email-input">
-                <div id="store-notify-message" class="store-notify-message"></div>
-                <button class="store-submit-btn" onclick="submitStoreNotification()">
-                    Notify Me
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    // Add styles for modal
-    const modalStyles = document.createElement('style');
-    modalStyles.textContent = `
-        .store-modal {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .journey-container {
+            max-width: 430px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .hero-visual {
+            position: relative;
+            height: 320px;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            overflow: hidden;
+        }
+
+        .journey-path-visual {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .path-svg {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .path-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawPath 2s ease-out forwards;
+        }
+
+        @keyframes drawPath {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .milestone-node {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .milestone-node.completed {
+            background: #2a2a2a;
+            border: 2px solid #fff;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+        }
+
+        .milestone-node.current {
+            background: #fff;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+            animation: pulseGlow 2s infinite;
+        }
+
+        .milestone-node.current i {
+            color: #0a0a0a;
+        }
+
+        .milestone-node.locked {
+            background: #1a1a1a;
+            border: 2px solid #3a3a3a;
+        }
+
+        .milestone-node.locked i {
+            color: #5a5a5a;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.5); }
+        }
+
+        .milestone-node i {
+            font-size: 22px;
+            color: #fff;
+        }
+
+        .node-label {
+            position: absolute;
+            bottom: -28px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            color: #aaa;
+            letter-spacing: 0.5px;
+        }
+
+        .milestone-node.current .node-label {
+            color: #fff;
+        }
+
+        .hero-stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat .value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .hero-stat .label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            z-index: 20;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .journey-title-top {
+            position: absolute;
+            top: 30px;
+            left: 80px;
+            right: 20px;
+            z-index: 20;
+        }
+
+        .journey-title-top h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .visual-progress-bar {
+            padding: 20px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .progress-header span {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .progress-header span:last-child {
+            color: #aaa;
+        }
+
+        .progress-track {
+            height: 4px;
+            background: #1a1a1a;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill-visual {
+            height: 100%;
+            background: #fff;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .progress-fill-visual::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            border: 2px solid #0a0a0a;
+        }
+
+        .stats-cards {
+            display: flex;
+            gap: 12px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: #111;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #222;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #fff;
+            opacity: 0.7;
+        }
+
+        .stat-card .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-card .label {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .cinematic-strip {
+            padding: 20px 0;
+        }
+
+        .strip-header {
+            padding: 0 20px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .strip-header i {
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .strip-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .strip-header span {
+            margin-left: auto;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .day-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 20px;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .day-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .strip-day {
+            flex: 0 0 110px;
+            scroll-snap-align: start;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .strip-day.locked {
+            opacity: 0.4;
+        }
+
+        .strip-thumbnail {
+            width: 110px;
+            height: 165px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            background: #1a1a1a;
+            border: 1px solid transparent;
+        }
+
+        .strip-day.current .strip-thumbnail {
+            border-color: #fff;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .strip-thumbnail video,
+        .strip-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .strip-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 8px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+        }
+
+        .strip-day-number {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            display: block;
+        }
+
+        .strip-day-status {
+            font-size: 9px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .play-icon-strip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .lock-icon-strip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 24px;
+        }
+
+        .check-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0a0a0a;
+            font-size: 11px;
+        }
+
+        .current-day-hero {
+            margin: 10px 20px 20px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            height: 420px;
+            cursor: pointer;
+            border: 1px solid #2a2a2a;
+        }
+
+        .current-day-hero video,
+        .current-day-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px 20px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: #fff;
+            color: #0a0a0a;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .hero-day-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .hero-day-desc {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 24px;
+        }
+
+        .hero-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .hero-action i {
+            color: #888;
+        }
+
+        .hero-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .continue-btn-visual {
+            margin: 0 20px 30px;
+            padding: 18px;
+            background: #fff;
+            border: none;
+            border-radius: 30px;
+            color: #0a0a0a;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            width: calc(100% - 40px);
+        }
+
+        .video-modal {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: #000;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-video-container {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 10001;
-            animation: fadeIn 0.3s ease;
+            background: #0a0a0a;
         }
         
-        .store-modal-content {
-            background: #1a1a1a;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid rgba(139,92,246,0.3);
-            overflow: hidden;
-            animation: slideUp 0.3s ease;
+        .modal-video-container video,
+        .modal-video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         
-        .store-modal-header {
+        .modal-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #8b5cf6, #ec489a);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            color: white;
+            gap: 12px;
+            z-index: 10;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
         }
         
-        .store-modal-header i {
-            font-size: 24px;
-        }
-        
-        .store-modal-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
+        .modal-close-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
             cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
+            border: none;
+        }
+        
+        .modal-day-indicator {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .modal-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px 20px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+        }
+        
+        .modal-user-row {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
         }
         
-        .store-modal-body {
-            padding: 20px;
+        .modal-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #3a3a3a;
         }
         
-        .store-modal-body p {
+        .modal-user-info {
+            flex: 1;
+        }
+        
+        .modal-username {
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .modal-day-info {
             color: #aaa;
-            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        
+        .modal-caption {
+            color: #fff;
             font-size: 14px;
+            margin-bottom: 16px;
             line-height: 1.5;
         }
         
-        .store-email-input {
-            width: 100%;
-            padding: 12px;
-            background: #2a2a2a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            color: white;
-            font-size: 14px;
-            margin-bottom: 12px;
+        .modal-actions {
+            display: flex;
+            gap: 24px;
         }
         
-        .store-email-input:focus {
-            outline: none;
-            border-color: #8b5cf6;
-        }
-        
-        .store-notify-message {
-            font-size: 12px;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-        
-        .store-submit-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #8b5cf6, #ec489a);
+        .modal-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
             border: none;
-            color: white;
-            border-radius: 8px;
+            color: #fff;
             font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
         }
         
-        .store-submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+        .modal-action i {
+            font-size: 24px;
+            color: #aaa;
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .modal-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            pointer-events: none;
         }
         
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        .modal-nav-btn {
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    `;
-    document.head.appendChild(modalStyles);
-}
-
-function submitStoreNotification() {
-    const emailInput = document.getElementById('store-notify-email');
-    const messageDiv = document.getElementById('store-notify-message');
-    const email = emailInput.value;
-    
-    if (!email || !email.includes('@')) {
-        messageDiv.innerHTML = '<span style="color: #ff6b6b;">Please enter a valid email address</span>';
-        return;
-    }
-    
-    // Disable button
-    const button = document.querySelector('.store-submit-btn');
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-    button.disabled = true;
-    
-    // Send to backend
-    fetch('/api/notify-journey-store/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ 
-            email: email,
-            feature: 'journey_store',
-            campaign_id: '{{ campaign.id }}'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            messageDiv.innerHTML = '<span style="color: #4CAF50;">✓ Thanks! We\'ll notify you when the store launches!</span>';
-            emailInput.value = '';
-            
-            // Close modal after 2 seconds
-            setTimeout(() => {
-                document.querySelector('.store-modal').remove();
-            }, 2000);
-        } else {
-            messageDiv.innerHTML = '<span style="color: #ff6b6b;">' + (data.error || 'Something went wrong') + '</span>';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        messageDiv.innerHTML = '<span style="color: #ff6b6b;">Network error. Please try again.</span>';
-    })
-    .finally(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-</script>
-{% endif %}
-
-        <div style="font-weight:600; margin-bottom:12px;">Recent</div>
-        {% if activities %}
-            {% for activity in activities|slice:":5" %}
-            <div class="preview-item" onclick="goToReel({{ forloop.counter0 }})">
-                <div class="preview-image" style="background-image: url('{% if activity.screenshots_list.first %}{{ activity.screenshots_list.first.image.url }}?w=96&h=96&fit=crop&q=80{% elif activity.file %}{{ activity.file.url }}?w=96&h=96&fit=crop&q=80{% endif %}')"></div>
-                <div>
-                    <div style="font-weight:600;">Day {{ activity.day_number }}</div>
-                    <div style="font-size:12px; opacity:0.6;">{{ activity.content|striptags|truncatechars:30 }}</div>
-                </div>
+    </style>
+</head>
+<body>
+    <div class="journey-container">
+        <div class="hero-visual">
+            <div class="back-btn" onclick="window.location.href='/'">
+                <i class="fas fa-arrow-left"></i>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="preview-item" style="opacity: 0.5; cursor: default; justify-content: center; padding: 20px;">
-                <div style="text-align: center; width: 100%;">
-                    <i class="fas fa-camera" style="font-size: 24px; color: #444; margin-bottom: 8px;"></i>
-                    <div style="font-size: 14px; color: #888;">No activities yet</div>
-                </div>
-            </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Comment Modal -->
-<div class="comment-modal" id="commentModal">
-    <div class="comment-modal-overlay" onclick="closeCommentModal()"></div>
-    <div class="comment-modal-container">
-        <div class="comment-modal-header">
-            <h3>Comments</h3>
-            <button class="comment-modal-close" onclick="closeCommentModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="comment-modal-body">
-            <!-- Comments will be loaded here -->
-            <div class="comments-loading">
-                <i class="fas fa-spinner fa-spin"></i> Loading comments...
-            </div>
-        </div>
-        <div class="comment-modal-footer">
-            <div class="comment-form">
-                <input type="text" 
-                       class="comment-input" 
-                       id="commentInput" 
-                       placeholder="Add a comment..." 
-                       maxlength="500">
-                <button class="comment-submit" onclick="submitComment()">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Share Modal -->
-<div class="share-modal" id="shareModal">
-    <div class="share-modal-overlay" onclick="closeShareModal()"></div>
-    <div class="share-modal-container">
-        <div class="share-modal-header">
-            <h3>Share</h3>
-            <button class="share-modal-close" onclick="closeShareModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="share-modal-body">
-            <div class="share-options">
-                <div class="share-option" onclick="shareVia('facebook')">
-                    <i class="fab fa-facebook-f" style="color: #1877f2;"></i>
-                    <span>Facebook</span>
-                </div>
-                <div class="share-option" onclick="shareVia('twitter')">
-                    <i class="fab fa-x-twitter" style="color: #000;"></i>
-                    <span>X</span>
-                </div>
-                <div class="share-option" onclick="shareVia('instagram')">
-                    <i class="fab fa-instagram" style="color: #e4405f;"></i>
-                    <span>Instagram</span>
-                </div>
-                <div class="share-option" onclick="shareVia('whatsapp')">
-                    <i class="fab fa-whatsapp" style="color: #25D366;"></i>
-                    <span>WhatsApp</span>
-                </div>
-                <div class="share-option" onclick="shareVia('telegram')">
-                    <i class="fab fa-telegram" style="color: #0088cc;"></i>
-                    <span>Telegram</span>
-                </div>
-                <div class="share-option" onclick="copyLink()">
-                    <i class="fas fa-link" style="color: #666;"></i>
-                    <span>Copy Link</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- NEW: Store Modal (Mobile only) -->
-{% if journey_completed %}
-<div class="store-modal" id="storeModal">
-    <div class="store-modal-overlay" onclick="closeStoreModal()"></div>
-    <div class="store-modal-container">
-        <div class="store-modal-header">
-            <h3><i class="fas fa-crown"></i> Journey Store</h3>
-            <button class="store-modal-close" onclick="closeStoreModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="store-modal-body">
-            <p style="color: #888; margin-bottom: 20px;">The creator completed {{ activities|length }} days. Now learn how they did it.</p>
-            
-            <!-- Blueprint -->
-            <div class="store-product">
-                <div class="store-product-icon blueprint">
-                    <i class="fas fa-file-pdf"></i>
-                </div>
-                <div class="store-product-info">
-                    <h4 class="store-product-title">The Complete Blueprint</h4>
-                    <p class="store-product-desc">Step-by-step guide • PDF</p>
-                </div>
-                <div>
-                    <span class="store-product-price">$9.99</span>
-                </div>
-                <button class="store-product-btn" onclick="buyProduct('blueprint')">Buy</button>
+            <div class="journey-title-top">
+                <h2>{{ campaign.title }}</h2>
             </div>
             
-            <!-- Behind Scenes -->
-            <div class="store-product">
-                <div class="store-product-icon video">
-                    <i class="fas fa-video"></i>
-                </div>
-                <div class="store-product-info">
-                    <h4 class="store-product-title">Behind the Scenes</h4>
-                    <p class="store-product-desc">2+ hours • Never seen footage</p>
-                </div>
-                <div>
-                    <span class="store-product-price">$19.99</span>
-                </div>
-                <button class="store-product-btn" onclick="buyProduct('video')">Watch</button>
-            </div>
-            
-            <!-- Coaching -->
-            <div class="store-product">
-                <div class="store-product-icon coaching">
-                    <i class="fas fa-user-tie"></i>
-                </div>
-                <div class="store-product-info">
-                    <h4 class="store-product-title">1-on-1 Coaching</h4>
-                    <p class="store-product-desc">60-min session • Personalized</p>
-                </div>
-                <div>
-                    <span class="store-product-price">$49.99</span>
-                </div>
-                <button class="store-product-btn" onclick="buyProduct('coaching')">Book</button>
-            </div>
-            
-            <!-- Bundle -->
-            <div class="store-product" style="border-color: #FFD700; position: relative; margin-top: 8px;">
-                <div class="store-bundle-badge">BEST VALUE</div>
-                <div class="store-product-icon bundle">
-                    <i class="fas fa-gem"></i>
-                </div>
-                <div class="store-product-info">
-                    <h4 class="store-product-title">Complete Bundle</h4>
-                    <p class="store-product-desc">Everything + bonus content</p>
-                </div>
-                <div>
-                    <span class="store-product-price">$69.99</span>
-                </div>
-                <button class="store-product-btn bundle" onclick="buyProduct('bundle')">Get</button>
-            </div>
-            
-            <div class="store-footer">
-                <i class="fas fa-lock"></i> Creator earns 70% • Platform fee 30%
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- ===== NEW: Simple infinite scroll script ===== -->
-<script>
-(function() {
-    // ===== SIMPLE INFINITE SCROLL =====
-    let isLoading = false;
-    let hasMore = true;
-    let lastCursor = null;
-    const reelsTrack = document.getElementById('reelsTrack');
-    const sentinel = document.getElementById('infiniteScrollSentinel');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    
-    // Get last cursor from the last reel
-    const reels = document.querySelectorAll('.reel');
-    if (reels.length > 0) {
-        lastCursor = reels[reels.length - 1].dataset.activityCursor;
-    }
-    
-    // Setup intersection observer
-    if (sentinel && 'IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !isLoading && hasMore && lastCursor) {
-                loadMoreActivities();
-            }
-        }, {
-            root: reelsTrack,
-            rootMargin: '200px',
-            threshold: 0
-        });
-        
-        observer.observe(sentinel);
-    }
-    
-    async function loadMoreActivities() {
-        isLoading = true;
-        loadingSpinner.style.display = 'flex';
-        
-        try {
-            const response = await fetch(`/load-more-activities/?campaign_id={{ campaign.id }}&cursor=${lastCursor}`);
-            const data = await response.json();
-            
-            if (data.activities && data.activities.length > 0) {
-                appendActivities(data.activities);
-                lastCursor = data.next_cursor;
-                hasMore = data.has_more;
-            } else {
-                hasMore = false;
-                sentinel.style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Failed to load more activities:', error);
-            hasMore = false;
-        } finally {
-            isLoading = false;
-            loadingSpinner.style.display = 'none';
-        }
-    }
-    
-    function appendActivities(activities) {
-        activities.forEach((activity, index) => {
-            const reelHtml = createReelHtml(activity, reels.length + index);
-            reelsTrack.insertBefore(createElementFromHtml(reelHtml), sentinel);
-        });
-    }
-    
-    function createElementFromHtml(html) {
-        const div = document.createElement('div');
-        div.innerHTML = html.trim();
-        return div.firstChild;
-    }
-})();
-</script>
-
-<script>
-(function() {
-    'use strict';
-
-    // ========== CONFIGURATION ==========
-    const CONFIG = {
-        debug: true, // Set to false in production
-        videoSelector: '.video-preview-player',
-        backgroundAudioSelector: '.background-audio',
-        reelSelector: '.reel',
-        previewContainerSelector: '.video-preview-container',
-        modalSelector: '.modal',
-        modalVideoSelector: '.modal-video'
-    };
-
-    // ========== STATE MANAGEMENT ==========
-    const state = {
-        hasUserInteracted: false,
-        currentVisibleReelIndex: 0,
-        currentlyPlayingVideoId: null,
-        currentlyOpenModalId: null,
-        scrollTimeout: null,
-        observers: []
-    };
-
-    // ========== UTILITY FUNCTIONS ==========
-    function log(message, data = null) {
-        if (CONFIG.debug) {
-            if (data) {
-                console.log(`[Journey Reels] ${message}`, data);
-            } else {
-                console.log(`[Journey Reels] ${message}`);
-            }
-        }
-    }
-
-    function isElementInViewport(el, buffer = 100) {
-        if (!el) return false;
-        const rect = el.getBoundingClientRect();
-        return (
-            rect.top < (window.innerHeight + buffer) &&
-            rect.bottom > -buffer &&
-            rect.left < window.innerWidth &&
-            rect.right > 0
-        );
-    }
-
-    function getActivityIdFromElement(el) {
-        if (!el) return null;
-        const container = el.closest(CONFIG.previewContainerSelector) || 
-                         el.closest(CONFIG.reelSelector) ||
-                         el.closest('[data-activity-id]');
-        return container?.dataset.activityId || null;
-    }
-
-    // ========== AUDIO MANAGEMENT ==========
-    function pauseAllBackgroundAudio() {
-        const audioElements = document.querySelectorAll(CONFIG.backgroundAudioSelector);
-        let pausedCount = 0;
-        
-        audioElements.forEach(audio => {
-            if (!audio.paused) {
-                audio.pause();
-                audio.currentTime = 0;
-                pausedCount++;
-            }
-        });
-        
-        if (pausedCount > 0) {
-            log(`Paused ${pausedCount} background audio tracks`);
-        }
-    }
-
-    function pauseAllVideoPreviews(exceptVideo = null) {
-        const videos = document.querySelectorAll(CONFIG.videoSelector);
-        let pausedCount = 0;
-        
-        videos.forEach(video => {
-            if (video !== exceptVideo && !video.paused) {
-                video.pause();
-                pausedCount++;
-            }
-        });
-        
-        if (pausedCount > 0) {
-            log(`Paused ${pausedCount} video previews`);
-        }
-    }
-
-    function pauseAllModalVideos() {
-        const modalVideos = document.querySelectorAll(CONFIG.modalVideoSelector);
-        let pausedCount = 0;
-        
-        modalVideos.forEach(video => {
-            if (!video.paused) {
-                video.pause();
-                video.currentTime = 0;
-                pausedCount++;
-            }
-        });
-        
-        if (pausedCount > 0) {
-            log(`Paused ${pausedCount} modal videos`);
-        }
-    }
-
-    function stopAllMedia() {
-        pauseAllBackgroundAudio();
-        pauseAllVideoPreviews();
-        pauseAllModalVideos();
-    }
-
-    // ========== VIDEO PREVIEW CONTROL ==========
-    function playVideo(videoElement) {
-        if (!videoElement) return false;
-        
-        // Don't play preview if a modal is open
-        if (state.currentlyOpenModalId) {
-            log('Modal open - not playing preview');
-            return false;
-        }
-        
-        const activityId = getActivityIdFromElement(videoElement);
-        
-        // Stop all other media first
-        pauseAllBackgroundAudio();
-        pauseAllVideoPreviews(videoElement);
-        
-        // Update state
-        state.currentlyPlayingVideoId = activityId;
-        
-        // Attempt to play
-        const playPromise = videoElement.play();
-        
-        if (playPromise !== undefined) {
-            playPromise
-                .then(() => {
-                    log(`Video ${activityId} playing`);
-                    videoElement.muted = false;
-                    videoElement.volume = 1.0;
-                    
-                    if (videoElement.dataset.playingMuted === 'true') {
-                        delete videoElement.dataset.playingMuted;
-                    }
-                })
-                .catch(error => {
-                    log(`Video ${activityId} autoplay failed: ${error.message}`);
-                    
-                    videoElement.muted = true;
-                    videoElement.play()
-                        .then(() => {
-                            videoElement.dataset.playingMuted = 'true';
-                            log(`Video ${activityId} playing muted`);
-                        })
-                        .catch(e => log(`Video ${activityId} even muted failed: ${e.message}`));
-                });
-            
-            return true;
-        }
-        
-        return false;
-    }
-
-    function pauseVideo(videoElement) {
-        if (!videoElement || videoElement.paused) return;
-        
-        const activityId = getActivityIdFromElement(videoElement);
-        videoElement.pause();
-        log(`Paused video ${activityId}`);
-        
-        if (state.currentlyPlayingVideoId === activityId) {
-            state.currentlyPlayingVideoId = null;
-        }
-    }
-
-    // ========== MODAL FUNCTIONS ==========
-    window.openVideoModal = function(activityId) {
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (!modal) return;
-        
-        log(`Opening modal for activity ${activityId}`);
-        
-        // Set modal as open in state
-        state.currentlyOpenModalId = activityId;
-        
-        // STOP ALL PREVIEW VIDEOS AND AUDIO
-        pauseAllVideoPreviews();
-        pauseAllBackgroundAudio();
-        
-        // Show modal
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-        
-        // Get modal video - IMPORTANT: Do NOT autoplay
-        const modalVideo = modal.querySelector('video');
-        if (modalVideo) {
-            // Ensure it's not playing
-            modalVideo.pause();
-            modalVideo.currentTime = 0;
-            
-            // Set to play ONLY when user clicks play button
-            modalVideo.muted = false;
-            modalVideo.volume = 1.0;
-            modalVideo.autoplay = false; // Explicitly disable autoplay
-            
-            // Remove any autoplay attributes
-            modalVideo.removeAttribute('autoplay');
-            
-            log(`Modal video ready for activity ${activityId} - waiting for user to play`);
-        }
-    };
-
-    window.closeModal = function(activityId) {
-        const modal = document.getElementById(`modal-${activityId}`);
-        if (!modal) return;
-        
-        log(`Closing modal for activity ${activityId}`);
-        
-        // Clear modal state
-        state.currentlyOpenModalId = null;
-        
-        modal.classList.remove('show');
-        document.body.style.overflow = '';
-        
-        // Pause and reset modal video
-        const modalVideo = modal.querySelector('video');
-        if (modalVideo) {
-            modalVideo.pause();
-            modalVideo.currentTime = 0;
-        }
-        
-        // Resume preview video if visible
-        const previewContainer = document.getElementById(`preview-${activityId}`);
-        if (previewContainer && isElementInViewport(previewContainer)) {
-            const previewVideo = previewContainer.querySelector('video');
-            if (previewVideo) {
-                // Small delay to ensure modal is fully closed
-                setTimeout(() => {
-                    playVideo(previewVideo);
-                }, 100);
-            }
-        }
-    };
-
-    // ========== INTERSECTION OBSERVER ==========
-    function initIntersectionObserver() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const video = entry.target;
-                const activityId = getActivityIdFromElement(video);
+            <div class="journey-path-visual">
+                <svg class="path-svg" viewBox="0 0 400 220">
+                    <path class="path-line" d="M60,120 Q140,40 200,100 T340,80" 
+                          stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.3"/>
+                </svg>
                 
-                // Don't do anything if a modal is open
-                if (state.currentlyOpenModalId) {
-                    if (!video.paused) {
-                        pauseVideo(video);
-                    }
-                    return;
-                }
+                {% with total_days=campaign.duration|default:30 current=campaign.get_current_day %}
                 
-                if (entry.isIntersecting) {
-                    // Video is visible
-                    log(`Video ${activityId} became visible`);
+                <div class="milestone-node {% if 1 <= current %}completed{% else %}locked{% endif %}" 
+                     style="left: 14%; top: 48%;" 
+                     onclick="{% if 1 <= current %}openDayActivity(1){% else %}alert('Day 1 unlocks soon!'){% endif %}">
+                    <i class="fas {% if 1 <= current %}fa-check{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 1</span>
+                </div>
+                
+                {% if total_days >= 5 %}
+                <div class="milestone-node {% if 5 < current %}completed{% elif 5 == current %}current{% else %}locked{% endif %}" 
+                     style="left: 30%; top: 20%;" 
+                     onclick="{% if 5 <= current %}openDayActivity(5){% else %}alert('Day 5 unlocks soon!'){% endif %}">
+                    <i class="fas {% if 5 < current %}fa-check{% elif 5 == current %}fa-play{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 5</span>
+                </div>
+                {% endif %}
+                
+                {% if total_days >= 10 %}
+                <div class="milestone-node {% if 10 < current %}completed{% elif 10 == current %}current{% else %}locked{% endif %}" 
+                     style="left: 48%; top: 52%;" 
+                     onclick="{% if 10 <= current %}openDayActivity(10){% else %}alert('Day 10 unlocks soon!'){% endif %}">
+                    <i class="fas {% if 10 < current %}fa-check{% elif 10 == current %}fa-play{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 10</span>
+                </div>
+                {% endif %}
+                
+                <div class="milestone-node {% if current < total_days %}current{% else %}completed{% endif %}" 
+                     style="left: 62%; top: 38%;" 
+                     onclick="openDayActivity({{ current }})">
+                    <i class="fas {% if current < total_days %}fa-play{% else %}fa-check{% endif %}"></i>
+                    <span class="node-label">Day {{ current }}</span>
+                </div>
+                
+                {% if total_days >= 20 %}
+                <div class="milestone-node {% if 20 <= current %}completed{% else %}locked{% endif %}" 
+                     style="left: 80%; top: 48%;" 
+                     onclick="{% if 20 <= current %}openDayActivity(20){% else %}alert('Day 20 unlocks soon!'){% endif %}">
+                    <i class="fas {% if 20 <= current %}fa-check{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 20</span>
+                </div>
+                {% endif %}
+                
+                {% endwith %}
+            </div>
+            
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="value">{{ campaign.get_current_day }}</div>
+                    <div class="label">Days Done</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="value">{{ campaign.duration|default:30 }}</div>
+                    <div class="label">Total</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="value">{{ campaign.get_follower_count }}</div>
+                    <div class="label">Followers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-progress-bar">
+            <div class="progress-header">
+                <span>Journey Progress</span>
+                <span>{{ campaign.get_current_day }}/{{ campaign.duration|default:30 }} · {{ campaign.get_progress_percentage }}%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill-visual" style="width: {{ campaign.get_progress_percentage }}%;"></div>
+            </div>
+        </div>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <div class="value">{{ campaign.get_follower_count }}</div>
+                <div class="label">Followers</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-hand-holding-heart"></i>
+                <div class="value">${{ campaign.total_donations|floatformat:0 }}</div>
+                <div class="label">Raised</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-heart"></i>
+                <div class="value">{{ campaign.get_love_count }}</div>
+                <div class="label">Loves</div>
+            </div>
+        </div>
+
+        <div class="cinematic-strip">
+            <div class="strip-header">
+                <i class="fas fa-film"></i>
+                <h3>All Days</h3>
+                <span>Swipe →</span>
+            </div>
+            <div class="day-strip">
+                {% with total_days=campaign.duration|default:30 current=campaign.get_current_day %}
+                
+                {% for day_num in total_days|get_range %}
+                    {% with activity=activities_dict|get_item:day_num %}
                     
-                    if (state.hasUserInteracted) {
-                        playVideo(video);
-                    } else {
-                        video.muted = true;
-                        video.play()
-                            .then(() => {
-                                video.dataset.playingMuted = 'true';
-                                log(`Video ${activityId} playing muted (pre-interaction)`);
-                            })
-                            .catch(() => {});
-                    }
+                    <div class="strip-day {% if day_num < current %}completed{% elif day_num == current %}current{% else %}locked{% endif %}" 
+                         onclick="{% if day_num <= current %}openDayActivity({{ day_num }}){% else %}alert('Day {{ day_num }} unlocks soon!'){% endif %}">
+                        <div class="strip-thumbnail">
+                            {% if activity and activity.file %}
+                                {% if activity.is_video %}
+                                <video src="{{ activity.file.url }}" muted loop playsinline preload="metadata"></video>
+                                {% else %}
+                                <img src="{{ activity.file.url }}" alt="Day {{ day_num }}">
+                                {% endif %}
+                            {% else %}
+                                <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-image" style="color:#444;font-size:24px;"></i>
+                                </div>
+                            {% endif %}
+                            
+                            {% if day_num < current %}
+                            <div class="check-badge"><i class="fas fa-check"></i></div>
+                            {% endif %}
+                            
+                            {% if activity and activity.file %}
+                            <div class="play-icon-strip"><i class="fas fa-play"></i></div>
+                            {% elif day_num > current %}
+                            <div class="lock-icon-strip"><i class="fas fa-lock"></i></div>
+                            {% endif %}
+                            
+                            <div class="strip-overlay">
+                                <span class="strip-day-number">Day {{ day_num }}</span>
+                                <span class="strip-day-status">
+                                    {% if day_num < current %}Completed
+                                    {% elif day_num == current %}📍 Current
+                                    {% else %}Coming Soon{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% endwith %}
+                {% endfor %}
+                
+                {% endwith %}
+            </div>
+        </div>
+
+        {% with current_activity=latest_activity %}
+        <div class="current-day-hero" onclick="openDayActivity({{ campaign.get_current_day }})">
+            {% if current_activity and current_activity.file %}
+                {% if current_activity.is_video %}
+                <video src="{{ current_activity.file.url }}" muted loop playsinline autoplay></video>
+                {% else %}
+                <img src="{{ current_activity.file.url }}" alt="Current day">
+                {% endif %}
+            {% else %}
+                <img src="{{ campaign.poster.url|default:'https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg' }}" alt="Campaign">
+            {% endif %}
+            
+            <div class="hero-play-btn">
+                <i class="fas fa-play"></i>
+            </div>
+            <div class="hero-content">
+                <span class="hero-badge">DAY {{ campaign.get_current_day }} · CURRENT</span>
+                <h3 class="hero-day-title">
+                    {% if current_activity %}
+                        {{ current_activity.content|truncatechars:40 }}
+                    {% else %}
+                        {{ campaign.title|truncatechars:40 }}
+                    {% endif %}
+                </h3>
+                <p class="hero-day-desc">
+                    {% if current_activity %}
+                        {{ current_activity.content|truncatechars:100 }}
+                    {% else %}
+                        {{ campaign.content|truncatechars:100 }}
+                    {% endif %}
+                </p>
+                <div class="hero-actions">
+                    <span class="hero-action"><i class="fas fa-heart"></i> {{ campaign.get_love_count }}</span>
+                    <span class="hero-action"><i class="fas fa-comment"></i> {{ campaign.get_comment_count }}</span>
+                    <span class="hero-action"><i class="fas fa-bookmark"></i> {{ campaign.get_save_count }}</span>
+                    <span class="hero-action"><i class="fas fa-share-alt"></i> {{ campaign.get_share_count }}</span>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+
+        <button class="continue-btn-visual" onclick="openDayActivity({{ campaign.get_current_day }})">
+            <i class="fas fa-play-circle"></i>
+            Continue Day {{ campaign.get_current_day }}
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <script>
+        const campaignId = {{ campaign.id }};
+        const totalDays = {{ campaign.duration|default:30 }};
+        const currentDay = {{ campaign.get_current_day }};
+        const activities = {{ activities_json|safe }};
+        
+        function openDayActivity(day) {
+            const activity = activities[day];
+            
+            if (activity && activity.fileUrl) {
+                if (activity.isVideo) {
+                    openVideoModal(day, activity);
                 } else {
-                    // Video is not visible
-                    if (!video.paused) {
-                        log(`Video ${activityId} became invisible - pausing`);
-                        pauseVideo(video);
-                    }
+                    openImageModal(day, activity);
                 }
-            });
-        }, {
-            threshold: 0.2,
-            rootMargin: '50px'
-        });
-
-        document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
-            observer.observe(video);
-        });
-        
-        state.observers.push(observer);
-        log('Intersection Observer initialized');
-    }
-
-    // ========== SCROLL HANDLER ==========
-    function initScrollHandler() {
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        reelsTrack.addEventListener('scroll', () => {
-            // Don't process scroll if modal is open
-            if (state.currentlyOpenModalId) return;
-            
-            if (state.scrollTimeout) {
-                clearTimeout(state.scrollTimeout);
-            }
-            
-            const scrollTop = reelsTrack.scrollTop;
-            const reelHeight = reelsTrack.clientHeight;
-            const visibleIndex = Math.round(scrollTop / reelHeight);
-            
-            if (visibleIndex !== state.currentVisibleReelIndex) {
-                state.currentVisibleReelIndex = visibleIndex;
-                log(`Scrolled to reel ${visibleIndex}`);
-                
-                document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
-                    const videoReel = video.closest(CONFIG.reelSelector);
-                    if (videoReel) {
-                        const reelIndex = parseInt(videoReel.dataset.index);
-                        if (reelIndex === visibleIndex) {
-                            if (video.paused) {
-                                playVideo(video);
-                            }
-                        } else {
-                            if (!video.paused) {
-                                pauseVideo(video);
-                            }
-                        }
-                    }
-                });
-            }
-            
-            document.querySelectorAll('.progress-bar').forEach((bar, i) => {
-                bar.classList.toggle('active', i === visibleIndex);
-            });
-            
-            state.scrollTimeout = setTimeout(() => {
-                if (!state.currentlyOpenModalId) {
-                    document.querySelectorAll(CONFIG.videoSelector).forEach(video => {
-                        const isVisible = isElementInViewport(video);
-                        if (isVisible && video.paused) {
-                            playVideo(video);
-                        } else if (!isVisible && !video.paused) {
-                            pauseVideo(video);
-                        }
-                    });
+            } else if (day <= currentDay) {
+                if (day === currentDay) {
+                    alert('Post your update for Day ' + day + '!');
+                    window.location.href = `/campaign/${campaignId}/post-activity/`;
+                } else {
+                    alert('No update posted for Day ' + day);
                 }
-            }, 150);
-        }, { passive: true });
-        
-        log('Scroll handler initialized');
-    }
-
-    // ========== USER INTERACTION HANDLER ==========
-    function initUserInteractionHandler() {
-        function handleUserInteraction() {
-            if (!state.hasUserInteracted) {
-                state.hasUserInteracted = true;
-                log('User interacted - enabling audio');
-                
-                document.querySelectorAll(`${CONFIG.videoSelector}[data-playing-muted="true"]`).forEach(video => {
-                    video.muted = false;
-                    video.volume = 1.0;
-                    delete video.dataset.playingMuted;
-                    log(`Unmuted video ${getActivityIdFromElement(video)}`);
-                });
+            } else {
+                alert('Day ' + day + ' unlocks soon!');
             }
         }
-
-        const interactionEvents = ['click', 'touchstart', 'keydown'];
-        interactionEvents.forEach(eventType => {
-            document.addEventListener(eventType, handleUserInteraction, { once: true, passive: true });
-        });
         
-        log('User interaction handler initialized');
-    }
-
-    // ========== CAROUSEL FUNCTIONS ==========
-    window.goToSlide = function(carouselId, index) {
-        const track = document.getElementById(`track-${carouselId}`);
-        if (!track) return;
-        
-        const slideCount = track.children.length;
-        if (slideCount === 0) return;
-        
-        index = Math.max(0, Math.min(index, slideCount - 1));
-        track.style.transform = `translateX(-${index * 100}%)`;
-        
-        const dots = document.querySelectorAll(`#carousel-${carouselId} .dot`);
-        dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
-        
-        const thumbnails = document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`);
-        thumbnails.forEach((thumb, i) => thumb.classList.toggle('active', i === index));
-        
-        const counter = document.getElementById(`current-${carouselId}`);
-        if (counter) counter.textContent = index + 1;
-    };
-
-    // ========== ACTION HANDLERS ==========
-    window.handleLove = function(id, event) {
-        event.stopPropagation();
-        event.preventDefault();
-        
-        const btn = document.getElementById('love-' + id);
-        const icon = btn.querySelector('i');
-        const countSpan = document.getElementById('love-count-' + id);
-        const wasLoved = btn.classList.contains('loved');
-        
-        btn.classList.toggle('loved');
-        icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
-        
-        let count = parseInt(countSpan.textContent.replace(/,/g, '')) || 0;
-        count = wasLoved ? Math.max(0, count - 1) : count + 1;
-        countSpan.textContent = count.toLocaleString();
-    };
-
-    window.toggleCaption = function(id, event) {
-        event.stopPropagation();
-        const caption = document.getElementById('caption-' + id);
-        caption.classList.toggle('expanded');
-        event.target.textContent = caption.classList.contains('expanded') ? 'less' : 'more';
-    };
-
-    window.openComments = function(id, e) { 
-        e.stopPropagation(); 
-        e.preventDefault();
-    };
-
-    window.openShareMenu = function(id, e) { 
-        e.stopPropagation(); 
-        e.preventDefault();
-        
-        if (navigator.share) {
-            navigator.share({
-                title: document.title,
-                text: 'Check out this journey moment',
-                url: window.location.href + '#activity-' + id
-            }).catch(() => {});
-        } else {
-            prompt('Copy this link:', window.location.href + '#activity-' + id);
-        }
-    };
-
-    window.goToReel = function(index) {
-        const reelsTrack = document.getElementById('reelsTrack');
-        if (!reelsTrack) return;
-        
-        reelsTrack.scrollTo({
-            top: index * reelsTrack.clientHeight,
-            behavior: 'smooth'
-        });
-    };
-
-    // ========== NEW: STORE FUNCTIONS ==========
-    window.openStoreModal = function() {
-        const modal = document.getElementById('storeModal');
-        if (modal) {
-            modal.classList.add('show');
+        function openVideoModal(day, activity) {
+            const existingModal = document.querySelector('.video-modal');
+            if (existingModal) existingModal.remove();
+            
+            const modal = document.createElement('div');
+            modal.className = 'video-modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button class="modal-close-btn" onclick="this.closest('.video-modal').remove(); document.body.style.overflow='';">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span class="modal-day-indicator">Day ${day} of ${totalDays}</span>
+                    </div>
+                    <div class="modal-video-container">
+                        <video src="${activity.fileUrl}" controls playsinline autoplay></video>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="modal-user-row">
+                            <img src="{{ campaign.get_profile_image }}" alt="User" class="modal-avatar">
+                            <div class="modal-user-info">
+                                <div class="modal-username">@{{ campaign.get_username }}</div>
+                                <div class="modal-day-info">Day ${day}</div>
+                            </div>
+                        </div>
+                        <p class="modal-caption">${activity.content}</p>
+                        <div class="modal-actions">
+                            <button class="modal-action">
+                                <i class="far fa-heart"></i>
+                                <span>${activity.loveCount || 0}</span>
+                            </button>
+                            <button class="modal-action">
+                                <i class="far fa-comment"></i>
+                                <span>${activity.commentCount || 0}</span>
+                            </button>
+                            <button class="modal-action">
+                                <i class="far fa-bookmark"></i>
+                            </button>
+                            <button class="modal-action">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-nav">
+                        ${day > 1 ? `<button class="modal-nav-btn" onclick="openDayActivity(${day - 1})"><i class="fas fa-chevron-left"></i></button>` : '<div></div>'}
+                        ${day < totalDays ? `<button class="modal-nav-btn" onclick="openDayActivity(${day + 1})"><i class="fas fa-chevron-right"></i></button>` : '<div></div>'}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
             document.body.style.overflow = 'hidden';
-        }
-    };
-
-    window.closeStoreModal = function() {
-        const modal = document.getElementById('storeModal');
-        if (modal) {
-            modal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-    };
-
-    window.buyProduct = function(productType) {
-        // Close modal if open
-        closeStoreModal();
-        
-        // Redirect to purchase page
-        window.location.href = `/campaign/{{ campaign.id }}/purchase/${productType}/`;
-    };
-
-    // Show/hide mobile store button based on screen size
-    function updateMobileStoreButton() {
-        const mobileBtn = document.getElementById('mobileStoreBtn');
-        if (!mobileBtn) return;
-        
-        if (window.innerWidth <= 767) {
-            mobileBtn.style.display = 'flex';
-        } else {
-            mobileBtn.style.display = 'none';
-        }
-    }
-
-    // ========== CAROUSEL INITIALIZATION ==========
-    function initCarousels() {
-        document.querySelectorAll('.story-carousel').forEach(carousel => {
-            const carouselId = carousel.id.replace('carousel-', '');
-            const track = document.getElementById(`track-${carouselId}`);
             
-            if (!track) return;
-            
-            carousel.querySelectorAll('.dot[data-carousel]').forEach(dot => {
-                dot.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.goToSlide(carouselId, parseInt(dot.dataset.index));
-                });
-            });
-            
-            document.querySelectorAll(`#strip-${carouselId} .thumbnail-item`).forEach(thumb => {
-                thumb.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.goToSlide(carouselId, parseInt(thumb.dataset.index));
-                });
-            });
-            
-            // Touch/swipe support
-            let startX = 0;
-            let currentIndex = 0;
-            let isDragging = false;
-            
-            const activeDot = carousel.querySelector('.dot.active');
-            if (activeDot) {
-                currentIndex = parseInt(activeDot.dataset.index) || 0;
-            }
-            
-            track.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                isDragging = true;
-                track.style.transition = 'none';
-            }, { passive: true });
-            
-            track.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                
-                const diffX = e.touches[0].clientX - startX;
-                const movePercent = (diffX / track.offsetWidth) * 100;
-                track.style.transform = `translateX(${(-currentIndex * 100) + movePercent}%)`;
-            }, { passive: false });
-            
-            track.addEventListener('touchend', (e) => {
-                if (!isDragging) return;
-                
-                const diffX = e.changedTouches[0].clientX - startX;
-                const threshold = track.offsetWidth * 0.15;
-                const slideCount = track.children.length;
-                
-                if (Math.abs(diffX) > threshold) {
-                    if (diffX > 0 && currentIndex > 0) {
-                        currentIndex--;
-                    } else if (diffX < 0 && currentIndex < slideCount - 1) {
-                        currentIndex++;
-                    }
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                    document.body.style.overflow = '';
                 }
-                
-                track.style.transition = 'transform 0.3s ease-out';
-                window.goToSlide(carouselId, currentIndex);
-                isDragging = false;
-            }, { passive: true });
-        });
+            });
+        }
         
-        log('Carousels initialized');
-    }
-
-    // ========== IMAGE OPTIMIZATION ==========
-    function initImageOptimization() {
-        const images = document.querySelectorAll('.carousel-slide img.carousel-image');
+        function openImageModal(day, activity) {
+            const existingModal = document.querySelector('.video-modal');
+            if (existingModal) existingModal.remove();
+            
+            const modal = document.createElement('div');
+            modal.className = 'video-modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button class="modal-close-btn" onclick="this.closest('.video-modal').remove(); document.body.style.overflow='';">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <span class="modal-day-indicator">Day ${day} of ${totalDays}</span>
+                    </div>
+                    <div class="modal-video-container">
+                        <img src="${activity.fileUrl}" style="width:100%;height:100%;object-fit:contain;">
+                    </div>
+                    <div class="modal-footer">
+                        <div class="modal-user-row">
+                            <img src="{{ campaign.get_profile_image }}" alt="User" class="modal-avatar">
+                            <div class="modal-user-info">
+                                <div class="modal-username">@{{ campaign.get_username }}</div>
+                                <div class="modal-day-info">Day ${day}</div>
+                            </div>
+                        </div>
+                        <p class="modal-caption">${activity.content}</p>
+                        <div class="modal-actions">
+                            <button class="modal-action">
+                                <i class="far fa-heart"></i>
+                                <span>${activity.loveCount || 0}</span>
+                            </button>
+                            <button class="modal-action">
+                                <i class="far fa-comment"></i>
+                                <span>${activity.commentCount || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-nav">
+                        ${day > 1 ? `<button class="modal-nav-btn" onclick="openDayActivity(${day - 1})"><i class="fas fa-chevron-left"></i></button>` : '<div></div>'}
+                        ${day < totalDays ? `<button class="modal-nav-btn" onclick="openDayActivity(${day + 1})"><i class="fas fa-chevron-right"></i></button>` : '<div></div>'}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            document.body.style.overflow = 'hidden';
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                    document.body.style.overflow = '';
+                }
+            });
+        }
         
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const video = entry.target.querySelector('video');
+                if (video) {
                     if (entry.isIntersecting) {
-                        entry.target.classList.add('loaded');
-                        imageObserver.unobserve(entry.target);
-                    }
-                });
-            }, {
-                rootMargin: '50px 0px',
-                threshold: 0.01
-            });
-            
-            images.forEach(img => imageObserver.observe(img));
-            state.observers.push(imageObserver);
-        } else {
-            images.forEach(img => img.classList.add('loaded'));
-        }
-        
-        log('Image optimization initialized');
-    }
-
-    // ========== KEYBOARD NAVIGATION ==========
-    function initKeyboardNavigation() {
-        document.addEventListener('keydown', (e) => {
-            if (document.querySelector(`${CONFIG.modalSelector}.show`)) {
-                if (e.key === 'Escape') {
-                    document.querySelectorAll(`${CONFIG.modalSelector}.show`).forEach(modal => {
-                        const id = modal.id.replace('modal-', '');
-                        window.closeModal(id);
-                    });
-                }
-                return;
-            }
-            
-            const reelsTrack = document.getElementById('reelsTrack');
-            if (!reelsTrack) return;
-            
-            const currentIndex = Math.round(reelsTrack.scrollTop / reelsTrack.clientHeight);
-            const totalReels = document.querySelectorAll(CONFIG.reelSelector).length;
-            
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                window.goToReel(Math.max(0, currentIndex - 1));
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                window.goToReel(Math.min(totalReels - 1, currentIndex + 1));
-            }
-        });
-        
-        log('Keyboard navigation initialized');
-    }
-
-    // ========== ENSURE MODAL VIDEOS DON'T AUTOPLAY ==========
-    function preventModalAutoplay() {
-        // Find all modal videos and disable autoplay
-        document.querySelectorAll(CONFIG.modalVideoSelector).forEach(video => {
-            // Remove autoplay attribute
-            video.removeAttribute('autoplay');
-            video.autoplay = false;
-            
-            // Pause immediately if somehow playing
-            if (!video.paused) {
-                video.pause();
-                video.currentTime = 0;
-            }
-            
-            // Override any play attempts
-            const originalPlay = video.play;
-            video.play = function() {
-                // Only allow play if modal is open for this video
-                const modal = video.closest(CONFIG.modalSelector);
-                if (modal && modal.classList.contains('show')) {
-                    return originalPlay.apply(this, arguments);
-                }
-                log('Prevented modal video autoplay');
-                return Promise.reject('Modal video autoplay prevented');
-            };
-        });
-        
-        log('Modal autoplay prevention initialized');
-    }
-
-    // ========== HIDE SWIPE INDICATOR ==========
-    function hideSwipeIndicator() {
-        setTimeout(() => {
-            document.querySelectorAll('.swipe-indicator').forEach(el => {
-                el.style.opacity = '0';
-                setTimeout(() => {
-                    el.style.display = 'none';
-                }, 500);
-            });
-        }, 3000);
-    }
-
-    // ========== INITIALIZATION ==========
-    function initialize() {
-        log('Initializing Journey Reels...');
-        
-        // Stop all media initially
-        stopAllMedia();
-        
-        // Prevent modal autoplay
-        preventModalAutoplay();
-        
-        // Initialize all components
-        initUserInteractionHandler();
-        initIntersectionObserver();
-        initScrollHandler();
-        initCarousels();
-        initImageOptimization();
-        initKeyboardNavigation();
-        hideSwipeIndicator();
-        updateMobileStoreButton();
-        
-        // Handle resize
-        window.addEventListener('resize', updateMobileStoreButton);
-        
-        log('Journey Reels initialized successfully', {
-            videosFound: document.querySelectorAll(CONFIG.videoSelector).length,
-            audioFound: document.querySelectorAll(CONFIG.backgroundAudioSelector).length,
-            modalVideosFound: document.querySelectorAll(CONFIG.modalVideoSelector).length,
-            reelsFound: document.querySelectorAll(CONFIG.reelSelector).length
-        });
-    }
-
-    // Start when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
-    }
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        state.observers.forEach(observer => {
-            if (observer && typeof observer.disconnect === 'function') {
-                observer.disconnect();
-            }
-        });
-        stopAllMedia();
-    });
-
-})();
-</script>
-<script type="text/javascript">
-    // ========== LOVE FUNCTIONALITY ==========
-async function handleLove(activityId, event) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    const btn = document.getElementById(`love-${activityId}`);
-    const icon = btn.querySelector('i');
-    const countSpan = document.getElementById(`love-count-${activityId}`);
-    
-    try {
-        const response = await fetch(`/love_activity/${activityId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            // Toggle love state
-            const wasLoved = btn.classList.contains('loved');
-            btn.classList.toggle('loved');
-            icon.className = wasLoved ? 'far fa-heart' : 'fas fa-heart';
-            
-            // Update count with animation
-            countSpan.textContent = data.love_count.toLocaleString();
-            
-            // Add subtle animation
-            countSpan.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                countSpan.style.transform = 'scale(1)';
-            }, 200);
-        } else {
-            console.error('Failed to love activity');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-// ========== COMMENT MODAL FUNCTIONS ==========
-let currentActivityId = null;
-let replyingToCommentId = null;
-
-window.openComments = async function(activityId, event) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    currentActivityId = activityId;
-    replyingToCommentId = null; // Reset reply state
-    
-    const modal = document.getElementById('commentModal');
-    const body = modal.querySelector('.comment-modal-body');
-    
-    // Reset comment input placeholder
-    document.getElementById('commentInput').placeholder = 'Add a comment...';
-    
-    // Show modal with loading
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    
-    // Load comments
-    await loadComments(activityId);
-};
-
-window.closeCommentModal = function() {
-    const modal = document.getElementById('commentModal');
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-    currentActivityId = null;
-    replyingToCommentId = null;
-};
-
-async function loadComments(activityId, loadAll = false) {
-    const body = document.querySelector('.comment-modal-body');
-    body.innerHTML = '<div class="comments-loading"><i class="fas fa-spinner fa-spin"></i> Loading comments...</div>';
-    
-    try {
-        const response = await fetch(`/get_activity_comments/${activityId}/?all=${loadAll}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            renderComments(data.comments, data.total_comments);
-        } else {
-            body.innerHTML = '<div class="comments-loading">Failed to load comments</div>';
-        }
-    } catch (error) {
-        console.error('Error loading comments:', error);
-        body.innerHTML = '<div class="comments-loading">Error loading comments</div>';
-    }
-}
-
-function renderComments(comments, totalComments) {
-    const body = document.querySelector('.comment-modal-body');
-    const header = document.querySelector('.comment-modal-header h3');
-    
-    header.textContent = `Comments (${totalComments})`;
-    
-    if (comments.length === 0) {
-        body.innerHTML = `
-            <div class="comments-loading">
-                <i class="far fa-comment-dots"></i> No comments yet. Be the first!
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    comments.forEach(comment => {
-        html += renderCommentItem(comment);
-    });
-    
-    // Add "View all" button if there are more comments
-    if (totalComments > comments.length) {
-        html += `
-            <button class="view-replies-btn" onclick="loadComments('${currentActivityId}', true)" style="margin-top: 16px; width: 100%; padding: 12px; background: #222; border-radius: 12px; border: none; color: #0a84ff; cursor: pointer;">
-                <i class="fas fa-chevron-down"></i> View all ${totalComments} comments
-            </button>
-        `;
-    }
-    
-    body.innerHTML = html;
-}
-
-function renderCommentItem(comment) {
-    return `
-        <div class="comment-item" data-comment-id="${comment.id}">
-            <a href="/user-profile/@${comment.username}/" class="comment-avatar">
-                <img src="${comment.user_image || '/static/default-avatar.png'}" alt="${comment.username}">
-            </a>
-            <div class="comment-content">
-                <div class="comment-header">
-                    <a href="/user-profile/@${comment.username}/" class="comment-username">@${comment.username}</a>
-                    <span class="comment-timestamp">${comment.timestamp}</span>
-                </div>
-                <div class="comment-text">${escapeHtml(comment.content)}</div>
-                <div class="comment-actions">
-                    <button class="comment-like-btn ${comment.liked ? 'liked' : ''}" onclick="likeComment(${comment.id}, this)">
-                        <i class="${comment.liked ? 'fas' : 'far'} fa-heart"></i>
-                        <span>${comment.like_count}</span>
-                    </button>
-                    <button class="comment-reply-btn" onclick="showReplyForm(${comment.id}, '${comment.username}')">
-                        <i class="far fa-comment"></i>
-                        <span>Reply</span>
-                    </button>
-                </div>
-                ${comment.reply_count > 0 ? `
-                    <button class="view-replies-btn" onclick="loadReplies(${comment.id}, this)">
-                        <i class="fas fa-chevron-down"></i> View ${comment.reply_count} repl${comment.reply_count > 1 ? 'ies' : 'y'}
-                    </button>
-                ` : ''}
-                <div class="comment-replies" id="replies-${comment.id}" style="display: none;"></div>
-            </div>
-        </div>
-    `;
-}
-
-function renderReplyItem(reply) {
-    return `
-        <div class="reply-item" data-reply-id="${reply.id}">
-            <a href="/user-profile/@${reply.username}/" class="reply-avatar">
-                <img src="${reply.user_image || '/static/default-avatar.png'}" alt="${reply.username}">
-            </a>
-            <div class="reply-content">
-                <div class="reply-header">
-                    <a href="/user-profile/@${reply.username}/" class="reply-username">@${reply.username}</a>
-                    <span class="reply-timestamp">${reply.timestamp}</span>
-                </div>
-                <div class="reply-text">${escapeHtml(reply.content)}</div>
-                <div class="reply-actions">
-                    <button class="reply-like-btn ${reply.liked ? 'liked' : ''}" onclick="likeReply(${reply.id}, this)">
-                        <i class="${reply.liked ? 'fas' : 'far'} fa-heart"></i>
-                        <span>${reply.like_count}</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// ========== REPLY FUNCTIONALITY ==========
-function showReplyForm(commentId, username) {
-    replyingToCommentId = commentId;
-    const input = document.getElementById('commentInput');
-    input.placeholder = `Reply to @${username}...`;
-    input.focus();
-}
-
-async function loadReplies(commentId, button) {
-    const repliesDiv = document.getElementById(`replies-${commentId}`);
-    
-    if (repliesDiv.style.display === 'block') {
-        // Hide replies
-        repliesDiv.style.display = 'none';
-        button.innerHTML = `<i class="fas fa-chevron-down"></i> View ${repliesDiv.dataset.totalReplies || ''} repl${parseInt(repliesDiv.dataset.totalReplies || 0) > 1 ? 'ies' : 'y'}`;
-        return;
-    }
-    
-    // Show loading
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-    
-    try {
-        const response = await fetch(`/get_comment_replies/${commentId}/`);
-        const data = await response.json();
-        
-        if (data.success) {
-            let repliesHtml = '';
-            data.replies.forEach(reply => {
-                repliesHtml += renderReplyItem(reply);
-            });
-            
-            repliesDiv.innerHTML = repliesHtml;
-            repliesDiv.style.display = 'block';
-            repliesDiv.dataset.totalReplies = data.total_replies;
-            
-            button.innerHTML = `<i class="fas fa-chevron-up"></i> Hide repl${data.total_replies > 1 ? 'ies' : 'y'}`;
-        } else {
-            button.innerHTML = '<i class="fas fa-chevron-down"></i> Error loading replies';
-        }
-    } catch (error) {
-        console.error('Error loading replies:', error);
-        button.innerHTML = '<i class="fas fa-chevron-down"></i> Error loading replies';
-    }
-}
-
-// ========== COMMENT SUBMISSION ==========
-async function submitComment() {
-    const input = document.getElementById('commentInput');
-    const content = input.value.trim();
-    
-    if (!content || !currentActivityId) return;
-    
-    const submitBtn = document.querySelector('.comment-submit');
-    submitBtn.disabled = true;
-    
-    try {
-        let url, data;
-        
-        if (replyingToCommentId) {
-            // Posting a reply
-            const response = await fetch('/post_comment_reply/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    comment_id: replyingToCommentId,
-                    content: content
-                })
-            });
-            data = await response.json();
-            url = 'reply';
-        } else {
-            // Posting a new comment
-            const response = await fetch('/post_activity_comment/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    activity_id: currentActivityId,
-                    content: content
-                })
-            });
-            data = await response.json();
-            url = 'comment';
-        }
-        
-        if (data.success) {
-            input.value = '';
-            input.placeholder = 'Add a comment...';
-            
-            if (replyingToCommentId) {
-                // If it was a reply, reload replies for that comment
-                const repliesDiv = document.getElementById(`replies-${replyingToCommentId}`);
-                if (repliesDiv && repliesDiv.style.display === 'block') {
-                    // Reload replies if they're visible
-                    const viewBtn = document.querySelector(`[onclick="loadReplies(${replyingToCommentId}, this)"]`);
-                    if (viewBtn) {
-                        await loadReplies(replyingToCommentId, viewBtn);
+                        video.play().catch(() => {});
+                    } else {
+                        video.pause();
                     }
                 }
-                replyingToCommentId = null;
-            } else {
-                // Reload all comments
-                await loadComments(currentActivityId);
-            }
-        }
-    } catch (error) {
-        console.error('Error posting:', error);
-        alert('Failed to post. Please try again.');
-    } finally {
-        submitBtn.disabled = false;
-    }
-}
-
-// ========== COMMENT LIKE FUNCTIONALITY ==========
-async function likeComment(commentId, button) {
-    const isLiked = button.classList.contains('liked');
-    const action = isLiked ? 'unlike' : 'like';
-    
-    try {
-        const response = await fetch('/like_activity_comment/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                comment_id: commentId,
-                action: action
-            })
+            });
+        }, { threshold: 0.5 });
+        
+        document.querySelectorAll('.strip-day').forEach(day => {
+            videoObserver.observe(day);
         });
         
-        const data = await response.json();
-        
-        if (data.success) {
-            button.classList.toggle('liked');
-            button.querySelector('i').className = button.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
-            button.querySelector('span').textContent = data.like_count;
+        const heroVideo = document.querySelector('.current-day-hero video');
+        if (heroVideo) {
+            videoObserver.observe(document.querySelector('.current-day-hero'));
         }
-    } catch (error) {
-        console.error('Error liking comment:', error);
-    }
-}
-
-// ========== REPLY LIKE FUNCTIONALITY ==========
-async function likeReply(replyId, button) {
-    const isLiked = button.classList.contains('liked');
-    const action = isLiked ? 'unlike' : 'like';
-    
-    try {
-        const response = await fetch('/like_comment_reply/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                reply_id: replyId,
-                action: action
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            button.classList.toggle('liked');
-            button.querySelector('i').className = button.classList.contains('liked') ? 'fas fa-heart' : 'far fa-heart';
-            button.querySelector('span').textContent = data.like_count;
-        }
-    } catch (error) {
-        console.error('Error liking reply:', error);
-    }
-}
-
-// ========== SHARE MODAL FUNCTIONS ==========
-window.openShareMenu = function(activityId, event) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    const modal = document.getElementById('shareModal');
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    
-    // Store activityId for sharing
-    modal.dataset.activityId = activityId;
-};
-
-window.closeShareModal = function() {
-    const modal = document.getElementById('shareModal');
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-};
-function shareVia(platform) {
-    const modal = document.getElementById('shareModal');
-    const activityId = modal.dataset.activityId;
-    const url = window.location.href.split('#')[0] + '#activity-' + activityId;
-    const text = 'Check out this journey moment';
-    
-    let shareUrl = '';
-    
-    switch(platform) {
-        case 'facebook':
-            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-            break;
-        case 'twitter':
-            shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-            break;
-        case 'instagram':
-            // Instagram doesn't have a direct web share URL API
-            // Instead, we'll use the native share if available, or copy to clipboard
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Journey Moment',
-                    text: text,
-                    url: url
-                }).catch(() => {
-                    // If share fails, fallback to copy link
-                    copyLink();
-                });
-            } else {
-                // For Instagram on mobile, we can try to open the Instagram app
-                // This will either open the app or the App Store/Play Store
-                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                if (isMobile) {
-                    // Try to open Instagram app
-                    window.location.href = `instagram://library?AssetPath=${encodeURIComponent(url)}`;
-                    
-                    // Fallback to copy link after a delay
-                    setTimeout(() => {
-                        if (confirm('To share on Instagram, copy the link and paste it in your Instagram story or post. Copy now?')) {
-                            copyLink();
-                        }
-                    }, 500);
-                } else {
-                    // On desktop, just copy link
-                    copyLink();
-                }
-            }
-            closeShareModal();
-            return;
-        case 'whatsapp':
-            shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
-            break;
-        case 'telegram':
-            shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-            break;
-    }
-    
-    if (shareUrl) {
-        window.open(shareUrl, '_blank', 'width=600,height=400');
-    }
-    
-    closeShareModal();
-}
-function copyLink() {
-    const modal = document.getElementById('shareModal');
-    const activityId = modal.dataset.activityId;
-    const url = window.location.href.split('#')[0] + '#activity-' + activityId;
-    
-    navigator.clipboard.writeText(url).then(() => {
-        alert('Link copied to clipboard!');
-        closeShareModal();
-    }).catch(() => {
-        prompt('Copy this link:', url);
-        closeShareModal();
-    });
-}
-
-// ========== UTILITY FUNCTIONS ==========
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function escapeHtml(unsafe) {
-    if (!unsafe) return '';
-    return unsafe
-        .toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// Close modals on escape key
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeCommentModal();
-        closeShareModal();
-        closeStoreModal();
-    }
-});
-
-// Close modals on overlay click
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('comment-modal-overlay')) {
-        closeCommentModal();
-    }
-    if (e.target.classList.contains('share-modal-overlay')) {
-        closeShareModal();
-    }
-    if (e.target.classList.contains('store-modal-overlay')) {
-        closeStoreModal();
-    }
-});
-
-// Handle Enter key in comment input
-document.getElementById('commentInput')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        submitComment();
-    }
-});
-</script>
+    </script>
 </body>
 </html>

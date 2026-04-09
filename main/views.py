@@ -1733,149 +1733,55 @@ def load_more_activities(request):
     })
 
 
-
-
+# views.py - updated activity_list function
 @login_required
 def activity_list(request, campaign_id):
-   
-    category_filter = request.GET.get('category', '')  # Get category filter from request
-    user_profile = get_object_or_404(Profile, user=request.user)
     campaign = get_object_or_404(Campaign, id=campaign_id)
     
-    # Get all activities associated with the campaign with prefetch for screenshots
-    activities = Activity.objects.filter(campaign=campaign).prefetch_related(
-        'video_screenshots'
-    ).order_by('-timestamp')
+    # Get all activities for this campaign, ordered by day number
+    activities = Activity.objects.filter(campaign=campaign).order_by('day_number_field')
     
-    # Add comment count for each activity and screenshot info
+    # Create a dictionary mapping day numbers to activities
+    activities_dict = {}
+    activities_json = {}
+    
     for activity in activities:
-        activity.comment_count = ActivityComment.objects.filter(activity=activity).count()
-        # FIX: Don't try to set properties - use regular attributes instead
-        activity.has_screenshots_var = activity.video_screenshots.exists()
-        activity.screenshots_list = activity.video_screenshots.all().order_by('order')
-        activity.screenshot_count_total = activity.screenshots_list.count()
+        day_num = activity.day_number_field
+        activities_dict[day_num] = activity
+        
+        # Build JSON data for JavaScript
+        file_url = activity.file.url if activity.file else None
+        activities_json[str(day_num)] = {
+            'id': activity.id,
+            'content': activity.content,
+            'fileUrl': file_url,
+            'isVideo': activity.is_video,
+            'loveCount': activity.loves.count(),
+            'commentCount': activity.comments.count(),
+        }
     
-    # List of image extensions
-    image_extensions = ['.jpg', '.jpeg', '.png', '.gif']
-    activity_count = activities.count()
+    # Get current day's activity - NOW FILTERABLE!
+    current_day = campaign.get_current_day()
+    current_activity = activities.filter(day_number_field=current_day).first()
     
-    # Calculate progress percentage based on real-time duration
-    if campaign.duration and campaign.duration > 0:
-        if campaign.duration_unit == 'minutes':
-            total_duration = campaign.duration
-            elapsed = min(activity_count, total_duration)
-            progress_percentage = (elapsed / total_duration) * 100
-        else:
-            # For days, use the days_left property for real-time tracking
-            if campaign.days_left is not None:
-                elapsed_days = campaign.duration - campaign.days_left
-                progress_percentage = (elapsed_days / campaign.duration) * 100
-            else:
-                progress_percentage = (activity_count / campaign.duration) * 100
-    else:
-        # Ongoing campaign with no set duration
-        progress_percentage = activity_count * 10  # Just a placeholder
-        if progress_percentage > 100:
-            progress_percentage = 100
+    # If no activity for current day, get the most recent one
+    if not current_activity and activities.exists():
+        current_activity = activities.last()
     
-    # Ensure progress percentage doesn't exceed 100
-    progress_percentage = min(progress_percentage, 100)
+    # Create day range for iteration
+    total_days = campaign.duration or 30
+    day_range = range(1, total_days + 1)
     
-    # Notification and messaging data
-    unread_notifications = Notification.objects.filter(user=request.user, viewed=False)
-    
-    
-    # 🔥 Trending campaigns (Only those with at least 1 love)
-    trending_campaigns = Campaign.objects.filter() \
-        .annotate(love_count_annotated=Count('loves')) \
-        .filter(love_count_annotated__gte=1)
-     
-
-    # Apply category filter if provided
-    if category_filter:
-        trending_campaigns = trending_campaigns.filter(category=category_filter)
-
-    trending_campaigns = trending_campaigns.order_by('-love_count_annotated')[:10]
-
-    # Top Contributors logic
-    from itertools import chain
-    from collections import defaultdict
-    
-    love_pairs = Love.objects.values_list('user_id', 'campaign_id')
-    comment_pairs = Comment.objects.values_list('user_id', 'campaign_id')
-    view_pairs = CampaignView.objects.values_list('user_id', 'campaign_id')
-    activity_love_pairs = ActivityLove.objects.values_list('user_id', 'activity__campaign_id')
-    activity_comment_pairs = ActivityComment.objects.values_list('user_id', 'activity__campaign_id')
-
-    # Combine all engagement pairs
-    all_pairs = chain(love_pairs, comment_pairs, view_pairs,
-                      activity_love_pairs, activity_comment_pairs)
-
-    # Count number of unique campaigns each user engaged with
-    user_campaign_map = defaultdict(set)
-    for user_id, campaign_id in all_pairs:
-        user_campaign_map[user_id].add(campaign_id)
-
-    # Build a list of contributors with their campaign engagement count
-    contributor_data = []
-    for user_id, campaign_set in user_campaign_map.items():
-        try:
-            profile = Profile.objects.get(user__id=user_id)
-            contributor_data.append({
-                'user': profile.user,
-                'image': profile.image,
-                'campaign_count': len(campaign_set),
-            })
-        except Profile.DoesNotExist:
-            continue
-
-    # Sort contributors by campaign_count descending
-    top_contributors = sorted(contributor_data, key=lambda x: x['campaign_count'], reverse=True)[:5]
-
-    categories = Campaign.objects.values_list('category', flat=True).distinct()
-
-    # ===== NEW: Check if journey is completed =====
-    from django.utils import timezone
-    
-    # Check if journey is completed (today > end_date)
-    journey_completed = True
-    post_products = []
-    
-    if campaign.end_date and timezone.now().date() > campaign.end_date.date():
-        journey_completed = True
-        # Get any products creator has added
-        post_products = campaign.post_journey_products.filter(is_active=True)
-    
-    # Also check if all days are completed
-    elif campaign.duration and activities.count() >= campaign.duration:
-        journey_completed = True
-        post_products = campaign.post_journey_products.filter(is_active=True)
-    
-    # Add video-specific context
     context = {
-      
-        'campaign': campaign, 
-        'activities': activities, 
-        'image_extensions': image_extensions,
-        'user_profile': user_profile,
-        'activity_count': activity_count,
-        'progress_percentage': progress_percentage,
-        'unread_notifications': unread_notifications,
-            'journey_completed': journey_completed,
-        'post_products': post_products,
-      
-        'trending_campaigns': trending_campaigns,
-        'top_contributors': top_contributors,
-        'categories': categories,
-        'selected_category': category_filter,
-        # Video processing context
-        'video_processing_enabled': True,
-        'supported_video_formats': ['mp4', 'mov', 'avi', 'webm', 'mkv'],
+        'campaign': campaign,
+        'activities_dict': activities_dict,
+        'activities_json': json.dumps(activities_json),
+        'latest_activity': current_activity,
+        'day_range': day_range,
+        'get_item': lambda d, k: d.get(k),
     }
     
     return render(request, 'main/activity_list.html', context)
-
-
 
 
 
