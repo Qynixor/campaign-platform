@@ -1205,7 +1205,6 @@
     <p id="journeyPopupText">Continue your impact story and track progress</p>
     <button class="journey-popup-button" id="journeyConfirmBtn">Continue Journey →</button>
 </div>
-
 <script>
     // Fix for mobile viewport height
     function setVhProperty() { 
@@ -1224,8 +1223,38 @@
             container.scrollTop = 0;
         }
         initializeAllSlides();
-        startAutoplayForActiveSlide(); // Start autoplay for the first visible slide
+        startAutoplayForActiveSlide();
+        setCurrentJourneyFromActive(); // Set initial journey ID
     });
+    
+    // Set current journey from visible slide
+    function setCurrentJourneyFromActive() {
+        const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
+        const items = document.querySelectorAll('.campaign-item');
+        const scrollTop = container.scrollTop;
+        
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const itemTop = item.offsetTop;
+            const itemBottom = itemTop + item.offsetHeight;
+            
+            if (scrollTop >= itemTop - 150 && scrollTop < itemBottom - 150) {
+                window.currentJourneyId = item.getAttribute('data-campaign-id');
+                window.currentJourneyTitle = item.getAttribute('data-campaign-title') || 'Journey';
+                console.log('Set current journey:', window.currentJourneyId, window.currentJourneyTitle);
+                return;
+            }
+        }
+        
+        // Fallback to first item
+        if (items.length > 0) {
+            window.currentJourneyId = items[0].getAttribute('data-campaign-id');
+            window.currentJourneyTitle = items[0].getAttribute('data-campaign-title') || 'Journey';
+            console.log('Fallback to first journey:', window.currentJourneyId);
+        }
+    }
     
     // Initialize slides for all campaigns
     function initializeAllSlides() {
@@ -1251,7 +1280,6 @@
         }
         
         if (activeCampaignId) {
-            // Check if this campaign has multiple slides
             const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
             if (total > 1) {
                 startAutoplay(activeCampaignId);
@@ -1264,7 +1292,6 @@
         const btn = document.getElementById(`autoplayBtn-${campaignId}`);
         if (!btn) return;
         
-        // Only start if not already playing
         if (btn.classList.contains('playing')) return;
         
         btn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -1273,7 +1300,6 @@
         const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
         if (total > 1) {
             if (!window.slideshowTimers) window.slideshowTimers = {};
-            // Clear any existing timer
             if (window.slideshowTimers[campaignId]) {
                 clearInterval(window.slideshowTimers[campaignId]);
             }
@@ -1318,31 +1344,31 @@
     }
     
     function closeAllPopups() {
-        document.getElementById('statsPopup').classList.remove('active');
-        document.getElementById('menuPopup').classList.remove('active');
-        document.getElementById('commentsModal').classList.remove('active');
-        document.getElementById('donationModal').classList.remove('active');
-        document.getElementById('popupBackdrop').classList.remove('active');
+        document.getElementById('statsPopup')?.classList.remove('active');
+        document.getElementById('menuPopup')?.classList.remove('active');
+        document.getElementById('commentsModal')?.classList.remove('active');
+        document.getElementById('donationModal')?.classList.remove('active');
+        document.getElementById('popupBackdrop')?.classList.remove('active');
     }
     
     function closeStatsPopup() { 
-        document.getElementById('statsPopup').classList.remove('active'); 
-        document.getElementById('popupBackdrop').classList.remove('active'); 
+        document.getElementById('statsPopup')?.classList.remove('active'); 
+        document.getElementById('popupBackdrop')?.classList.remove('active'); 
     }
     
     function closeMenuPopup() { 
-        document.getElementById('menuPopup').classList.remove('active'); 
-        document.getElementById('popupBackdrop').classList.remove('active'); 
+        document.getElementById('menuPopup')?.classList.remove('active'); 
+        document.getElementById('popupBackdrop')?.classList.remove('active'); 
     }
     
     function closeCommentsModal() { 
-        document.getElementById('commentsModal').classList.remove('active'); 
-        document.getElementById('popupBackdrop').classList.remove('active'); 
+        document.getElementById('commentsModal')?.classList.remove('active'); 
+        document.getElementById('popupBackdrop')?.classList.remove('active'); 
     }
     
     function closeDonationModal() { 
-        document.getElementById('donationModal').classList.remove('active'); 
-        document.getElementById('popupBackdrop').classList.remove('active'); 
+        document.getElementById('donationModal')?.classList.remove('active'); 
+        document.getElementById('popupBackdrop')?.classList.remove('active'); 
     }
     
     window.openStatsPopup = function(campaignId) {
@@ -1594,7 +1620,6 @@
         }
     };
     
-    // Toggle caption for the structure with short and full divs
     window.toggleCaption = function(campaignId, element) { 
         const shortDiv = document.getElementById(`caption-short-${campaignId}`);
         const fullDiv = document.getElementById(`caption-full-${campaignId}`);
@@ -1616,7 +1641,6 @@
         }
     };
     
-    // Toggle full content (called from the "less" link)
     window.toggleFullContent = function(campaignId) {
         const shortDiv = document.getElementById(`caption-short-${campaignId}`);
         const fullDiv = document.getElementById(`caption-full-${campaignId}`);
@@ -1627,7 +1651,6 @@
         }
     };
     
-    // Update slide indicators
     function updateSlideIndicators(campaignId, currentIndex) {
         const dots = document.querySelectorAll(`#indicators-${campaignId} .indicator-dot`); 
         dots.forEach((dot, i) => {
@@ -1640,7 +1663,6 @@
         }
     }
     
-    // Go to specific slide
     window.goToSlide = function(campaignId, index) { 
         const container = document.getElementById(`slidesContainer-${campaignId}`); 
         if (container) {
@@ -1649,7 +1671,6 @@
         }
     };
     
-    // Toggle autoplay (user control)
     window.toggleAutoplay = function(campaignId) { 
         const btn = document.getElementById(`autoplayBtn-${campaignId}`); 
         if (!btn) return;
@@ -1661,7 +1682,6 @@
         } 
     };
     
-    // Clean up autoplay when scrolling away
     function handleScrollAutoplay() {
         const container = document.getElementById('campaignsContainer');
         const items = document.querySelectorAll('.campaign-item');
@@ -1676,22 +1696,38 @@
             if (isActive) {
                 activeCampaignId = campaignId;
             } else {
-                // Stop autoplay for inactive slides
                 if (window.slideshowTimers && window.slideshowTimers[campaignId]) {
                     stopAutoplay(campaignId);
                 }
             }
         });
         
-        // Start autoplay for the newly active slide if it has multiple images
         if (activeCampaignId) {
             const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
             if (total > 1) {
-                // Check if it's already playing
                 const btn = document.getElementById(`autoplayBtn-${activeCampaignId}`);
                 if (btn && !btn.classList.contains('playing')) {
                     startAutoplay(activeCampaignId);
                 }
+            }
+        }
+    }
+    
+    // Set current journey on scroll for ALL devices
+    function updateCurrentJourneyOnScroll() {
+        const container = document.getElementById('campaignsContainer');
+        const items = document.querySelectorAll('.campaign-item');
+        const scrollTop = container.scrollTop;
+        
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const itemTop = item.offsetTop;
+            const itemBottom = itemTop + item.offsetHeight;
+            
+            if (scrollTop >= itemTop - 150 && scrollTop < itemBottom - 150) {
+                window.currentJourneyId = item.getAttribute('data-campaign-id');
+                window.currentJourneyTitle = item.getAttribute('data-campaign-title') || 'Journey';
+                return;
             }
         }
     }
@@ -1744,16 +1780,17 @@
         if(statsTrigger) {
             statsTrigger.onclick = () => { openStatsPopup(campaignId); };
         }
-        window.currentJourneyId = campaignId;
-        window.currentJourneyTitle = active.getAttribute('data-campaign-title');
     }
     
-    let journeyPopup = document.getElementById('journeyPopup'), journeyOverlay = document.getElementById('journeyOverlay'), journeyTimeout = null;
+    let journeyPopup = document.getElementById('journeyPopup');
+    let journeyOverlay = document.getElementById('journeyOverlay');
+    let journeyTimeout = null;
     
     function showJourneyPopup() {
         let title = window.currentJourneyTitle || 'Journey';
         document.getElementById('journeyPopupText').innerHTML = `Continue "${title}" and see your impact.`;
-        journeyPopup.classList.add('active'); journeyOverlay.classList.add('active');
+        journeyPopup.classList.add('active'); 
+        journeyOverlay.classList.add('active');
         if(journeyTimeout) clearTimeout(journeyTimeout);
         journeyTimeout = setTimeout(() => { hideJourneyPopup(); }, 7000);
     }
@@ -1761,42 +1798,72 @@
     function hideJourneyPopup() { 
         journeyPopup.classList.remove('active'); 
         journeyOverlay.classList.remove('active'); 
-        if(journeyTimeout) clearTimeout(journeyTimeout); 
+        if(journeyTimeout) {
+            clearTimeout(journeyTimeout);
+            journeyTimeout = null;
+        }
     }
     
- document.getElementById('closeJourneyPopupBtn').onclick = hideJourneyPopup;
-journeyOverlay.onclick = hideJourneyPopup;
-document.getElementById('journeyConfirmBtn').onclick = () => { 
-    if(window.currentJourneyId) {
-        window.location.href = `/campaign/${window.currentJourneyId}/activity_list/`; 
-    } else {
-        alert('Journey link ready'); 
+    // Journey confirm button with proper mobile support
+    if (document.getElementById('closeJourneyPopupBtn')) {
+        document.getElementById('closeJourneyPopupBtn').onclick = hideJourneyPopup;
     }
-    hideJourneyPopup(); 
-};    
+    if (journeyOverlay) {
+        journeyOverlay.onclick = hideJourneyPopup;
+    }
+    if (document.getElementById('journeyConfirmBtn')) {
+        document.getElementById('journeyConfirmBtn').onclick = () => { 
+            console.log('Confirm clicked - Current Journey ID:', window.currentJourneyId);
+            
+            if (window.currentJourneyId) {
+                window.location.href = `/campaign/${window.currentJourneyId}/activity_list/`; 
+            } else {
+                // Try to get it one more time
+                setCurrentJourneyFromActive();
+                if (window.currentJourneyId) {
+                    window.location.href = `/campaign/${window.currentJourneyId}/activity_list/`;
+                } else {
+                    alert('Please select a journey first'); 
+                }
+            }
+            hideJourneyPopup(); 
+        };
+    }
+    
     function closeStatsProgress() { 
-        document.getElementById('statsProgressPopup').classList.remove('active'); 
-        document.getElementById('statsBackdrop').classList.remove('active'); 
+        document.getElementById('statsProgressPopup')?.classList.remove('active'); 
+        document.getElementById('statsBackdrop')?.classList.remove('active'); 
     }
     
-    document.getElementById('closeStatsPopupBtn').onclick = closeStatsProgress;
-    document.getElementById('statsBackdrop').onclick = closeStatsProgress;
+    if (document.getElementById('closeStatsPopupBtn')) {
+        document.getElementById('closeStatsPopupBtn').onclick = closeStatsProgress;
+    }
+    if (document.getElementById('statsBackdrop')) {
+        document.getElementById('statsBackdrop').onclick = closeStatsProgress;
+    }
     
-    let scrollContainer = document.getElementById('campaignsContainer'), scrollTimer = null;
-    scrollContainer.addEventListener('scroll', () => { 
-        updateExternalSidebars(); 
-        handleScrollAutoplay(); // Handle autoplay on scroll
-        if(scrollTimer) clearTimeout(scrollTimer); 
-        scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); 
-    });
+    let scrollContainer = document.getElementById('campaignsContainer');
+    let scrollTimer = null;
+    
+    if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', () => { 
+            updateCurrentJourneyOnScroll(); // Set journey ID on mobile too
+            updateExternalSidebars(); 
+            handleScrollAutoplay();
+            if(scrollTimer) clearTimeout(scrollTimer); 
+            scrollTimer = setTimeout(() => { showJourneyPopup(); }, 500); 
+        });
+    }
     
     window.addEventListener('resize', () => { updateExternalSidebars(); });
+    
     document.addEventListener('DOMContentLoaded', () => { 
+        setCurrentJourneyFromActive(); // Set initial journey ID
         updateExternalSidebars(); 
         initializeAllSlides();
         setTimeout(() => { 
             showJourneyPopup(); 
-            startAutoplayForActiveSlide(); // Start autoplay after a short delay
+            startAutoplayForActiveSlide();
         }, 500); 
     });
     
