@@ -1117,6 +1117,17 @@
                 font-size: 13px;
             }
         }
+
+
+#load-more-container {
+    scroll-snap-align: none;
+}
+
+#load-more-container button:hover {
+    background: #0c85d0 !important;
+}
+
+
     </style>
 </head>
 <body>
@@ -1131,7 +1142,11 @@
                 {% include "main/partials/campaign_card.html" with campaign=campaign %}
             {% endfor %}
         {% else %}
-            <div class="no-campaigns"><i class="fas fa-compass"></i><p>No journeys to explore yet</p><a href="{% url 'create_campaign' %}">Start Your Journey</a></div>
+            <div class="no-campaigns">
+                <i class="fas fa-compass"></i>
+                <p>No journeys to explore yet</p>
+                <a href="{% url 'create_campaign' %}">Start Your Journey</a>
+            </div>
         {% endif %}
     </div>
 </div>
@@ -1223,8 +1238,10 @@
             container.scrollTop = 0;
         }
         initializeAllSlides();
-        startAutoplayForActiveSlide();
-        setCurrentJourneyFromActive(); // Set initial journey ID
+        setCurrentJourneyFromActive();
+        setTimeout(() => {
+            forceStartAutoplayForActiveSlide();
+        }, 300);
     });
     
     // Set current journey from visible slide
@@ -1243,16 +1260,13 @@
             if (scrollTop >= itemTop - 150 && scrollTop < itemBottom - 150) {
                 window.currentJourneyId = item.getAttribute('data-campaign-id');
                 window.currentJourneyTitle = item.getAttribute('data-campaign-title') || 'Journey';
-                console.log('Set current journey:', window.currentJourneyId, window.currentJourneyTitle);
                 return;
             }
         }
         
-        // Fallback to first item
         if (items.length > 0) {
             window.currentJourneyId = items[0].getAttribute('data-campaign-id');
             window.currentJourneyTitle = items[0].getAttribute('data-campaign-title') || 'Journey';
-            console.log('Fallback to first journey:', window.currentJourneyId);
         }
     }
     
@@ -1266,52 +1280,86 @@
         });
     }
     
-    // Start autoplay for the currently active/visible slide
-    function startAutoplayForActiveSlide() {
+    function forceStartAutoplayForActiveSlide() {
         const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
         const items = document.querySelectorAll('.campaign-item');
         const scrollTop = container.scrollTop;
         
         let activeCampaignId = null;
         for (let i = 0; i < items.length; i++) {
-            if (scrollTop >= items[i].offsetTop - 150) {
+            const itemTop = items[i].offsetTop;
+            const itemBottom = itemTop + items[i].offsetHeight;
+            if (scrollTop >= itemTop - 150 && scrollTop < itemBottom - 150) {
                 activeCampaignId = items[i].getAttribute('data-campaign-id');
+                break;
             }
+        }
+        
+        if (!activeCampaignId && items.length > 0) {
+            activeCampaignId = items[0].getAttribute('data-campaign-id');
         }
         
         if (activeCampaignId) {
-            const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
+            const totalSlides = document.getElementById(`totalSlides-${activeCampaignId}`);
+            const total = parseInt(totalSlides?.textContent || '0');
             if (total > 1) {
-                startAutoplay(activeCampaignId);
+                forceStartAutoplay(activeCampaignId);
             }
         }
     }
     
-    // Helper function to start autoplay for a specific campaign
+    function forceStartAutoplay(campaignId) {
+        const btn = document.getElementById(`autoplayBtn-${campaignId}`);
+        const totalSlides = document.getElementById(`totalSlides-${campaignId}`);
+        const total = parseInt(totalSlides?.textContent || '0');
+        
+        if (total <= 1) return;
+        
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            btn.classList.add('playing');
+        }
+        
+        if (!window.slideshowTimers) window.slideshowTimers = {};
+        if (window.slideshowTimers[campaignId]) {
+            clearInterval(window.slideshowTimers[campaignId]);
+        }
+        
+        window.slideshowTimers[campaignId] = setInterval(() => {
+            const currentSlideSpan = document.querySelector(`#currentSlide-${campaignId}`);
+            const currentSlide = parseInt(currentSlideSpan?.textContent || '1') - 1;
+            const nextIndex = (currentSlide + 1) % total;
+            goToSlide(campaignId, nextIndex);
+        }, 3000);
+    }
+    
     function startAutoplay(campaignId) {
         const btn = document.getElementById(`autoplayBtn-${campaignId}`);
-        if (!btn) return;
+        const totalSlides = document.getElementById(`totalSlides-${campaignId}`);
+        const total = parseInt(totalSlides?.textContent || '0');
         
-        if (btn.classList.contains('playing')) return;
+        if (total <= 1) return;
         
-        btn.innerHTML = '<i class="fas fa-pause"></i>';
-        btn.classList.add('playing');
-        
-        const total = parseInt(document.getElementById(`totalSlides-${campaignId}`)?.textContent || '0');
-        if (total > 1) {
-            if (!window.slideshowTimers) window.slideshowTimers = {};
-            if (window.slideshowTimers[campaignId]) {
-                clearInterval(window.slideshowTimers[campaignId]);
-            }
-            window.slideshowTimers[campaignId] = setInterval(() => {
-                const currentSlide = parseInt(document.querySelector(`#currentSlide-${campaignId}`)?.textContent || '1') - 1;
-                const nextIndex = (currentSlide + 1) % total;
-                goToSlide(campaignId, nextIndex);
-            }, 3000);
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-pause"></i>';
+            btn.classList.add('playing');
         }
+        
+        if (!window.slideshowTimers) window.slideshowTimers = {};
+        if (window.slideshowTimers[campaignId]) {
+            clearInterval(window.slideshowTimers[campaignId]);
+        }
+        
+        window.slideshowTimers[campaignId] = setInterval(() => {
+            const currentSlideSpan = document.querySelector(`#currentSlide-${campaignId}`);
+            const currentSlide = parseInt(currentSlideSpan?.textContent || '1') - 1;
+            const nextIndex = (currentSlide + 1) % total;
+            goToSlide(campaignId, nextIndex);
+        }, 3000);
     }
     
-    // Helper function to stop autoplay for a specific campaign
     function stopAutoplay(campaignId) {
         const btn = document.getElementById(`autoplayBtn-${campaignId}`);
         if (btn) {
@@ -1684,6 +1732,8 @@
     
     function handleScrollAutoplay() {
         const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
         const items = document.querySelectorAll('.campaign-item');
         const scrollTop = container.scrollTop;
         
@@ -1691,7 +1741,9 @@
         
         items.forEach((item) => {
             const campaignId = item.getAttribute('data-campaign-id');
-            const isActive = scrollTop >= item.offsetTop - 150 && scrollTop < item.offsetTop + item.offsetHeight - 150;
+            const itemTop = item.offsetTop;
+            const itemBottom = itemTop + item.offsetHeight;
+            const isActive = scrollTop >= itemTop - 150 && scrollTop < itemBottom - 150;
             
             if (isActive) {
                 activeCampaignId = campaignId;
@@ -1703,19 +1755,24 @@
         });
         
         if (activeCampaignId) {
-            const total = parseInt(document.getElementById(`totalSlides-${activeCampaignId}`)?.textContent || '0');
+            const totalSlides = document.getElementById(`totalSlides-${activeCampaignId}`);
+            const total = parseInt(totalSlides?.textContent || '0');
             if (total > 1) {
                 const btn = document.getElementById(`autoplayBtn-${activeCampaignId}`);
-                if (btn && !btn.classList.contains('playing')) {
-                    startAutoplay(activeCampaignId);
+                if (!window.slideshowTimers || !window.slideshowTimers[activeCampaignId]) {
+                    forceStartAutoplay(activeCampaignId);
+                } else if (btn && !btn.classList.contains('playing')) {
+                    btn.classList.add('playing');
+                    btn.innerHTML = '<i class="fas fa-pause"></i>';
                 }
             }
         }
     }
     
-    // Set current journey on scroll for ALL devices
     function updateCurrentJourneyOnScroll() {
         const container = document.getElementById('campaignsContainer');
+        if (!container) return;
+        
         const items = document.querySelectorAll('.campaign-item');
         const scrollTop = container.scrollTop;
         
@@ -1789,22 +1846,21 @@
     function showJourneyPopup() {
         let title = window.currentJourneyTitle || 'Journey';
         document.getElementById('journeyPopupText').innerHTML = `Continue "${title}" and see your impact.`;
-        journeyPopup.classList.add('active'); 
-        journeyOverlay.classList.add('active');
+        if (journeyPopup) journeyPopup.classList.add('active'); 
+        if (journeyOverlay) journeyOverlay.classList.add('active');
         if(journeyTimeout) clearTimeout(journeyTimeout);
         journeyTimeout = setTimeout(() => { hideJourneyPopup(); }, 7000);
     }
     
     function hideJourneyPopup() { 
-        journeyPopup.classList.remove('active'); 
-        journeyOverlay.classList.remove('active'); 
+        if (journeyPopup) journeyPopup.classList.remove('active'); 
+        if (journeyOverlay) journeyOverlay.classList.remove('active'); 
         if(journeyTimeout) {
             clearTimeout(journeyTimeout);
             journeyTimeout = null;
         }
     }
     
-    // Journey confirm button with proper mobile support
     if (document.getElementById('closeJourneyPopupBtn')) {
         document.getElementById('closeJourneyPopupBtn').onclick = hideJourneyPopup;
     }
@@ -1813,12 +1869,9 @@
     }
     if (document.getElementById('journeyConfirmBtn')) {
         document.getElementById('journeyConfirmBtn').onclick = () => { 
-            console.log('Confirm clicked - Current Journey ID:', window.currentJourneyId);
-            
             if (window.currentJourneyId) {
                 window.location.href = `/campaign/${window.currentJourneyId}/activity_list/`; 
             } else {
-                // Try to get it one more time
                 setCurrentJourneyFromActive();
                 if (window.currentJourneyId) {
                     window.location.href = `/campaign/${window.currentJourneyId}/activity_list/`;
@@ -1847,7 +1900,7 @@
     
     if (scrollContainer) {
         scrollContainer.addEventListener('scroll', () => { 
-            updateCurrentJourneyOnScroll(); // Set journey ID on mobile too
+            updateCurrentJourneyOnScroll();
             updateExternalSidebars(); 
             handleScrollAutoplay();
             if(scrollTimer) clearTimeout(scrollTimer); 
@@ -1858,13 +1911,24 @@
     window.addEventListener('resize', () => { updateExternalSidebars(); });
     
     document.addEventListener('DOMContentLoaded', () => { 
-        setCurrentJourneyFromActive(); // Set initial journey ID
+        setCurrentJourneyFromActive();
         updateExternalSidebars(); 
         initializeAllSlides();
         setTimeout(() => { 
             showJourneyPopup(); 
-            startAutoplayForActiveSlide();
-        }, 500); 
+            forceStartAutoplayForActiveSlide();
+        }, 300); 
+    });
+    
+    // FIX: Re-initialize slides when new campaigns load via infinite scroll
+    document.body.addEventListener('htmx:afterSwap', function() {
+        document.querySelectorAll('.campaign-item').forEach(item => {
+            const campaignId = item.getAttribute('data-campaign-id');
+            if (campaignId && !item.hasAttribute('data-slides-initialized')) {
+                updateSlideIndicators(campaignId, 0);
+                item.setAttribute('data-slides-initialized', 'true');
+            }
+        });
     });
     
     document.body.addEventListener('htmx:configRequest', function(evt) { 

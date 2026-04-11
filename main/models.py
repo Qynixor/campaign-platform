@@ -306,6 +306,17 @@ class Campaign(models.Model):
         return ''
 
 
+# Add to Campaign model in models.py
+    @property
+    def current_day_activity(self):
+        try:
+            current_day = self.get_current_day()
+            return self.activity_set.filter(day_number_field=current_day).first()
+        except:
+            return None
+
+
+
     # ==================== STRING REPRESENTATION ====================
     def __str__(self):
         return self.title

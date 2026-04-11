@@ -1,16 +1,41 @@
 {% load static %}
-<div class="campaign-item" id="campaign-{{ campaign.id }}" data-campaign-id="{{ campaign.id }}">
+<div class="campaign-item" id="campaign-{{ campaign.id }}" data-campaign-id="{{ campaign.id }}" data-campaign-title="{{ campaign.title|escapejs }}">
     <!-- Audio trigger (click anywhere on image to toggle audio) -->
     <div class="audio-trigger" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer;"></div>
     
-    <!-- Image Slideshow -->
+    <!-- Image Slideshow - NOW SHOWS CURRENT DAY ACTIVITY MEDIA -->
     <div class="image-slideshow">
         <div class="slides-container" id="slidesContainer-{{ campaign.id }}">
-            {% for image in campaign.get_images %}
-                <div class="slide-item">
-                    <img src="{{ image }}" alt="{{ campaign.title }}" loading="lazy">
-                </div>
-            {% endfor %}
+            {% with activity=campaign.cached_activity %}
+                {% if activity and activity.has_screenshots %}
+                    <!-- Show screenshots from video activity -->
+                    {% for screenshot in activity.screenshots %}
+                        <div class="slide-item">
+                            <img src="{{ screenshot.image.url }}" alt="Day {{ activity.day_number }}" loading="lazy">
+                        </div>
+                    {% endfor %}
+                {% elif activity and activity.file %}
+                    <!-- Show single file (image or video thumbnail) -->
+                    <div class="slide-item">
+                        {% if activity.is_video %}
+                            <video src="{{ activity.file.url }}" muted loop playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>
+                        {% else %}
+                            <img src="{{ activity.file.url }}" alt="Day {{ activity.day_number }}" loading="lazy">
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- Fallback to campaign poster -->
+                    {% for image in campaign.get_images %}
+                        <div class="slide-item">
+                            <img src="{{ image }}" alt="{{ campaign.title }}" loading="lazy">
+                        </div>
+                    {% empty %}
+                        <div class="slide-item">
+                            <img src="https://res.cloudinary.com/dvlgdzood/image/upload/v1763637368/pp_vvzbcj.jpg" alt="Placeholder" loading="lazy">
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
         </div>
     </div>
 
@@ -18,11 +43,18 @@
     <div class="gradient-top"></div>
     <div class="gradient-bottom"></div>
 
-<!-- ===== ADD THIS TITLE OVERLAY SECTION ===== -->
-<div class="campaign-title-overlay">
-    <h1 class="campaign-title">{{ campaign.title }}</h1>
-</div>
-<!-- ===== END TITLE OVERLAY ===== -->
+    <!-- TITLE OVERLAY - Shows activity caption or campaign title -->
+    <div class="campaign-title-overlay">
+        {% with activity=campaign.cached_activity %}
+            <h1 class="campaign-title">
+                {% if activity and activity.content %}
+                    {{ activity.content|truncatechars:50 }}
+                {% else %}
+                    {{ campaign.title }}
+                {% endif %}
+            </h1>
+        {% endwith %}
+    </div>
 
     <!-- Top Bar -->
     <div class="top-bar">
@@ -37,12 +69,11 @@
     </div>
 
     <!-- Journey Link -->
-  <!-- Journey Link -->
-<div class="journey-center-link">
-    <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="journey-link" onclick="event.stopPropagation()">
-        <i class="fas fa-compass"></i> view journey
-    </a>
-</div>
+    <div class="journey-center-link">
+        <a href="{% url 'activity_list' campaign_id=campaign.id %}" class="journey-link" onclick="event.stopPropagation()">
+            <i class="fas fa-compass"></i> view journey
+        </a>
+    </div>
 
     <!-- Action Buttons -->
     <div class="action-buttons">
@@ -114,67 +145,119 @@
             <span class="timestamp">• {{ campaign.time_ago }}</span>
         </div>
 
-        <!-- Caption -->
-        <!-- Caption with Tags -->
-<!-- Caption with Tags -->
-<div class="caption" id="caption-{{ campaign.id }}">
-    <div id="caption-short-{{ campaign.id }}">
-        {% for tag in campaign.tags.all|slice:":3" %}
-            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
-        {% endfor %}
-        {% if campaign.content|length > 35 %}
-            {{ campaign.content|slice:":35" }}...
-        {% else %}
-            {{ campaign.content }}
-        {% endif %}
-        {% if campaign.tags.count > 3 or campaign.content|length > 35 %}
-            <span class="more-link" onclick="toggleCaption('{{ campaign.id }}', this)">more</span>
-        {% endif %}
-    </div>
-    <div id="caption-full-{{ campaign.id }}" style="display: none;">
-        {% for tag in campaign.tags.all %}
-            <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
-        {% endfor %}
-        {{ campaign.content }}
-        <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> less</span>
-    </div>
-</div>
-        <!-- Slide Controls -->
-        {% if campaign.get_image_count > 1 %}
-        <div class="slide-controls">
-            <div class="slide-indicators" id="indicators-{{ campaign.id }}">
-                {% for image in campaign.get_images %}
-                    <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
-                            onclick="goToSlide({{ campaign.id }}, {{ forloop.counter0 }})">
-                    </button>
-                {% endfor %}
-            </div>
-            <button class="autoplay-btn" id="autoplayBtn-{{ campaign.id }}" onclick="toggleAutoplay({{ campaign.id }})">
-                <i class="fas fa-pause"></i>
-            </button>
+        <!-- Caption - Shows activity content or campaign content -->
+        <div class="caption" id="caption-{{ campaign.id }}">
+            {% with activity=campaign.cached_activity %}
+                <div id="caption-short-{{ campaign.id }}">
+                    {% for tag in campaign.tags.all|slice:":3" %}
+                        <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+                    {% endfor %}
+                    
+                    {% if activity and activity.content %}
+                        {% if activity.content|length > 35 %}
+                            {{ activity.content|slice:":35" }}...
+                        {% else %}
+                            {{ activity.content }}
+                        {% endif %}
+                    {% else %}
+                        {% if campaign.content|length > 35 %}
+                            {{ campaign.content|slice:":35" }}...
+                        {% else %}
+                            {{ campaign.content }}
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if campaign.tags.count > 3 or activity.content|length > 35 or campaign.content|length > 35 %}
+                        <span class="more-link" onclick="toggleCaption('{{ campaign.id }}', this)">more</span>
+                    {% endif %}
+                </div>
+                <div id="caption-full-{{ campaign.id }}" style="display: none;">
+                    {% for tag in campaign.tags.all %}
+                        <span class="tag" onclick="event.stopPropagation(); window.location.href='/search/?q={{ tag.name }}'">#{{ tag.name }}</span>
+                    {% endfor %}
+                    {% if activity and activity.content %}
+                        {{ activity.content }}
+                    {% else %}
+                        {{ campaign.content }}
+                    {% endif %}
+                    <span class="more-link" onclick="toggleFullContent({{ campaign.id }})"> less</span>
+                </div>
+            {% endwith %}
         </div>
-        {% endif %}
+
+        <!-- Slide Controls - Updated for activity screenshots -->
+        {% with activity=campaign.cached_activity %}
+            {% if activity and activity.has_screenshots %}
+                <div class="slide-controls">
+                    <div class="slide-indicators" id="indicators-{{ campaign.id }}">
+                        {% for screenshot in activity.screenshots %}
+                            <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
+                                    onclick="goToSlide({{ campaign.id }}, {{ forloop.counter0 }})">
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <button class="autoplay-btn playing" id="autoplayBtn-{{ campaign.id }}" onclick="toggleAutoplay({{ campaign.id }})">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                </div>
+            {% elif campaign.get_image_count > 1 %}
+                <div class="slide-controls">
+                    <div class="slide-indicators" id="indicators-{{ campaign.id }}">
+                        {% for image in campaign.get_images %}
+                            <button class="indicator-dot {% if forloop.first %}active{% endif %}" 
+                                    onclick="goToSlide({{ campaign.id }}, {{ forloop.counter0 }})">
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <button class="autoplay-btn playing" id="autoplayBtn-{{ campaign.id }}" onclick="toggleAutoplay({{ campaign.id }})">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                </div>
+            {% endif %}
+        {% endwith %}
 
         <!-- Meta Info -->
         <div class="meta-row">
             <span><i class="fas fa-map-pin"></i> {{ campaign.get_location_display }}</span>
-            <span><i class="fas fa-calendar"></i> {{ campaign.get_current_day_display.display }}</span>
+            <span><i class="fas fa-calendar"></i> 
+                {% with activity=campaign.cached_activity %}
+                    {% if activity %}
+                        Day {{ activity.day_number }} of {{ campaign.duration|default:30 }}
+                    {% else %}
+                        {{ campaign.get_current_day_display.display }}
+                    {% endif %}
+                {% endwith %}
+            </span>
         </div>
 
         <!-- Media Stats -->
         <div class="media-stats-row">
             <div class="media-counter">
                 <i class="fas fa-images"></i>
-                <span>{{ campaign.get_image_count }} photo{{ campaign.get_image_count|pluralize }}</span>
+                {% with activity=campaign.cached_activity %}
+                    {% if activity and activity.has_screenshots %}
+                        <span>{{ activity.screenshots.count }} screenshot{{ activity.screenshots.count|pluralize }}</span>
+                    {% else %}
+                        <span>{{ campaign.get_image_count }} photo{{ campaign.get_image_count|pluralize }}</span>
+                    {% endif %}
+                {% endwith %}
             </div>
             
-            {% if campaign.get_image_count > 1 %}
-            <div class="slide-counter">
-                <i class="fas fa-image"></i>
-                <span class="current-slide" id="currentSlide-{{ campaign.id }}">1</span> / 
-                <span class="total-slides" id="totalSlides-{{ campaign.id }}">{{ campaign.get_image_count }}</span>
-            </div>
-            {% endif %}
+            {% with activity=campaign.cached_activity %}
+                {% if activity and activity.has_screenshots %}
+                    <div class="slide-counter">
+                        <i class="fas fa-image"></i>
+                        <span class="current-slide" id="currentSlide-{{ campaign.id }}">1</span> / 
+                        <span class="total-slides" id="totalSlides-{{ campaign.id }}">{{ activity.screenshots.count }}</span>
+                    </div>
+                {% elif campaign.get_image_count > 1 %}
+                    <div class="slide-counter">
+                        <i class="fas fa-image"></i>
+                        <span class="current-slide" id="currentSlide-{{ campaign.id }}">1</span> / 
+                        <span class="total-slides" id="totalSlides-{{ campaign.id }}">{{ campaign.get_image_count }}</span>
+                    </div>
+                {% endif %}
+            {% endwith %}
         </div>
 
         <!-- Donation Progress -->
@@ -195,146 +278,72 @@
         {% endif %}
     </div>
 
-   <!-- Audio Element -->
-<audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
+    <!-- AUDIO ELEMENT - Uses activity video audio with fallback to campaign audio -->
+    {% with activity=campaign.cached_activity %}
+        {% if activity and activity.is_video and activity.file %}
+            <audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ activity.file.url }}"></audio>
+        {% else %}
+            <audio class="bg-audio" id="bgAudio-{{ campaign.id }}" loop preload="none" src="{{ campaign.get_audio_url }}"></audio>
+        {% endif %}
+    {% endwith %}
 
-<script>
-(function() {
-    // Get elements for THIS specific campaign only
-    const campaignId = {{ campaign.id }};
-    const audio = document.getElementById(`bgAudio-${campaignId}`);
-    const trigger = document.querySelector(`#campaign-${campaignId} .audio-trigger`);
-    
-    if (!audio || !trigger) return;
-    
-    // Simple toggle function
-    function toggleAudio(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    <script>
+    (function() {
+        const campaignId = {{ campaign.id }};
+        const audio = document.getElementById(`bgAudio-${campaignId}`);
+        const trigger = document.querySelector(`#campaign-${campaignId} .audio-trigger`);
         
-        if (audio.paused) {
-            // Pause ALL other audio first
-            document.querySelectorAll('.bg-audio').forEach(otherAudio => {
-                if (!otherAudio.paused && otherAudio !== audio) {
-                    otherAudio.pause();
-                }
-            });
+        if (!audio || !trigger) return;
+        
+        function toggleAudio(e) {
+            e.preventDefault();
+            e.stopPropagation();
             
-            // Play this audio
-            audio.play().catch(err => {
-                console.log('Audio play failed:', err);
-            });
-        } else {
-            audio.pause();
-        }
-    }
-    
-    // Add click listener
-    trigger.addEventListener('click', toggleAudio);
-    
-    // Pause when campaign scrolls out of view
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting && !audio.paused) {
+            if (audio.paused) {
+                document.querySelectorAll('.bg-audio').forEach(otherAudio => {
+                    if (!otherAudio.paused && otherAudio !== audio) {
+                        otherAudio.pause();
+                    }
+                });
+                
+                audio.play().catch(err => {
+                    console.log('Audio play failed:', err);
+                });
+            } else {
                 audio.pause();
             }
-        });
-    }, { threshold: 0.1 });
-    
-    observer.observe(document.getElementById(`campaign-${campaignId}`));
-    
-})();
-</script>
+        }
+        
+        trigger.addEventListener('click', toggleAudio);
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting && !audio.paused) {
+                    audio.pause();
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        observer.observe(document.getElementById(`campaign-${campaignId}`));
+        
+        // Auto-play videos in slideshow
+        {% with activity=campaign.cached_activity %}
+            {% if activity and activity.is_video and not activity.has_screenshots %}
+                const video = document.querySelector(`#campaign-${campaignId} .slide-item video`);
+                if (video) {
+                    const videoObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                video.play().catch(() => {});
+                            } else {
+                                video.pause();
+                            }
+                        });
+                    }, { threshold: 0.5 });
+                    videoObserver.observe(document.getElementById(`campaign-${campaignId}`));
+                }
+            {% endif %}
+        {% endwith %}
+    })();
+    </script>
 </div>
-
-
-{% if campaign %}
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "FundingCampaign",
-    "name": "{{ campaign.title|escapejs }}",
-    "description": "{{ campaign.content|escapejs|truncatechars:300 }}",
-    "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'view_campaign' campaign_id=campaign.id %}",
-    "image": "{{ campaign.poster.url|default:'https://rallynex.com/static/images/default-campaign.jpg' }}",
-    "fundedBy": {
-        "@type": "Organization",
-        "name": "RallyNex"
-    },
-    "fundingGoal": {
-        "@type": "MonetaryAmount",
-        "currency": "USD",
-        "value": {{ campaign.funding_goal|default:0 }}
-    },
-    "totalDonations": {
-        "@type": "MonetaryAmount",
-        "currency": "USD",
-        "value": {{ campaign.total_donations|default:0 }}
-    },
-    "donationCount": {{ campaign.get_donor_count|default:0 }},
-    "dateCreated": "{{ campaign.timestamp|date:'Y-m-d' }}",
-    "datePublished": "{{ campaign.timestamp|date:'Y-m-d' }}",
-    "dateModified": "{{ campaign.timestamp|date:'Y-m-d' }}",
-    "status": "{{ campaign.is_active|yesno:'Active,Ended' }}",
-    "potentialAction": {
-        "@type": "DonateAction",
-        "name": "Support this journey",
-        "target": {
-            "@type": "EntryPoint",
-            "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}{% url 'create_donation' campaign_id=campaign.id %}",
-            "inLanguage": "en-US",
-            "actionPlatform": [
-                "http://schema.org/DesktopWebPlatform",
-                "http://schema.org/MobileWebPlatform"
-            ]
-        }
-    },
-    "author": {
-        "@type": "Person",
-        "name": "{{ campaign.get_username|escapejs }}",
-        "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'profile_view' username=campaign.get_username %}"
-    },
-    "creator": {
-        "@type": "Person",
-        "name": "{{ campaign.get_username|escapejs }}"
-    },
-    "publisher": {
-        "@type": "Organization",
-        "name": "RallyNex",
-        "logo": {
-            "@type": "ImageObject",
-            "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-logo.png' %}"
-        }
-    },
-    "interactionStatistic": [
-        {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/LikeAction",
-            "userInteractionCount": {{ campaign.get_love_count|default:0 }}
-        },
-        {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/CommentAction",
-            "userInteractionCount": {{ campaign.get_comment_count|default:0 }}
-        },
-        {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/ShareAction",
-            "userInteractionCount": {{ campaign.get_share_count|default:0 }}
-        }
-    ],
-    "video": {% if campaign.get_images %}[
-        {% for image in campaign.get_images %}
-        {
-            "@type": "VideoObject",
-            "name": "Day {{ forloop.counter }} update",
-            "description": "Daily update from {{ campaign.get_username }}'s journey",
-            "thumbnailUrl": "{{ image }}",
-            "contentUrl": "{{ image }}",
-            "uploadDate": "{{ campaign.timestamp|date:'Y-m-d' }}"
-        }{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ]{% else %}[]{% endif %}
-}
-</script>
-{% endif %}
