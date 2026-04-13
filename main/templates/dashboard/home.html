@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .dashboard-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 700;
+    }
+    
+    .dashboard-subtitle {
+        color: #888;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .stat-icon i {
+        font-size: 24px;
+        color: #3b82f6;
+    }
+    
+    .stat-content {
+        flex: 1;
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        color: #888;
+    }
+    
+    /* Dashboard Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+    
+    .dashboard-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #222;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .card-title {
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    .card-link {
+        color: #3b82f6;
+        font-size: 14px;
+    }
+    
+    .card-body {
+        padding: 20px 24px;
+    }
+    
+    /* Journey List */
+    .journey-list-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid #222;
+    }
+    
+    .journey-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .journey-thumbnail {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: #1a1a1a;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .journey-thumbnail i {
+        font-size: 24px;
+        color: #444;
+    }
+    
+    .journey-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+    }
+    
+    .journey-info {
+        flex: 1;
+    }
+    
+    .journey-title-link {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .journey-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: #888;
+    }
+    
+    .journey-progress-mini {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    
+    .progress-bar-mini {
+        width: 100px;
+        height: 4px;
+        background: #2a2a2a;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .progress-fill-mini {
+        height: 100%;
+        background: #3b82f6;
+        border-radius: 2px;
+    }
+    
+    .journey-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        background: #1a1a1a;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #aaa;
+        transition: all 0.2s;
+    }
+    
+    .btn-icon:hover {
+        background: #2a2a2a;
+        color: #fff;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        color: #333;
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h4 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+    
+    .empty-state p {
+        color: #888;
+        margin-bottom: 20px;
+    }
+    
+    /* Activity Feed */
+    .activity-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #222;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        background: #1a1a1a;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .activity-content {
+        flex: 1;
+    }
+    
+    .activity-text {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .activity-time {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    /* Alert */
+    .alert-info {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .alert-info i {
+        color: #3b82f6;
+        font-size: 20px;
+    }
+    
+    .alert-link {
+        margin-left: auto;
+        color: #3b82f6;
+        font-weight: 500;
+    }
+    
+    /* Quick Links */
+    .quick-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        color: #aaa;
+        transition: color 0.2s;
+    }
+    
+    .quick-link:hover {
+        color: #fff;
+    }
+    
+    .quick-link i {
+        width: 24px;
+        color: #3b82f6;
+    }
+    
+    .badge {
+        margin-left: auto;
+        background: #3b82f6;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-container">
+    
+    {# Header #}
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Welcome back, {{ user.username }}!</h1>
+            <p class="dashboard-subtitle">Manage your journeys and track your progress</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'quick_import' %}" class="btn btn-outline">
+                <i class="fas fa-cloud-upload-alt"></i> Quick Import
+            </a>
+            <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Journey
+            </a>
+        </div>
+    </div>
+    
+    {# Pending Imports Alert #}
+    {% if pending_imports > 0 %}
+    <div class="alert-info">
+        <i class="fas fa-cloud-download-alt"></i>
+        <span>You have <strong>{{ pending_imports }}</strong> pending imports waiting for review.</span>
+        <a href="{% url 'import_queue' %}" class="alert-link">Review Now →</a>
+    </div>
+    {% endif %}
+    
+    {# Stats #}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_journeys }}</div>
+                <div class="stat-label">Total Journeys</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ active_journeys }}</div>
+                <div class="stat-label">Active</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-eye"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_views|default:0 }}</div>
+                <div class="stat-label">Total Views</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_followers|default:0 }}</div>
+                <div class="stat-label">Followers</div>
+            </div>
+        </div>
+    </div>
+    
+    {# Main Grid #}
+    <div class="dashboard-grid">
+        
+        {# Left Column #}
+        <div>
+            {# Your Journeys #}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Your Active Journeys</h3>
+                    <a href="{% url 'my_journeys' %}" class="card-link">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if journeys %}
+                        {% for journey in journeys %}
+                        <div class="journey-list-item">
+                            <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-thumbnail">
+                                {% if journey.cover_image %}
+                                    <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}">
+                                {% else %}
+                                    <i class="fas fa-flag"></i>
+                                {% endif %}
+                            </a>
+                            
+                            <div class="journey-info">
+                                <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-title-link">
+                                    {{ journey.title }}
+                                </a>
+                                <div class="journey-meta">
+                                    <span><i class="fas fa-calendar"></i> Day {{ journey.get_current_day }}/{{ journey.duration }}</span>
+                                    <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
+                                </div>
+                                <div class="journey-progress-mini">
+                                    <div class="progress-bar-mini">
+                                        <div class="progress-fill-mini" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                                    </div>
+                                    <span style="font-size: 12px; color: #888;">{{ journey.get_progress_percentage }}%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="journey-actions">
+                                <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-icon" title="Manage Content">
+                                    <i class="fas fa-images"></i>
+                                </a>
+                                <a href="{% url 'post_activity' slug=journey.slug %}" class="btn-icon" title="Post Update">
+                                    <i class="fas fa-plus-circle"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-flag-checkered empty-icon"></i>
+                            <h4>No journeys yet</h4>
+                            <p>Create your first journey to start organizing your content.</p>
+                            <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Journey</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {# Recent Activity #}
+            {% if recent_activities %}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">
+                                Posted Day {{ activity.day_number_field }} in 
+                                <a href="{% url 'journey_detail' slug=activity.journey.slug %}">
+                                    {{ activity.journey.title }}
+                                </a>
+                            </p>
+                            <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        {# Right Column #}
+        <div>
+            {# Profile Summary #}
+            <div class="dashboard-card">
+                <div class="card-body" style="text-align: center;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #1a1a1a; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 32px; color: #888;"></i>
+                    </div>
+                    <h4 style="margin-bottom: 4px;">{{ user.get_full_name|default:user.username }}</h4>
+                    <p style="color: #888; font-size: 14px; margin-bottom: 16px;">@{{ user.username }}</p>
+                    <a href="{% url 'profile_settings' %}" class="btn btn-outline btn-block">
+                        <i class="fas fa-cog"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+            
+            {# Quick Links #}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Quick Links</h3>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'social_connections' %}" class="quick-link">
+                        <i class="fab fa-tiktok"></i>
+                        <span>Connect Socials</span>
+                    </a>
+                    <a href="{% url 'import_queue' %}" class="quick-link">
+                        <i class="fas fa-cloud-download-alt"></i>
+                        <span>Import Queue</span>
+                        {% if pending_imports > 0 %}
+                        <span class="badge">{{ pending_imports }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'notifications' %}" class="quick-link">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                    </a>
+                    <a href="{% url 'saved_journeys' %}" class="quick-link">
+                        <i class="fas fa-bookmark"></i>
+                        <span>Saved Journeys</span>
+                    </a>
+                </div>
+            </div>
+            
+            {# Recent Comments #}
+            {% if recent_comments %}
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Comments</h3>
+                </div>
+                <div class="card-body">
+                    {% for comment in recent_comments %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-comment"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">{{ comment.content|truncatechars:50 }}</p>
+                            <span class="activity-time">
+                                @{{ comment.user.username }} · {{ comment.created_at|timesince }} ago
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,684 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if is_editing %}Edit{% else %}Create{% endif %} Journey | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .form-header {
+        margin-bottom: 32px;
+    }
+    
+    .form-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .form-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .form-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 32px;
+    }
+    
+    .form-section {
+        margin-bottom: 32px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid #222;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .section-title i {
+        color: #3b82f6;
+        font-size: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+        color: #555;
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        font-size: 14px;
+    }
+    
+    .field-error {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    
+    /* Checkbox */
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 0;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+    }
+    
+    .checkbox-group label {
+        margin-bottom: 0;
+        cursor: pointer;
+        color: #fff;
+    }
+    
+    /* File Upload */
+    .file-upload {
+        border: 2px dashed #333;
+        border-radius: 12px;
+        padding: 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    
+    .file-upload:hover {
+        border-color: #3b82f6;
+    }
+    
+    .file-upload i {
+        font-size: 32px;
+        color: #666;
+        margin-bottom: 12px;
+    }
+    
+    .file-upload p {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .file-upload .file-name {
+        color: #3b82f6;
+        margin-top: 8px;
+    }
+    
+    .file-upload input {
+        display: none;
+    }
+    
+    /* Image Preview */
+    .image-preview {
+        margin-top: 16px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .preview-item {
+        width: 100px;
+        height: 100px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #1a1a1a;
+    }
+    
+    .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #222;
+    }
+    
+    .btn-secondary {
+        background: transparent;
+        color: #fff;
+        border: 1px solid #333;
+    }
+    
+    .btn-secondary:hover {
+        background: #1a1a1a;
+    }
+    
+    .btn-danger {
+        background: transparent;
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        margin-right: auto;
+    }
+    
+    .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.1);
+    }
+    
+    /* Milestone Input */
+    .milestone-input-container {
+        border: 1px solid #333;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .milestone-input {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: none;
+        border-bottom: 1px solid #333;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+    }
+    
+    .milestone-list {
+        padding: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .milestone-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: #1a1a1a;
+        border-radius: 8px;
+        margin-bottom: 6px;
+    }
+    
+    .milestone-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .milestone-text {
+        font-size: 14px;
+    }
+    
+    .milestone-remove {
+        color: #ef4444;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+    
+    /* Collapsible */
+    .collapsible-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 16px 0;
+    }
+    
+    .collapsible-header i {
+        transition: transform 0.3s;
+    }
+    
+    .collapsible-header.active i {
+        transform: rotate(180deg);
+    }
+    
+    .collapsible-content {
+        display: none;
+        padding-bottom: 16px;
+    }
+    
+    .collapsible-content.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+    
+    <div class="form-header">
+        <h1 class="form-title">{% if is_editing %}Edit Journey{% else %}Create New Journey{% endif %}</h1>
+        <p class="form-subtitle">
+            {% if is_editing %}
+                Update your journey details and settings
+            {% else %}
+                Set up your journey to start organizing your content
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if form.errors %}
+    <ul class="errorlist">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li><i class="fas fa-exclamation-circle"></i> {{ field }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data" class="form-card">
+        {% csrf_token %}
+        
+        {# Basic Info Section #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                Basic Information
+            </h3>
+            
+            <div class="form-group">
+                <label for="id_title">Journey Title *</label>
+                <input type="text" name="title" id="id_title" 
+                       value="{{ form.title.value|default:'' }}"
+                       placeholder="e.g., 30 Days of Yoga Transformation"
+                       maxlength="100" required>
+                <p class="form-hint">Choose a clear, descriptive title (max 100 characters)</p>
+                {% if form.title.errors %}
+                    <p class="field-error">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="id_description">Description *</label>
+                <textarea name="description" id="id_description" 
+                          placeholder="What is this journey about? What will followers experience?" 
+                          maxlength="500" required>{{ form.description.value|default:'' }}</textarea>
+                <p class="form-hint">Briefly describe your journey (max 500 characters)</p>
+                {% if form.description.errors %}
+                    <p class="field-error">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_category">Category *</label>
+                    <select name="category" id="id_category" required>
+                        <option value="">Select a category</option>
+                        <option value="fitness" {% if form.category.value == 'fitness' %}selected{% endif %}>Fitness & Wellness</option>
+                        <option value="learning" {% if form.category.value == 'learning' %}selected{% endif %}>Learning & Skills</option>
+                        <option value="creative" {% if form.category.value == 'creative' %}selected{% endif %}>Creative Projects</option>
+                        <option value="business" {% if form.category.value == 'business' %}selected{% endif %}>Business & Startups</option>
+                        <option value="personal" {% if form.category.value == 'personal' %}selected{% endif %}>Personal Growth</option>
+                        <option value="cause" {% if form.category.value == 'cause' %}selected{% endif %}>Social Cause</option>
+                        <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_journey_type">Journey Type *</label>
+                    <select name="journey_type" id="id_journey_type" required>
+                        <option value="daily" {% if form.journey_type.value == 'daily' %}selected{% endif %}>Daily Challenge</option>
+                        <option value="milestone" {% if form.journey_type.value == 'milestone' %}selected{% endif %}>Milestone Journey</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        {# Visuals Section #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-image"></i>
+                Cover Media
+            </h3>
+            
+            <div class="form-group">
+                <label>Cover Image</label>
+                <div class="file-upload" onclick="document.getElementById('id_cover_image').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click to upload a cover image</p>
+                    <p class="file-name" id="coverImageName"></p>
+                    <input type="file" name="cover_image" id="id_cover_image" accept="image/*">
+                </div>
+                <p class="form-hint">Recommended size: 800x800px. Max 5MB.</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Cover Video (Optional)</label>
+                <div class="file-upload" onclick="document.getElementById('id_cover_video').click()">
+                    <i class="fas fa-video"></i>
+                    <p>Click to upload a cover video</p>
+                    <p class="file-name" id="coverVideoName"></p>
+                    <input type="file" name="cover_video" id="id_cover_video" accept="video/*">
+                </div>
+                <p class="form-hint">Short video to showcase your journey. Max 50MB.</p>
+            </div>
+        </div>
+        
+        {# Structure Section #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-calendar-alt"></i>
+                Journey Structure
+            </h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_duration">Duration *</label>
+                    <input type="number" name="duration" id="id_duration" 
+                           value="{{ form.duration.value|default:'30' }}"
+                           min="1" max="365" required>
+                    <p class="form-hint">Number of days (1-365)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="id_start_date">Start Date</label>
+                    <input type="datetime-local" name="start_date" id="id_start_date" 
+                           value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
+                    <p class="form-hint">Leave empty to start immediately</p>
+                </div>
+            </div>
+            
+            {# Milestones (shown only for milestone journeys) #}
+            <div id="milestoneSection" style="display: none;">
+                <div class="form-group">
+                    <label>Milestones</label>
+                    <div class="milestone-input-container">
+                        <input type="text" class="milestone-input" id="milestoneInput" 
+                               placeholder="Enter a milestone and press Enter...">
+                        <div class="milestone-list" id="milestoneList"></div>
+                    </div>
+                    <input type="hidden" name="milestones_input" id="milestonesInput">
+                    <p class="form-hint">Add key milestones for your journey</p>
+                </div>
+            </div>
+        </div>
+        
+        {# Settings Section #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-cog"></i>
+                Settings
+            </h3>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" name="is_public" id="id_is_public" 
+                       {% if form.is_public.value|default:True %}checked{% endif %}>
+                <label for="id_is_public">Public Journey</label>
+            </div>
+            <p class="form-hint" style="margin-top: -8px; margin-bottom: 16px;">
+                Public journeys appear in discovery and search results
+            </p>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" name="allow_comments" id="id_allow_comments" 
+                       {% if form.allow_comments.value|default:True %}checked{% endif %}>
+                <label for="id_allow_comments">Allow Comments</label>
+            </div>
+            
+            {# Auto Import Collapsible #}
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span style="font-weight: 500;">Auto-Import Settings</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="auto_import_enabled" id="id_auto_import_enabled"
+                               {% if form.auto_import_enabled.value %}checked{% endif %}>
+                        <label for="id_auto_import_enabled">Enable Auto-Import</label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_import_hashtag">Import Hashtag</label>
+                        <input type="text" name="import_hashtag" id="id_import_hashtag"
+                               value="{{ form.import_hashtag.value|default:'' }}"
+                               placeholder="#MyJourney">
+                        <p class="form-hint">We'll import posts with this hashtag</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {# Funding Section (Optional) #}
+        <div class="form-section">
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="section-title" style="margin-bottom: 0;">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        Fundraising (Optional)
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="funding_enabled" id="id_funding_enabled"
+                               {% if form.funding_enabled.value %}checked{% endif %}>
+                        <label for="id_funding_enabled">Enable Fundraising</label>
+                    </div>
+                    
+                    <div id="fundingFields" style="display: none;">
+                        <div class="form-group">
+                            <label for="id_funding_goal">Funding Goal ($)</label>
+                            <input type="number" name="funding_goal" id="id_funding_goal"
+                                   value="{{ form.funding_goal.value|default:'' }}"
+                                   min="1" step="0.01" placeholder="1000.00">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_funding_description">Funding Description</label>
+                            <textarea name="funding_description" id="id_funding_description"
+                                      placeholder="What will the funds be used for?"
+                                      maxlength="500">{{ form.funding_description.value|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {# Tags Section #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-tags"></i>
+                Tags
+            </h3>
+            
+            <div class="form-group">
+                <label for="id_tags_input">Tags (comma separated)</label>
+                <input type="text" name="tags_input" id="id_tags_input"
+                       value="{{ form.tags_input.value|default:'' }}"
+                       placeholder="fitness, yoga, wellness, challenge">
+                <p class="form-hint">Add up to 10 tags to help others discover your journey</p>
+            </div>
+        </div>
+        
+        {# Form Actions #}
+        <div class="form-actions">
+            {% if is_editing %}
+            <a href="{% url 'delete_journey' slug=journey.slug %}" class="btn btn-danger" 
+               onclick="return confirm('Are you sure you want to delete this journey? This cannot be undone.')">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+            {% endif %}
+            
+            <a href="{% if is_editing %}{% url 'my_journeys' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+               class="btn btn-secondary">
+                Cancel
+            </a>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-{% if is_editing %}save{% else %}plus{% endif %}"></i>
+                {% if is_editing %}Save Changes{% else %}Create Journey{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // File upload display
+    document.getElementById('id_cover_image').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file selected';
+        document.getElementById('coverImageName').textContent = fileName;
+    });
+    
+    document.getElementById('id_cover_video').addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || 'No file selected';
+        document.getElementById('coverVideoName').textContent = fileName;
+    });
+    
+    // Journey type toggle
+    const journeyTypeSelect = document.getElementById('id_journey_type');
+    const milestoneSection = document.getElementById('milestoneSection');
+    
+    function toggleMilestoneSection() {
+        if (journeyTypeSelect.value === 'milestone') {
+            milestoneSection.style.display = 'block';
+        } else {
+            milestoneSection.style.display = 'none';
+        }
+    }
+    
+    journeyTypeSelect.addEventListener('change', toggleMilestoneSection);
+    toggleMilestoneSection();
+    
+    // Funding toggle
+    const fundingCheckbox = document.getElementById('id_funding_enabled');
+    const fundingFields = document.getElementById('fundingFields');
+    
+    function toggleFundingFields() {
+        if (fundingCheckbox.checked) {
+            fundingFields.style.display = 'block';
+        } else {
+            fundingFields.style.display = 'none';
+        }
+    }
+    
+    fundingCheckbox.addEventListener('change', toggleFundingFields);
+    toggleFundingFields();
+    
+    // Collapsible
+    function toggleCollapsible(header) {
+        header.classList.toggle('active');
+        header.nextElementSibling.classList.toggle('active');
+    }
+    
+    // Milestone management
+    const milestoneInput = document.getElementById('milestoneInput');
+    const milestoneList = document.getElementById('milestoneList');
+    const milestonesInput = document.getElementById('milestonesInput');
+    let milestones = {{ form.milestones_input.value|default:'[]'|safe }};
+    
+    function renderMilestones() {
+        milestoneList.innerHTML = '';
+        milestones.forEach((milestone, index) => {
+            const item = document.createElement('div');
+            item.className = 'milestone-item';
+            item.innerHTML = `
+                <span class="milestone-text">${milestone}</span>
+                <span class="milestone-remove" onclick="removeMilestone(${index})">
+                    <i class="fas fa-times"></i>
+                </span>
+            `;
+            milestoneList.appendChild(item);
+        });
+        milestonesInput.value = JSON.stringify(milestones);
+    }
+    
+    function addMilestone(text) {
+        if (text && !milestones.includes(text)) {
+            milestones.push(text);
+            renderMilestones();
+        }
+        milestoneInput.value = '';
+    }
+    
+    function removeMilestone(index) {
+        milestones.splice(index, 1);
+        renderMilestones();
+    }
+    
+    milestoneInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addMilestone(this.value);
+        }
+    });
+    
+    // Initialize
+    renderMilestones();
+</script>
+
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - {{ journey.title }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .settings-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .back-btn {
+        width: 44px;
+        height: 44px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+    }
+    
+    .settings-title {
+        font-size: 24px;
+        font-weight: 700;
+    }
+    
+    .settings-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 32px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 0;
+        border-bottom: 1px solid #222;
+    }
+    
+    .checkbox-group:last-of-type {
+        border-bottom: none;
+    }
+    
+    .checkbox-group input {
+        width: 20px;
+        height: 20px;
+        accent-color: #3b82f6;
+    }
+    
+    .checkbox-info {
+        flex: 1;
+    }
+    
+    .checkbox-info label {
+        font-weight: 600;
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .checkbox-info p {
+        color: #888;
+        font-size: 13px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #222;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="settings-container">
+    
+    <div class="settings-header">
+        <a href="{% url 'my_journeys' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="settings-title">Journey Settings</h1>
+    </div>
+    
+    <form method="post" class="settings-card">
+        {% csrf_token %}
+        
+        <div class="checkbox-group">
+            <input type="checkbox" name="is_public" id="id_is_public" 
+                   {% if journey.is_public %}checked{% endif %}>
+            <div class="checkbox-info">
+                <label for="id_is_public">Public Journey</label>
+                <p>When enabled, your journey appears in discovery and search results</p>
+            </div>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" name="allow_comments" id="id_allow_comments" 
+                   {% if journey.allow_comments %}checked{% endif %}>
+            <div class="checkbox-info">
+                <label for="id_allow_comments">Allow Comments</label>
+                <p>Followers can comment on your daily updates</p>
+            </div>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" name="auto_import_enabled" id="id_auto_import_enabled" 
+                   {% if journey.auto_import_enabled %}checked{% endif %}>
+            <div class="checkbox-info">
+                <label for="id_auto_import_enabled">Auto-Import</label>
+                <p>Automatically import posts with your hashtag from connected social accounts</p>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_import_hashtag">Import Hashtag</label>
+            <input type="text" name="import_hashtag" id="id_import_hashtag" 
+                   value="{{ journey.import_hashtag }}"
+                   placeholder="#MyJourney"
+                   style="width:100%; padding:12px; background:#0a0a0a; border:1px solid #333; border-radius:8px; color:#fff;">
+        </div>
+        
+        <div class="form-actions">
+            <a href="{% url 'my_journeys' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+    </form>
+    
+</div>
+
+{% endblock %}

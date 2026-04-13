@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile Settings | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .settings-header {
+        margin-bottom: 30px;
+    }
+    
+    .settings-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .settings-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .settings-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 32px;
+    }
+    
+    .avatar-section {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 32px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid #222;
+    }
+    
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .avatar-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .avatar-preview i {
+        font-size: 40px;
+        color: #666;
+    }
+    
+    .avatar-upload {
+        flex: 1;
+    }
+    
+    .avatar-upload .btn {
+        margin-bottom: 8px;
+    }
+    
+    .avatar-upload p {
+        color: #666;
+        font-size: 12px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #222;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #222;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="settings-container">
+    
+    <div class="settings-header">
+        <h1 class="settings-title">Profile Settings</h1>
+        <p class="settings-subtitle">Manage your public profile information</p>
+    </div>
+    
+    {% if form.errors %}
+    <ul class="errorlist">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <form method="post" enctype="multipart/form-data" class="settings-card">
+        {% csrf_token %}
+        
+        {# Avatar #}
+        <div class="avatar-section">
+            <div class="avatar-preview" id="avatarPreview">
+                {% if profile.image %}
+                    <img src="{{ profile.image.url }}" alt="Avatar">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="avatar-upload">
+                <label class="btn btn-outline" for="id_image" style="cursor: pointer;">
+                    <i class="fas fa-camera"></i> Change Photo
+                </label>
+                <input type="file" name="image" id="id_image" accept="image/*" style="display: none;">
+                <p>JPG, PNG or GIF. Max 5MB.</p>
+            </div>
+        </div>
+        
+        {# Basic Info #}
+        <h3 class="section-title">Basic Information</h3>
+        
+        <div class="form-group">
+            <label for="id_bio">Bio</label>
+            <textarea name="bio" id="id_bio" 
+                      placeholder="Tell us about yourself..."
+                      maxlength="200">{{ form.bio.value|default:'' }}</textarea>
+            <div class="form-hint">Brief description for your profile. Max 200 characters.</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_location">Location</label>
+            <input type="text" name="location" id="id_location" 
+                   value="{{ form.location.value|default:'' }}"
+                   placeholder="City, Country">
+        </div>
+        
+        {# Social Links #}
+        <h3 class="section-title">Social Links</h3>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_tiktok_username">
+                    <i class="fab fa-tiktok"></i> TikTok
+                </label>
+                <input type="text" name="tiktok_username" id="id_tiktok_username" 
+                       value="{{ form.tiktok_username.value|default:'' }}"
+                       placeholder="@username">
+            </div>
+            
+            <div class="form-group">
+                <label for="id_instagram_username">
+                    <i class="fab fa-instagram"></i> Instagram
+                </label>
+                <input type="text" name="instagram_username" id="id_instagram_username" 
+                       value="{{ form.instagram_username.value|default:'' }}"
+                       placeholder="@username">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_youtube_channel">
+                <i class="fab fa-youtube"></i> YouTube Channel
+            </label>
+            <input type="text" name="youtube_channel" id="id_youtube_channel" 
+                   value="{{ form.youtube_channel.value|default:'' }}"
+                   placeholder="@channel or channel URL">
+        </div>
+        
+        {# Payment Info #}
+        <h3 class="section-title">Payment Information</h3>
+        
+        <div class="form-group">
+            <label for="id_paypal_email">
+                <i class="fab fa-paypal"></i> PayPal Email
+            </label>
+            <input type="email" name="paypal_email" id="id_paypal_email" 
+                   value="{{ form.paypal_email.value|default:'' }}"
+                   placeholder="your@email.com">
+            <div class="form-hint">Used to receive donations and payments</div>
+        </div>
+        
+        {# Actions #}
+        <div class="form-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </form>
+    
+</div>
+
+<script>
+    // Avatar preview
+    document.getElementById('id_image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('avatarPreview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Post Day {{ day_number }} - {{ journey.title }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .post-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .post-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .back-btn {
+        width: 44px;
+        height: 44px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    
+    .back-btn:hover {
+        background: #2a2a2a;
+    }
+    
+    .post-header-info {
+        flex: 1;
+    }
+    
+    .post-header-info h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    
+    .post-header-info p {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .day-badge-large {
+        display: inline-block;
+        background: #3b82f6;
+        color: #fff;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+    
+    .post-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 32px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 120px;
+    }
+    
+    .form-group textarea:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group textarea::placeholder {
+        color: #555;
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 6px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    /* File Upload */
+    .file-upload-area {
+        border: 2px dashed #333;
+        border-radius: 16px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #0a0a0a;
+    }
+    
+    .file-upload-area:hover {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .file-upload-area i {
+        font-size: 48px;
+        color: #666;
+        margin-bottom: 16px;
+    }
+    
+    .file-upload-area p {
+        color: #888;
+        margin-bottom: 8px;
+    }
+    
+    .file-upload-area .small {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .file-upload-area input {
+        display: none;
+    }
+    
+    /* Preview */
+    .media-preview {
+        margin-top: 20px;
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #0a0a0a;
+    }
+    
+    .media-preview img,
+    .media-preview video {
+        width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+    }
+    
+    .remove-media {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
+    }
+    
+    .remove-media:hover {
+        background: rgba(239, 68, 68, 0.8);
+    }
+    
+    /* Existing Content Warning */
+    .existing-warning {
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .existing-warning i {
+        color: #f59e0b;
+        font-size: 20px;
+    }
+    
+    .existing-warning p {
+        color: #f59e0b;
+        font-size: 14px;
+    }
+    
+    /* Error */
+    .errorlist {
+        list-style: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        font-size: 14px;
+    }
+    
+    .field-error {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+    }
+    
+    .form-actions .btn {
+        flex: 1;
+    }
+    
+    .btn-secondary {
+        background: transparent;
+        color: #fff;
+        border: 1px solid #333;
+    }
+    
+    /* Source Info */
+    .source-info {
+        margin-top: 20px;
+        padding: 16px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .source-info i {
+        color: #3b82f6;
+        font-size: 20px;
+    }
+    
+    .source-info p {
+        font-size: 14px;
+        color: #aaa;
+    }
+    
+    .source-info a {
+        color: #3b82f6;
+        margin-left: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="post-container">
+    
+    {# Header #}
+    <div class="post-header">
+        <a href="{% url 'journey_content' slug=journey.slug %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="post-header-info">
+            <h1>{{ journey.title }}</h1>
+            <p>Content Manager</p>
+        </div>
+    </div>
+    
+    <span class="day-badge-large">
+        <i class="fas fa-calendar-day"></i> Day {{ day_number }} of {{ journey.duration }}
+    </span>
+    
+    {# Existing Content Warning #}
+    {% if existing_activity %}
+    <div class="existing-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>You are editing existing content for Day {{ day_number }}. Your changes will overwrite the current post.</p>
+    </div>
+    {% endif %}
+    
+    {# Form Errors #}
+    {% if form.errors %}
+    <ul class="errorlist">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    {# Post Form #}
+    <form method="post" enctype="multipart/form-data" class="post-card">
+        {% csrf_token %}
+        {{ form.day_number_field }}
+        
+        <div class="form-group">
+            <label for="id_content">What happened today?</label>
+            <textarea name="content" id="id_content" 
+                      placeholder="Share your progress, thoughts, or milestones for Day {{ day_number }}..."
+                      required>{{ form.content.value|default:'' }}</textarea>
+            <div class="form-hint">
+                <span>Be authentic - your followers want the real journey</span>
+                <span id="charCount">0/500</span>
+            </div>
+            {% if form.content.errors %}
+                <p class="field-error">{{ form.content.errors.0 }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label>Media (Optional)</label>
+            
+            {% if existing_activity and existing_activity.file %}
+            <div class="media-preview" id="existingPreview">
+                {% if existing_activity.is_video %}
+                    <video src="{{ existing_activity.file.url }}" controls></video>
+                {% else %}
+                    <img src="{{ existing_activity.file.url }}" alt="Current media">
+                {% endif %}
+                <button type="button" class="remove-media" onclick="clearExistingMedia()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <input type="hidden" name="clear_existing" id="clearExisting" value="false">
+            {% endif %}
+            
+            <div class="file-upload-area" onclick="document.getElementById('id_file').click()" id="uploadArea" 
+                 style="{% if existing_activity and existing_activity.file %}display: none;{% endif %}">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to upload a photo or video</p>
+                <p class="small">Supports images and videos up to 100MB</p>
+                <input type="file" name="file" id="id_file" accept="image/*,video/*">
+            </div>
+            
+            <div class="media-preview" id="newPreview" style="display: none;">
+                <img id="previewImage" src="" alt="Preview" style="display: none;">
+                <video id="previewVideo" controls style="display: none;"></video>
+                <button type="button" class="remove-media" onclick="clearNewMedia()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            {% if form.file.errors %}
+                <p class="field-error">{{ form.file.errors.0 }}</p>
+            {% endif %}
+        </div>
+        
+        {# Source Info (if imported) #}
+        {% if existing_activity and existing_activity.imported_from %}
+        <div class="source-info">
+            <i class="fab fa-{{ existing_activity.imported_from.platform }}"></i>
+            <p>
+                Imported from {{ existing_activity.imported_from.get_platform_display }}
+                <a href="{{ existing_activity.source_url }}" target="_blank">View Original <i class="fas fa-external-link-alt"></i></a>
+            </p>
+        </div>
+        {% endif %}
+        
+        <div class="form-actions">
+            <a href="{% url 'journey_content' slug=journey.slug %}" class="btn btn-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-{% if existing_activity %}save{% else %}paper-plane{% endif %}"></i>
+                {% if existing_activity %}Update{% else %}Post{% endif %} Day {{ day_number }}
+            </button>
+        </div>
+    </form>
+    
+    {# Tips Card #}
+    <div style="margin-top: 24px; padding: 20px; background: #111; border: 1px solid #222; border-radius: 16px;">
+        <h4 style="font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-lightbulb" style="color: #fbbf24;"></i>
+            Tips for a great update
+        </h4>
+        <ul style="color: #888; font-size: 13px; line-height: 1.8; padding-left: 20px;">
+            <li>Share both wins and struggles - authenticity builds connection</li>
+            <li>Include a photo or short video to increase engagement</li>
+            <li>Ask a question to encourage comments</li>
+            <li>Use the journey hashtag to help others discover your content</li>
+        </ul>
+    </div>
+    
+</div>
+
+<script>
+    // Character counter
+    const textarea = document.getElementById('id_content');
+    const charCount = document.getElementById('charCount');
+    
+    function updateCharCount() {
+        const count = textarea.value.length;
+        charCount.textContent = count + '/500';
+        if (count > 450) {
+            charCount.style.color = '#f59e0b';
+        } else {
+            charCount.style.color = '#666';
+        }
+    }
+    
+    textarea.addEventListener('input', updateCharCount);
+    updateCharCount();
+    
+    // File upload preview
+    const fileInput = document.getElementById('id_file');
+    const uploadArea = document.getElementById('uploadArea');
+    const newPreview = document.getElementById('newPreview');
+    const previewImage = document.getElementById('previewImage');
+    const previewVideo = document.getElementById('previewVideo');
+    
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        uploadArea.style.display = 'none';
+        newPreview.style.display = 'block';
+        
+        const url = URL.createObjectURL(file);
+        
+        if (file.type.startsWith('image/')) {
+            previewImage.src = url;
+            previewImage.style.display = 'block';
+            previewVideo.style.display = 'none';
+        } else if (file.type.startsWith('video/')) {
+            previewVideo.src = url;
+            previewVideo.style.display = 'block';
+            previewImage.style.display = 'none';
+        }
+    });
+    
+    function clearNewMedia() {
+        fileInput.value = '';
+        uploadArea.style.display = 'block';
+        newPreview.style.display = 'none';
+        previewImage.src = '';
+        previewVideo.src = '';
+    }
+    
+    function clearExistingMedia() {
+        document.getElementById('existingPreview').style.display = 'none';
+        document.getElementById('clearExisting').value = 'true';
+        uploadArea.style.display = 'block';
+    }
+</script>
+
+{% endblock %}

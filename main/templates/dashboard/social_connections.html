@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Social Connections | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .connections-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .connections-header {
+        margin-bottom: 30px;
+    }
+    
+    .connections-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .connections-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    /* Platform Cards */
+    .platform-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 40px;
+    }
+    
+    .platform-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.2s;
+    }
+    
+    .platform-card.connected {
+        border-color: #22c55e;
+    }
+    
+    .platform-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+    
+    .platform-icon.tiktok {
+        background: linear-gradient(135deg, #000000, #1a1a1a);
+        color: #fff;
+        border: 1px solid #333;
+    }
+    
+    .platform-icon.instagram {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        color: #fff;
+    }
+    
+    .platform-icon.youtube {
+        background: #ff0000;
+        color: #fff;
+    }
+    
+    .platform-info {
+        flex: 1;
+    }
+    
+    .platform-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .platform-username {
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .connection-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .status-connected {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-disconnected {
+        background: rgba(102, 102, 102, 0.1);
+        color: #888;
+        border: 1px solid rgba(102, 102, 102, 0.3);
+    }
+    
+    .platform-actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    /* Settings Panel */
+    .settings-panel {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        margin-top: 16px;
+        padding: 20px;
+        display: none;
+    }
+    
+    .settings-panel.active {
+        display: block;
+    }
+    
+    .settings-group {
+        margin-bottom: 20px;
+    }
+    
+    .settings-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .settings-group input {
+        width: 100%;
+        padding: 12px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 14px;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 0;
+    }
+    
+    .checkbox-group input {
+        width: 20px;
+        height: 20px;
+        accent-color: #3b82f6;
+    }
+    
+    .checkbox-group label {
+        margin-bottom: 0;
+        color: #fff;
+    }
+    
+    /* Info Box */
+    .info-box {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .info-box h4 {
+        font-size: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .info-box h4 i {
+        color: #3b82f6;
+    }
+    
+    .info-box p {
+        color: #aaa;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+    
+    .info-box ul {
+        color: #aaa;
+        font-size: 14px;
+        padding-left: 20px;
+        line-height: 1.8;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+    }
+    
+    .modal-card i {
+        font-size: 48px;
+        color: #ef4444;
+        margin-bottom: 16px;
+    }
+    
+    .modal-card h3 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+    
+    .modal-card p {
+        color: #888;
+        margin-bottom: 24px;
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="connections-container">
+    
+    {# Header #}
+    <div class="connections-header">
+        <h1 class="connections-title">Social Connections</h1>
+        <p class="connections-subtitle">Connect your social accounts to auto-import content into your journeys</p>
+    </div>
+    
+    {# Platform List #}
+    <div class="platform-list">
+        
+        {# TikTok #}
+        <div class="platform-card {% if tiktok_connection %}connected{% endif %}" id="tiktokCard">
+            <div class="platform-icon tiktok">
+                <i class="fab fa-tiktok"></i>
+            </div>
+            <div class="platform-info">
+                <div class="platform-name">
+                    TikTok
+                    {% if tiktok_connection %}
+                    <span class="connection-status status-connected">
+                        <i class="fas fa-check-circle"></i> Connected
+                    </span>
+                    {% else %}
+                    <span class="connection-status status-disconnected">
+                        <i class="fas fa-plug"></i> Not Connected
+                    </span>
+                    {% endif %}
+                </div>
+                {% if tiktok_connection %}
+                <p class="platform-username">@{{ tiktok_connection.platform_username }}</p>
+                {% else %}
+                <p class="platform-username">Connect to auto-import your TikToks</p>
+                {% endif %}
+            </div>
+            <div class="platform-actions">
+                {% if tiktok_connection %}
+                <button class="btn-icon" onclick="toggleSettings('tiktok')" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn-icon" onclick="showDisconnectModal('tiktok', {{ tiktok_connection.id }})" title="Disconnect">
+                    <i class="fas fa-unlink"></i>
+                </button>
+                {% else %}
+                <a href="{% url 'connect_social' platform='tiktok' %}" class="btn btn-primary">
+                    <i class="fab fa-tiktok"></i> Connect
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# TikTok Settings Panel #}
+        {% if tiktok_connection %}
+        <div class="settings-panel" id="tiktokSettings">
+            <form method="post" action="{% url 'social_connections' %}">
+                {% csrf_token %}
+                <input type="hidden" name="connection_id" value="{{ tiktok_connection.id }}">
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" name="auto_import" id="tiktok_auto_import" 
+                           {% if tiktok_connection.auto_import %}checked{% endif %}>
+                    <label for="tiktok_auto_import">Enable auto-import from TikTok</label>
+                </div>
+                
+                <div class="settings-group">
+                    <label for="tiktok_hashtag">Import Hashtag</label>
+                    <input type="text" name="import_hashtag" id="tiktok_hashtag" 
+                           value="{{ tiktok_connection.import_hashtag }}"
+                           placeholder="#MyJourney">
+                    <p style="color: #666; font-size: 12px; margin-top: 6px;">
+                        We'll import TikTok posts that contain this hashtag
+                    </p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        {# Instagram #}
+        <div class="platform-card {% if instagram_connection %}connected{% endif %}" id="instagramCard">
+            <div class="platform-icon instagram">
+                <i class="fab fa-instagram"></i>
+            </div>
+            <div class="platform-info">
+                <div class="platform-name">
+                    Instagram
+                    {% if instagram_connection %}
+                    <span class="connection-status status-connected">
+                        <i class="fas fa-check-circle"></i> Connected
+                    </span>
+                    {% else %}
+                    <span class="connection-status status-disconnected">
+                        <i class="fas fa-plug"></i> Not Connected
+                    </span>
+                    {% endif %}
+                </div>
+                {% if instagram_connection %}
+                <p class="platform-username">@{{ instagram_connection.platform_username }}</p>
+                {% else %}
+                <p class="platform-username">Connect to auto-import your Instagram posts</p>
+                {% endif %}
+            </div>
+            <div class="platform-actions">
+                {% if instagram_connection %}
+                <button class="btn-icon" onclick="toggleSettings('instagram')" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn-icon" onclick="showDisconnectModal('instagram', {{ instagram_connection.id }})" title="Disconnect">
+                    <i class="fas fa-unlink"></i>
+                </button>
+                {% else %}
+                <a href="{% url 'connect_social' platform='instagram' %}" class="btn btn-primary">
+                    <i class="fab fa-instagram"></i> Connect
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# Instagram Settings Panel #}
+        {% if instagram_connection %}
+        <div class="settings-panel" id="instagramSettings">
+            <form method="post" action="{% url 'social_connections' %}">
+                {% csrf_token %}
+                <input type="hidden" name="connection_id" value="{{ instagram_connection.id }}">
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" name="auto_import" id="instagram_auto_import" 
+                           {% if instagram_connection.auto_import %}checked{% endif %}>
+                    <label for="instagram_auto_import">Enable auto-import from Instagram</label>
+                </div>
+                
+                <div class="settings-group">
+                    <label for="instagram_hashtag">Import Hashtag</label>
+                    <input type="text" name="import_hashtag" id="instagram_hashtag" 
+                           value="{{ instagram_connection.import_hashtag }}"
+                           placeholder="#MyJourney">
+                    <p style="color: #666; font-size: 12px; margin-top: 6px;">
+                        We'll import Instagram posts that contain this hashtag
+                    </p>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </div>
+        {% endif %}
+        
+        {# YouTube (Coming Soon) #}
+        <div class="platform-card" style="opacity: 0.6;">
+            <div class="platform-icon youtube">
+                <i class="fab fa-youtube"></i>
+            </div>
+            <div class="platform-info">
+                <div class="platform-name">
+                    YouTube
+                    <span class="connection-status status-disconnected">
+                        Coming Soon
+                    </span>
+                </div>
+                <p class="platform-username">Connect your YouTube channel</p>
+            </div>
+            <div class="platform-actions">
+                <button class="btn btn-outline" disabled>
+                    <i class="fab fa-youtube"></i> Soon
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    {# Info Box #}
+    <div class="info-box">
+        <h4>
+            <i class="fas fa-lightbulb"></i>
+            How Auto-Import Works
+        </h4>
+        <p>Once connected, Rallynex will automatically detect new posts from your social accounts.</p>
+        <ul>
+            <li>Posts with your journey hashtag appear in the Import Queue</li>
+            <li>We'll try to detect the day number from your caption</li>
+            <li>You can review and assign content before it goes live</li>
+            <li>Your data is secure and we never post on your behalf</li>
+        </ul>
+    </div>
+    
+</div>
+
+{# Disconnect Modal #}
+<div class="modal-overlay" id="disconnectModal">
+    <div class="modal-card">
+        <i class="fas fa-triangle-exclamation"></i>
+        <h3>Disconnect Account?</h3>
+        <p>Your imported content will remain, but new posts won't be imported until you reconnect.</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+            <form method="post" id="disconnectForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Disconnect</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSettings(platform) {
+        const panel = document.getElementById(platform + 'Settings');
+        panel.classList.toggle('active');
+    }
+    
+    function showDisconnectModal(platform, connectionId) {
+        const modal = document.getElementById('disconnectModal');
+        const form = document.getElementById('disconnectForm');
+        form.action = `/dashboard/social/${connectionId}/disconnect/`;
+        modal.classList.add('active');
+    }
+    
+    function hideModal() {
+        document.getElementById('disconnectModal').classList.remove('active');
+    }
+    
+    // Close modal on background click
+    document.getElementById('disconnectModal').addEventListener('click', function(e) {
+        if (e.target === this) hideModal();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,746 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Setup Your Journey | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Progress Bar */
+    .wizard-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+    
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #1a1a1a;
+        border: 2px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #888;
+        transition: all 0.3s;
+    }
+    
+    .progress-step.active .step-number {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+    }
+    
+    .progress-step.completed .step-number {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+    }
+    
+    .progress-step.completed .step-number i {
+        display: block;
+    }
+    
+    .progress-step .step-number span {
+        display: block;
+    }
+    
+    .progress-step.completed .step-number span {
+        display: none;
+    }
+    
+    .progress-step .step-number i {
+        display: none;
+    }
+    
+    .step-label {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #888;
+        font-weight: 500;
+    }
+    
+    .progress-step.active .step-label {
+        color: #fff;
+    }
+    
+    .progress-line {
+        width: 60px;
+        height: 2px;
+        background: #333;
+        margin: 0 10px;
+        margin-bottom: 28px;
+    }
+    
+    .progress-line.completed {
+        background: #22c55e;
+    }
+    
+    /* AI Message */
+    .ai-message {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 30px;
+        align-items: flex-start;
+    }
+    
+    .ai-avatar {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    
+    .ai-bubble {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        padding: 16px 20px;
+        flex: 1;
+    }
+    
+    .ai-bubble p {
+        margin-bottom: 8px;
+    }
+    
+    .ai-bubble p:last-child {
+        margin-bottom: 0;
+        color: #aaa;
+        font-size: 14px;
+    }
+    
+    /* Step Content */
+    .wizard-step {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .step-content {
+        flex: 1;
+    }
+    
+    /* Connect Cards */
+    .connect-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 20px;
+    }
+    
+    .connect-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .connect-card:hover {
+        border-color: #3b82f6;
+        background: #1a1a1a;
+    }
+    
+    .connect-card i {
+        font-size: 32px;
+        width: 40px;
+        text-align: center;
+    }
+    
+    .connect-card.tiktok i {
+        color: #fff;
+    }
+    
+    .connect-card.instagram i {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .connect-card .card-content {
+        flex: 1;
+    }
+    
+    .connect-card span {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .connect-card small {
+        color: #888;
+        font-size: 12px;
+    }
+    
+    .connect-card.skip {
+        background: transparent;
+        border: 1px dashed #333;
+    }
+    
+    .connect-card.skip:hover {
+        border-color: #666;
+    }
+    
+    /* Form Styles */
+    .quick-journey-form {
+        margin-top: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 6px;
+        color: #666;
+        font-size: 12px;
+    }
+    
+    .ai-suggestion {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .ai-suggestion i {
+        color: #3b82f6;
+        margin-right: 6px;
+    }
+    
+    .ai-suggestion button {
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    
+    /* Wizard Actions */
+    .wizard-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #222;
+    }
+    
+    .wizard-actions .btn {
+        flex: 1;
+    }
+    
+    /* Celebration */
+    .celebration {
+        text-align: center;
+    }
+    
+    .celebration-emoji {
+        font-size: 64px;
+        margin-bottom: 20px;
+        animation: bounce 0.5s ease;
+    }
+    
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .celebration h2 {
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
+    
+    .celebration p {
+        color: #888;
+        margin-bottom: 24px;
+    }
+    
+    .journey-link-box {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 32px;
+    }
+    
+    .journey-link-box input {
+        flex: 1;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 14px;
+    }
+    
+    .journey-link-box button {
+        padding: 14px 20px;
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .next-actions {
+        text-align: left;
+        margin-top: 30px;
+    }
+    
+    .next-actions h3 {
+        font-size: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .action-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .action-card i {
+        font-size: 24px;
+        width: 30px;
+        color: #3b82f6;
+    }
+    
+    .action-card div {
+        flex: 1;
+    }
+    
+    .action-card strong {
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .action-card p {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 0;
+    }
+    
+    .action-card button,
+    .action-card .btn {
+        white-space: nowrap;
+    }
+    
+    /* Hidden */
+    .hidden {
+        display: none !important;
+    }
+    
+    /* Loading */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="wizard-container">
+    
+    {# Progress Bar #}
+    <div class="wizard-progress">
+        <div class="progress-step active" id="progressStep1">
+            <div class="step-number">
+                <span>1</span>
+                <i class="fas fa-check"></i>
+            </div>
+            <span class="step-label">Connect</span>
+        </div>
+        <div class="progress-line" id="progressLine1"></div>
+        
+        <div class="progress-step" id="progressStep2">
+            <div class="step-number">
+                <span>2</span>
+                <i class="fas fa-check"></i>
+            </div>
+            <span class="step-label">Create</span>
+        </div>
+        <div class="progress-line" id="progressLine2"></div>
+        
+        <div class="progress-step" id="progressStep3">
+            <div class="step-number">
+                <span>3</span>
+                <i class="fas fa-check"></i>
+            </div>
+            <span class="step-label">Share</span>
+        </div>
+    </div>
+    
+    {# Step 1: Connect Socials #}
+    <div class="wizard-step" id="step1">
+        <div class="step-content">
+            <div class="ai-message">
+                <div class="ai-avatar">🤖</div>
+                <div class="ai-bubble">
+                    <p><strong>Let's connect your content!</strong></p>
+                    <p>Where do you post your journey updates? Connect your account and we'll automatically import your posts as you go.</p>
+                </div>
+            </div>
+            
+            <div class="connect-options">
+                <a href="{% url 'connect_social' platform='tiktok' %}" class="connect-card tiktok">
+                    <i class="fab fa-tiktok"></i>
+                    <div class="card-content">
+                        <span>Connect TikTok</span>
+                        <small>Auto-import your TikToks • Takes 30 seconds</small>
+                    </div>
+                    <i class="fas fa-arrow-right" style="color: #666;"></i>
+                </a>
+                
+                <a href="{% url 'connect_social' platform='instagram' %}" class="connect-card instagram">
+                    <i class="fab fa-instagram"></i>
+                    <div class="card-content">
+                        <span>Connect Instagram</span>
+                        <small>Auto-import your Reels • Takes 30 seconds</small>
+                    </div>
+                    <i class="fas fa-arrow-right" style="color: #666;"></i>
+                </a>
+                
+                <div class="connect-card skip" onclick="goToStep(2)">
+                    <i class="fas fa-arrow-right"></i>
+                    <div class="card-content">
+                        <span>Skip for now</span>
+                        <small>You can connect social accounts later</small>
+                    </div>
+                    <i class="fas fa-arrow-right" style="color: #666;"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wizard-actions">
+            <button class="btn btn-primary" onclick="goToStep(2)">
+                Continue without connecting →
+            </button>
+        </div>
+    </div>
+    
+    {# Step 2: Create Journey #}
+    <div class="wizard-step hidden" id="step2">
+        <div class="step-content">
+            <div class="ai-message">
+                <div class="ai-avatar">🤖</div>
+                <div class="ai-bubble">
+                    <p><strong>Now, let's create your journey page!</strong></p>
+                    <p>This is what your followers will see when they visit your Rallynex link.</p>
+                </div>
+            </div>
+            
+            <form id="quickJourneyForm" class="quick-journey-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>What's your challenge called?</label>
+                    <input type="text" name="title" id="journeyTitle" 
+                           placeholder="e.g., 75 Hard Transformation" 
+                           value="{{ suggested_title|default:'75 Hard Challenge' }}">
+                    
+                    <div class="ai-suggestion" id="titleSuggestion" style="display: none;">
+                        <span><i class="fas fa-lightbulb"></i> We detected: "<span id="detectedChallenge">75 Hard</span>"</span>
+                        <button type="button" onclick="useDetectedTitle()">Use this →</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>How many days is your challenge?</label>
+                    <select name="duration" id="journeyDuration">
+                        <option value="30">30 Days</option>
+                        <option value="75" selected>75 Days (75 Hard)</option>
+                        <option value="90">90 Days</option>
+                        <option value="100">100 Days</option>
+                        <option value="30" selected>30 Days</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>What day are you currently on?</label>
+                    <input type="number" name="current_day" id="currentDay" 
+                           min="1" max="75" value="1">
+                    <small>We'll help you backfill previous days if needed</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category (optional)</label>
+                    <select name="category">
+                        <option value="fitness">💪 Fitness & Wellness</option>
+                        <option value="learning">📚 Learning & Skills</option>
+                        <option value="creative">🎨 Creative Projects</option>
+                        <option value="business">📈 Business & Startups</option>
+                        <option value="personal">🌱 Personal Growth</option>
+                        <option value="cause">❤️ Social Cause</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        
+        <div class="wizard-actions">
+            <button class="btn btn-outline" onclick="goToStep(1)">
+                ← Back
+            </button>
+            <button class="btn btn-primary" onclick="createJourney()">
+                <span id="createBtnText">Create Journey</span>
+                <span id="createBtnLoading" class="hidden">
+                    <span class="loading-spinner"></span> Creating...
+                </span>
+            </button>
+        </div>
+    </div>
+    
+    {# Step 3: Share & Celebrate #}
+    <div class="wizard-step hidden" id="step3">
+        <div class="step-content">
+            <div class="celebration">
+                <div class="celebration-emoji">🎉</div>
+                <h2>Your journey is live!</h2>
+                <p>Here's your unique Rallynex link. Put it in your bio and start sharing!</p>
+                
+                <div class="journey-link-box">
+                    <input type="text" id="journeyLink" value="" readonly>
+                    <button onclick="copyJourneyLink()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+                
+                <div class="next-actions">
+                    <h3>What's next?</h3>
+                    
+                    <div class="action-card">
+                        <i class="fab fa-tiktok"></i>
+                        <div>
+                            <strong>Put this link in your bio</strong>
+                            <p>Your followers can now see your full journey</p>
+                        </div>
+                        <button class="btn btn-outline btn-small" onclick="openTikTok()">
+                            Open TikTok →
+                        </button>
+                    </div>
+                    
+                    <div class="action-card">
+                        <i class="fas fa-plus-circle"></i>
+                        <div>
+                            <strong>Post your first update</strong>
+                            <p>Let's add Day 1 and get started</p>
+                        </div>
+                        <a href="#" id="postUpdateLink" class="btn btn-primary btn-small">
+                            Post Day 1 →
+                        </a>
+                    </div>
+                    
+                    <div class="action-card">
+                        <i class="fas fa-home"></i>
+                        <div>
+                            <strong>Go to your dashboard</strong>
+                            <p>Manage your journey and see analytics</p>
+                        </div>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline btn-small">
+                            Dashboard →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+    let currentStep = 1;
+    let createdJourneySlug = '';
+    
+    // Get URL parameters for detection
+    const urlParams = new URLSearchParams(window.location.search);
+    const detectedFrom = urlParams.get('from') || '';
+    
+    // Try to detect challenge from context
+    if (detectedFrom.includes('75hard') || detectedFrom.includes('75-hard')) {
+        document.getElementById('detectedChallenge').textContent = '75 Hard Challenge';
+        document.getElementById('titleSuggestion').style.display = 'flex';
+    }
+    
+    function goToStep(step) {
+        // Hide all steps
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.add('hidden');
+        document.getElementById('step3').classList.add('hidden');
+        
+        // Show current step
+        document.getElementById(`step${step}`).classList.remove('hidden');
+        
+        // Update progress bar
+        updateProgress(step);
+        
+        currentStep = step;
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
+    }
+    
+    function updateProgress(step) {
+        // Reset all
+        document.querySelectorAll('.progress-step').forEach((el, i) => {
+            el.classList.remove('active', 'completed');
+        });
+        
+        // Update steps
+        for (let i = 1; i <= 3; i++) {
+            const stepEl = document.getElementById(`progressStep${i}`);
+            if (i < step) {
+                stepEl.classList.add('completed');
+            } else if (i === step) {
+                stepEl.classList.add('active');
+            }
+        }
+        
+        // Update lines
+        document.getElementById('progressLine1').classList.toggle('completed', step > 1);
+        document.getElementById('progressLine2').classList.toggle('completed', step > 2);
+    }
+    
+    function useDetectedTitle() {
+        document.getElementById('journeyTitle').value = document.getElementById('detectedChallenge').textContent;
+        document.getElementById('titleSuggestion').style.display = 'none';
+    }
+    
+    function createJourney() {
+        const form = document.getElementById('quickJourneyForm');
+        const formData = new FormData(form);
+        
+        // Show loading
+        document.getElementById('createBtnText').classList.add('hidden');
+        document.getElementById('createBtnLoading').classList.remove('hidden');
+        
+        fetch('/api/journey/quick-create/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: formData.get('title'),
+                duration: formData.get('duration'),
+                current_day: formData.get('current_day'),
+                category: formData.get('category'),
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                createdJourneySlug = data.slug;
+                document.getElementById('journeyLink').value = data.journey_url;
+                document.getElementById('postUpdateLink').href = data.post_update_url;
+                goToStep(3);
+            } else {
+                alert('Error: ' + (data.error || 'Something went wrong'));
+            }
+        })
+        .catch(error => {
+            alert('Error creating journey. Please try again.');
+            console.error(error);
+        })
+        .finally(() => {
+            document.getElementById('createBtnText').classList.remove('hidden');
+            document.getElementById('createBtnLoading').classList.add('hidden');
+        });
+    }
+    
+    function copyJourneyLink() {
+        const input = document.getElementById('journeyLink');
+        input.select();
+        document.execCommand('copy');
+        alert('✅ Link copied! Now paste it in your TikTok/Instagram bio.');
+    }
+    
+    function openTikTok() {
+        window.open('https://www.tiktok.com/settings/profile', '_blank');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // If they came from social connect, maybe skip step 1
+        const connected = urlParams.get('connected');
+        if (connected === 'true') {
+            goToStep(2);
+        }
+    });
+</script>
+
+{% endblock %}

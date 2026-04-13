@@ -1,520 +1,685 @@
 from django.contrib import admin
-from django.contrib import messages
 from django.utils.html import format_html
-from tinymce.widgets import TinyMCE
-
+from django.urls import reverse
+from django.utils import timezone
+from django.db.models import Count, Sum, Q
 from .models import (
-    # Core models
-    Profile, Campaign, CampaignView, SupportCampaign, Love, Comment, CommentLike,
-    Activity, VideoScreenshot, ActivityLove, ActivityComment, ActivityCommentLike,
-    Notification, Report, NotInterested, UserVerification, ChangemakerAward,
-    Conversation, DirectMessage, ActiveAudioSession,
-    
-    # Marketing models
-    Blog, CampaignStory, FAQ,
-    
-    # Monetization models
-    Donation, Pledge, CampaignProduct, Transaction, Cart, CartItem,
+    Profile, SocialConnection, ImportedContent,
+    Journey, Activity, JourneyFollow, Tag, JourneyTag,
+    ActivityLove, ActivityComment, JourneySave, Share,
+    Donation, Notification, PostJourneyProduct,
+    Report, Blog, FAQ
 )
 
 
-# admin.py
-from django.contrib import admin
-from django.utils import timezone
-from .models import (BoostedJourney, BoostedJourneyImpression, 
-                     BoostedJourneyClick, KeywordBidAuction, 
-                     BoostedJourneyPackage,   CampaignFollow ,)
-@admin.register(BoostedJourney)
-class BoostedJourneyAdmin(admin.ModelAdmin):
-    list_display = ['campaign', 'creator', 'placement_type', 'status', 'bid_amount', 'flat_fee', 'start_date', 'end_date', 'is_paid']
-    list_filter = ['placement_type', 'status', 'is_paid']
-    search_fields = ['campaign__title', 'creator__username', 'keywords']
-    readonly_fields = ['impressions', 'clicks', 'created_at', 'updated_at']
+# ============================================================================
+# MIXINS
+# ============================================================================
+
+class ReadOnlyMixin:
+    """Make fields read-only after creation"""
     
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields['categories'].required = False  # ← ADD THIS
-        return form
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing existing object
+            return self.readonly_fields + ('created_at',)
+        return self.readonly_fields
 
 
-
-
-@admin.register(BoostedJourneyImpression)
-class BoostedJourneyImpressionAdmin(admin.ModelAdmin):
-    list_display = ['boosted_journey', 'user', 'placement_context', 'viewed_at']
-    list_filter = ['placement_context', 'viewed_at']
-
-
-@admin.register(BoostedJourneyClick)
-class BoostedJourneyClickAdmin(admin.ModelAdmin):
-    list_display = ['boosted_journey', 'user', 'placement_context', 'clicked_at']
-    list_filter = ['placement_context', 'clicked_at']
-
-
-@admin.register(KeywordBidAuction)
-class KeywordBidAuctionAdmin(admin.ModelAdmin):
-    list_display = ['keyword', 'boosted_journey', 'bid_amount', 'position', 'auction_date']
-
-
-@admin.register(BoostedJourneyPackage)
-class BoostedJourneyPackageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'price', 'duration_days', 'is_active']
-    list_filter = ['is_active']
-    prepopulated_fields = {'slug': ('name',)}
-
-@admin.register(CampaignFollow)
-class CampaignFollowAdmin(admin.ModelAdmin):
-    """Simple admin for Campaign Follows"""
+class TimestampMixin:
+    """Common timestamp display"""
     
-    # What to display in the list view
-    list_display = ['user', 'campaign', 'followed_at']
-    
-    # Add filters
-    list_filter = ['followed_at']
-    
-    # Add search
-    search_fields = ['user__username', 'campaign__title']
-    
-    # Default ordering
-    ordering = ['-followed_at']
+    def get_created_at(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d %H:%M')
+    get_created_at.short_description = 'Created'
+    get_created_at.admin_order_field = 'created_at'
+
+
 # ============================================================================
 # PROFILE ADMIN
 # ============================================================================
 
-class CampaignInline(admin.TabularInline):
-    model = Campaign
-    extra = 0
-
+@admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'location', 'profile_verified', 'is_changemaker')
-    search_fields = ('user__username', 'location', 'bio')
-    list_filter = ('profile_verified',)
-    readonly_fields = ('user',)
-    inlines = [CampaignInline]
-    actions = ['verify_users']
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_add_permission(self, request):
-        return False
-
-    def verify_users(self, request, queryset):
-        for profile in queryset:
-            profile.profile_verified = True
-            profile.save()
-        self.message_user(request, "Selected profiles have been verified.")
-    verify_users.short_description = "Verify selected users"
-
-    def is_changemaker(self, obj):
-        return obj.is_changemaker()
-    is_changemaker.boolean = True
-    is_changemaker.short_description = 'Changemaker'
-
-admin.site.register(Profile, ProfileAdmin)
-
-
-# ============================================================================
-# CAMPAIGN ADMIN
-# ============================================================================
-# Simpler admin.py without the problematic fields
-from django.contrib import admin
-from .models import Campaign
-
-@admin.register(Campaign)
-class CampaignAdmin(admin.ModelAdmin):
-    list_display = ['title', 'user', 'timestamp', 'is_active', 'category']
-    list_filter = ['is_active', 'category', 'duration_unit']
-    search_fields = ['title', 'content', 'user__username']
-    readonly_fields = ['timestamp', 'end_date', 'duration_last_updated']
-    raw_id_fields = ['user']
+    list_display = ['user', 'get_avatar', 'profile_verified', 'get_journey_count', 'last_activity']
+    list_filter = ['profile_verified', 'created_at']
+    search_fields = ['user__username', 'user__email', 'bio', 'location']
+    readonly_fields = ['created_at', 'last_activity', 'get_journey_count']
     
     fieldsets = (
-        ('Basic Information', {
-            'fields': ('user', 'title', 'content', 'category', 'is_active')
+        ('User Info', {
+            'fields': ('user', 'image', 'bio', 'location')
         }),
-        ('Media', {
-            'fields': ('poster', 'additional_images', 'audio')
+        ('Social Connections', {
+            'fields': ('tiktok_username', 'instagram_username', 'youtube_channel')
         }),
-        ('Duration Settings', {
-            'fields': ('journey_start_date', 'duration', 'duration_unit', 'end_date')
+        ('Verification & Payments', {
+            'fields': ('profile_verified', 'paypal_email')
         }),
-        ('Funding', {
-            'fields': ('funding_goal',)
+        ('Activity', {
+            'fields': ('created_at', 'last_activity', 'get_journey_count')
         }),
-        ('Metadata', {
-            'fields': ('timestamp', 'duration_last_updated', 'original_duration', 'original_duration_unit'),
+    )
+    
+    def get_avatar(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />',
+                obj.image.url
+            )
+        return '-'
+    get_avatar.short_description = 'Avatar'
+    
+    def get_journey_count(self, obj):
+        count = obj.journeys.count()
+        url = reverse('admin:main_journey_changelist') + f'?creator__id={obj.id}'
+        return format_html('<a href="{}">{} journeys</a>', url, count)
+    get_journey_count.short_description = 'Journeys'
+
+
+# ============================================================================
+# SOCIAL CONNECTION ADMIN
+# ============================================================================
+
+@admin.register(SocialConnection)
+class SocialConnectionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'platform', 'platform_username', 'auto_import', 'get_token_status', 'last_sync']
+    list_filter = ['platform', 'auto_import', 'connected_at']
+    search_fields = ['user__username', 'platform_username', 'platform_user_id']
+    readonly_fields = ['connected_at', 'last_sync']
+    
+    fieldsets = (
+        ('User & Platform', {
+            'fields': ('user', 'platform', 'platform_user_id', 'platform_username')
+        }),
+        ('OAuth Tokens', {
+            'fields': ('access_token', 'refresh_token', 'token_expires'),
             'classes': ('collapse',)
         }),
-        # Removed tags and followers completely
+        ('Import Settings', {
+            'fields': ('auto_import', 'import_hashtag')
+        }),
+        ('Metadata', {
+            'fields': ('connected_at', 'last_sync')
+        }),
     )
-
-@admin.register(CampaignView)
-class CampaignViewAdmin(admin.ModelAdmin):
-    list_display = ('campaign', 'user', 'timestamp')
-    search_fields = ('campaign__title', 'user__user__username')
-    list_filter = ('timestamp',)
-    raw_id_fields = ('campaign', 'user')
-
-
-# ============================================================================
-# SUPPORT & ENGAGEMENT ADMIN
-# ============================================================================
-
-@admin.register(SupportCampaign)
-class SupportCampaignAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign', 'category', 'donate_monetary_visible', 'pledge_visible', 'campaign_product_visible')
-    list_filter = ('category',)
-    search_fields = ('user__username', 'campaign__title')
-    raw_id_fields = ('user', 'campaign')
-
-@admin.register(Love)
-class LoveAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign')  # Remove 'timestamp'
-    search_fields = ('user__username', 'campaign__title')
-
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign', 'timestamp', 'text_preview')
-    search_fields = ('user__user__username', 'campaign__title', 'text')
-    list_filter = ('timestamp',)
-    raw_id_fields = ('user', 'campaign', 'parent_comment')
     
-    def text_preview(self, obj):
-        return obj.text[:50] + '...' if len(obj.text) > 50 else obj.text
-    text_preview.short_description = 'Comment'
+    def get_token_status(self, obj):
+        if not obj.token_expires:
+            return format_html('<span style="color: orange;">⚠️ No expiry</span>')
+        if obj.is_token_expired():
+            return format_html('<span style="color: red;">❌ Expired</span>')
+        return format_html('<span style="color: green;">✅ Valid</span>')
+    get_token_status.short_description = 'Token Status'
 
 
-@admin.register(CommentLike)
-class CommentLikeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'comment', 'is_like', 'timestamp')
-    list_filter = ('is_like',)
-    raw_id_fields = ('user', 'comment')
+# ============================================================================
+# IMPORTED CONTENT ADMIN
+# ============================================================================
 
+@admin.register(ImportedContent)
+class ImportedContentAdmin(admin.ModelAdmin):
+    list_display = ['get_thumbnail', 'platform', 'get_caption_preview', 'status', 'detected_day', 'assigned_journey', 'imported_at']
+    list_filter = ['platform', 'status', 'media_type', 'imported_at']
+    search_fields = ['caption', 'platform_post_id', 'assigned_journey__title']
+    readonly_fields = ['imported_at', 'processed_at', 'get_media_preview']
+    actions = ['approve_selected', 'ignore_selected']
+    
+    fieldsets = (
+        ('Source', {
+            'fields': ('social_connection', 'platform', 'platform_post_id', 'platform_url')
+        }),
+        ('Content', {
+            'fields': ('caption', 'media_type', 'get_media_preview', 'media_url', 'thumbnail_url')
+        }),
+        ('Platform Metadata', {
+            'fields': ('posted_at', 'like_count', 'comment_count')
+        }),
+        ('Assignment', {
+            'fields': ('detected_day', 'assigned_journey', 'assigned_day', 'status')
+        }),
+        ('Result', {
+            'fields': ('created_activity',)
+        }),
+        ('Timestamps', {
+            'fields': ('imported_at', 'processed_at')
+        }),
+    )
+    
+    def get_thumbnail(self, obj):
+        if obj.thumbnail_url:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
+                obj.thumbnail_url
+            )
+        return '-'
+    get_thumbnail.short_description = 'Thumbnail'
+    
+    def get_caption_preview(self, obj):
+        return obj.caption[:50] + '...' if len(obj.caption) > 50 else obj.caption
+    get_caption_preview.short_description = 'Caption'
+    
+    def get_media_preview(self, obj):
+        if obj.media_type == 'image':
+            return format_html(
+                '<img src="{}" style="max-width: 300px; max-height: 300px; border-radius: 12px;" />',
+                obj.media_url
+            )
+        elif obj.media_type == 'video':
+            return format_html(
+                '<video src="{}" controls style="max-width: 300px; max-height: 300px; border-radius: 12px;"></video>',
+                obj.media_url
+            )
+        return '-'
+    get_media_preview.short_description = 'Media Preview'
+    
+    def approve_selected(self, request, queryset):
+        updated = queryset.update(status='approved', processed_at=timezone.now())
+        self.message_user(request, f'{updated} items approved.')
+    approve_selected.short_description = 'Approve selected items'
+    
+    def ignore_selected(self, request, queryset):
+        updated = queryset.update(status='ignored', processed_at=timezone.now())
+        self.message_user(request, f'{updated} items ignored.')
+    ignore_selected.short_description = 'Ignore selected items'
+
+
+# ============================================================================
+# INLINE MODELS
+# ============================================================================
+
+class ActivityInline(admin.TabularInline):
+    model = Activity
+    extra = 0
+    fields = ['day_number_field', 'content', 'is_video', 'get_love_count', 'created_at']
+    readonly_fields = ['day_number_field', 'get_love_count', 'created_at']
+    show_change_link = True
+    
+    def get_love_count(self, obj):
+        return obj.loves.count()
+    get_love_count.short_description = '❤️'
+
+
+class JourneyFollowInline(admin.TabularInline):
+    model = JourneyFollow
+    extra = 0
+    fields = ['user', 'notify_on_activity', 'followed_at']
+    readonly_fields = ['followed_at']
+
+
+class DonationInline(admin.TabularInline):
+    model = Donation
+    extra = 0
+    fields = ['donor_name', 'amount', 'status', 'created_at']
+    readonly_fields = ['created_at']
+
+
+class JourneyTagInline(admin.TabularInline):
+    model = JourneyTag
+    extra = 1
+    autocomplete_fields = ['tag']
+
+
+# ============================================================================
+# JOURNEY ADMIN
+# ============================================================================
+@admin.register(Journey)
+class JourneyAdmin(admin.ModelAdmin):
+    list_display = ['get_cover', 'title', 'creator', 'category', 'journey_type', 'get_progress', 'get_stats', 'is_public', 'created_at']
+    list_filter = ['category', 'journey_type', 'is_public', 'is_active', 'is_featured', 'funding_enabled', 'created_at']
+    search_fields = ['title', 'description', 'creator__user__username', 'slug']
+    readonly_fields = ['slug', 'view_count', 'unique_viewers', 'total_watch_time', 'created_at', 'updated_at', 'get_absolute_url']
+    prepopulated_fields = {'slug': ('title',)}
+    autocomplete_fields = ['creator']
+    # REMOVED: filter_horizontal = ['tags']
+    
+    inlines = [ActivityInline, JourneyFollowInline, DonationInline, JourneyTagInline]
+    
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('creator', 'title', 'slug', 'description', 'category', 'journey_type')
+        }),
+        ('Visuals', {
+            'fields': ('cover_image', 'cover_video')
+        }),
+        ('Structure', {
+            'fields': ('duration', 'duration_unit', 'start_date', 'end_date', 'milestones')
+        }),
+        ('Settings', {
+            'fields': ('is_public', 'is_active', 'is_featured', 'allow_comments', 'auto_import_enabled', 'import_hashtag')
+        }),
+        ('Funding', {
+            'fields': ('funding_enabled', 'funding_goal', 'funding_description'),
+            'classes': ('collapse',)
+        }),
+        ('Analytics', {
+            'fields': ('view_count', 'unique_viewers', 'total_watch_time')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'published_at')
+        }),
+        ('Links', {
+            'fields': ('get_absolute_url',)
+        }),
+    )
+    
+    def get_cover(self, obj):
+        if obj.cover_image:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
+                obj.cover_image.url
+            )
+        return '-'
+    get_cover.short_description = 'Cover'
+    
+    def get_progress(self, obj):
+        percentage = obj.get_progress_percentage()
+        current = obj.get_current_day()
+        return f"{current}/{obj.duration} ({percentage}%)"
+    get_progress.short_description = 'Progress'
+    
+    def get_stats(self, obj):
+        followers = obj.get_follower_count()
+        loves = obj.get_love_count()
+        return format_html('👥 {} · ❤️ {}', followers, loves)
+    get_stats.short_description = 'Stats'
+    
+    def get_absolute_url(self, obj):
+        if obj.slug:
+            url = reverse('journey_detail', kwargs={'slug': obj.slug})
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return '-'
+    get_absolute_url.short_description = 'Public URL'
+    
+    actions = ['make_featured', 'remove_featured', 'make_public', 'make_private']
+    
+    def make_featured(self, request, queryset):
+        updated = queryset.update(is_featured=True)
+        self.message_user(request, f'{updated} journeys marked as featured.')
+    make_featured.short_description = 'Mark as featured'
+    
+    def remove_featured(self, request, queryset):
+        updated = queryset.update(is_featured=False)
+        self.message_user(request, f'{updated} journeys removed from featured.')
+    remove_featured.short_description = 'Remove from featured'
+    
+    def make_public(self, request, queryset):
+        updated = queryset.update(is_public=True)
+        self.message_user(request, f'{updated} journeys made public.')
+    make_public.short_description = 'Make public'
+    
+    def make_private(self, request, queryset):
+        updated = queryset.update(is_public=False)
+        self.message_user(request, f'{updated} journeys made private.')
+    make_private.short_description = 'Make private'
 
 # ============================================================================
 # ACTIVITY ADMIN
 # ============================================================================
 
-class VideoScreenshotInline(admin.TabularInline):
-    model = VideoScreenshot
-    extra = 0
-    fields = ['order', 'timestamp']
-    raw_id_fields = ['activity']
-
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ('id', 'campaign', 'short_content', 'is_video', 'timestamp')
-    list_filter = ('is_video', 'video_processed')
-    search_fields = ('content',)
-    raw_id_fields = ('campaign',)
-    inlines = [VideoScreenshotInline]
+    list_display = ['get_thumbnail', 'journey', 'day_number_field', 'get_content_preview', 'is_video', 'get_engagement', 'created_at']
+    list_filter = ['is_video', 'created_at', 'journey__category']
+    search_fields = ['content', 'journey__title']
+    readonly_fields = ['day_number_field', 'view_count', 'created_at', 'published_at', 'get_media_preview']
+    autocomplete_fields = ['journey']
     
     fieldsets = (
-        (None, {
-            'fields': ('campaign', 'content', 'file')
+        ('Journey', {
+            'fields': ('journey', 'day_number_field')
         }),
-        ('Video Processing', {
-            'fields': ('is_video', 'video_processed', 'screenshot_count'),
-            'classes': ('collapse',)
+        ('Content', {
+            'fields': ('content', 'file', 'is_video', 'thumbnail', 'get_media_preview')
+        }),
+        ('Source', {
+            'fields': ('imported_from', 'source_url')
+        }),
+        ('Stats', {
+            'fields': ('view_count',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'published_at')
         }),
     )
     
-    def short_content(self, obj):
-        return obj.content[:50] + '...' if obj.content and len(obj.content) > 50 else obj.content
-    short_content.short_description = 'Content'
+    def get_thumbnail(self, obj):
+        if obj.thumbnail:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
+                obj.thumbnail.url
+            )
+        elif obj.file and not obj.is_video:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
+                obj.file.url
+            )
+        return '-'
+    get_thumbnail.short_description = 'Media'
+    
+    def get_content_preview(self, obj):
+        return obj.content[:40] + '...' if len(obj.content) > 40 else obj.content
+    get_content_preview.short_description = 'Content'
+    
+    def get_engagement(self, obj):
+        loves = obj.get_love_count()
+        comments = obj.get_comment_count()
+        return f'❤️ {loves} · 💬 {comments}'
+    get_engagement.short_description = 'Engagement'
+    
+    def get_media_preview(self, obj):
+        if obj.file:
+            if obj.is_video:
+                return format_html(
+                    '<video src="{}" controls style="max-width: 400px; max-height: 400px; border-radius: 12px;"></video>',
+                    obj.file.url
+                )
+            else:
+                return format_html(
+                    '<img src="{}" style="max-width: 400px; max-height: 400px; border-radius: 12px;" />',
+                    obj.file.url
+                )
+        return '-'
+    get_media_preview.short_description = 'Media Preview'
 
 
-@admin.register(VideoScreenshot)
-class VideoScreenshotAdmin(admin.ModelAdmin):
-    list_display = ('id', 'activity', 'order', 'timestamp')
-    raw_id_fields = ('activity',)
+# ============================================================================
+# TAG ADMIN
+# ============================================================================
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'get_journey_count', 'created_at']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['created_at', 'get_journey_count']
+    
+    def get_journey_count(self, obj):
+        count = obj.journeys.count()
+        url = reverse('admin:main_journey_changelist') + f'?tags__id={obj.id}'
+        return format_html('<a href="{}">{} journeys</a>', url, count)
+    get_journey_count.short_description = 'Journeys'
+
+
+# ============================================================================
+# ENGAGEMENT ADMINS
+# ============================================================================
+
+@admin.register(JourneyFollow)
+class JourneyFollowAdmin(admin.ModelAdmin):
+    list_display = ['user', 'journey', 'notify_on_activity', 'followed_at']
+    list_filter = ['notify_on_activity', 'followed_at']
+    search_fields = ['user__username', 'journey__title']
+    readonly_fields = ['followed_at']
+    autocomplete_fields = ['user', 'journey']
 
 
 @admin.register(ActivityLove)
 class ActivityLoveAdmin(admin.ModelAdmin):
-    list_display = ('user', 'activity', 'timestamp')
-    raw_id_fields = ('user', 'activity')
+    list_display = ['user', 'activity', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'activity__content', 'activity__journey__title']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['user', 'activity']
 
 
 @admin.register(ActivityComment)
 class ActivityCommentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'activity', 'content_preview', 'timestamp')
-    search_fields = ('content', 'user__username')
-    raw_id_fields = ('user', 'activity', 'parent_comment')
+    list_display = ['user', 'get_content_preview', 'activity', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'content', 'activity__journey__title']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['user', 'activity']
     
-    def content_preview(self, obj):
+    def get_content_preview(self, obj):
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = 'Comment'
+    get_content_preview.short_description = 'Comment'
 
 
-@admin.register(ActivityCommentLike)
-class ActivityCommentLikeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'comment', 'timestamp')
-    raw_id_fields = ('user', 'comment')
+@admin.register(JourneySave)
+class JourneySaveAdmin(admin.ModelAdmin):
+    list_display = ['user', 'journey', 'saved_at']
+    list_filter = ['saved_at']
+    search_fields = ['user__username', 'journey__title']
+    readonly_fields = ['saved_at']
+    autocomplete_fields = ['user', 'journey']
 
 
-@admin.register(ActiveAudioSession)
-class ActiveAudioSessionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'activity', 'started_at', 'last_heartbeat')
-    raw_id_fields = ('user', 'activity')
-
-
-# ============================================================================
-# MESSAGING ADMIN
-# ============================================================================
-
-@admin.register(Conversation)
-class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user1', 'user2', 'updated_at', 'last_message_preview')
-    search_fields = ('user1__username', 'user2__username')
-    list_filter = ('updated_at',)
-    raw_id_fields = ('user1', 'user2')
-    
-    def last_message_preview(self, obj):
-        last_msg = obj.last_message
-        return last_msg.content[:50] + '...' if last_msg and last_msg.content else ''
-
-
-@admin.register(DirectMessage)
-class DirectMessageAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'recipient', 'content_preview', 'timestamp', 'read')
-    list_filter = ('read', 'timestamp')
-    search_fields = ('sender__username', 'recipient__username', 'content')
-    raw_id_fields = ('conversation', 'sender', 'recipient')
-    
-    def content_preview(self, obj):
-        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = 'Message'
+@admin.register(Share)
+class ShareAdmin(admin.ModelAdmin):
+    list_display = ['journey', 'user', 'platform', 'created_at']
+    list_filter = ['platform', 'created_at']
+    search_fields = ['journey__title', 'user__username']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['journey', 'user']
 
 
 # ============================================================================
-# NOTIFICATION & REPORTING ADMIN
-# ============================================================================
-
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'message_preview', 'viewed', 'timestamp', 'campaign_notification')
-    list_filter = ('viewed', 'campaign_notification', 'timestamp')
-    search_fields = ('user__username', 'message')
-    raw_id_fields = ('user', 'campaign')
-    
-    def message_preview(self, obj):
-        return obj.message[:50] + '...' if len(obj.message) > 50 else obj.message
-    message_preview.short_description = 'Message'
-
-
-@admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
-    list_display = ('campaign', 'reported_by', 'reason', 'timestamp')
-    search_fields = ('campaign__title', 'reported_by__user__username', 'reason', 'description')
-    list_filter = ('reason', 'timestamp')
-    raw_id_fields = ('campaign', 'reported_by')
-    actions = ['delete_reported_campaigns']
-
-    def delete_reported_campaigns(self, request, queryset):
-        for report in queryset:
-            campaign = report.campaign
-            campaign_title = campaign.title
-            campaign.delete()
-            self.message_user(request, f'The campaign "{campaign_title}" has been deleted.', messages.SUCCESS)
-    delete_reported_campaigns.short_description = "Delete selected campaigns"
-
-
-@admin.register(NotInterested)
-class NotInterestedAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign', 'timestamp')
-    raw_id_fields = ('user', 'campaign')
-
-
-# ============================================================================
-# VERIFICATION & AWARDS ADMIN
-# ============================================================================
-
-@admin.register(UserVerification)
-class UserVerificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'document_type', 'status', 'submission_date', 'verified_on')
-    search_fields = ('user__username', 'document_type', 'status')
-    list_filter = ('status', 'document_type', 'submission_date')
-    readonly_fields = ('submission_date',)
-    actions = ['approve_verifications', 'reject_verifications']
-
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        if obj.status == 'Rejected' and obj.rejection_reason:
-            message = f"Your verification for {obj.document_type} has been rejected. Reason: {obj.rejection_reason}."
-            Notification.objects.create(user=obj.user, message=message)
-        elif obj.status == 'Approved':
-            message = f"Your verification for {obj.document_type} has been approved."
-            Notification.objects.create(user=obj.user, message=message)
-
-    def approve_verifications(self, request, queryset):
-        for verification in queryset:
-            verification.status = 'Approved'
-            verification.verified_on = timezone.now()
-            verification.save()
-            message = f"Your verification for {verification.document_type} has been approved."
-            Notification.objects.create(user=verification.user, message=message)
-        self.message_user(request, f"{queryset.count()} verifications approved.")
-    approve_verifications.short_description = "Approve selected verifications"
-
-    def reject_verifications(self, request, queryset):
-        for verification in queryset:
-            verification.status = 'Rejected'
-            verification.save()
-        self.message_user(request, f"{queryset.count()} verifications rejected. Please add rejection reasons individually.")
-    reject_verifications.short_description = "Reject selected verifications"
-
-
-@admin.register(ChangemakerAward)
-class ChangemakerAwardAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign', 'award', 'timestamp')
-    search_fields = ('user__user__username', 'campaign__title', 'award')
-    list_filter = ('award', 'timestamp')
-    raw_id_fields = ('user', 'campaign')
-    ordering = ('-timestamp',)
-
-
-# ============================================================================
-# MARKETING & CONTENT ADMIN
-# ============================================================================
-# main/admin.py
-
-from django.contrib import admin
-from .models import Blog  # Import your models
-# from .forms import BlogForm  # Comment this out if you're not using it
-
-@admin.register(Blog)
-class BlogAdmin(admin.ModelAdmin):
-    # form = BlogForm  # ← REMOVE THIS LINE
-    list_display = ('title', 'category', 'status', 'author', 'created_at', 'view_count')
-    list_filter = ('status', 'category', 'created_at')
-    search_fields = ('title', 'content', 'excerpt', 'author__username')
-    prepopulated_fields = {'slug': ('title',)}
-    readonly_fields = ('view_count', 'like_count', 'share_count', 'seo_score')
-    raw_id_fields = ('author', 'related_posts')
-    
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('title', 'slug', 'excerpt', 'content', 'author')
-        }),
-        ('SEO & Metadata', {
-            'fields': ('meta_title', 'meta_description', 'focus_keyword', 'canonical_url')
-        }),
-        ('Media', {
-            'fields': ('featured_image', 'og_image')
-        }),
-        ('Status & Organization', {
-            'fields': ('status', 'category', 'tags', 'published_at')
-        }),
-        ('Related Content', {
-            'fields': ('related_posts',)
-        }),
-        ('Statistics', {
-            'fields': ('estimated_reading_time', 'view_count', 'like_count', 'share_count', 'seo_score'),
-            'classes': ('collapse',)
-        }),
-    )
-
-@admin.register(CampaignStory)
-class CampaignStoryAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_at', 'display_image')
-    list_filter = ('created_at',)
-    search_fields = ('title', 'content')
-    prepopulated_fields = {'slug': ('title',)}
-    readonly_fields = ('created_at', 'display_image')
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('title', 'slug', 'content', 'image'),
-        }),
-        ('Timestamps', {
-            'fields': ('created_at',),
-        }),
-    )
-
-    def display_image(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" width="100" style="border-radius: 5px;" />', obj.image.url)
-        return "No Image"
-    display_image.short_description = "Image Preview"
-
-
-@admin.register(FAQ)
-class FAQAdmin(admin.ModelAdmin):
-    list_display = ('question', 'category', 'answer_preview')
-    list_filter = ('category',)
-    search_fields = ('question', 'answer')
-    
-    def answer_preview(self, obj):
-        return obj.answer[:75] + '...' if len(obj.answer) > 75 else obj.answer
-    answer_preview.short_description = 'Answer'
-
-
-# ============================================================================
-# MONETIZATION ADMIN
+# DONATION ADMIN
 # ============================================================================
 
 @admin.register(Donation)
 class DonationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'campaign', 'amount', 'fulfilled', 'timestamp')
-    list_filter = ('fulfilled', 'timestamp')
-    search_fields = ('user__username', 'campaign__title')
-    raw_id_fields = ('user', 'campaign')
-    readonly_fields = ('timestamp',)
-
-
-@admin.register(Pledge)
-class PledgeAdmin(admin.ModelAdmin):
-    list_display = ('user_display', 'campaign', 'amount', 'is_fulfilled', 'payment_status', 'timestamp')
-    list_filter = ('is_fulfilled', 'payment_status', 'timestamp')
-    search_fields = ('user__username', 'anonymous_name', 'contact', 'campaign__title')
-    raw_id_fields = ('user', 'campaign')
-    readonly_fields = ('timestamp',)
+    list_display = ['journey', 'get_donor', 'amount', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['journey__title', 'donor__username', 'donor_name', 'donor_email', 'paypal_order_id']
+    readonly_fields = ['created_at', 'completed_at']
+    autocomplete_fields = ['journey', 'donor']
+    actions = ['mark_completed', 'mark_failed']
     
-    def user_display(self, obj):
-        if obj.user:
-            return obj.user.username
-        return obj.anonymous_name or "Anonymous"
-    user_display.short_description = 'User'
-
-
-@admin.register(CampaignProduct)
-class CampaignProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'campaign', 'price', 'stock_quantity', 'stock_status', 'is_active')
-    list_filter = ('campaign', 'is_active', 'stock_status')
-    search_fields = ('name', 'description', 'campaign__title')
-    list_editable = ('price', 'stock_quantity', 'is_active')
-    raw_id_fields = ('campaign',)
-
-
-@admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'product', 'buyer', 'amount', 'quantity', 'status', 'created_at')
-    list_filter = ('status', 'payout_status', 'created_at')
-    search_fields = ('buyer__username', 'product__name', 'tx_ref')
-    raw_id_fields = ('product', 'buyer')
-    readonly_fields = ('created_at', 'updated_at')
-
-
-@admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
-    list_display = ('user', 'total_items_display', 'total_price_display', 'updated_at')
-    search_fields = ('user__username',)
-    raw_id_fields = ('user',)
+    fieldsets = (
+        ('Donation Info', {
+            'fields': ('journey', 'amount', 'message')
+        }),
+        ('Donor Info', {
+            'fields': ('donor', 'donor_name', 'donor_email')
+        }),
+        ('Status', {
+            'fields': ('status', 'paypal_order_id')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'completed_at')
+        }),
+    )
     
-    def total_items_display(self, obj):
-        return obj.total_items
-    total_items_display.short_description = 'Items'
+    def get_donor(self, obj):
+        if obj.donor:
+            return obj.donor.username
+        return obj.donor_name or 'Anonymous'
+    get_donor.short_description = 'Donor'
+    get_donor.admin_order_field = 'donor__username'
     
-    def total_price_display(self, obj):
-        return f"${obj.total_price}"
-    total_price_display.short_description = 'Total'
+    def mark_completed(self, request, queryset):
+        updated = queryset.update(status='completed', completed_at=timezone.now())
+        self.message_user(request, f'{updated} donations marked as completed.')
+    mark_completed.short_description = 'Mark as completed'
+    
+    def mark_failed(self, request, queryset):
+        updated = queryset.update(status='failed')
+        self.message_user(request, f'{updated} donations marked as failed.')
+    mark_failed.short_description = 'Mark as failed'
 
 
-@admin.register(CartItem)
-class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('cart', 'product', 'quantity', 'total_price', 'added_at')
-    raw_id_fields = ('cart', 'product')
+# ============================================================================
+# NOTIFICATION ADMIN
+# ============================================================================
 
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'get_message_preview', 'viewed', 'created_at']
+    list_filter = ['viewed', 'created_at']
+    search_fields = ['user__username', 'message']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['user', 'journey']
+    actions = ['mark_as_viewed', 'mark_as_unviewed']
+    
+    def get_message_preview(self, obj):
+        return obj.message[:60] + '...' if len(obj.message) > 60 else obj.message
+    get_message_preview.short_description = 'Message'
+    
+    def mark_as_viewed(self, request, queryset):
+        updated = queryset.update(viewed=True)
+        self.message_user(request, f'{updated} notifications marked as viewed.')
+    mark_as_viewed.short_description = 'Mark as viewed'
+    
+    def mark_as_unviewed(self, request, queryset):
+        updated = queryset.update(viewed=False)
+        self.message_user(request, f'{updated} notifications marked as unviewed.')
+    mark_as_unviewed.short_description = 'Mark as unviewed'
+
+
+# ============================================================================
+# POST-JOURNEY PRODUCT ADMIN
+# ============================================================================
+
+@admin.register(PostJourneyProduct)
+class PostJourneyProductAdmin(admin.ModelAdmin):
+    list_display = ['title', 'journey', 'product_type', 'price', 'is_active', 'created_at']
+    list_filter = ['product_type', 'is_active', 'created_at']
+    search_fields = ['title', 'description', 'journey__title']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['journey']
+    
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('journey', 'product_type', 'title', 'description', 'price')
+        }),
+        ('Files', {
+            'fields': ('pdf_file', 'video_file')
+        }),
+        ('Coaching', {
+            'fields': ('coaching_calendar_link', 'coaching_duration')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'created_at')
+        }),
+    )
+
+
+# ============================================================================
+# REPORT ADMIN
+# ============================================================================
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+    list_display = ['get_reported_item', 'reported_by', 'reason', 'resolved', 'created_at']
+    list_filter = ['reason', 'resolved', 'created_at']
+    search_fields = ['reported_by__username', 'description', 'journey__title', 'activity__content']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['journey', 'activity', 'reported_by']
+    actions = ['mark_resolved', 'mark_unresolved']
+    
+    fieldsets = (
+        ('Report Info', {
+            'fields': ('journey', 'activity', 'reported_by', 'reason', 'description')
+        }),
+        ('Status', {
+            'fields': ('resolved', 'created_at')
+        }),
+    )
+    
+    def get_reported_item(self, obj):
+        if obj.journey:
+            return format_html('<a href="{}">{}</a>', 
+                reverse('admin:main_journey_change', args=[obj.journey.id]),
+                obj.journey.title)
+        elif obj.activity:
+            return f"Activity: {obj.activity.content[:30]}"
+        return '-'
+    get_reported_item.short_description = 'Reported Item'
+    
+    def mark_resolved(self, request, queryset):
+        updated = queryset.update(resolved=True)
+        self.message_user(request, f'{updated} reports marked as resolved.')
+    mark_resolved.short_description = 'Mark as resolved'
+    
+    def mark_unresolved(self, request, queryset):
+        updated = queryset.update(resolved=False)
+        self.message_user(request, f'{updated} reports marked as unresolved.')
+    mark_unresolved.short_description = 'Mark as unresolved'
+
+
+# ============================================================================
+# BLOG ADMIN
+# ============================================================================
+
+@admin.register(Blog)
+class BlogAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'status', 'view_count', 'published_at', 'created_at']
+    list_filter = ['category', 'status', 'created_at', 'published_at']
+    search_fields = ['title', 'content', 'excerpt']
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ['view_count', 'created_at', 'updated_at']
+    autocomplete_fields = ['author']
+    
+    fieldsets = (
+        ('Content', {
+            'fields': ('title', 'slug', 'excerpt', 'content')
+        }),
+        ('Media', {
+            'fields': ('featured_image',)
+        }),
+        ('Meta', {
+            'fields': ('author', 'category', 'status')
+        }),
+        ('Stats', {
+            'fields': ('view_count',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at', 'published_at')
+        }),
+    )
+    
+    actions = ['publish_selected', 'archive_selected']
+    
+    def publish_selected(self, request, queryset):
+        updated = queryset.update(status='published', published_at=timezone.now())
+        self.message_user(request, f'{updated} blog posts published.')
+    publish_selected.short_description = 'Publish selected'
+    
+    def archive_selected(self, request, queryset):
+        updated = queryset.update(status='archived')
+        self.message_user(request, f'{updated} blog posts archived.')
+    archive_selected.short_description = 'Archive selected'
+
+
+# ============================================================================
+# FAQ ADMIN
+# ============================================================================
+
+@admin.register(FAQ)
+class FAQAdmin(admin.ModelAdmin):
+    list_display = ['question', 'category', 'order', 'is_active']
+    list_filter = ['category', 'is_active']
+    search_fields = ['question', 'answer']
+    list_editable = ['order', 'is_active']
+    
+    fieldsets = (
+        ('Content', {
+            'fields': ('category', 'question', 'answer')
+        }),
+        ('Display', {
+            'fields': ('order', 'is_active')
+        }),
+    )
+
+
+# ============================================================================
+# JOURNEY TAG ADMIN (THROUGH MODEL)
+# ============================================================================
+
+@admin.register(JourneyTag)
+class JourneyTagAdmin(admin.ModelAdmin):
+    list_display = ['journey', 'tag', 'added_at']
+    list_filter = ['added_at']
+    search_fields = ['journey__title', 'tag__name']
+    readonly_fields = ['added_at']
+    autocomplete_fields = ['journey', 'tag']
+
+
+# ============================================================================
+# DASHBOARD CUSTOMIZATION
+# ============================================================================
+
+admin.site.site_header = 'Rallynex Administration'
+admin.site.site_title = 'Rallynex Admin'
+admin.site.index_title = 'Journey Organizer Dashboard'

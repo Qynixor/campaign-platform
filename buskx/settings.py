@@ -24,22 +24,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =====================================================
 SECRET_KEY = env('SECRET_KEY', default='unsafe-secret-key-for-development-only')
-DEBUG = env.bool('DEBUG', default=False)
+DEBUG = env.bool('DEBUG', default=True)  # Set to True for development
 
-# 🔧 FIX: allow BOTH domains so redirects work cleanly
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
-    'rallynex.com',
-    'www.rallynex.com',
     'localhost',
     '127.0.0.1',
-
+    'rallynex.com',
+    'www.rallynex.com',
 ])
 
 # =====================================================
 # APPLICATIONS
 # =====================================================
 INSTALLED_APPS = [
-    'tinymce',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,53 +44,33 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-
-    'storages',
-    'accounts',
-    'crispy_forms',
-    'main.apps.MainConfig',
-
-    'django.contrib.sitemaps',
-    'django_extensions',
     'django.contrib.humanize',
-    'django_summernote',
-    'django_quill',
-    'django_crontab',
-    'background_task',
+    'django.contrib.sitemaps',
 
+    # Third party
+    'tinymce',
     'cloudinary',
     'cloudinary_storage',
-]
+    'crispy_forms',
+    'django_extensions',
+    'background_task',
 
-CRONJOBS = [
-    ('0 */24 * * *', 'campaigns.cron.send_pledge_reminders'),
+    # Main app
+    'main.apps.MainConfig',
 ]
 
 # =====================================================
 # MIDDLEWARE
 # =====================================================
 MIDDLEWARE = [
- 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-
-    'allauth.account.middleware.AccountMiddleware',
- 
-    'buskx.middlewares.LegalLinksMiddleware',
-    'buskx.middlewares.WWWRedirectMiddleware',  # 🔧 MUST be 301
-  
 ]
 
 ROOT_URLCONF = 'buskx.urls'
@@ -105,7 +82,10 @@ WSGI_APPLICATION = 'buskx.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'accounts/templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'main/templates'),
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,17 +93,14 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                 'main.context_processors.featured_spot_processor',
-                'buskx.context_processors.seo_context',
-                'buskx.context_processors.notification_count',
-                'buskx.context_processors.site_config',
             ],
         },
     },
 ]
 
-import dj_database_url
-
+# =====================================================
+# DATABASE
+# =====================================================
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
@@ -138,61 +115,47 @@ DATABASES = {
 CSRF_TRUSTED_ORIGINS = [
     'https://rallynex.com',
     'https://www.rallynex.com',
-
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 
 # =====================================================
 # AUTH
 # =====================================================
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'accounts.validators.AnyPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 SITE_ID = 1
 
-# 🔧 FIX: single canonical source of truth
-SITE_URL = 'https://rallynex.com'
-SITE_DOMAIN = 'rallynex.com'
+SITE_URL = 'http://localhost:8000'  # Development
+SITE_DOMAIN = 'localhost'
 SITE_NAME = "RallyNex"
 
 # =====================================================
-# ALLAUTH
+# LOGIN/LOGOUT
 # =====================================================
-ACCOUNT_LOGIN_METHODS = {'username'}
-ACCOUNT_SIGNUP_FIELDS = ['username*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_EMAIL_CONFIRMATION_HMAC = False
+LOGIN_URL = 'login'
 
-LOGIN_REDIRECT_URL = '/rallynex-logo/'
-LOGOUT_REDIRECT_URL = 'index'
-# settings.py
+LOGOUT_REDIRECT_URL = 'landing'
 
 
-SOCIALACCOUNT_LOGIN_ON_GET = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_ADAPTER = 'accounts.adapter.CustomSocialAccountAdapter'
-
-ACCOUNT_USERNAME_MIN_LENGTH = 3
-ACCOUNT_USERNAME_BLACKLIST = ['admin', 'administrator', 'moderator', 'root']
-
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-        'APP': {
-            'client_id': env('SOCIALACCOUNT_GOOGLE_CLIENT_ID', default=''),
-            'secret': env('SOCIALACCOUNT_GOOGLE_SECRET', default=''),
-            'key': ''
-        }
-    }
-}
-
+LOGIN_REDIRECT_URL = '/onboarding/'
 # =====================================================
 # LOCALIZATION
 # =====================================================
@@ -217,85 +180,36 @@ CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
 
-cloudinary.config(
-    cloud_name=CLOUDINARY_CLOUD_NAME,
-    api_key=CLOUDINARY_API_KEY,
-    api_secret=CLOUDINARY_API_SECRET,
-    secure=True
-)
-
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
-    'API_KEY': CLOUDINARY_API_KEY,
-    'API_SECRET': CLOUDINARY_API_SECRET,
-}
-
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True
+    )
+    
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+    }
+    
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # =====================================================
-# PAYMENTS (UNCHANGED)
+# PAYMENTS
 # =====================================================
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 
 PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
 PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
 PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')
-PAYPAL_PLATFORM_ACCOUNT = env('PAYPAL_PLATFORM_ACCOUNT', default='')
 PAYPAL_BRAND_NAME = 'RALLYNEX'
-PAYPAL_ENABLE_PAYOUTS = env.bool('PAYPAL_ENABLE_PAYOUTS', default=False)
-
-PAYPAL_API_BASE = (
-    "https://api-m.sandbox.paypal.com"
-    if PAYPAL_MODE == "sandbox"
-    else "https://api-m.paypal.com"
-)
-
-FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY')
-FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY')
-FLUTTERWAVE_SECRET_HASH = os.environ.get('FLUTTERWAVE_SECRET_HASH')
 
 # =====================================================
-# MISC
+# TINYMCE
 # =====================================================
-
-PRIVACY_POLICY_LINK = env('PRIVACY_POLICY_LINK', default='/privacy-policy/')
-TERMS_OF_SERVICE_LINK = env('TERMS_OF_SERVICE_LINK', default='/terms-of-service/')
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# =====================================================
-# LOGGING
-# =====================================================
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': 'django_errors.log',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
-        'main': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-    },
-}
-
-# settings.py
 TINYMCE_DEFAULT_CONFIG = {
     'height': 500,
     'width': '100%',
@@ -316,36 +230,38 @@ TINYMCE_DEFAULT_CONFIG = {
         aligncenter alignjustify | indent outdent | bullist numlist table |
         | link image media | codesample |
     ''',
-    'toolbar2': '''
-        visualblocks visualchars |
-        charmap hr pagebreak nonbreaking anchor | code |
-    ''',
     'contextmenu': 'formats | link image',
     'menubar': True,
     'statusbar': True,
-    'images_upload_url': '/upload_image/',  # Add this endpoint
 }
 
+# =====================================================
+# MISC
+# =====================================================
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Add to settings.py:
-Q_CLUSTER = {
-    'name': 'journey_reels',
-    'workers': 2,
-    'recycle': 500,
-    'timeout': 300,
-    'retry': 60,
-    'queue_limit': 10,
-    'bulk': 1,
-    'orm': 'default'
+# =====================================================
+# LOGGING
+# =====================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'main': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
 }
-
-
-
-
-# SEO Verification Codes
-GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
-YANDEX_VERIFICATION = os.environ.get('YANDEX_VERIFICATION', '')
-BING_VERIFICATION = os.environ.get('BING_VERIFICATION', '')
-
-
-

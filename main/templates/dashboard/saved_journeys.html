@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Saved Journeys | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .saved-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .saved-header {
+        margin-bottom: 30px;
+    }
+    
+    .saved-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .saved-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .journey-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+    
+    .journey-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.2s;
+        position: relative;
+    }
+    
+    .journey-card:hover {
+        transform: translateY(-3px);
+        border-color: #3b82f6;
+    }
+    
+    .journey-cover {
+        aspect-ratio: 1;
+        background: #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .journey-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .journey-cover i {
+        font-size: 48px;
+        color: #444;
+    }
+    
+    .unsave-btn {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ef4444;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        z-index: 10;
+    }
+    
+    .unsave-btn:hover {
+        background: #ef4444;
+        color: #fff;
+    }
+    
+    .journey-info {
+        padding: 20px;
+    }
+    
+    .journey-title {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    
+    .journey-creator {
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+    
+    .journey-progress {
+        margin-bottom: 12px;
+    }
+    
+    .progress-bar {
+        height: 4px;
+        background: #2a2a2a;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 6px;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: #3b82f6;
+        border-radius: 2px;
+    }
+    
+    .progress-text {
+        font-size: 12px;
+        color: #888;
+    }
+    
+    .saved-date {
+        font-size: 12px;
+        color: #666;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #222;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        color: #888;
+        margin-bottom: 24px;
+    }
+    
+    @media (max-width: 768px) {
+        .journey-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="saved-container">
+    
+    <div class="saved-header">
+        <h1 class="saved-title">Saved Journeys</h1>
+        <p class="saved-subtitle">Journeys you've bookmarked to follow later</p>
+    </div>
+    
+    {% if saves %}
+    <div class="journey-grid">
+        {% for save in saves %}
+        <div class="journey-card">
+            <button class="unsave-btn" onclick="unsaveJourney('{{ save.journey.slug }}', this)" title="Remove from saved">
+                <i class="fas fa-bookmark"></i>
+            </button>
+            
+            <a href="{% url 'journey_detail' slug=save.journey.slug %}">
+                <div class="journey-cover">
+                    {% if save.journey.cover_image %}
+                        <img src="{{ save.journey.cover_image.url }}" alt="{{ save.journey.title }}">
+                    {% else %}
+                        <i class="fas fa-flag-checkered"></i>
+                    {% endif %}
+                </div>
+                <div class="journey-info">
+                    <h3 class="journey-title">{{ save.journey.title }}</h3>
+                    <p class="journey-creator">@{{ save.journey.creator.user.username }}</p>
+                    <div class="journey-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ save.journey.get_progress_percentage }}%;"></div>
+                        </div>
+                        <span class="progress-text">Day {{ save.journey.get_current_day }}/{{ save.journey.duration }}</span>
+                    </div>
+                    <p class="saved-date">
+                        <i class="far fa-bookmark"></i> Saved {{ save.saved_at|timesince }} ago
+                    </p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="far fa-bookmark"></i>
+        <h3>No saved journeys yet</h3>
+        <p>Bookmark journeys you want to follow, and they'll appear here.</p>
+        <a href="{% url 'discover' %}" class="btn btn-primary">
+            <i class="fas fa-compass"></i> Discover Journeys
+        </a>
+    </div>
+    {% endif %}
+    
+</div>
+
+<script>
+    function unsaveJourney(slug, btn) {
+        fetch(`/api/journey/${slug}/save/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.saved) {
+                btn.closest('.journey-card').remove();
+                
+                // Check if grid is empty
+                const grid = document.querySelector('.journey-grid');
+                if (grid.children.length === 0) {
+                    location.reload();
+                }
+            }
+        });
+    }
+</script>
+
+{% endblock %}

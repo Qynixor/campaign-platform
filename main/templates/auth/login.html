@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Log in | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        min-height: calc(100vh - 200px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+    
+    .auth-card {
+        max-width: 420px;
+        width: 100%;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 24px;
+        padding: 40px;
+    }
+    
+    .auth-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    
+    .auth-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .auth-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .auth-form .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .auth-form label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .auth-form input {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    
+    .auth-form input:focus {
+        border-color: #3b82f6;
+    }
+    
+    .auth-form input::placeholder {
+        color: #555;
+    }
+    
+    .form-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .form-checkbox input {
+        width: 18px;
+        height: 18px;
+        accent-color: #3b82f6;
+    }
+    
+    .form-checkbox label {
+        margin-bottom: 0;
+        color: #aaa;
+        font-weight: 400;
+    }
+    
+    .form-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    
+    .forgot-link {
+        color: #3b82f6;
+        font-size: 14px;
+    }
+    
+    .forgot-link:hover {
+        text-decoration: underline;
+    }
+    
+    .auth-btn {
+        width: 100%;
+        padding: 14px;
+        background: #fff;
+        color: #0a0a0a;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+    }
+    
+    .auth-btn:hover {
+        background: #e5e5e5;
+    }
+    
+    .auth-footer {
+        text-align: center;
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .auth-footer a {
+        color: #3b82f6;
+        font-weight: 500;
+    }
+    
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        font-size: 14px;
+    }
+    
+    .errorlist li {
+        margin-bottom: 4px;
+    }
+    
+    .errorlist li:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Welcome back</h1>
+            <p class="auth-subtitle">Log in to continue your journey</p>
+        </div>
+        
+        {% if form.errors %}
+        <ul class="errorlist">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_username">Username or Email</label>
+                <input type="text" name="username" id="id_username" 
+                       placeholder="Enter your username or email" 
+                       required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_password">Password</label>
+                <input type="password" name="password" id="id_password" 
+                       placeholder="Enter your password" 
+                       required>
+            </div>
+            
+            <div class="form-footer">
+                <div class="form-checkbox">
+                    <input type="checkbox" name="remember_me" id="id_remember_me">
+                    <label for="id_remember_me">Remember me</label>
+                </div>
+                
+                <a href="{% url 'password_reset' %}" class="forgot-link">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="auth-btn">
+                <i class="fas fa-sign-in-alt"></i> Log in
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            Don't have an account? 
+            <a href="{% url 'signup' %}">Sign up</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

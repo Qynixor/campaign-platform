@@ -1,0 +1,50 @@
+{% load static %}
+
+<a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-card">
+    <div class="journey-cover">
+        {% if journey.cover_image %}
+            <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}">
+        {% else %}
+            <i class="fas fa-flag-checkered"></i>
+        {% endif %}
+        
+        <span class="journey-category">{{ journey.get_category_display }}</span>
+        
+        {% if journey.funding_enabled %}
+        <span class="journey-funded-badge">
+            <i class="fas fa-hand-holding-heart"></i>
+        </span>
+        {% endif %}
+    </div>
+    
+    <div class="journey-info">
+        <h3 class="journey-title">{{ journey.title }}</h3>
+        
+        <div class="journey-creator">
+            <div class="creator-avatar">
+                {% if journey.creator.image %}
+                    <img src="{{ journey.creator.image.url }}" alt="{{ journey.creator.get_display_name }}">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <span class="creator-name">@{{ journey.creator.user.username }}</span>
+        </div>
+        
+        <div class="journey-progress">
+            <div class="progress-header">
+                <span>Day {{ journey.get_current_day }} of {{ journey.duration }}</span>
+                <span>{{ journey.get_progress_percentage }}%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+            </div>
+        </div>
+        
+        <div class="journey-stats">
+            <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
+            <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
+            <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+        </div>
+    </div>
+</a>

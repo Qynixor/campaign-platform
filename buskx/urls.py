@@ -15,60 +15,47 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+"""
+URL configuration for rallynex project.
+"""
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-from main.sitemaps import StaticViewSitemap, CampaignSitemap,ProfileSitemap,BlogSitemap
-from main import views as main_views
-from accounts import views as accounts_views
-from django.contrib.sitemaps.views import sitemap
 from django.views.generic import RedirectView
-from main.views import custom_signup_view  # Add this import
-from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET
-
-sitemaps = {
-    'static': StaticViewSitemap,
-    'campaigns': CampaignSitemap,
-    'profiles': ProfileSitemap,
-    'blogs': BlogSitemap,
-}
-
-# ADD THIS FUNCTION
-@require_GET
-@never_cache
-def sitemap_fixed(request, *args, **kwargs):
-    response = sitemap(request, *args, **kwargs)
-    response['X-Robots-Tag'] = 'index, follow'
-    return response
 
 urlpatterns = [
+    # Admin
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('accounts/password/reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('', include('accounts.urls')),
-    path('', include('main.urls')),
-    path('tinymce/', include('tinymce.urls')),
-    path('sitemap.xml', sitemap_fixed, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    path('', accounts_views.index, name='index'),
-    path('privacy-policy/', main_views.privacy_policy, name='privacy_policy'),
-    path('terms-of-service/', main_views.terms_of_service, name='terms_of_service'),
     
-    path('signup/', custom_signup_view, name='custom_signup'),
-
-    path('robots.txt', main_views.robots_txt),
-    path("favicon.ico", RedirectView.as_view(
-        url=settings.STATIC_URL + "favicon.ico",
-        permanent=True
-    )),
+    # Main app - includes all core functionality
+    path('', include('main.urls')),
+    
+    # Accounts app (if you have separate accounts app)
+    # path('accounts/', include('accounts.urls')),
+    
+    # TinyMCE (for blog content editor)
+    path('tinymce/', include('tinymce.urls')),
+    
+    # Favicon redirect
+    path('favicon.ico', RedirectView.as_view(url='/static/images/favicon.ico', permanent=True)),
 ]
 
-# Configuring URL patterns for serving media files during development
+# Serve media and static files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     
+    # Django Debug Toolbar (if installed)
+    try:
+        import debug_toolbar
+        urlpatterns = [
+            path('__debug__/', include(debug_toolbar.urls)),
+        ] + urlpatterns
+    except ImportError:
+        pass
+
+# Custom error handlers
+handler404 = 'main.views.handler404'
+handler500 = 'main.views.handler500'
+handler403 = 'main.views.handler403'

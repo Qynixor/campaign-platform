@@ -1,0 +1,437 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Import Queue | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .queue-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .queue-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    
+    .queue-title {
+        font-size: 28px;
+        font-weight: 700;
+    }
+    
+    .queue-subtitle {
+        color: #888;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+    
+    /* Filter Bar */
+    .filter-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-select {
+        padding: 10px 16px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 30px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+    }
+    
+    /* Import Items */
+    .import-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .import-item {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        gap: 16px;
+        transition: border-color 0.2s;
+    }
+    
+    .import-item:hover {
+        border-color: #3b82f6;
+    }
+    
+    .import-thumbnail {
+        width: 100px;
+        height: 100px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #1a1a1a;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .import-thumbnail img,
+    .import-thumbnail video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .import-thumbnail i {
+        font-size: 32px;
+        color: #444;
+    }
+    
+    .import-content {
+        flex: 1;
+    }
+    
+    .import-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: #1a1a1a;
+        border-radius: 20px;
+        font-size: 12px;
+        color: #aaa;
+    }
+    
+    .platform-badge.tiktok {
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+    }
+    
+    .platform-badge.instagram {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        color: #fff;
+    }
+    
+    .detected-day {
+        background: #3b82f6;
+        color: #fff;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .import-caption {
+        color: #ddd;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 12px;
+    }
+    
+    .import-meta {
+        display: flex;
+        gap: 20px;
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 12px;
+    }
+    
+    .import-meta i {
+        margin-right: 4px;
+    }
+    
+    .import-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .day-input {
+        width: 80px;
+        padding: 8px 12px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+    }
+    
+    .journey-select {
+        padding: 8px 12px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 14px;
+        min-width: 180px;
+    }
+    
+    .btn-small {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+    
+    .btn-success {
+        background: #22c55e;
+        color: #fff;
+    }
+    
+    .btn-success:hover {
+        background: #16a34a;
+    }
+    
+    .btn-warning {
+        background: transparent;
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        color: #888;
+        margin-bottom: 24px;
+    }
+    
+    /* Quick Import Button */
+    .quick-import-fab {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: #3b82f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 24px;
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        transition: all 0.2s;
+    }
+    
+    .quick-import-fab:hover {
+        transform: scale(1.05);
+        background: #2563eb;
+    }
+    
+    @media (max-width: 768px) {
+        .import-item {
+            flex-direction: column;
+        }
+        
+        .import-thumbnail {
+            width: 100%;
+            height: 200px;
+        }
+        
+        .import-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .day-input, .journey-select {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="queue-container">
+    
+    {# Header #}
+    <div class="queue-header">
+        <div>
+            <h1 class="queue-title">Import Queue</h1>
+            <p class="queue-subtitle">Review and assign content from your connected social accounts</p>
+        </div>
+        <a href="{% url 'quick_import' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Quick Import
+        </a>
+    </div>
+    
+    {# Filter Bar #}
+    <div class="filter-bar">
+        <select class="filter-select" id="journeyFilter" onchange="filterByJourney(this.value)">
+            <option value="">All Journeys</option>
+            {% for j in journeys %}
+            <option value="{{ j.id }}" {% if selected_journey == j.id|stringformat:"s" %}selected{% endif %}>
+                {{ j.title }}
+            </option>
+            {% endfor %}
+        </select>
+        
+        <select class="filter-select" id="platformFilter" onchange="filterByPlatform(this.value)">
+            <option value="">All Platforms</option>
+            <option value="tiktok">TikTok</option>
+            <option value="instagram">Instagram</option>
+        </select>
+    </div>
+    
+    {# Import List #}
+    {% if imports %}
+    <div class="import-list">
+        {% for item in imports %}
+        <div class="import-item" data-journey="{{ item.assigned_journey.id|default:'' }}" data-platform="{{ item.platform }}">
+            
+            {# Thumbnail #}
+            <div class="import-thumbnail">
+                {% if item.thumbnail_url %}
+                    <img src="{{ item.thumbnail_url }}" alt="Thumbnail">
+                {% elif item.media_type == 'video' %}
+                    <i class="fas fa-video"></i>
+                {% else %}
+                    <i class="fas fa-image"></i>
+                {% endif %}
+            </div>
+            
+            {# Content #}
+            <div class="import-content">
+                <div class="import-header">
+                    <span class="platform-badge {{ item.platform }}">
+                        <i class="fab fa-{{ item.platform }}"></i>
+                        {{ item.platform|title }}
+                    </span>
+                    
+                    {% if item.detected_day %}
+                    <span class="detected-day">
+                        <i class="fas fa-magic"></i> Detected Day {{ item.detected_day }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <p class="import-caption">{{ item.caption|truncatechars:200 }}</p>
+                
+                <div class="import-meta">
+                    <span><i class="fas fa-calendar"></i> Posted {{ item.posted_at|timesince }} ago</span>
+                    <span><i class="fas fa-heart"></i> {{ item.like_count }}</span>
+                    <span><i class="fas fa-comment"></i> {{ item.comment_count }}</span>
+                    <a href="{{ item.platform_url }}" target="_blank" style="color: #3b82f6;">
+                        <i class="fas fa-external-link-alt"></i> View Original
+                    </a>
+                </div>
+                
+                {# Assignment Form #}
+                <form method="post" action="{% url 'process_import' import_id=item.id %}" class="import-actions">
+                    {% csrf_token %}
+                    
+                    <select name="journey_id" class="journey-select" required>
+                        <option value="">Select Journey</option>
+                        {% for j in journeys %}
+                        <option value="{{ j.id }}" {% if item.assigned_journey.id == j.id %}selected{% endif %}>
+                            {{ j.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <input type="number" name="assigned_day" class="day-input" 
+                           placeholder="Day" min="1" 
+                           value="{{ item.detected_day|default:'' }}" required>
+                    
+                    <button type="submit" name="action" value="approve" class="btn btn-small btn-success">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    
+                    <button type="submit" name="action" value="ignore" class="btn btn-small btn-warning">
+                        <i class="fas fa-times"></i> Ignore
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>No pending imports</h3>
+        <p>When you post on connected social accounts with your journey hashtag, content will appear here.</p>
+        <a href="{% url 'social_connections' %}" class="btn btn-primary">
+            <i class="fas fa-link"></i> Connect Social Accounts
+        </a>
+    </div>
+    {% endif %}
+    
+    {# Help Card #}
+    <div style="margin-top: 30px; padding: 20px; background: #111; border: 1px solid #222; border-radius: 16px;">
+        <h4 style="font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-info-circle" style="color: #3b82f6;"></i>
+            How Auto-Import Works
+        </h4>
+        <ol style="color: #888; font-size: 13px; line-height: 1.8; padding-left: 20px;">
+            <li>Connect your TikTok or Instagram account in <a href="{% url 'social_connections' %}" style="color: #3b82f6;">Social Connections</a></li>
+            <li>Enable auto-import and set a hashtag for your journey</li>
+            <li>Post on social media using that hashtag</li>
+            <li>Your content appears here for review</li>
+            <li>Assign to the correct day and approve</li>
+        </ol>
+    </div>
+    
+</div>
+
+{# Quick Import FAB #}
+<a href="{% url 'quick_import' %}" class="quick-import-fab" title="Quick Import">
+    <i class="fas fa-cloud-upload-alt"></i>
+</a>
+
+<script>
+    function filterByJourney(journeyId) {
+        const items = document.querySelectorAll('.import-item');
+        items.forEach(item => {
+            if (!journeyId || item.dataset.journey === journeyId) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    function filterByPlatform(platform) {
+        const items = document.querySelectorAll('.import-item');
+        items.forEach(item => {
+            if (!platform || item.dataset.platform === platform) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>
+
+{% endblock %}

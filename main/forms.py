@@ -1,403 +1,742 @@
-# main/forms.py
-
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth import get_user_model
+from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
-from tinymce.widgets import TinyMCE
-
+from cloudinary.forms import CloudinaryFileField
 from .models import (
-    Profile, Campaign, Comment, Activity, SupportCampaign,
-    ActivityComment, CampaignProduct, Report, NotInterested,
-    UserVerification, Pledge, Blog, Donation
+    Profile, SocialConnection, ImportedContent,
+    Journey, Activity, JourneyFollow, Tag,
+    ActivityComment, Donation, PostJourneyProduct,
+    Report, Blog
 )
+import re
+from datetime import timedelta
+from django.utils import timezone
+
+User = get_user_model()
+
 
 # ============================================================================
-# CUSTOM VALIDATORS
+# AUTHENTICATION FORMS
 # ============================================================================
 
-def validate_no_long_words(value):
-    """Check if any word exceeds 20 characters"""
-    for word in value.split():
-        if len(word) > 20:
-            raise ValidationError(f"Word '{word}' exceeds the allowed length of 20 characters.")
-
-# main/forms.py
-from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from .models import Profile
-import logging
-
-logger = logging.getLogger(__name__)
-
-class CustomSignupForm(UserCreationForm):
+class SignUpForm(UserCreationForm):
+    """User registration form"""
+    
     email = forms.EmailField(
+        max_length=254,
         required=True,
-        label="Email Address",
         widget=forms.EmailInput(attrs={
-            'placeholder': 'your-email@example.com'
+            'class': 'form-input',
+            'placeholder': 'your@email.com',
+            'autocomplete': 'email'
         })
     )
     
-    paypal_email = forms.EmailField(
-        required=True,
-        label="PayPal Email",
-        help_text="Required—we need your PayPal email to send you payouts.",
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'your-email@paypal.com'
+    username = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'username',
+            'autocomplete': 'username'
         })
     )
     
-    terms_agreement = forms.BooleanField(
-        required=True,
-        error_messages={
-            'required': 'You must agree to the terms and conditions to sign up.'
-        }
+    password1 = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': '••••••••',
+            'autocomplete': 'new-password'
+        })
+    )
+    
+    password2 = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': '••••••••',
+            'autocomplete': 'new-password'
+        })
+    )
+    
+    # Optional profile fields
+    tiktok_username = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username (optional)'
+        })
+    )
+    
+    instagram_username = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username (optional)'
+        })
     )
     
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
     
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').lower()
+        if User.objects.filter(username__iexact=username).exists():
+            raise ValidationError('This username is already taken.')
+        if len(username) < 3:
+            raise ValidationError('Username must be at least 3 characters.')
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+            raise ValidationError('Username can only contain letters, numbers, and underscores.')
+        return username
+    
     def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("A user with this email already exists.")
+        email = self.cleaned_data.get('email', '').lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise ValidationError('This email is already registered.')
         return email
     
-    def clean_paypal_email(self):
-        paypal_email = self.cleaned_data.get('paypal_email')
-        print(f"Cleaning paypal_email: {paypal_email}")
-        if not paypal_email:
-            raise forms.ValidationError("PayPal email is required to receive payouts.")
-        return paypal_email
+    def clean_tiktok_username(self):
+        username = self.cleaned_data.get('tiktok_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
+    
+    def clean_instagram_username(self):
+        username = self.cleaned_data.get('instagram_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
     
     def save(self, commit=True):
-        print("DEBUG: Entering save method")
-        # Save user
         user = super().save(commit=False)
-        user.email = self.cleaned_data['email']
-        
-        paypal_email = self.cleaned_data.get('paypal_email')
-        print(f"DEBUG: PayPal email from form: {paypal_email}")
-        
+        user.email = self.cleaned_data['email'].lower()
         if commit:
             user.save()
-            print(f"DEBUG: User saved with username: {user.username}")
-            
-            # Create or update profile
-            profile, created = Profile.objects.get_or_create(user=user)
-            profile.paypal_email = paypal_email
+            # Update profile with social usernames
+            profile = user.profile
+            profile.tiktok_username = self.cleaned_data.get('tiktok_username', '')
+            profile.instagram_username = self.cleaned_data.get('instagram_username', '')
             profile.save()
-            print(f"DEBUG: Profile {'created' if created else 'updated'} with PayPal email: {profile.paypal_email}")
-            
-            # Double-check it saved
-            profile.refresh_from_db()
-            print(f"DEBUG: Verified profile PayPal email after save: {profile.paypal_email}")
-        
         return user
+
+
+class LoginForm(AuthenticationForm):
+    """User login form"""
+    
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Username or Email',
+            'autocomplete': 'username'
+        })
+    )
+    
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Password',
+            'autocomplete': 'current-password'
+        })
+    )
+    
+    remember_me = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+
 
 # ============================================================================
 # PROFILE FORMS
 # ============================================================================
 
 class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = [
-            'image', 'bio', 'contact', 'location',
-            'date_of_birth', 'gender', 'highest_level_of_education',
-            'paypal_email'
-        ]
-        widgets = {
-            'paypal_email': forms.EmailInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'your-email@paypal.com'
-            }),
-            'bio': forms.Textarea(attrs={
-                'class': 'form-input',
-                'rows': 4,
-                'placeholder': 'Tell us about yourself...'
-            }),
-            'contact': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Your phone number'
-            }),
-            'location': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'City, Country'
-            }),
-            'date_of_birth': forms.DateInput(attrs={
-                'class': 'form-input',
-                'type': 'date'
-            }),
-            'gender': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'highest_level_of_education': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'image': forms.FileInput(attrs={
-                'class': 'form-file'
-            }),
-        }
+    """Edit profile information"""
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Make all fields optional
-        for field in self.fields:
-            self.fields[field].required = False
-
-
-class ProfileSearchForm(forms.Form):
-    search_query = forms.CharField(label='Search', max_length=100)
-
-
-# ============================================================================
-# USER FORMS
-# ============================================================================
-
-class UserForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email']
-        labels = {
-            'username': 'Username:',
-            'email': 'Email:'
-        }
-
-
-# ============================================================================
-# CAMPAIGN FORMS
-# ============================================================================
-
-class CampaignForm(forms.ModelForm):
-    tags_input = forms.CharField(
+    image = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'profile_pics',
+            'transformation': [
+                {'width': 400, 'height': 400, 'crop': 'fill'},
+                {'quality': 'auto:best', 'fetch_format': 'auto'}
+            ],
+            'format': 'webp'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        })
+    )
+    
+    bio = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Tell us about yourself...',
+            'rows': 3
+        })
+    )
+    
+    location = forms.CharField(
+        max_length=100,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'Add tags separated by commas...'
-        }),
-        help_text="Separate tags with commas (e.g., education, children, school)"
+            'placeholder': 'City, Country'
+        })
     )
     
-    additional_images = forms.FileField(
+    tiktok_username = forms.CharField(
+        max_length=50,
         required=False,
-        label="Additional Images for Slideshow",
-        help_text="Upload up to 4 additional images for your poster slideshow (optional)",
-        widget=forms.FileInput(attrs={
-            'accept': 'image/png, image/jpeg, image/gif, image/webp'
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username'
+        })
+    )
+    
+    instagram_username = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username'
+        })
+    )
+    
+    youtube_channel = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@channel'
+        })
+    )
+    
+    paypal_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'your@paypal.com'
         })
     )
     
     class Meta:
-        model = Campaign
+        model = Profile
+        fields = ['image', 'bio', 'location', 'tiktok_username', 
+                  'instagram_username', 'youtube_channel', 'paypal_email']
+    
+    def clean_tiktok_username(self):
+        username = self.cleaned_data.get('tiktok_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
+    
+    def clean_instagram_username(self):
+        username = self.cleaned_data.get('instagram_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
+
+
+# ============================================================================
+# JOURNEY FORMS
+# ============================================================================
+
+class JourneyForm(forms.ModelForm):
+    """Create/Edit a journey"""
+    
+    title = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g., 30 Days of Yoga',
+            'autofocus': True
+        })
+    )
+    
+    description = forms.CharField(
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'What is this journey about? What will followers experience?',
+            'rows': 4
+        })
+    )
+    
+    category = forms.ChoiceField(
+        choices=Journey.CATEGORY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    journey_type = forms.ChoiceField(
+        choices=Journey.JOURNEY_TYPES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'data-trigger': 'journey-type-change'
+        })
+    )
+    
+    cover_image = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'journey_covers',
+            'transformation': [
+                {'width': 800, 'height': 800, 'crop': 'fill'},
+                {'quality': 'auto:best', 'fetch_format': 'auto'}
+            ],
+            'format': 'webp'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        })
+    )
+    
+    cover_video = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'journey_covers',
+            'resource_type': 'video',
+            'transformation': [
+                {'quality': 'auto:best'}
+            ]
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'video/*'
+        })
+    )
+    
+    duration = forms.IntegerField(
+        min_value=1,
+        max_value=365,
+        initial=30,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'min': 1,
+            'max': 365
+        })
+    )
+    
+    start_date = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-input',
+            'type': 'datetime-local'
+        })
+    )
+    
+    # Settings
+    is_public = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    allow_comments = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    auto_import_enabled = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox',
+            'data-trigger': 'auto-import-toggle'
+        })
+    )
+    
+    import_hashtag = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '#MyJourney'
+        })
+    )
+    
+    # Funding (optional)
+    funding_enabled = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox',
+            'data-trigger': 'funding-toggle'
+        })
+    )
+    
+    funding_goal = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=1,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': '1000.00',
+            'step': '0.01'
+        })
+    )
+    
+    funding_description = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'What will the funds be used for?',
+            'rows': 3
+        })
+    )
+    
+    # Tags
+    tags_input = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'fitness, health, challenge (comma separated)'
+        }),
+        help_text='Enter tags separated by commas'
+    )
+    
+    # Milestones (for milestone journeys)
+    milestones_input = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Enter each milestone on a new line...',
+            'rows': 5
+        }),
+        help_text='Enter each milestone on a new line'
+    )
+    
+    class Meta:
+        model = Journey
         fields = [
-            'title', 'category', 'poster', 'audio',
-            'content', 'duration',
-            'duration_unit', 'funding_goal'
+            'title', 'description', 'category', 'journey_type',
+            'cover_image', 'cover_video', 'duration', 'start_date',
+            'is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag',
+            'funding_enabled', 'funding_goal', 'funding_description'
         ]
-        
-        widgets = {
-            'title': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'e.g., 90 Days Discipline (4 words max)'
-            }),
-            'content': forms.Textarea(attrs={
-                'class': 'form-textarea',
-                'placeholder': 'Tell people more about your campaign...',
-                'rows': 5
-            }),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'duration': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '1',
-                'placeholder': 'e.g., 30'
-            }),
-            'duration_unit': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'funding_goal': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '0',
-                'step': '0.01',
-                'placeholder': '0.00'
-            }),
-            'poster': forms.FileInput(attrs={
-                'accept': 'image/png, image/jpeg, image/gif, image/webp',
-                'class': 'file-upload-input'
-            }),
-            'audio': forms.FileInput(attrs={
-                'accept': 'audio/*',
-                'class': 'file-upload-input'
-            }),
-        }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Required fields
-        self.fields['title'].required = True
-        self.fields['content'].required = True
-        self.fields['category'].required = True
-        
-        # Optional fields
-        self.fields['poster'].required = False
-        self.fields['audio'].required = False
-        self.fields['duration'].required = False
-        self.fields['duration_unit'].required = False
-        self.fields['funding_goal'].required = False
-        self.fields['tags_input'].required = False
-        self.fields['additional_images'].required = False
-        
-        # Add empty choice to duration_unit dropdown
-        self.fields['duration_unit'].widget.choices = [
-            ('', 'Select unit (optional)'),
-            ('days', 'Days'),
-            ('minutes', 'Minutes'),
-        ]
-        
-        # Set defaults for required fields for new campaigns
-        if not self.instance.pk:
-            self.fields['category'].initial = 'Personal Empowerment'
-        
-        # Pre-populate with existing tags if editing
+        # If editing existing journey, populate tags and milestones
         if self.instance and self.instance.pk:
-            existing_tags = ', '.join([tag.name for tag in self.instance.tags.all()])
-            self.fields['tags_input'].initial = existing_tags
-    
-    def clean_funding_goal(self):
-        """Ensure funding_goal has a value, default to 0.00"""
-        funding_goal = self.cleaned_data.get('funding_goal')
-        if funding_goal is None or funding_goal == '':
-            return 0.00
-        return funding_goal
-    
-    def clean_duration(self):
-        """Validate duration is positive if provided"""
-        duration = self.cleaned_data.get('duration')
-        
-        # If duration is empty string, set to None
-        if duration == '':
-            return None
+            # Populate tags
+            tags = self.instance.tags.all()
+            if tags.exists():
+                self.fields['tags_input'].initial = ', '.join([tag.name for tag in tags])
             
-        if duration is not None and duration <= 0:
-            raise ValidationError("Duration must be a positive number.")
-        
-        return duration
-    
-    def clean(self):
-        """Custom validation for duration fields"""
-        cleaned_data = super().clean()
-        duration = cleaned_data.get('duration')
-        duration_unit = cleaned_data.get('duration_unit')
-        
-        # If this is an existing campaign
-        if self.instance and self.instance.pk:
-            # If duration is being changed but unit not provided, use existing unit
-            if duration and not duration_unit:
-                cleaned_data['duration_unit'] = self.instance.duration_unit
-            # If unit is being changed but duration not provided, use existing duration
-            elif duration_unit and not duration:
-                cleaned_data['duration'] = self.instance.duration
-        else:
-            # New campaign validation
-            if duration and not duration_unit:
-                self.add_error('duration_unit', 'Please select a duration unit if you set a duration.')
-            if duration_unit and not duration:
-                self.add_error('duration', 'Please enter a duration if you select a unit.')
-        
-        return cleaned_data
+            # Populate milestones
+            if self.instance.milestones:
+                self.fields['milestones_input'].initial = '\n'.join(self.instance.milestones)
     
     def clean_title(self):
-        title = self.cleaned_data.get('title')
-        
-        if title:
-            word_count = len(title.split())
-            
-            # 4 words max
-            if word_count > 4:
-                raise forms.ValidationError(
-                    f"Title must be 4 words or less. You used {word_count} words."
-                )
-            
+        title = self.cleaned_data.get('title', '')
+        if len(title) < 3:
+            raise ValidationError('Title must be at least 3 characters.')
+        if len(title) > 100:
+            raise ValidationError('Title must be 100 characters or less.')
         return title
     
+    def clean_description(self):
+        description = self.cleaned_data.get('description', '')
+        if len(description) < 10:
+            raise ValidationError('Description must be at least 10 characters.')
+        return description
+    
+    def clean_import_hashtag(self):
+        hashtag = self.cleaned_data.get('import_hashtag', '')
+        if hashtag and not hashtag.startswith('#'):
+            hashtag = '#' + hashtag
+        return hashtag
+    
+    def clean_funding_goal(self):
+        funding_enabled = self.cleaned_data.get('funding_enabled', False)
+        funding_goal = self.cleaned_data.get('funding_goal')
+        
+        if funding_enabled:
+            if not funding_goal or funding_goal < 1:
+                raise ValidationError('Funding goal must be at least $1 when funding is enabled.')
+        
+        return funding_goal
+    
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get('start_date')
+        if not start_date:
+            start_date = timezone.now()
+        return start_date
+    
+    def clean_milestones_input(self):
+        milestones_text = self.cleaned_data.get('milestones_input', '')
+        if milestones_text:
+            milestones = [m.strip() for m in milestones_text.split('\n') if m.strip()]
+            return milestones
+        return []
+    
     def save(self, commit=True):
-        instance = super().save(commit=False)
+        journey = super().save(commit=False)
         
         if commit:
-            instance.save()
+            journey.save()
             
-            # Handle tags if provided
+            # Save milestones
+            if self.cleaned_data.get('journey_type') == 'milestone':
+                journey.milestones = self.cleaned_data.get('milestones_input', [])
+                journey.save(update_fields=['milestones'])
+            
+            # Save tags
             tags_input = self.cleaned_data.get('tags_input', '')
             if tags_input:
                 # Clear existing tags
-                instance.tags.clear()
+                journey.tags.clear()
                 
                 # Add new tags
-                tag_names = [name.strip() for name in tags_input.split(',') if name.strip()]
-                for tag_name in tag_names:
-                    from .models import Tag
-                    tag, created = Tag.objects.get_or_create(name=tag_name.lower())
-                    instance.tags.add(tag)
+                tag_names = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
+                for tag_name in tag_names[:10]:  # Limit to 10 tags
+                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    journey.tags.add(tag)
         
-        return instance
+        return journey
 
 
-class CampaignSearchForm(forms.Form):
-    search_query = forms.CharField(label='Search', max_length=100)
+class JourneySettingsForm(forms.ModelForm):
+    """Quick settings update for existing journey"""
+    
+    class Meta:
+        model = Journey
+        fields = ['is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag']
+        widgets = {
+            'import_hashtag': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': '#MyJourney'
+            })
+        }
+
+
+# ============================================================================
+# ACTIVITY FORMS
+# ============================================================================
 
 class ActivityForm(forms.ModelForm):
-    file = forms.FileField(
-        required=False,
-        label="Upload Video",
-        widget=forms.ClearableFileInput(attrs={
-            'accept': 'video/*',
-            'class': 'file-input',
+    """Post/Edit a day's activity"""
+    
+    content = forms.CharField(
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': "What happened today? Share your progress...",
+            'rows': 4
         })
     )
     
-    screenshot_count = forms.ChoiceField(
-        choices=[(3, '3 photos'), (5, '5 photos'), (7, '7 photos'), (10, '10 photos')],
-        initial=5,
+    file = CloudinaryFileField(
         required=False,
-        widget=forms.Select(attrs={
-            'class': 'screenshot-count-select',
+        options={
+            'folder': 'activity_files',
+            'resource_type': 'auto',
+            'transformation': [
+                {'quality': 'auto:best', 'fetch_format': 'auto'}
+            ]
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*,video/*'
         })
+    )
+    
+    day_number_field = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput()
     )
     
     class Meta:
         model = Activity
-        fields = ['file', 'screenshot_count']
+        fields = ['content', 'file', 'day_number_field']
     
     def __init__(self, *args, **kwargs):
+        self.journey = kwargs.pop('journey', None)
+        self.day_number = kwargs.pop('day_number', None)
         super().__init__(*args, **kwargs)
-        if 'content' in self.fields:
-            del self.fields['content']
-        if not self.instance.pk:
-            self.fields['file'].required = True
+        
+        if self.day_number:
+            self.fields['day_number_field'].initial = self.day_number
     
-    def clean_file(self):
-        file = self.cleaned_data.get('file')
-        if file:
-            if file.size > 40 * 1024 * 1024:
-                raise forms.ValidationError('Video must be under 40MB')
-            if not file.content_type.startswith('video/'):
-                raise forms.ValidationError('Only video files are allowed')
-        return file
-
-
-
-class ActivityCommentForm(forms.ModelForm):
-    class Meta:
-        model = ActivityComment
-        fields = ['content']
-
     def clean_content(self):
-        content = self.cleaned_data.get('content')
-        validate_no_long_words(content)
+        content = self.cleaned_data.get('content', '')
+        if not content.strip():
+            raise ValidationError('Please write something about this day.')
         return content
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        if self.journey:
+            day_number = cleaned_data.get('day_number_field') or self.day_number
+            
+            if day_number:
+                # Check if day is locked (future day)
+                if self.journey.is_day_locked(day_number):
+                    raise ValidationError(f"Day {day_number} is not available yet.")
+                
+                # Check if activity already exists for this day
+                existing = Activity.objects.filter(
+                    journey=self.journey,
+                    day_number_field=day_number
+                )
+                if self.instance.pk:
+                    existing = existing.exclude(pk=self.instance.pk)
+                
+                if existing.exists():
+                    raise ValidationError(f"Day {day_number} already has content posted.")
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        activity = super().save(commit=False)
+        
+        if self.journey:
+            activity.journey = self.journey
+        
+        if self.day_number and not activity.day_number_field:
+            activity.day_number_field = self.day_number
+        
+        if commit:
+            activity.save()
+        
+        return activity
+
+
+class QuickImportForm(forms.Form):
+    """Quick import from social media via paste link"""
+    
+    url = forms.URLField(
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://www.tiktok.com/@username/video/123456789',
+            'autofocus': True
+        })
+    )
+    
+    journey = forms.ModelChoiceField(
+        queryset=Journey.objects.none(),
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    day_number = forms.IntegerField(
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Day number',
+            'min': 1
+        })
+    )
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.fields['journey'].queryset = Journey.objects.filter(
+                creator__user=user,
+                is_active=True
+            )
+    
+    def clean_url(self):
+        url = self.cleaned_data.get('url', '')
+        
+        # Basic platform detection
+        if 'tiktok.com' in url:
+            platform = 'tiktok'
+        elif 'instagram.com' in url:
+            platform = 'instagram'
+        elif 'youtube.com' in url or 'youtu.be' in url:
+            platform = 'youtube'
+        else:
+            raise ValidationError('Please enter a valid TikTok, Instagram, or YouTube URL.')
+        
+        self.cleaned_data['detected_platform'] = platform
+        return url
+    
+    def clean_day_number(self):
+        day_number = self.cleaned_data.get('day_number')
+        journey = self.cleaned_data.get('journey')
+        
+        if journey and day_number:
+            if journey.is_day_locked(day_number):
+                raise ValidationError(f"Day {day_number} is not available yet.")
+            
+            # Check if day already has content
+            if Activity.objects.filter(journey=journey, day_number_field=day_number).exists():
+                raise ValidationError(f"Day {day_number} already has content. This will override it.")
+        
+        return day_number
+
+
+# ============================================================================
+# SOCIAL CONNECTION FORMS
+# ============================================================================
+
+class SocialConnectForm(forms.Form):
+    """Connect social media account"""
+    
+    platform = forms.ChoiceField(
+        choices=SocialConnection.PLATFORMS,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+
+
+class SocialSettingsForm(forms.ModelForm):
+    """Update social connection settings"""
+    
+    auto_import = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    import_hashtag = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '#MyJourney'
+        })
+    )
+    
+    class Meta:
+        model = SocialConnection
+        fields = ['auto_import', 'import_hashtag']
+    
+    def clean_import_hashtag(self):
+        hashtag = self.cleaned_data.get('import_hashtag', '')
+        if hashtag and not hashtag.startswith('#'):
+            hashtag = '#' + hashtag
+        return hashtag
 
 
 # ============================================================================
@@ -405,135 +744,20 @@ class ActivityCommentForm(forms.ModelForm):
 # ============================================================================
 
 class CommentForm(forms.ModelForm):
-    class Meta:
-        model = Comment
-        fields = ['text']
-
-    def clean_text(self):
-        text = self.cleaned_data.get('text')
-        validate_no_long_words(text)
-        return text
-
-
-# ============================================================================
-# SUPPORT FORMS
-# ============================================================================
-
-class SupportForm(forms.ModelForm):
-    class Meta:
-        model = SupportCampaign
-        fields = []
-
-
-# ============================================================================
-# PRODUCT FORMS
-# ============================================================================
-
-class CampaignProductForm(forms.ModelForm):
-    class Meta:
-        model = CampaignProduct
-        fields = ['name', 'description', 'image', 'price', 'stock_quantity', 'stock_status', 'is_active']
-
-
-# ============================================================================
-# REPORT FORMS
-# ============================================================================
-
-class ReportForm(forms.ModelForm):
-    class Meta:
-        model = Report
-        fields = ['reason', 'description']
-        widgets = {
-            'reason': forms.Select(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
-
-    def clean_reason(self):
-        reason = self.cleaned_data.get('reason')
-        validate_no_long_words(reason)
-        return reason
-
-    def clean_description(self):
-        description = self.cleaned_data.get('description')
-        validate_no_long_words(description)
-        return description
-
-
-# ============================================================================
-# NOT INTERESTED FORMS
-# ============================================================================
-
-class NotInterestedForm(forms.ModelForm):
-    class Meta:
-        model = NotInterested
-        fields = ['campaign']
-
-
-# ============================================================================
-# VERIFICATION FORMS
-# ============================================================================
-
-class UserVerificationForm(forms.ModelForm):
-    class Meta:
-        model = UserVerification
-        fields = ['document_type', 'document']
-        widgets = {
-            'document_type': forms.Select(attrs={'class': 'custom-select'}),
-            'document': forms.ClearableFileInput(attrs={'class': 'custom-file-input'}),
-        }
+    """Add a comment to an activity"""
     
-    def clean_document(self):
-        document = self.cleaned_data.get('document')
-        if document:
-            if document.size > 5 * 1024 * 1024:
-                raise forms.ValidationError("File size must be under 5 MB.")
-        return document
-
-    def save(self, commit=True, user=None):
-        instance = super().save(commit=False)
-        if user:
-            instance.user = user
-        if commit:
-            instance.save()
-        return instance
-
-
-class VerificationRequestForm(forms.Form):
-    message = forms.CharField(widget=forms.Textarea)
-
-
-class VerificationReviewForm(forms.Form):
-    approval_status = forms.ChoiceField(choices=[(True, 'Approve'), (False, 'Deny')])
-    review_comment = forms.CharField(widget=forms.Textarea, required=False)
-
-
-# ============================================================================
-# PLEDGE FORMS
-# ============================================================================
-
-class PledgeForm(forms.ModelForm):
-    class Meta:
-        model = Pledge
-        fields = ['campaign', 'amount', 'contact']
-        widgets = {
-            'campaign': forms.HiddenInput(),
-            'amount': forms.NumberInput(attrs={
-                'min': '1',
-                'step': '0.01',
-                'class': 'form-control'
-            }),
-        }
+    content = forms.CharField(
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Add a comment...',
+            'rows': 2
+        })
+    )
     
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        campaign = kwargs.pop('campaign', None)
-        super().__init__(*args, **kwargs)
-        
-        if campaign:
-            self.initial['campaign'] = campaign
-            self.fields['campaign'].widget = forms.HiddenInput()
-        
-        self.fields['amount'].min_value = 1
+    class Meta:
+        model = ActivityComment
+        fields = ['content']
 
 
 # ============================================================================
@@ -541,20 +765,264 @@ class PledgeForm(forms.ModelForm):
 # ============================================================================
 
 class DonationForm(forms.ModelForm):
+    """Make a donation to a journey"""
+    
+    amount = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': '25.00',
+            'step': '1.00',
+            'min': 1
+        })
+    )
+    
+    donor_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Your name (optional)'
+        })
+    )
+    
+    donor_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'your@email.com (for receipt)'
+        })
+    )
+    
+    message = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Leave a message of support...',
+            'rows': 3
+        })
+    )
+    
+    anonymous = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
     class Meta:
         model = Donation
-        fields = ['amount']
-        widgets = {
-            'amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter donation amount',
-                'step': '0.01',
-                'min': '1'
-            }),
-        }
-        labels = {
-            'amount': 'Donation Amount',
-        }
+        fields = ['amount', 'donor_name', 'donor_email', 'message']
+    
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount < 1:
+            raise ValidationError('Minimum donation is $1.')
+        return amount
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # If anonymous, clear donor name
+        if cleaned_data.get('anonymous'):
+            cleaned_data['donor_name'] = 'Anonymous'
+        
+        return cleaned_data
+
+
+# ============================================================================
+# SEARCH FORMS
+# ============================================================================
+class JourneySearchForm(forms.Form):
+    """Search and filter journeys"""
+    
+    SORT_CHOICES = [
+        ('-created_at', 'Newest'),
+        ('-view_count', 'Most Viewed'),
+        ('title', 'Title A-Z'),
+    ]
+    
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Search journeys...'
+        })
+    )
+    
+    category = forms.ChoiceField(
+        choices=[('', 'All Categories')] + Journey.CATEGORY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    journey_type = forms.ChoiceField(
+        choices=[('', 'All Types')] + Journey.JOURNEY_TYPES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    funding_enabled = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    sort = forms.ChoiceField(
+        choices=SORT_CHOICES,
+        required=False,
+        initial='-created_at',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+
+# ============================================================================
+# REPORT FORMS
+# ============================================================================
+
+class ReportForm(forms.ModelForm):
+    """Report inappropriate content"""
+    
+    reason = forms.ChoiceField(
+        choices=Report.REASON_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    description = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Please provide additional details...',
+            'rows': 4
+        })
+    )
+    
+    class Meta:
+        model = Report
+        fields = ['reason', 'description']
+
+
+# ============================================================================
+# POST-JOURNEY PRODUCT FORMS
+# ============================================================================
+
+class PostJourneyProductForm(forms.ModelForm):
+    """Create a post-journey product"""
+    
+    title = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g., Complete 30-Day Blueprint'
+        })
+    )
+    
+    description = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'What does this product include?',
+            'rows': 4
+        })
+    )
+    
+    price = forms.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': '29.99',
+            'step': '0.01',
+            'min': 0.01
+        })
+    )
+    
+    product_type = forms.ChoiceField(
+        choices=PostJourneyProduct.PRODUCT_TYPES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'data-trigger': 'product-type-change'
+        })
+    )
+    
+    pdf_file = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'post_journey_pdfs',
+            'resource_type': 'raw'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': '.pdf'
+        })
+    )
+    
+    video_file = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'post_journey_videos',
+            'resource_type': 'video'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'video/*'
+        })
+    )
+    
+    coaching_calendar_link = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://calendly.com/your-link'
+        })
+    )
+    
+    coaching_duration = forms.IntegerField(
+        min_value=15,
+        initial=60,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'min': 15,
+            'step': 15
+        })
+    )
+    
+    class Meta:
+        model = PostJourneyProduct
+        fields = [
+            'title', 'description', 'price', 'product_type',
+            'pdf_file', 'video_file', 'coaching_calendar_link', 'coaching_duration'
+        ]
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        product_type = cleaned_data.get('product_type')
+        
+        if product_type == 'blueprint' and not cleaned_data.get('pdf_file'):
+            self.add_error('pdf_file', 'PDF file is required for blueprint products.')
+        
+        if product_type == 'behind_scenes' and not cleaned_data.get('video_file'):
+            self.add_error('video_file', 'Video file is required for behind the scenes products.')
+        
+        if product_type == 'coaching' and not cleaned_data.get('coaching_calendar_link'):
+            self.add_error('coaching_calendar_link', 'Calendar link is required for coaching products.')
+        
+        return cleaned_data
 
 
 # ============================================================================
@@ -562,11 +1030,134 @@ class DonationForm(forms.ModelForm):
 # ============================================================================
 
 class BlogForm(forms.ModelForm):
+    """Create/edit blog post"""
+    
+    title = forms.CharField(
+        max_length=255,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Blog post title'
+        })
+    )
+    
+    excerpt = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Short summary (shown in listings)',
+            'rows': 3
+        })
+    )
+    
+    content = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Write your blog post...',
+            'rows': 15
+        })
+    )
+    
+    featured_image = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'blog',
+            'transformation': [
+                {'width': 1200, 'height': 630, 'crop': 'fill'},
+                {'quality': 'auto:best', 'fetch_format': 'auto'}
+            ],
+            'format': 'webp'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        })
+    )
+    
+    category = forms.ChoiceField(
+        choices=Blog.CATEGORY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    status = forms.ChoiceField(
+        choices=Blog.STATUS_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
     class Meta:
         model = Blog
-        fields = '__all__'
-        widgets = {
-            'content': TinyMCE(attrs={'cols': 80, 'rows': 30}),
-            'excerpt': forms.Textarea(attrs={'rows': 4}),
-            'meta_description': forms.Textarea(attrs={'rows': 3}),
-        }
+        fields = ['title', 'excerpt', 'content', 'featured_image', 'category', 'status']
+    
+    def save(self, commit=True):
+        blog = super().save(commit=False)
+        
+        if blog.status == 'published' and not blog.published_at:
+            blog.published_at = timezone.now()
+        
+        if commit:
+            blog.save()
+        
+        return blog
+
+
+# ============================================================================
+# CONTACT / SUPPORT FORMS
+# ============================================================================
+
+class ContactForm(forms.Form):
+    """Contact form for support"""
+    
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Your name'
+        })
+    )
+    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'your@email.com'
+        })
+    )
+    
+    subject = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Subject'
+        })
+    )
+    
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'How can we help you?',
+            'rows': 6
+        })
+    )
+
+
+class NewsletterSignupForm(forms.Form):
+    """Newsletter signup form"""
+    
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'your@email.com'
+        })
+    )
+    
+    name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Your name (optional)'
+        })
+    )

@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notifications-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .notifications-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .notifications-title {
+        font-size: 28px;
+        font-weight: 700;
+    }
+    
+    .notifications-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .notification-item {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .notification-item.unread {
+        background: #1a1a2e;
+        border-color: #3b82f6;
+    }
+    
+    .notification-item:hover {
+        background: #1a1a1a;
+    }
+    
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .notification-icon.follow {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+    
+    .notification-icon.love {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .notification-icon.comment {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+    
+    .notification-icon.donation {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
+    .notification-icon.system {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-message {
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+    
+    .notification-message a {
+        color: #3b82f6;
+        font-weight: 500;
+    }
+    
+    .notification-time {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .unread-dot {
+        width: 10px;
+        height: 10px;
+        background: #3b82f6;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        color: #888;
+    }
+    
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 30px;
+    }
+    
+    .pagination a,
+    .pagination span {
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #aaa;
+    }
+    
+    .pagination .current {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="notifications-container">
+    
+    <div class="notifications-header">
+        <h1 class="notifications-title">Notifications</h1>
+        
+        {% if notifications %}
+        <div class="notifications-actions">
+            <button class="btn btn-outline" onclick="markAllRead()">
+                <i class="fas fa-check-double"></i> Mark All Read
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if notifications %}
+    <div class="notification-list">
+        {% for notification in notifications %}
+        <div class="notification-item {% if not notification.viewed %}unread{% endif %}" 
+             onclick="markAsRead({{ notification.id }}, '{{ notification.redirect_link|escapejs }}')">
+            
+            <div class="notification-icon 
+                 {% if 'follow' in notification.message %}follow
+                 {% elif 'love' in notification.message or 'donat' in notification.message %}love
+                 {% elif 'comment' in notification.message %}comment
+                 {% elif 'donation' in notification.message or 'support' in notification.message %}donation
+                 {% else %}system{% endif %}">
+                <i class="fas 
+                    {% if 'follow' in notification.message %}fa-user-plus
+                    {% elif 'love' in notification.message %}fa-heart
+                    {% elif 'comment' in notification.message %}fa-comment
+                    {% elif 'donation' in notification.message or 'support' in notification.message %}fa-hand-holding-heart
+                    {% else %}fa-bell{% endif %}">
+                </i>
+            </div>
+            
+            <div class="notification-content">
+                <div class="notification-message">
+                    {{ notification.message|safe }}
+                    {% if not notification.viewed %}
+                    <span class="unread-dot"></span>
+                    {% endif %}
+                </div>
+                <div class="notification-time">
+                    <i class="far fa-clock"></i> {{ notification.created_at|timesince }} ago
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {# Pagination #}
+    {% if notifications.has_other_pages %}
+    <div class="pagination">
+        {% if notifications.has_previous %}
+            <a href="?page={{ notifications.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        
+        {% for num in notifications.paginator.page_range %}
+            {% if notifications.number == num %}
+                <span class="current">{{ num }}</span>
+            {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                <a href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        
+        {% if notifications.has_next %}
+            <a href="?page={{ notifications.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty-state">
+        <i class="far fa-bell"></i>
+        <h3>No notifications yet</h3>
+        <p>When someone interacts with your journeys, you'll see it here.</p>
+    </div>
+    {% endif %}
+    
+</div>
+
+<script>
+    function markAsRead(id, redirectLink) {
+        fetch(`/api/notifications/${id}/read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && redirectLink) {
+                window.location.href = redirectLink;
+            } else {
+                location.reload();
+            }
+        });
+    }
+    
+    function markAllRead() {
+        fetch('/api/notifications/read-all/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+
+{% endblock %}

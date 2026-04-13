@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quick Import | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .import-header {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    
+    .import-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+    
+    .import-icon i {
+        font-size: 40px;
+        color: #3b82f6;
+    }
+    
+    .import-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    .import-subtitle {
+        color: #888;
+        font-size: 14px;
+    }
+    
+    .import-card {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 32px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #aaa;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group input::placeholder {
+        color: #555;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        font-size: 14px;
+    }
+    
+    /* Preview */
+    .preview-card {
+        margin-top: 24px;
+        padding: 20px;
+        background: #1a1a1a;
+        border-radius: 12px;
+        display: none;
+    }
+    
+    .preview-card.active {
+        display: block;
+    }
+    
+    .preview-thumbnail {
+        width: 100%;
+        max-height: 300px;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    
+    .preview-thumbnail img,
+    .preview-thumbnail video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .preview-caption {
+        color: #ddd;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    /* Supported Platforms */
+    .supported-platforms {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        margin-top: 24px;
+    }
+    
+    .platform-tag {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: #1a1a1a;
+        border-radius: 30px;
+        font-size: 13px;
+        color: #aaa;
+    }
+    
+    .platform-tag i {
+        font-size: 16px;
+    }
+    
+    .platform-tag.tiktok i {
+        color: #fff;
+    }
+    
+    .platform-tag.instagram i {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="import-container">
+    
+    <div class="import-header">
+        <div class="import-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <h1 class="import-title">Quick Import</h1>
+        <p class="import-subtitle">Paste a link from TikTok or Instagram to import content</p>
+    </div>
+    
+    {% if form.errors %}
+    <ul class="errorlist">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <form method="post" class="import-card">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_url">Video/Post URL</label>
+            <input type="url" name="url" id="id_url" 
+                   placeholder="https://www.tiktok.com/@username/video/123456789"
+                   value="{{ form.url.value|default:'' }}"
+                   required autofocus>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_journey">Journey</label>
+                <select name="journey" id="id_journey" required>
+                    <option value="">Select Journey</option>
+                    {% for journey in form.journey.field.queryset %}
+                    <option value="{{ journey.id }}" {% if form.journey.value == journey.id|stringformat:"s" %}selected{% endif %}>
+                        {{ journey.title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_day_number">Day Number</label>
+                <input type="number" name="day_number" id="id_day_number" 
+                       value="{{ form.day_number.value|default:'' }}"
+                       min="1" placeholder="e.g., 5" required>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-block">
+            <i class="fas fa-download"></i> Import Content
+        </button>
+    </form>
+    
+    {# Supported Platforms #}
+    <div class="supported-platforms">
+        <span class="platform-tag tiktok">
+            <i class="fab fa-tiktok"></i> TikTok
+        </span>
+        <span class="platform-tag instagram">
+            <i class="fab fa-instagram"></i> Instagram
+        </span>
+        <span class="platform-tag">
+            <i class="fab fa-youtube"></i> YouTube (Soon)
+        </span>
+    </div>
+    
+    {# Tips #}
+    <div style="margin-top: 30px; padding: 20px; background: #111; border: 1px solid #222; border-radius: 16px;">
+        <h4 style="font-size: 14px; margin-bottom: 12px;">
+            <i class="fas fa-info-circle" style="color: #3b82f6;"></i> Tips
+        </h4>
+        <ul style="color: #888; font-size: 13px; line-height: 1.8; padding-left: 20px;">
+            <li>Make sure the post is public so we can access it</li>
+            <li>For TikTok, copy the link from the Share button</li>
+            <li>For Instagram, copy the link from the post menu</li>
+            <li>The content will be saved to your Rallynex media library</li>
+        </ul>
+    </div>
+    
+</div>
+
+{% endblock %}

@@ -1,0 +1,1263 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}{{ journey.title }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .journey-container {
+        max-width: 430px;
+        margin: 0 auto;
+        background: #0a0a0a;
+        min-height: 100vh;
+        position: relative;
+    }
+    
+    /* Hero Section */
+    .journey-hero {
+        position: relative;
+        height: 320px;
+        background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+        overflow: hidden;
+    }
+    
+    .journey-path-visual {
+        position: relative;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .path-svg {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .path-line {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: drawPath 2s ease-out forwards;
+    }
+    
+    @keyframes drawPath {
+        to { stroke-dashoffset: 0; }
+    }
+    
+    .milestone-node {
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .milestone-node.completed {
+        background: #2a2a2a;
+        border: 2px solid #fff;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    
+    .milestone-node.current {
+        background: #fff;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        animation: pulseGlow 2s infinite;
+    }
+    
+    .milestone-node.current i {
+        color: #0a0a0a;
+    }
+    
+    .milestone-node.locked {
+        background: #1a1a1a;
+        border: 2px solid #3a3a3a;
+    }
+    
+    .milestone-node.locked i {
+        color: #5a5a5a;
+    }
+    
+    @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+        50% { box-shadow: 0 0 40px rgba(255, 255, 255, 0.4); }
+    }
+    
+    .milestone-node i {
+        font-size: 18px;
+        color: #fff;
+    }
+    
+    .node-label {
+        position: absolute;
+        bottom: -24px;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+        color: #aaa;
+        letter-spacing: 0.5px;
+    }
+    
+    .milestone-node.current .node-label {
+        color: #fff;
+    }
+    
+    .hero-stats {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        display: flex;
+        justify-content: space-between;
+        z-index: 10;
+    }
+    
+    .hero-stat {
+        text-align: center;
+    }
+    
+    .hero-stat .value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #fff;
+    }
+    
+    .hero-stat .label {
+        font-size: 10px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .back-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 44px;
+        height: 44px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 20;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .journey-title-top {
+        position: absolute;
+        top: 30px;
+        left: 80px;
+        right: 20px;
+        z-index: 20;
+    }
+    
+    .journey-title-top h2 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .creator-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    
+    .creator-avatar {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #2a2a2a;
+    }
+    
+    .creator-name {
+        font-size: 12px;
+        color: #aaa;
+    }
+    
+    .menu-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 20;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Progress Bar */
+    .progress-section {
+        padding: 20px;
+        background: #0a0a0a;
+        border-bottom: 1px solid #1a1a1a;
+    }
+    
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .progress-header span {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .progress-header span:last-child {
+        color: #aaa;
+    }
+    
+    .progress-track {
+        height: 4px;
+        background: #1a1a1a;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: #fff;
+        border-radius: 2px;
+        position: relative;
+    }
+    
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        right: -6px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        border: 2px solid #0a0a0a;
+    }
+    
+    /* Stats Cards */
+    .stats-cards {
+        display: flex;
+        gap: 12px;
+        padding: 20px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        background: #111;
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid #222;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .stat-card:hover {
+        background: #1a1a1a;
+    }
+    
+    .stat-card i {
+        font-size: 20px;
+        margin-bottom: 8px;
+        color: #fff;
+        opacity: 0.7;
+    }
+    
+    .stat-card .value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+    }
+    
+    .stat-card .label {
+        font-size: 10px;
+        color: #666;
+    }
+    
+    /* Cinematic Strip */
+    .cinematic-strip {
+        padding: 20px 0;
+    }
+    
+    .strip-header {
+        padding: 0 20px 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .strip-header i {
+        color: #fff;
+        font-size: 14px;
+    }
+    
+    .strip-header h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .strip-header span {
+        margin-left: auto;
+        font-size: 11px;
+        color: #666;
+    }
+    
+    .day-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 20px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .day-strip::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .strip-day {
+        flex: 0 0 100px;
+        scroll-snap-align: start;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .strip-day.locked {
+        opacity: 0.4;
+    }
+    
+    .strip-thumbnail {
+        width: 100px;
+        height: 150px;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        background: #1a1a1a;
+        border: 1px solid transparent;
+    }
+    
+    .strip-day.current .strip-thumbnail {
+        border-color: #fff;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+    }
+    
+    .strip-thumbnail video,
+    .strip-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .strip-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 6px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    }
+    
+    .strip-day-number {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        display: block;
+    }
+    
+    .strip-day-status {
+        font-size: 8px;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .play-icon-strip {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 32px;
+        height: 32px;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(5px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 12px;
+    }
+    
+    .lock-icon-strip {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #666;
+        font-size: 20px;
+    }
+    
+    .check-badge {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 20px;
+        height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0a0a0a;
+        font-size: 10px;
+    }
+    
+    /* Current Day Hero */
+    .current-day-hero {
+        margin: 10px 20px 20px;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        height: 420px;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+    }
+    
+    .current-day-hero video,
+    .current-day-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .hero-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 40px 20px 20px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+    }
+    
+    .hero-badge {
+        display: inline-block;
+        background: #fff;
+        color: #0a0a0a;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+    
+    .hero-day-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #fff;
+    }
+    
+    .hero-day-desc {
+        font-size: 14px;
+        color: #aaa;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    
+    .hero-actions {
+        display: flex;
+        gap: 24px;
+    }
+    
+    .hero-action {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+    
+    .hero-action:hover {
+        opacity: 0.8;
+    }
+    
+    .hero-action i {
+        color: #888;
+    }
+    
+    .hero-action.loved i {
+        color: #ef4444;
+    }
+    
+    .hero-play-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60px;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        padding: 0 20px 20px;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+    
+    .action-btn-primary {
+        background: #fff;
+        color: #0a0a0a;
+    }
+    
+    .action-btn-outline {
+        background: transparent;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .action-btn-outline.saved {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    /* Comments Section */
+    .comments-section {
+        padding: 20px;
+        border-top: 1px solid #1a1a1a;
+    }
+    
+    .comments-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+    
+    .comments-header h4 {
+        font-size: 14px;
+        font-weight: 600;
+    }
+    
+    .comment-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .comment-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #1a1a1a;
+        flex-shrink: 0;
+    }
+    
+    .comment-content {
+        flex: 1;
+    }
+    
+    .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    
+    .comment-username {
+        font-weight: 600;
+        font-size: 13px;
+    }
+    
+    .comment-time {
+        font-size: 11px;
+        color: #666;
+    }
+    
+    .comment-text {
+        font-size: 14px;
+        color: #ddd;
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+    
+    .comment-actions {
+        display: flex;
+        gap: 16px;
+    }
+    
+    .comment-action {
+        font-size: 12px;
+        color: #888;
+        cursor: pointer;
+    }
+    
+    .comment-action i {
+        margin-right: 4px;
+    }
+    
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+        z-index: 1000;
+    }
+    
+    .modal.active {
+        display: block;
+    }
+    
+    .modal-content {
+        width: 100%;
+        max-width: 430px;
+        margin: 0 auto;
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 10;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
+    }
+    
+    .modal-close {
+        width: 44px;
+        height: 44px;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        border: none;
+    }
+    
+    .modal-day {
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .modal-media {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0a;
+    }
+    
+    .modal-media video,
+    .modal-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .modal-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 30px 20px 20px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    }
+    
+    .modal-caption {
+        color: #fff;
+        font-size: 14px;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 24px;
+    }
+    
+    .modal-action {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    .modal-action i {
+        font-size: 22px;
+        color: #aaa;
+    }
+    
+    .modal-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10px;
+        pointer-events: none;
+    }
+    
+    .modal-nav-btn {
+        width: 44px;
+        height: 44px;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        pointer-events: auto;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="journey-container">
+    
+    {# Hero with Path Visualization #}
+    <div class="journey-hero">
+        <div class="back-btn" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </div>
+        
+        <div class="menu-btn" onclick="toggleMenu()">
+            <i class="fas fa-ellipsis-h"></i>
+        </div>
+        
+        <div class="journey-title-top">
+            <h2>{{ journey.title }}</h2>
+            <div class="creator-info">
+                <div class="creator-avatar"></div>
+                <span class="creator-name">@{{ journey.creator.user.username }}</span>
+            </div>
+        </div>
+        
+        <div class="journey-path-visual">
+            <svg class="path-svg" viewBox="0 0 400 220">
+                <path class="path-line" d="M60,120 Q140,40 200,100 T340,80" 
+                      stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.3"/>
+            </svg>
+            
+            {# Milestone Nodes #}
+            <div class="milestone-node completed" style="left: 14%; top: 48%;" onclick="openDay(1)">
+                <i class="fas fa-check"></i>
+                <span class="node-label">Day 1</span>
+            </div>
+            
+            {% if journey.duration >= 5 %}
+            <div class="milestone-node completed" style="left: 30%; top: 20%;" onclick="openDay(5)">
+                <i class="fas fa-check"></i>
+                <span class="node-label">Day 5</span>
+            </div>
+            {% endif %}
+            
+            {% if journey.duration >= 10 %}
+            <div class="milestone-node {% if current_day >= 10 %}completed{% else %}locked{% endif %}" 
+                 style="left: 48%; top: 52%;" onclick="openDay(10)">
+                <i class="fas {% if current_day >= 10 %}fa-check{% else %}fa-lock{% endif %}"></i>
+                <span class="node-label">Day 10</span>
+            </div>
+            {% endif %}
+            
+            <div class="milestone-node current" style="left: 62%; top: 38%;" onclick="openDay({{ current_day }})">
+                <i class="fas fa-play"></i>
+                <span class="node-label">Day {{ current_day }}</span>
+            </div>
+            
+            {% if journey.duration >= 20 %}
+            <div class="milestone-node {% if current_day >= 20 %}completed{% else %}locked{% endif %}" 
+                 style="left: 80%; top: 48%;" onclick="openDay(20)">
+                <i class="fas {% if current_day >= 20 %}fa-check{% else %}fa-lock{% endif %}"></i>
+                <span class="node-label">Day 20</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="value">{{ current_day }}</div>
+                <div class="label">Days Done</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">{{ journey.duration }}</div>
+                <div class="label">Total</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">{{ journey.get_follower_count }}</div>
+                <div class="label">Followers</div>
+            </div>
+        </div>
+    </div>
+    
+    {# Progress Bar #}
+    <div class="progress-section">
+        <div class="progress-header">
+            <span>Journey Progress</span>
+            <span>{{ current_day }}/{{ journey.duration }} · {{ journey.get_progress_percentage }}%</span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+        </div>
+    </div>
+    
+    {# Stats Cards #}
+    <div class="stats-cards">
+        <div class="stat-card">
+            <i class="fas fa-users"></i>
+            <div class="value">{{ journey.get_follower_count }}</div>
+            <div class="label">Followers</div>
+        </div>
+        <div class="stat-card" onclick="toggleFollow()">
+            <i class="fas fa-heart"></i>
+            <div class="value" id="loveCount">{{ journey.get_love_count }}</div>
+            <div class="label">Loves</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-comment"></i>
+            <div class="value">{{ journey.get_comment_count }}</div>
+            <div class="label">Comments</div>
+        </div>
+    </div>
+    
+    {# Cinematic Day Strip #}
+    <div class="cinematic-strip">
+        <div class="strip-header">
+            <i class="fas fa-film"></i>
+            <h3>All Days</h3>
+            <span>Swipe →</span>
+        </div>
+        <div class="day-strip">
+            {% for day_num in total_days_range %}
+                {% with activity=activities_by_day|get_item:day_num %}
+                <div class="strip-day {% if day_num < current_day %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %}" 
+                     onclick="openDay({{ day_num }})">
+                    <div class="strip-thumbnail">
+                        {% if activity and activity.file %}
+                            {% if activity.is_video %}
+                                <video src="{{ activity.file.url }}" muted loop playsinline></video>
+                            {% else %}
+                                <img src="{{ activity.file.url }}" alt="Day {{ day_num }}">
+                            {% endif %}
+                        {% else %}
+                            <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-image" style="color:#444;font-size:20px;"></i>
+                            </div>
+                        {% endif %}
+                        
+                        {% if day_num < current_day %}
+                        <div class="check-badge"><i class="fas fa-check"></i></div>
+                        {% endif %}
+                        
+                        {% if activity and activity.file %}
+                        <div class="play-icon-strip"><i class="fas fa-play"></i></div>
+                        {% elif day_num > current_day %}
+                        <div class="lock-icon-strip"><i class="fas fa-lock"></i></div>
+                        {% endif %}
+                        
+                        <div class="strip-overlay">
+                            <span class="strip-day-number">Day {{ day_num }}</span>
+                            <span class="strip-day-status">
+                                {% if day_num < current_day %}Completed
+                                {% elif day_num == current_day %}📍 Current
+                                {% else %}Coming Soon{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    {# Current Day Hero #}
+    {% if current_activity %}
+    <div class="current-day-hero" onclick="openDay({{ current_day }})">
+        {% if current_activity.is_video %}
+            <video src="{{ current_activity.file.url }}" muted loop playsinline autoplay></video>
+        {% else %}
+            <img src="{{ current_activity.file.url }}" alt="Day {{ current_day }}">
+        {% endif %}
+        
+        <div class="hero-play-btn">
+            <i class="fas fa-play"></i>
+        </div>
+        
+        <div class="hero-content">
+            <span class="hero-badge">DAY {{ current_day }} · CURRENT</span>
+            <h3 class="hero-day-title">
+                {{ current_activity.content|truncatechars:40 }}
+            </h3>
+            <p class="hero-day-desc">
+                {{ current_activity.content|truncatechars:100 }}
+            </p>
+            <div class="hero-actions">
+                <span class="hero-action" onclick="event.stopPropagation(); toggleLove()">
+                    <i class="fas fa-heart" id="heroLoveIcon"></i>
+                    <span id="heroLoveCount">{{ current_activity.get_love_count }}</span>
+                </span>
+                <span class="hero-action" onclick="event.stopPropagation(); scrollToComments()">
+                    <i class="fas fa-comment"></i>
+                    <span>{{ current_activity.get_comment_count }}</span>
+                </span>
+                <span class="hero-action" onclick="event.stopPropagation(); shareJourney()">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Share</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="current-day-hero" style="display: flex; align-items: center; justify-content: center; background: #111;">
+        <div style="text-align: center; color: #888;">
+            <i class="fas fa-calendar-plus" style="font-size: 48px; margin-bottom: 16px;"></i>
+            <p>No content yet for Day {{ current_day }}</p>
+            {% if user == journey.creator.user %}
+            <a href="{% url 'post_activity' slug=journey.slug %}" class="btn btn-primary" style="margin-top: 16px;">
+                Post Update
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {# Action Buttons #}
+    <div class="action-buttons">
+        <button class="action-btn action-btn-outline {% if is_saved %}saved{% endif %}" id="saveBtn" onclick="toggleSave()">
+            <i class="fas fa-bookmark"></i>
+            <span id="saveText">{% if is_saved %}Saved{% else %}Save{% endif %}</span>
+        </button>
+        
+        {% if journey.funding_enabled %}
+        <a href="{% url 'donate' slug=journey.slug %}" class="action-btn action-btn-primary">
+            <i class="fas fa-hand-holding-heart"></i>
+            Support
+        </a>
+        {% else %}
+        <button class="action-btn action-btn-primary" id="followBtn" onclick="toggleFollow()">
+            <i class="fas fa-user-plus"></i>
+            <span id="followText">{% if is_following %}Following{% else %}Follow{% endif %}</span>
+        </button>
+        {% endif %}
+    </div>
+    
+    {# Comments Section #}
+    <div class="comments-section" id="comments">
+        <div class="comments-header">
+            <h4>Comments ({{ recent_comments|length }})</h4>
+        </div>
+        
+        <div class="comments-list">
+            {% for comment in recent_comments %}
+            <div class="comment-item">
+                <div class="comment-avatar"></div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <span class="comment-username">@{{ comment.user.username }}</span>
+                        <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+                    </div>
+                    <p class="comment-text">{{ comment.content }}</p>
+                    <div class="comment-actions">
+                        <span class="comment-action"><i class="far fa-heart"></i> 0</span>
+                        <span class="comment-action"><i class="far fa-comment"></i> Reply</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: #888; text-align: center; padding: 20px;">No comments yet. Be the first!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{# Video/Image Modal #}
+<div class="modal" id="mediaModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <span class="modal-day" id="modalDay">Day 1</span>
+        </div>
+        
+        <div class="modal-media" id="modalMedia"></div>
+        
+        <div class="modal-footer">
+            <p class="modal-caption" id="modalCaption"></p>
+            <div class="modal-actions">
+                <button class="modal-action" onclick="toggleLove()">
+                    <i class="far fa-heart"></i>
+                    <span id="modalLoveCount">0</span>
+                </button>
+                <button class="modal-action">
+                    <i class="far fa-comment"></i>
+                    <span id="modalCommentCount">0</span>
+                </button>
+                <button class="modal-action" onclick="shareJourney()">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="modal-nav">
+            <button class="modal-nav-btn" onclick="prevDay()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="modal-nav-btn" onclick="nextDay()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const journeySlug = '{{ journey.slug }}';
+    const currentDay = {{ current_day }};
+    const totalDays = {{ journey.duration }};
+    const activities = {{ activities_json|safe }};
+    let currentModalDay = currentDay;
+    let isFollowing = {{ is_following|yesno:"true,false" }};
+    let isSaved = {{ is_saved|yesno:"true,false" }};
+    let isLoved = false;
+    
+    function openDay(day) {
+        if (day > currentDay) {
+            alert('Day ' + day + ' unlocks soon!');
+            return;
+        }
+        
+        const activity = activities[day];
+        if (!activity) {
+            alert('No content posted for Day ' + day);
+            return;
+        }
+        
+        currentModalDay = day;
+        document.getElementById('modalDay').textContent = 'Day ' + day;
+        document.getElementById('modalCaption').textContent = activity.content;
+        document.getElementById('modalLoveCount').textContent = activity.loveCount || 0;
+        document.getElementById('modalCommentCount').textContent = activity.commentCount || 0;
+        
+        const mediaContainer = document.getElementById('modalMedia');
+        if (activity.isVideo) {
+            mediaContainer.innerHTML = `<video src="${activity.fileUrl}" controls playsinline autoplay></video>`;
+        } else {
+            mediaContainer.innerHTML = `<img src="${activity.fileUrl}" style="width:100%;height:100%;object-fit:contain;">`;
+        }
+        
+        document.getElementById('mediaModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal() {
+        document.getElementById('mediaModal').classList.remove('active');
+        document.body.style.overflow = '';
+        const video = document.querySelector('#modalMedia video');
+        if (video) video.pause();
+    }
+    
+    function prevDay() {
+        if (currentModalDay > 1) {
+            openDay(currentModalDay - 1);
+        }
+    }
+    
+    function nextDay() {
+        if (currentModalDay < totalDays && currentModalDay < currentDay) {
+            openDay(currentModalDay + 1);
+        }
+    }
+    
+    function toggleFollow() {
+        fetch(`/api/journey/${journeySlug}/follow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            isFollowing = data.following;
+            const btn = document.getElementById('followText');
+            if (btn) btn.textContent = isFollowing ? 'Following' : 'Follow';
+        });
+    }
+    
+    function toggleSave() {
+        fetch(`/api/journey/${journeySlug}/save/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            isSaved = data.saved;
+            const btn = document.getElementById('saveBtn');
+            const text = document.getElementById('saveText');
+            if (isSaved) {
+                btn.classList.add('saved');
+                text.textContent = 'Saved';
+            } else {
+                btn.classList.remove('saved');
+                text.textContent = 'Save';
+            }
+        });
+    }
+    
+    function toggleLove() {
+        const activityId = activities[currentModalDay]?.id;
+        if (!activityId) return;
+        
+        fetch(`/api/activity/${activityId}/love/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            isLoved = data.loved;
+            document.getElementById('modalLoveCount').textContent = data.love_count;
+        });
+    }
+    
+    function shareJourney() {
+        const url = window.location.href;
+        fetch(`/api/journey/${journeySlug}/share/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({platform: 'copy'})
+        });
+        
+        navigator.clipboard?.writeText(url);
+        alert('Link copied to clipboard!');
+    }
+    
+    function scrollToComments() {
+        document.getElementById('comments').scrollIntoView({behavior: 'smooth'});
+    }
+    
+    function toggleMenu() {
+        alert('Menu options: Report, Share, etc.');
+    }
+    
+    // Video observer for autoplay
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target.querySelector('video');
+            if (video) {
+                if (entry.isIntersecting) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                }
+            }
+        });
+    }, {threshold: 0.5});
+    
+    document.querySelectorAll('.strip-day').forEach(day => observer.observe(day));
+    
+    const heroVideo = document.querySelector('.current-day-hero video');
+    if (heroVideo) observer.observe(document.querySelector('.current-day-hero'));
+    
+    // Close modal on background click
+    document.getElementById('mediaModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+{% endblock %}
