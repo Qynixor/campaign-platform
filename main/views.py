@@ -1031,32 +1031,34 @@ def love_activity_view(request, activity_id):
     })
 
 
-@login_required
 @require_POST
 def comment_activity_view(request, activity_id):
     """Add a comment to an activity"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Please log in to comment'}, status=401)
+    
     activity = get_object_or_404(Activity, id=activity_id)
+    content = request.POST.get('content', '').strip()
     
-    form = CommentForm(request.POST)
-    if form.is_valid():
-        comment = form.save(commit=False)
-        comment.activity = activity
-        comment.user = request.user
-        comment.save()
-        
-        return JsonResponse({
-            'success': True,
-            'comment': {
-                'id': comment.id,
-                'user': comment.user.username,
-                'content': comment.content,
-                'created_at': comment.created_at.strftime('%b %d, %Y'),
-            },
-            'comment_count': activity.get_comment_count(),
-        })
+    if not content:
+        return JsonResponse({'success': False, 'error': 'Comment cannot be empty'}, status=400)
     
-    return JsonResponse({'success': False, 'errors': form.errors})
-
+    comment = ActivityComment.objects.create(
+        activity=activity,
+        user=request.user,
+        content=content
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'comment': {
+            'id': comment.id,
+            'user': comment.user.username,
+            'content': comment.content,
+            'created_at': comment.created_at.strftime('%b %d, %Y'),
+        },
+        'comment_count': activity.get_comment_count(),
+    })
 
 @login_required
 @require_POST
