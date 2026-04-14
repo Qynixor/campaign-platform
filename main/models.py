@@ -135,7 +135,7 @@ class ImportedContent(models.Model):
     ]
     
     # Source info
-    social_connection = models.ForeignKey(SocialConnection, on_delete=models.CASCADE, related_name='imported_content')
+    social_connection = models.ForeignKey(SocialConnection, on_delete=models.CASCADE, related_name='imported_content', null=True, blank=True)
     platform = models.CharField(max_length=20)
     platform_post_id = models.CharField(max_length=100)
     platform_url = models.URLField(max_length=500)
