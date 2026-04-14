@@ -241,7 +241,7 @@ class Journey(models.Model):
     
     # ==================== FUNDING (OPTIONAL) ====================
     funding_enabled = models.BooleanField(default=False)
-    funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
     funding_description = models.TextField(blank=True)
     
     # ==================== RELATIONSHIPS ====================
@@ -285,7 +285,7 @@ class Journey(models.Model):
                 counter += 1
             self.slug = slug
         
-        # Calculate end date
+        # Calculate end date (only for daily challenges)
         if self.duration and self.journey_type == 'daily':
             self.end_date = self.start_date + datetime.timedelta(days=self.duration)
         
@@ -294,7 +294,11 @@ class Journey(models.Model):
     # ==================== DAY/MILESTONE METHODS ====================
     
     def get_current_day(self):
-        """Calculate current day based on start date"""
+        """
+        Calculate current day based on journey type:
+        - Daily: Based on calendar days elapsed
+        - Milestone: Based on number of completed milestones
+        """
         if self.journey_type == 'milestone':
             return self.activities.count()
         
@@ -309,29 +313,56 @@ class Journey(models.Model):
         """Get completion percentage"""
         if self.duration == 0:
             return 0
+        
+        if self.journey_type == 'milestone':
+            completed = self.activities.count()
+            return min(round((completed / self.duration) * 100), 100)
+        
         current = self.get_current_day()
         return min(round((current / self.duration) * 100), 100)
     
     def is_day_locked(self, day_number):
-        """Check if a day is locked (future)"""
-        return day_number > self.get_current_day()
+        """
+        Check if a day/milestone is locked.
+        - Daily: Locked if day > current calendar day
+        - Milestone: NEVER locked (can post any milestone anytime)
+        """
+        if self.journey_type == 'daily':
+            current = self.get_current_day()
+            return day_number > current
+        elif self.journey_type == 'milestone':
+            return False  # Milestone journeys never lock
+        return False
     
     def get_day_status(self, day_number):
-        """Get status of a specific day"""
-        current = self.get_current_day()
+        """
+        Get status of a specific day/milestone.
+        Returns: 'locked', 'current', 'completed', or 'available'
+        """
+        has_content = self.activities.filter(day_number_field=day_number).exists()
         
-        if day_number > current:
-            return 'locked'
-        elif day_number == current:
-            return 'current'
-        else:
-            has_content = self.activities.filter(day_number_field=day_number).exists()
-            return 'completed' if has_content else 'available'
+        if self.journey_type == 'daily':
+            current = self.get_current_day()
+            
+            if day_number > current:
+                return 'locked'
+            elif day_number == current:
+                return 'current'
+            else:
+                return 'completed' if has_content else 'available'
+        
+        elif self.journey_type == 'milestone':
+            if has_content:
+                return 'completed'
+            else:
+                return 'available'
+        
+        return 'available'
     
     # ==================== CONTENT METHODS ====================
     
     def get_activity_for_day(self, day_number):
-        """Get activity for specific day"""
+        """Get activity for specific day/milestone"""
         return self.activities.filter(day_number_field=day_number).first()
     
     def get_all_activities_by_day(self):
@@ -395,7 +426,6 @@ class Journey(models.Model):
 # ============================================================================
 # ACTIVITY MODEL (DAY CONTENT)
 # ============================================================================
-
 class Activity(models.Model):
     """Individual day/milestone content within a journey"""
     
@@ -409,6 +439,13 @@ class Activity(models.Model):
     
     # Day tracking
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
+    
+    # NEW: Actual date when this milestone happened (for portfolio/trust building)
+    actual_date = models.DateField(
+        null=True, 
+        blank=True,
+        help_text="When this milestone actually happened (e.g., project completion date)"
+    )
     
     # Source tracking (if imported)
     imported_from = models.ForeignKey(ImportedContent, on_delete=models.SET_NULL, null=True, blank=True)
@@ -431,6 +468,8 @@ class Activity(models.Model):
         verbose_name_plural = 'Activities'
     
     def __str__(self):
+        if self.journey.journey_type == 'milestone':
+            return f"Milestone {self.day_number_field} - {self.journey.title}"
         return f"Day {self.day_number_field} - {self.journey.title}"
     
     def save(self, *args, **kwargs):
@@ -449,10 +488,16 @@ class Activity(models.Model):
     
     def _notify_followers(self):
         """Notify journey followers of new activity"""
+        # Customize message based on journey type
+        if self.journey.journey_type == 'milestone':
+            message = f"Milestone {self.day_number_field} of '{self.journey.title}' is complete!"
+        else:
+            message = f"Day {self.day_number_field} of '{self.journey.title}' is now available!"
+        
         for follow in self.journey.journeyfollow_set.filter(notify_on_activity=True):
             Notification.objects.create(
                 user=follow.user,
-                message=f"Day {self.day_number_field} of '{self.journey.title}' is now available!",
+                message=message,
                 redirect_link=self.journey.get_absolute_url(),
                 journey=self.journey
             )
@@ -468,7 +513,19 @@ class Activity(models.Model):
     
     def get_comment_count(self):
         return self.comments.count()
-
+    
+    def get_display_date(self):
+        """Return the actual date if set, otherwise the published date"""
+        if self.actual_date:
+            return self.actual_date
+        return self.published_at.date() if self.published_at else None
+    
+    def get_date_display(self):
+        """Return formatted date for display"""
+        date = self.get_display_date()
+        if date:
+            return date.strftime("%b %d, %Y")
+        return None
 
 # ============================================================================
 # RELATIONSHIP MODELS

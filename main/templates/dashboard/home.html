@@ -142,6 +142,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
     }
     
     .journey-thumbnail i {
@@ -156,6 +157,24 @@
         border-radius: 12px;
     }
     
+    .journey-type-dot {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #111;
+    }
+    
+    .journey-type-dot.daily {
+        background: #3b82f6;
+    }
+    
+    .journey-type-dot.milestone {
+        background: #8b5cf6;
+    }
+    
     .journey-info {
         flex: 1;
     }
@@ -163,6 +182,26 @@
     .journey-title-link {
         font-weight: 600;
         margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .journey-type-tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .journey-type-tag.daily {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+    }
+    
+    .journey-type-tag.milestone {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
     }
     
     .journey-meta {
@@ -191,6 +230,10 @@
         height: 100%;
         background: #3b82f6;
         border-radius: 2px;
+    }
+    
+    .progress-fill-mini.milestone {
+        background: #8b5cf6;
     }
     
     .journey-actions {
@@ -258,6 +301,16 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+    }
+    
+    .activity-icon.milestone-icon {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+    }
+    
+    .activity-icon.daily-icon {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
     }
     
     .activity-content {
@@ -433,21 +486,33 @@
                                 {% if journey.cover_image %}
                                     <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}">
                                 {% else %}
-                                    <i class="fas fa-flag"></i>
+                                    <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar{% endif %}"></i>
                                 {% endif %}
+                                <span class="journey-type-dot {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}"></span>
                             </a>
                             
                             <div class="journey-info">
                                 <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-title-link">
                                     {{ journey.title }}
+                                    <span class="journey-type-tag {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
+                                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
+                                    </span>
                                 </a>
                                 <div class="journey-meta">
-                                    <span><i class="fas fa-calendar"></i> Day {{ journey.get_current_day }}/{{ journey.duration }}</span>
+                                    <span>
+                                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar{% endif %}"></i> 
+                                        {% if journey.journey_type == 'milestone' %}
+                                            {{ journey.get_current_day }}/{{ journey.duration }} milestones
+                                        {% else %}
+                                            Day {{ journey.get_current_day }}/{{ journey.duration }}
+                                        {% endif %}
+                                    </span>
                                     <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
                                 </div>
                                 <div class="journey-progress-mini">
                                     <div class="progress-bar-mini">
-                                        <div class="progress-fill-mini" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                                        <div class="progress-fill-mini {% if journey.journey_type == 'milestone' %}milestone{% endif %}" 
+                                             style="width: {{ journey.get_progress_percentage }}%;"></div>
                                     </div>
                                     <span style="font-size: 12px; color: #888;">{{ journey.get_progress_percentage }}%</span>
                                 </div>
@@ -483,12 +548,13 @@
                 <div class="card-body">
                     {% for activity in recent_activities %}
                     <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-video"></i>
+                        <div class="activity-icon {% if activity.journey.journey_type == 'milestone' %}milestone-icon{% else %}daily-icon{% endif %}">
+                            <i class="fas fa-{% if activity.journey.journey_type == 'milestone' %}flag-checkered{% else %}video{% endif %}"></i>
                         </div>
                         <div class="activity-content">
                             <p class="activity-text">
-                                Posted Day {{ activity.day_number_field }} in 
+                                Posted {% if activity.journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+                                {{ activity.day_number_field }} in 
                                 <a href="{% url 'journey_detail' slug=activity.journey.slug %}">
                                     {{ activity.journey.title }}
                                 </a>
@@ -508,7 +574,11 @@
             <div class="dashboard-card">
                 <div class="card-body" style="text-align: center;">
                     <div style="width: 80px; height: 80px; border-radius: 50%; background: #1a1a1a; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="font-size: 32px; color: #888;"></i>
+                        {% if user.profile.image %}
+                            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        {% else %}
+                            <i class="fas fa-user" style="font-size: 32px; color: #888;"></i>
+                        {% endif %}
                     </div>
                     <h4 style="margin-bottom: 4px;">{{ user.get_full_name|default:user.username }}</h4>
                     <p style="color: #888; font-size: 14px; margin-bottom: 16px;">@{{ user.username }}</p>

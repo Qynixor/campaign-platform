@@ -640,19 +640,22 @@ def journey_content_view(request, slug):
     
     return render(request, 'dashboard/content_manager.html', context)
 
-
 @login_required
 def post_activity_view(request, slug, day_number=None):
-    """Post an activity for a specific day"""
+    """Post an activity for a specific day/milestone"""
     profile = get_user_profile(request.user)
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
     if day_number is None:
         day_number = journey.get_current_day()
+        if journey.journey_type == 'milestone':
+            # For milestones, suggest the next available milestone number
+            existing_count = journey.activities.count()
+            day_number = existing_count + 1
     
-    # Check if day is locked
+    # Check if day is locked (only for daily challenges)
     if journey.is_day_locked(day_number):
-        messages.error(request, f'Day {day_number} is not available yet.')
+        messages.error(request, f'This day/milestone is not available yet.')
         return redirect('journey_detail', slug=journey.slug)
     
     # Get existing activity if any
@@ -667,15 +670,27 @@ def post_activity_view(request, slug, day_number=None):
             day_number=day_number
         )
         if form.is_valid():
-            activity = form.save()
-            messages.success(request, f'Day {day_number} posted successfully!')
+            activity = form.save(commit=False)
+            activity.journey = journey
+            activity.day_number_field = day_number  # ← ENSURE THIS IS SET
+            activity.save()
+            
+            if journey.journey_type == 'milestone':
+                messages.success(request, f'Milestone {day_number} posted successfully!')
+            else:
+                messages.success(request, f'Day {day_number} posted successfully!')
             return redirect('journey_detail', slug=journey.slug)
+        else:
+            print("Form errors:", form.errors)  # Debug
     else:
         form = ActivityForm(
             instance=existing_activity,
             journey=journey,
             day_number=day_number,
-            initial={'content': existing_activity.content if existing_activity else ''}
+            initial={
+                'content': existing_activity.content if existing_activity else '',
+                'actual_date': existing_activity.actual_date if existing_activity else None,
+            }
         )
     
     context = {
@@ -686,8 +701,6 @@ def post_activity_view(request, slug, day_number=None):
     }
     
     return render(request, 'dashboard/post_activity.html', context)
-
-
 @login_required
 def delete_activity_view(request, activity_id):
     """Delete an activity"""

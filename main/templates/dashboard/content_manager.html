@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Content Manager - {{ journey.title }} | Rallynex{% endblock %}
 
@@ -101,12 +102,16 @@
         border-radius: 4px;
     }
     
+    .progress-bar-large.milestone .progress-fill {
+        background: #8b5cf6;
+    }
+    
     .progress-text {
         font-size: 14px;
         color: #888;
     }
     
-    /* Day Grid */
+    /* Day/Milestone Grid */
     .day-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -126,6 +131,10 @@
     .day-card:hover {
         border-color: #3b82f6;
         transform: translateY(-2px);
+    }
+    
+    .day-card.milestone-card:hover {
+        border-color: #8b5cf6;
     }
     
     .day-card.locked {
@@ -183,8 +192,26 @@
         font-weight: 600;
     }
     
+    .badge-milestone {
+        background: #8b5cf6;
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+    
     .badge-locked {
         background: #666;
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+    
+    .badge-available {
+        background: #f59e0b;
         color: #fff;
         padding: 4px 8px;
         border-radius: 20px;
@@ -205,6 +232,12 @@
     .day-status {
         font-size: 11px;
         color: #888;
+    }
+    
+    .milestone-date-badge {
+        font-size: 10px;
+        color: #8b5cf6;
+        margin-top: 4px;
     }
     
     .day-actions {
@@ -249,6 +282,7 @@
     .quick-post-form {
         display: flex;
         gap: 12px;
+        flex-wrap: wrap;
     }
     
     .quick-post-form input {
@@ -259,6 +293,11 @@
         border-radius: 12px;
         color: #fff;
         font-size: 14px;
+    }
+    
+    .quick-post-form input[type="number"] {
+        width: 100px;
+        flex: 0 0 auto;
     }
     
     /* Empty State */
@@ -272,12 +311,17 @@
         color: #333;
         margin-bottom: 16px;
     }
+    
+    /* Journey type specific */
+    .milestone-mode .badge-current {
+        background: #8b5cf6;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="manager-container">
+<div class="manager-container {% if journey.journey_type == 'milestone' %}milestone-mode{% endif %}">
     
     {# Header #}
     <div class="manager-header">
@@ -286,7 +330,13 @@
         </a>
         <div class="manager-title">
             <h1>{{ journey.title }}</h1>
-            <p>Content Manager · Day-by-day organization</p>
+            <p>
+                {% if journey.journey_type == 'milestone' %}
+                    Content Manager · Milestone-by-milestone organization
+                {% else %}
+                    Content Manager · Day-by-day organization
+                {% endif %}
+            </p>
         </div>
         <a href="{% url 'journey_detail' slug=journey.slug %}" class="btn btn-outline" target="_blank">
             <i class="fas fa-eye"></i> View Public Page
@@ -298,19 +348,25 @@
         <div class="progress-stats">
             <div class="progress-stat">
                 <div class="value">{{ current_day }}</div>
-                <div class="label">Current Day</div>
+                <div class="label">
+                    {% if journey.journey_type == 'milestone' %}Completed{% else %}Current Day{% endif %}
+                </div>
             </div>
             <div class="progress-stat">
                 <div class="value">{{ journey.duration }}</div>
-                <div class="label">Total Days</div>
+                <div class="label">
+                    {% if journey.journey_type == 'milestone' %}Total Milestones{% else %}Total Days{% endif %}
+                </div>
             </div>
             <div class="progress-stat">
                 <div class="value">{{ activities|length }}</div>
-                <div class="label">Days Posted</div>
+                <div class="label">
+                    {% if journey.journey_type == 'milestone' %}Milestones Posted{% else %}Days Posted{% endif %}
+                </div>
             </div>
         </div>
         
-        <div class="progress-bar-large">
+        <div class="progress-bar-large {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
             <div class="progress-track">
                 <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
             </div>
@@ -318,49 +374,74 @@
         </div>
     </div>
     
-    {# Day Grid #}
+    {# Day/Milestone Grid #}
     <div class="day-grid">
         {% for day_num in day_range %}
             {% with activity=activities|get_item:day_num %}
-            <div class="day-card {% if day_num > current_day %}locked{% endif %}"
-                 onclick="{% if day_num <= current_day %}window.location.href='{% url 'post_activity_day' slug=journey.slug day_number=day_num %}'{% endif %}">
+            
+            {% if journey.journey_type == 'milestone' %}
+                {# Milestone Journey - Never locked #}
+                <div class="day-card milestone-card"
+                     onclick="window.location.href='{% url 'post_activity_day' slug=journey.slug day_number=day_num %}'">
+            {% else %}
+                {# Daily Challenge - Calendar locking #}
+                <div class="day-card {% if day_num > current_day %}locked{% endif %}"
+                     onclick="{% if day_num <= current_day %}window.location.href='{% url 'post_activity_day' slug=journey.slug day_number=day_num %}'{% endif %}">
+            {% endif %}
                 
                 <div class="day-thumbnail">
                     {% if activity and activity.file %}
                         {% if activity.is_video %}
                             <video src="{{ activity.file.url }}" muted></video>
                         {% else %}
-                            <img src="{{ activity.file.url }}" alt="Day {{ day_num }}">
+                            <img src="{{ activity.file.url }}" alt="">
                         {% endif %}
                     {% else %}
-                        <i class="fas fa-image"></i>
+                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}image{% endif %}"></i>
                     {% endif %}
                     
                     <div class="day-badge">
-                        {% if day_num < current_day and activity %}
+                        {% if activity %}
                             <span class="badge-completed"><i class="fas fa-check"></i> Posted</span>
-                        {% elif day_num == current_day %}
-                            <span class="badge-current">📍 Current</span>
-                        {% elif day_num > current_day %}
+                        {% elif journey.journey_type == 'daily' and day_num > current_day %}
                             <span class="badge-locked"><i class="fas fa-lock"></i> Locked</span>
+                        {% elif journey.journey_type == 'daily' and day_num == current_day %}
+                            <span class="badge-current">📍 Current</span>
                         {% else %}
-                            <span class="badge-current">⚠️ Needs Post</span>
+                            <span class="badge-available">
+                                {% if journey.journey_type == 'milestone' %}
+                                    📍 Ready
+                                {% else %}
+                                    ⚠️ Needs Post
+                                {% endif %}
+                            </span>
                         {% endif %}
                     </div>
                 </div>
                 
                 <div class="day-info">
-                    <div class="day-number">Day {{ day_num }}</div>
+                    <div class="day-number">
+                        {% if journey.journey_type == 'milestone' %}
+                            Milestone {{ day_num }}
+                        {% else %}
+                            Day {{ day_num }}
+                        {% endif %}
+                    </div>
                     <div class="day-status">
                         {% if activity %}
                             {{ activity.content|truncatechars:30 }}
+                            {% if journey.journey_type == 'milestone' and activity.actual_date %}
+                                <div class="milestone-date-badge">
+                                    <i class="fas fa-calendar-check"></i> {{ activity.actual_date|date:"M d, Y" }}
+                                </div>
+                            {% endif %}
                         {% else %}
                             No content yet
                         {% endif %}
                     </div>
                 </div>
                 
-                {% if day_num <= current_day %}
+                {% if journey.journey_type == 'milestone' or day_num <= current_day %}
                 <div class="day-actions">
                     <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="day-action">
                         <i class="fas fa-{% if activity %}edit{% else %}plus{% endif %}"></i>
@@ -369,7 +450,7 @@
                     {% if activity %}
                     <a href="{% url 'delete_activity' activity_id=activity.id %}" 
                        class="day-action" 
-                       onclick="return confirm('Delete Day {{ day_num }} content?')">
+                       onclick="return confirm('Delete this content?')">
                         <i class="fas fa-trash"></i>
                     </a>
                     {% endif %}
@@ -380,7 +461,8 @@
         {% endfor %}
     </div>
     
-    {# Quick Import #}
+    {# Quick Import - Only show for daily challenges #}
+    {% if journey.journey_type == 'daily' %}
     <div class="quick-post">
         <h3>
             <i class="fas fa-cloud-upload-alt" style="color: #3b82f6;"></i>
@@ -389,10 +471,11 @@
         <form method="get" action="{% url 'quick_import' %}" class="quick-post-form">
             <input type="hidden" name="journey" value="{{ journey.id }}">
             <input type="text" name="url" placeholder="Paste TikTok or Instagram link...">
-            <input type="number" name="day_number" placeholder="Day" min="1" max="{{ journey.duration }}" style="width: 100px;">
+            <input type="number" name="day_number" placeholder="Day" min="1" max="{{ journey.duration }}">
             <button type="submit" class="btn btn-primary">Import</button>
         </form>
     </div>
+    {% endif %}
     
 </div>
 

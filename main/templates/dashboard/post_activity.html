@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Post Day {{ day_number }} - {{ journey.title }} | Rallynex{% endblock %}
+{% block title %}
+    {% if journey.journey_type == 'milestone' %}
+        Post Milestone {{ day_number }} - {{ journey.title }} | Rallynex
+    {% else %}
+        Post Day {{ day_number }} - {{ journey.title }} | Rallynex
+    {% endif %}
+{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -62,6 +68,10 @@
         margin-bottom: 20px;
     }
     
+    .day-badge-large.milestone {
+        background: #8b5cf6;
+    }
+    
     .post-card {
         background: #111;
         border: 1px solid #222;
@@ -81,7 +91,8 @@
         color: #aaa;
     }
     
-    .form-group textarea {
+    .form-group textarea,
+    .form-group input[type="date"] {
         width: 100%;
         padding: 16px;
         background: #0a0a0a;
@@ -92,11 +103,19 @@
         outline: none;
         transition: border-color 0.2s;
         font-family: inherit;
-        resize: vertical;
-        min-height: 120px;
     }
     
-    .form-group textarea:focus {
+    .form-group input[type="date"] {
+        cursor: pointer;
+    }
+    
+    .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+    
+    .form-group textarea:focus,
+    .form-group input[type="date"]:focus {
         border-color: #3b82f6;
     }
     
@@ -110,6 +129,16 @@
         margin-top: 6px;
         display: flex;
         justify-content: space-between;
+    }
+    
+    /* Date Field Special Styling for Milestones */
+    .date-field-highlight {
+        background: rgba(139, 92, 246, 0.05);
+        border-color: rgba(139, 92, 246, 0.3) !important;
+    }
+    
+    .date-field-highlight:focus {
+        border-color: #8b5cf6 !important;
     }
     
     /* File Upload */
@@ -268,6 +297,25 @@
         color: #3b82f6;
         margin-left: 8px;
     }
+    
+    /* Completed Date Display */
+    .completed-date-info {
+        margin-top: 8px;
+        padding: 12px;
+        background: rgba(34, 197, 94, 0.05);
+        border-radius: 8px;
+        border-left: 3px solid #22c55e;
+    }
+    
+    .completed-date-info i {
+        color: #22c55e;
+        margin-right: 8px;
+    }
+    
+    .completed-date-info span {
+        color: #aaa;
+        font-size: 13px;
+    }
 </style>
 {% endblock %}
 
@@ -286,15 +334,25 @@
         </div>
     </div>
     
-    <span class="day-badge-large">
-        <i class="fas fa-calendar-day"></i> Day {{ day_number }} of {{ journey.duration }}
+    {# Dynamic Badge #}
+    <span class="day-badge-large {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
+        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i> 
+        {% if journey.journey_type == 'milestone' %}
+            Milestone {{ day_number }} of {{ journey.duration }}
+        {% else %}
+            Day {{ day_number }} of {{ journey.duration }}
+        {% endif %}
     </span>
     
     {# Existing Content Warning #}
     {% if existing_activity %}
     <div class="existing-warning">
         <i class="fas fa-exclamation-triangle"></i>
-        <p>You are editing existing content for Day {{ day_number }}. Your changes will overwrite the current post.</p>
+        <p>
+            You are editing existing content for 
+            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+            {{ day_number }}. Your changes will overwrite the current post.
+        </p>
     </div>
     {% endif %}
     
@@ -315,9 +373,15 @@
         {{ form.day_number_field }}
         
         <div class="form-group">
-            <label for="id_content">What happened today?</label>
+            <label for="id_content">
+                {% if journey.journey_type == 'milestone' %}
+                    What did you achieve in this milestone?
+                {% else %}
+                    What happened today?
+                {% endif %}
+            </label>
             <textarea name="content" id="id_content" 
-                      placeholder="Share your progress, thoughts, or milestones for Day {{ day_number }}..."
+                      placeholder="{% if journey.journey_type == 'milestone' %}Describe what you accomplished in Milestone {{ day_number }}...{% else %}Share your progress, thoughts, or milestones for Day {{ day_number }}...{% endif %}"
                       required>{{ form.content.value|default:'' }}</textarea>
             <div class="form-hint">
                 <span>Be authentic - your followers want the real journey</span>
@@ -327,6 +391,33 @@
                 <p class="field-error">{{ form.content.errors.0 }}</p>
             {% endif %}
         </div>
+        
+        {# NEW: Actual Date Field for Milestone Journeys #}
+        {% if journey.journey_type == 'milestone' %}
+        <div class="form-group">
+            <label for="id_actual_date">
+                <i class="fas fa-calendar-check"></i> 
+                When did this milestone actually happen?
+            </label>
+            <input type="date" 
+                   name="actual_date" 
+                   id="id_actual_date" 
+                   class="date-field-highlight"
+                   value="{{ form.actual_date.value|date:'Y-m-d'|default:'' }}">
+            <div class="form-hint">
+                <span><i class="fas fa-lightbulb"></i> Adding the real date builds trust with your audience</span>
+            </div>
+            {% if existing_activity and existing_activity.actual_date %}
+            <div class="completed-date-info">
+                <i class="fas fa-check-circle"></i>
+                <span>Currently set to: <strong>{{ existing_activity.actual_date|date:"F j, Y" }}</strong></span>
+            </div>
+            {% endif %}
+            {% if form.actual_date.errors %}
+                <p class="field-error">{{ form.actual_date.errors.0 }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
         
         <div class="form-group">
             <label>Media (Optional)</label>
@@ -383,7 +474,9 @@
             </a>
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-{% if existing_activity %}save{% else %}paper-plane{% endif %}"></i>
-                {% if existing_activity %}Update{% else %}Post{% endif %} Day {{ day_number }}
+                {% if existing_activity %}Update{% else %}Post{% endif %} 
+                {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+                {{ day_number }}
             </button>
         </div>
     </form>
@@ -395,10 +488,17 @@
             Tips for a great update
         </h4>
         <ul style="color: #888; font-size: 13px; line-height: 1.8; padding-left: 20px;">
-            <li>Share both wins and struggles - authenticity builds connection</li>
-            <li>Include a photo or short video to increase engagement</li>
-            <li>Ask a question to encourage comments</li>
-            <li>Use the journey hashtag to help others discover your content</li>
+            {% if journey.journey_type == 'milestone' %}
+                <li>Be specific about what you accomplished in this milestone</li>
+                <li>Include the actual date to build a trustworthy timeline</li>
+                <li>Add photos or videos as proof of your achievement</li>
+                <li>Share challenges you overcame to reach this milestone</li>
+            {% else %}
+                <li>Share both wins and struggles - authenticity builds connection</li>
+                <li>Include a photo or short video to increase engagement</li>
+                <li>Ask a question to encourage comments</li>
+                <li>Use the journey hashtag to help others discover your content</li>
+            {% endif %}
         </ul>
     </div>
     
@@ -461,6 +561,14 @@
         document.getElementById('existingPreview').style.display = 'none';
         document.getElementById('clearExisting').value = 'true';
         uploadArea.style.display = 'block';
+    }
+    
+    // Set default date to today if empty (optional)
+    const dateInput = document.getElementById('id_actual_date');
+    if (dateInput && !dateInput.value) {
+        // Uncomment to auto-fill today's date
+        // const today = new Date().toISOString().split('T')[0];
+        // dateInput.value = today;
     }
 </script>
 

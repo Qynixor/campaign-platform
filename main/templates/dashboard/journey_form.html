@@ -186,28 +186,6 @@
         display: none;
     }
     
-    /* Image Preview */
-    .image-preview {
-        margin-top: 16px;
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    
-    .preview-item {
-        width: 100px;
-        height: 100px;
-        border-radius: 12px;
-        overflow: hidden;
-        background: #1a1a1a;
-    }
-    
-    .preview-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
     /* Form Actions */
     .form-actions {
         display: flex;
@@ -311,6 +289,42 @@
     
     .collapsible-content.active {
         display: block;
+    }
+    
+    /* Field visibility classes */
+    .field-hidden {
+        display: none !important;
+    }
+    
+    .milestone-note {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 20px;
+        color: #aaa;
+        font-size: 13px;
+    }
+    
+    .milestone-note i {
+        color: #8b5cf6;
+        margin-right: 8px;
+    }
+    
+    /* Daily challenge note */
+    .daily-note {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 20px;
+        color: #aaa;
+        font-size: 13px;
+    }
+    
+    .daily-note i {
+        color: #3b82f6;
+        margin-right: 8px;
     }
 </style>
 {% endblock %}
@@ -435,35 +449,59 @@
                 Journey Structure
             </h3>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="id_duration">Duration *</label>
-                    <input type="number" name="duration" id="id_duration" 
-                           value="{{ form.duration.value|default:'30' }}"
-                           min="1" max="365" required>
-                    <p class="form-hint">Number of days (1-365)</p>
+            {# Daily Challenge Fields #}
+            <div id="dailyFields">
+                <div class="daily-note">
+                    <i class="fas fa-info-circle"></i>
+                    Daily challenges follow a calendar. Each day unlocks as time passes. Perfect for 75 Hard, 30-day challenges, etc.
                 </div>
                 
-                <div class="form-group">
-                    <label for="id_start_date">Start Date</label>
-                    <input type="datetime-local" name="start_date" id="id_start_date" 
-                           value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
-                    <p class="form-hint">Leave empty to start immediately</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_duration">Duration (Days) *</label>
+                        <input type="number" name="duration" id="id_duration" 
+                               value="{{ form.duration.value|default:'30' }}"
+                               min="1" max="365" required>
+                        <p class="form-hint">Number of days (1-365)</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_start_date">Start Date</label>
+                        <input type="datetime-local" name="start_date" id="id_start_date" 
+                               value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
+                        <p class="form-hint">Leave empty to start immediately</p>
+                    </div>
                 </div>
             </div>
             
-            {# Milestones (shown only for milestone journeys) #}
-            <div id="milestoneSection" style="display: none;">
+            {# Milestone Journey Fields #}
+            <div id="milestoneFields" style="display: none;">
+                <div class="milestone-note">
+                    <i class="fas fa-info-circle"></i>
+                    Milestone journeys are flexible. You can post any milestone at any time - no calendar restrictions. Perfect for projects, portfolios, and NGO campaigns.
+                </div>
+                
                 <div class="form-group">
-                    <label>Milestones</label>
+                    <label for="id_milestone_count">Number of Milestones *</label>
+                    <input type="number" name="duration" id="id_milestone_count" 
+                           value="{{ form.duration.value|default:'5' }}"
+                           min="1" max="50" required>
+                    <p class="form-hint">How many milestones in this journey? (1-50)</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Milestone Names (Optional)</label>
                     <div class="milestone-input-container">
                         <input type="text" class="milestone-input" id="milestoneInput" 
-                               placeholder="Enter a milestone and press Enter...">
+                               placeholder="e.g., Site Survey, Ground Breaking, Completion...">
                         <div class="milestone-list" id="milestoneList"></div>
                     </div>
                     <input type="hidden" name="milestones_input" id="milestonesInput">
-                    <p class="form-hint">Add key milestones for your journey</p>
+                    <p class="form-hint">Add descriptive names for each milestone (press Enter to add)</p>
                 </div>
+                
+                {# Hidden start date - not needed for milestones #}
+                <input type="hidden" name="start_date" id="milestone_start_date" value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
             </div>
         </div>
         
@@ -489,25 +527,27 @@
                 <label for="id_allow_comments">Allow Comments</label>
             </div>
             
-            {# Auto Import Collapsible #}
-            <div class="collapsible">
-                <div class="collapsible-header" onclick="toggleCollapsible(this)">
-                    <span style="font-weight: 500;">Auto-Import Settings</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="collapsible-content">
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="auto_import_enabled" id="id_auto_import_enabled"
-                               {% if form.auto_import_enabled.value %}checked{% endif %}>
-                        <label for="id_auto_import_enabled">Enable Auto-Import</label>
+            {# Auto Import Settings - Only show for daily challenges #}
+            <div id="autoImportSection">
+                <div class="collapsible">
+                    <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <span style="font-weight: 500;">Auto-Import Settings</span>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="id_import_hashtag">Import Hashtag</label>
-                        <input type="text" name="import_hashtag" id="id_import_hashtag"
-                               value="{{ form.import_hashtag.value|default:'' }}"
-                               placeholder="#MyJourney">
-                        <p class="form-hint">We'll import posts with this hashtag</p>
+                    <div class="collapsible-content">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="auto_import_enabled" id="id_auto_import_enabled"
+                                   {% if form.auto_import_enabled.value %}checked{% endif %}>
+                            <label for="id_auto_import_enabled">Enable Auto-Import</label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="id_import_hashtag">Import Hashtag</label>
+                            <input type="text" name="import_hashtag" id="id_import_hashtag"
+                                   value="{{ form.import_hashtag.value|default:'' }}"
+                                   placeholder="#MyJourney">
+                            <p class="form-hint">We'll import posts with this hashtag (daily challenges only)</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -599,20 +639,51 @@
         document.getElementById('coverVideoName').textContent = fileName;
     });
     
-    // Journey type toggle
+    // Journey type toggle - Show/hide appropriate fields
     const journeyTypeSelect = document.getElementById('id_journey_type');
-    const milestoneSection = document.getElementById('milestoneSection');
+    const dailyFields = document.getElementById('dailyFields');
+    const milestoneFields = document.getElementById('milestoneFields');
+    const autoImportSection = document.getElementById('autoImportSection');
+    const durationInput = document.getElementById('id_duration');
+    const milestoneCountInput = document.getElementById('id_milestone_count');
     
-    function toggleMilestoneSection() {
+    function toggleJourneyTypeFields() {
         if (journeyTypeSelect.value === 'milestone') {
-            milestoneSection.style.display = 'block';
+            dailyFields.style.display = 'none';
+            milestoneFields.style.display = 'block';
+            autoImportSection.style.display = 'none';
+            
+            // Sync duration values
+            if (milestoneCountInput) {
+                durationInput.value = milestoneCountInput.value;
+            }
         } else {
-            milestoneSection.style.display = 'none';
+            dailyFields.style.display = 'block';
+            milestoneFields.style.display = 'none';
+            autoImportSection.style.display = 'block';
+            
+            // Sync duration values
+            if (durationInput) {
+                if (milestoneCountInput) {
+                    milestoneCountInput.value = durationInput.value;
+                }
+            }
         }
     }
     
-    journeyTypeSelect.addEventListener('change', toggleMilestoneSection);
-    toggleMilestoneSection();
+    // Sync duration between fields
+    if (durationInput && milestoneCountInput) {
+        durationInput.addEventListener('input', function() {
+            milestoneCountInput.value = this.value;
+        });
+        
+        milestoneCountInput.addEventListener('input', function() {
+            durationInput.value = this.value;
+        });
+    }
+    
+    journeyTypeSelect.addEventListener('change', toggleJourneyTypeFields);
+    toggleJourneyTypeFields();
     
     // Funding toggle
     const fundingCheckbox = document.getElementById('id_funding_enabled');
@@ -626,8 +697,10 @@
         }
     }
     
-    fundingCheckbox.addEventListener('change', toggleFundingFields);
-    toggleFundingFields();
+    if (fundingCheckbox) {
+        fundingCheckbox.addEventListener('change', toggleFundingFields);
+        toggleFundingFields();
+    }
     
     // Collapsible
     function toggleCollapsible(header) {
@@ -642,6 +715,8 @@
     let milestones = {{ form.milestones_input.value|default:'[]'|safe }};
     
     function renderMilestones() {
+        if (!milestoneList) return;
+        
         milestoneList.innerHTML = '';
         milestones.forEach((milestone, index) => {
             const item = document.createElement('div');
@@ -654,7 +729,9 @@
             `;
             milestoneList.appendChild(item);
         });
-        milestonesInput.value = JSON.stringify(milestones);
+        if (milestonesInput) {
+            milestonesInput.value = JSON.stringify(milestones);
+        }
     }
     
     function addMilestone(text) {
@@ -662,7 +739,9 @@
             milestones.push(text);
             renderMilestones();
         }
-        milestoneInput.value = '';
+        if (milestoneInput) {
+            milestoneInput.value = '';
+        }
     }
     
     function removeMilestone(index) {
@@ -670,15 +749,27 @@
         renderMilestones();
     }
     
-    milestoneInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addMilestone(this.value);
-        }
-    });
+    if (milestoneInput) {
+        milestoneInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addMilestone(this.value);
+            }
+        });
+    }
     
     // Initialize
     renderMilestones();
+    
+    // Set default start date for milestones (current time)
+    if (journeyTypeSelect.value === 'milestone') {
+        const now = new Date();
+        const formatted = now.toISOString().slice(0, 16);
+        const milestoneDateInput = document.getElementById('milestone_start_date');
+        if (milestoneDateInput && !milestoneDateInput.value) {
+            milestoneDateInput.value = formatted;
+        }
+    }
 </script>
 
 {% endblock %}

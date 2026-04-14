@@ -536,7 +536,6 @@ class JourneySettingsForm(forms.ModelForm):
 # ============================================================================
 # ACTIVITY FORMS
 # ============================================================================
-
 class ActivityForm(forms.ModelForm):
     """Post/Edit a day's activity"""
     
@@ -544,7 +543,7 @@ class ActivityForm(forms.ModelForm):
         max_length=500,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': "What happened today? Share your progress...",
+            'placeholder': "What happened? Share your progress...",
             'rows': 4
         })
     )
@@ -569,9 +568,20 @@ class ActivityForm(forms.ModelForm):
         widget=forms.HiddenInput()
     )
     
+    # NEW: Actual date field for milestone journeys
+    actual_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-input',
+            'type': 'date',
+            'placeholder': 'YYYY-MM-DD'
+        }),
+        help_text="When did this actually happen? (For portfolio/trust building)"
+    )
+    
     class Meta:
         model = Activity
-        fields = ['content', 'file', 'day_number_field']
+        fields = ['content', 'file', 'day_number_field', 'actual_date']
     
     def __init__(self, *args, **kwargs):
         self.journey = kwargs.pop('journey', None)
@@ -580,11 +590,24 @@ class ActivityForm(forms.ModelForm):
         
         if self.day_number:
             self.fields['day_number_field'].initial = self.day_number
+        
+        # Customize placeholder based on journey type
+        if self.journey:
+            if self.journey.journey_type == 'milestone':
+                self.fields['content'].widget.attrs['placeholder'] = f"What did you achieve in Milestone {self.day_number}?"
+                
+                # Make actual_date more prominent for milestones
+                self.fields['actual_date'].help_text = "Add the real date this milestone was completed"
+            else:
+                self.fields['content'].widget.attrs['placeholder'] = f"What happened on Day {self.day_number}? Share your progress..."
     
     def clean_content(self):
         content = self.cleaned_data.get('content', '')
         if not content.strip():
-            raise ValidationError('Please write something about this day.')
+            if self.journey and self.journey.journey_type == 'milestone':
+                raise ValidationError('Please describe what you achieved in this milestone.')
+            else:
+                raise ValidationError('Please write something about this day.')
         return content
     
     def clean(self):
@@ -595,8 +618,10 @@ class ActivityForm(forms.ModelForm):
             
             if day_number:
                 # Check if day is locked (future day)
+                # For milestone journeys, is_day_locked returns False so this passes
                 if self.journey.is_day_locked(day_number):
-                    raise ValidationError(f"Day {day_number} is not available yet.")
+                    if self.journey.journey_type == 'daily':
+                        raise ValidationError(f"Day {day_number} is not available yet.")
                 
                 # Check if activity already exists for this day
                 existing = Activity.objects.filter(
@@ -607,7 +632,10 @@ class ActivityForm(forms.ModelForm):
                     existing = existing.exclude(pk=self.instance.pk)
                 
                 if existing.exists():
-                    raise ValidationError(f"Day {day_number} already has content posted.")
+                    if self.journey.journey_type == 'milestone':
+                        raise ValidationError(f"Milestone {day_number} already has content posted. You can edit it instead.")
+                    else:
+                        raise ValidationError(f"Day {day_number} already has content posted.")
         
         return cleaned_data
     
@@ -624,7 +652,6 @@ class ActivityForm(forms.ModelForm):
             activity.save()
         
         return activity
-
 
 class QuickImportForm(forms.Form):
     """Quick import from social media via paste link"""

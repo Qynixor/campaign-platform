@@ -86,6 +86,10 @@
         background: #1a1a1a;
     }
     
+    .journey-item.milestone-item:hover {
+        border-color: #8b5cf6;
+    }
+    
     .journey-cover {
         width: 100px;
         height: 100px;
@@ -96,6 +100,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
     }
     
     .journey-cover img {
@@ -107,6 +112,29 @@
     .journey-cover i {
         font-size: 40px;
         color: #444;
+    }
+    
+    .journey-type-indicator {
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+    }
+    
+    .journey-type-indicator.daily {
+        background: #3b82f6;
+        color: #fff;
+    }
+    
+    .journey-type-indicator.milestone {
+        background: #8b5cf6;
+        color: #fff;
     }
     
     .journey-info {
@@ -122,6 +150,26 @@
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
+    }
+    
+    .journey-type-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .type-daily {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .type-milestone {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+        border: 1px solid rgba(139, 92, 246, 0.3);
     }
     
     .journey-status {
@@ -187,6 +235,10 @@
         height: 100%;
         background: #3b82f6;
         border-radius: 3px;
+    }
+    
+    .progress-bar.milestone .progress-fill {
+        background: #8b5cf6;
     }
     
     .journey-stats {
@@ -361,7 +413,8 @@
     {% if journeys %}
     <div class="journey-list">
         {% for journey in journeys %}
-        <div class="journey-item" data-status="{% if not journey.is_active %}draft{% elif journey.get_current_day >= journey.duration %}completed{% else %}active{% endif %}" 
+        <div class="journey-item {% if journey.journey_type == 'milestone' %}milestone-item{% endif %}" 
+             data-status="{% if not journey.is_active %}draft{% elif journey.get_current_day >= journey.duration %}completed{% else %}active{% endif %}" 
              onclick="window.location.href='{% url 'journey_detail' slug=journey.slug %}'">
             
             {# Cover #}
@@ -371,12 +424,23 @@
                 {% else %}
                     <i class="fas fa-flag-checkered"></i>
                 {% endif %}
+                <span class="journey-type-indicator {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
+                    <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
+                </span>
             </div>
             
             {# Info #}
             <div class="journey-info">
                 <div class="journey-name">
                     {{ journey.title }}
+                    
+                    {# Journey Type Badge #}
+                    <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}type-milestone{% else %}type-daily{% endif %}">
+                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
+                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
+                    </span>
+                    
+                    {# Status Badge #}
                     {% if not journey.is_active %}
                         <span class="journey-status status-draft"><i class="fas fa-pen"></i> Draft</span>
                     {% elif journey.get_current_day >= journey.duration %}
@@ -384,6 +448,7 @@
                     {% else %}
                         <span class="journey-status status-active"><i class="fas fa-play-circle"></i> Active</span>
                     {% endif %}
+                    
                     {% if not journey.is_public %}
                         <span class="journey-status status-draft"><i class="fas fa-lock"></i> Private</span>
                     {% endif %}
@@ -392,15 +457,24 @@
                 <div class="journey-meta">
                     <span><i class="fas fa-tag"></i> {{ journey.get_category_display }}</span>
                     <span><i class="fas fa-calendar"></i> Started {{ journey.start_date|date:"M d, Y" }}</span>
-                    <span><i class="fas fa-clock"></i> {{ journey.duration }} days</span>
+                    <span>
+                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}clock{% endif %}"></i> 
+                        {{ journey.duration }} {% if journey.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                    </span>
                 </div>
                 
                 <div class="journey-progress">
                     <div class="progress-header">
-                        <span>Day {{ journey.get_current_day }} of {{ journey.duration }}</span>
+                        <span>
+                            {% if journey.journey_type == 'milestone' %}
+                                {{ journey.get_current_day }}/{{ journey.duration }} Milestones
+                            {% else %}
+                                Day {{ journey.get_current_day }} of {{ journey.duration }}
+                            {% endif %}
+                        </span>
                         <span>{{ journey.get_progress_percentage }}% Complete</span>
                     </div>
-                    <div class="progress-bar">
+                    <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
                         <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
                     </div>
                 </div>

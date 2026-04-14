@@ -15,6 +15,16 @@
             <i class="fas fa-hand-holding-heart"></i>
         </span>
         {% endif %}
+        
+        {% if journey.journey_type == 'milestone' %}
+        <span class="journey-type-badge milestone">
+            <i class="fas fa-flag"></i> Milestone
+        </span>
+        {% else %}
+        <span class="journey-type-badge daily">
+            <i class="fas fa-calendar-day"></i> Daily
+        </span>
+        {% endif %}
     </div>
     
     <div class="journey-info">
@@ -33,10 +43,16 @@
         
         <div class="journey-progress">
             <div class="progress-header">
-                <span>Day {{ journey.get_current_day }} of {{ journey.duration }}</span>
+                <span>
+                    {% if journey.journey_type == 'milestone' %}
+                        {{ journey.get_current_day }}/{{ journey.duration }} Milestones
+                    {% else %}
+                        Day {{ journey.get_current_day }} of {{ journey.duration }}
+                    {% endif %}
+                </span>
                 <span>{{ journey.get_progress_percentage }}%</span>
             </div>
-            <div class="progress-bar">
+            <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
                 <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
             </div>
         </div>
@@ -48,3 +64,35 @@
         </div>
     </div>
 </a>
+
+<style>
+    .journey-type-badge {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 500;
+        backdrop-filter: blur(5px);
+    }
+    
+    .journey-type-badge.daily {
+        background: rgba(59, 130, 246, 0.8);
+        color: #fff;
+    }
+    
+    .journey-type-badge.milestone {
+        background: rgba(139, 92, 246, 0.8);
+        color: #fff;
+    }
+    
+    .journey-type-badge i {
+        margin-right: 4px;
+        font-size: 9px;
+    }
+    
+    .progress-bar.milestone .progress-fill {
+        background: #8b5cf6;
+    }
+</style>

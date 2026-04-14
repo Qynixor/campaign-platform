@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
+
 {% block title %}{{ journey.title }} | Rallynex{% endblock %}
 
 {% block extra_css %}
@@ -13,7 +14,6 @@
         position: relative;
     }
     
-    /* Hero Section */
     .journey-hero {
         position: relative;
         height: 320px;
@@ -209,7 +209,6 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
-    /* Progress Bar */
     .progress-section {
         padding: 20px;
         background: #0a0a0a;
@@ -260,7 +259,6 @@
         border: 2px solid #0a0a0a;
     }
     
-    /* Stats Cards */
     .stats-cards {
         display: flex;
         gap: 12px;
@@ -300,7 +298,6 @@
         color: #666;
     }
     
-    /* Cinematic Strip */
     .cinematic-strip {
         padding: 20px 0;
     }
@@ -441,7 +438,6 @@
         font-size: 10px;
     }
     
-    /* Current Day Hero */
     .current-day-hero {
         margin: 10px 20px 20px;
         border-radius: 20px;
@@ -477,6 +473,11 @@
         font-size: 11px;
         font-weight: 600;
         margin-bottom: 12px;
+    }
+    
+    .hero-badge.milestone-badge {
+        background: #8b5cf6;
+        color: #fff;
     }
     
     .hero-day-title {
@@ -538,7 +539,6 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
-    /* Action Buttons */
     .action-buttons {
         display: flex;
         gap: 12px;
@@ -576,7 +576,6 @@
         border-color: #3b82f6;
     }
     
-    /* Comments Section */
     .comments-section {
         padding: 20px;
         border-top: 1px solid #1a1a1a;
@@ -651,7 +650,6 @@
         margin-right: 4px;
     }
     
-    /* Modal */
     .modal {
         display: none;
         position: fixed;
@@ -793,6 +791,16 @@
         pointer-events: auto;
         border: 1px solid rgba(255,255,255,0.1);
     }
+    
+    .milestone-date {
+        color: #888;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    
+    .milestone-date i {
+        margin-right: 4px;
+    }
 </style>
 {% endblock %}
 
@@ -800,7 +808,6 @@
 
 <div class="journey-container">
     
-    {# Hero with Path Visualization #}
     <div class="journey-hero">
         <div class="back-btn" onclick="history.back()">
             <i class="fas fa-arrow-left"></i>
@@ -824,45 +831,58 @@
                       stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.3"/>
             </svg>
             
-            {# Milestone Nodes #}
-            <div class="milestone-node completed" style="left: 14%; top: 48%;" onclick="openDay(1)">
-                <i class="fas fa-check"></i>
-                <span class="node-label">Day 1</span>
-            </div>
-            
-            {% if journey.duration >= 5 %}
-            <div class="milestone-node completed" style="left: 30%; top: 20%;" onclick="openDay(5)">
-                <i class="fas fa-check"></i>
-                <span class="node-label">Day 5</span>
-            </div>
-            {% endif %}
-            
-            {% if journey.duration >= 10 %}
-            <div class="milestone-node {% if current_day >= 10 %}completed{% else %}locked{% endif %}" 
-                 style="left: 48%; top: 52%;" onclick="openDay(10)">
-                <i class="fas {% if current_day >= 10 %}fa-check{% else %}fa-lock{% endif %}"></i>
-                <span class="node-label">Day 10</span>
-            </div>
-            {% endif %}
-            
-            <div class="milestone-node current" style="left: 62%; top: 38%;" onclick="openDay({{ current_day }})">
-                <i class="fas fa-play"></i>
-                <span class="node-label">Day {{ current_day }}</span>
-            </div>
-            
-            {% if journey.duration >= 20 %}
-            <div class="milestone-node {% if current_day >= 20 %}completed{% else %}locked{% endif %}" 
-                 style="left: 80%; top: 48%;" onclick="openDay(20)">
-                <i class="fas {% if current_day >= 20 %}fa-check{% else %}fa-lock{% endif %}"></i>
-                <span class="node-label">Day 20</span>
-            </div>
+            {% if journey.journey_type == 'milestone' %}
+                {% for day_num in total_days_range %}
+                    {% with activity=activities_by_day|get_item:day_num %}
+                    <div class="milestone-node {% if activity %}completed{% else %}current{% endif %}" 
+                         style="left: {% widthratio day_num journey.duration 80|add:10 %}%; top: 48%;" 
+                         onclick="openDay({{ day_num }})">
+                        <i class="fas {% if activity %}fa-check{% else %}fa-flag-checkered{% endif %}"></i>
+                        <span class="node-label">M{{ day_num }}</span>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            {% else %}
+                <div class="milestone-node completed" style="left: 14%; top: 48%;" onclick="openDay(1)">
+                    <i class="fas fa-check"></i>
+                    <span class="node-label">Day 1</span>
+                </div>
+                
+                {% if journey.duration >= 5 %}
+                <div class="milestone-node {% if current_day >= 5 %}completed{% else %}locked{% endif %}" 
+                     style="left: 30%; top: 20%;" onclick="openDay(5)">
+                    <i class="fas {% if current_day >= 5 %}fa-check{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 5</span>
+                </div>
+                {% endif %}
+                
+                {% if journey.duration >= 10 %}
+                <div class="milestone-node {% if current_day >= 10 %}completed{% else %}locked{% endif %}" 
+                     style="left: 48%; top: 52%;" onclick="openDay(10)">
+                    <i class="fas {% if current_day >= 10 %}fa-check{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 10</span>
+                </div>
+                {% endif %}
+                
+                <div class="milestone-node current" style="left: 62%; top: 38%;" onclick="openDay({{ current_day }})">
+                    <i class="fas fa-play"></i>
+                    <span class="node-label">Day {{ current_day }}</span>
+                </div>
+                
+                {% if journey.duration >= 20 %}
+                <div class="milestone-node {% if current_day >= 20 %}completed{% else %}locked{% endif %}" 
+                     style="left: 80%; top: 48%;" onclick="openDay(20)">
+                    <i class="fas {% if current_day >= 20 %}fa-check{% else %}fa-lock{% endif %}"></i>
+                    <span class="node-label">Day 20</span>
+                </div>
+                {% endif %}
             {% endif %}
         </div>
         
         <div class="hero-stats">
             <div class="hero-stat">
                 <div class="value">{{ current_day }}</div>
-                <div class="label">Days Done</div>
+                <div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days Done{% endif %}</div>
             </div>
             <div class="hero-stat">
                 <div class="value">{{ journey.duration }}</div>
@@ -875,7 +895,6 @@
         </div>
     </div>
     
-    {# Progress Bar #}
     <div class="progress-section">
         <div class="progress-header">
             <span>Journey Progress</span>
@@ -886,7 +905,6 @@
         </div>
     </div>
     
-    {# Stats Cards #}
     <div class="stats-cards">
         <div class="stat-card">
             <i class="fas fa-users"></i>
@@ -905,47 +923,57 @@
         </div>
     </div>
     
-    {# Cinematic Day Strip #}
     <div class="cinematic-strip">
         <div class="strip-header">
             <i class="fas fa-film"></i>
-            <h3>All Days</h3>
+            <h3>{% if journey.journey_type == 'milestone' %}All Milestones{% else %}All Days{% endif %}</h3>
             <span>Swipe →</span>
         </div>
         <div class="day-strip">
             {% for day_num in total_days_range %}
                 {% with activity=activities_by_day|get_item:day_num %}
-                <div class="strip-day {% if day_num < current_day %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %}" 
-                     onclick="openDay({{ day_num }})">
+                
+                {% if journey.journey_type == 'milestone' %}
+                    <div class="strip-day {% if activity %}completed{% else %}available{% endif %}" 
+                         onclick="openDay({{ day_num }})">
+                {% else %}
+                    <div class="strip-day {% if day_num < current_day %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %}" 
+                         onclick="{% if day_num <= current_day %}openDay({{ day_num }}){% endif %}">
+                {% endif %}
+                
                     <div class="strip-thumbnail">
                         {% if activity and activity.file %}
                             {% if activity.is_video %}
                                 <video src="{{ activity.file.url }}" muted loop playsinline></video>
                             {% else %}
-                                <img src="{{ activity.file.url }}" alt="Day {{ day_num }}">
+                                <img src="{{ activity.file.url }}" alt="">
                             {% endif %}
                         {% else %}
-                            <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;">
-                                <i class="fas fa-image" style="color:#444;font-size:20px;"></i>
+                            <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                                <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}image{% endif %}" style="color:#444;font-size:20px;"></i>
                             </div>
                         {% endif %}
                         
-                        {% if day_num < current_day %}
+                        {% if activity %}
                         <div class="check-badge"><i class="fas fa-check"></i></div>
                         {% endif %}
                         
                         {% if activity and activity.file %}
                         <div class="play-icon-strip"><i class="fas fa-play"></i></div>
-                        {% elif day_num > current_day %}
+                        {% elif journey.journey_type == 'daily' and day_num > current_day %}
                         <div class="lock-icon-strip"><i class="fas fa-lock"></i></div>
                         {% endif %}
                         
                         <div class="strip-overlay">
-                            <span class="strip-day-number">Day {{ day_num }}</span>
+                            <span class="strip-day-number">
+                                {% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}
+                            </span>
                             <span class="strip-day-status">
-                                {% if day_num < current_day %}Completed
-                                {% elif day_num == current_day %}📍 Current
-                                {% else %}Coming Soon{% endif %}
+                                {% if journey.journey_type == 'milestone' %}
+                                    {% if activity %}Done{% else %}Open{% endif %}
+                                {% else %}
+                                    {% if day_num < current_day %}Done{% elif day_num == current_day %}📍 Now{% else %}Locked{% endif %}
+                                {% endif %}
                             </span>
                         </div>
                     </div>
@@ -955,13 +983,12 @@
         </div>
     </div>
     
-    {# Current Day Hero #}
     {% if current_activity %}
     <div class="current-day-hero" onclick="openDay({{ current_day }})">
         {% if current_activity.is_video %}
             <video src="{{ current_activity.file.url }}" muted loop playsinline autoplay></video>
         {% else %}
-            <img src="{{ current_activity.file.url }}" alt="Day {{ current_day }}">
+            <img src="{{ current_activity.file.url }}" alt="">
         {% endif %}
         
         <div class="hero-play-btn">
@@ -969,13 +996,24 @@
         </div>
         
         <div class="hero-content">
-            <span class="hero-badge">DAY {{ current_day }} · CURRENT</span>
+            <span class="hero-badge {% if journey.journey_type == 'milestone' %}milestone-badge{% endif %}">
+                {% if journey.journey_type == 'milestone' %}
+                    MILESTONE {{ current_day }}
+                {% else %}
+                    DAY {{ current_day }} · CURRENT
+                {% endif %}
+            </span>
             <h3 class="hero-day-title">
                 {{ current_activity.content|truncatechars:40 }}
             </h3>
             <p class="hero-day-desc">
                 {{ current_activity.content|truncatechars:100 }}
             </p>
+            {% if journey.journey_type == 'milestone' and current_activity.actual_date %}
+            <p class="milestone-date">
+                <i class="fas fa-calendar-check"></i> {{ current_activity.actual_date|date:"F j, Y" }}
+            </p>
+            {% endif %}
             <div class="hero-actions">
                 <span class="hero-action" onclick="event.stopPropagation(); toggleLove()">
                     <i class="fas fa-heart" id="heroLoveIcon"></i>
@@ -995,8 +1033,8 @@
     {% else %}
     <div class="current-day-hero" style="display: flex; align-items: center; justify-content: center; background: #111;">
         <div style="text-align: center; color: #888;">
-            <i class="fas fa-calendar-plus" style="font-size: 48px; margin-bottom: 16px;"></i>
-            <p>No content yet for Day {{ current_day }}</p>
+            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-plus{% endif %}" style="font-size: 48px; margin-bottom: 16px;"></i>
+            <p>No content yet</p>
             {% if user == journey.creator.user %}
             <a href="{% url 'post_activity' slug=journey.slug %}" class="btn btn-primary" style="margin-top: 16px;">
                 Post Update
@@ -1006,7 +1044,6 @@
     </div>
     {% endif %}
     
-    {# Action Buttons #}
     <div class="action-buttons">
         <button class="action-btn action-btn-outline {% if is_saved %}saved{% endif %}" id="saveBtn" onclick="toggleSave()">
             <i class="fas fa-bookmark"></i>
@@ -1026,7 +1063,6 @@
         {% endif %}
     </div>
     
-    {# Comments Section #}
     <div class="comments-section" id="comments">
         <div class="comments-header">
             <h4>Comments ({{ recent_comments|length }})</h4>
@@ -1042,20 +1078,15 @@
                         <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
                     </div>
                     <p class="comment-text">{{ comment.content }}</p>
-                    <div class="comment-actions">
-                        <span class="comment-action"><i class="far fa-heart"></i> 0</span>
-                        <span class="comment-action"><i class="far fa-comment"></i> Reply</span>
-                    </div>
                 </div>
             </div>
             {% empty %}
-            <p style="color: #888; text-align: center; padding: 20px;">No comments yet. Be the first!</p>
+            <p style="color: #888; text-align: center; padding: 20px;">No comments yet.</p>
             {% endfor %}
         </div>
     </div>
 </div>
 
-{# Video/Image Modal #}
 <div class="modal" id="mediaModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -1100,28 +1131,28 @@
 {% block extra_js %}
 <script>
     const journeySlug = '{{ journey.slug }}';
+    const journeyType = '{{ journey.journey_type }}';
     const currentDay = {{ current_day }};
     const totalDays = {{ journey.duration }};
     const activities = {{ activities_json|safe }};
     let currentModalDay = currentDay;
     let isFollowing = {{ is_following|yesno:"true,false" }};
     let isSaved = {{ is_saved|yesno:"true,false" }};
-    let isLoved = false;
     
     function openDay(day) {
-        if (day > currentDay) {
+        if (journeyType === 'daily' && day > currentDay) {
             alert('Day ' + day + ' unlocks soon!');
             return;
         }
         
         const activity = activities[day];
         if (!activity) {
-            alert('No content posted for Day ' + day);
+            alert('No content posted for ' + (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day);
             return;
         }
         
         currentModalDay = day;
-        document.getElementById('modalDay').textContent = 'Day ' + day;
+        document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
         document.getElementById('modalCaption').textContent = activity.content;
         document.getElementById('modalLoveCount').textContent = activity.loveCount || 0;
         document.getElementById('modalCommentCount').textContent = activity.commentCount || 0;
@@ -1151,7 +1182,10 @@
     }
     
     function nextDay() {
-        if (currentModalDay < totalDays && currentModalDay < currentDay) {
+        if (journeyType === 'daily' && currentModalDay >= currentDay) {
+            return;
+        }
+        if (currentModalDay < totalDays) {
             openDay(currentModalDay + 1);
         }
     }
@@ -1208,7 +1242,6 @@
         })
         .then(response => response.json())
         .then(data => {
-            isLoved = data.loved;
             document.getElementById('modalLoveCount').textContent = data.love_count;
         });
     }
@@ -1236,7 +1269,6 @@
         alert('Menu options: Report, Share, etc.');
     }
     
-    // Video observer for autoplay
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const video = entry.target.querySelector('video');
@@ -1255,7 +1287,6 @@
     const heroVideo = document.querySelector('.current-day-hero video');
     if (heroVideo) observer.observe(document.querySelector('.current-day-hero'));
     
-    // Close modal on background click
     document.getElementById('mediaModal').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
