@@ -663,68 +663,58 @@ def journey_content_view(request, slug):
     }
     
     return render(request, 'dashboard/content_manager.html', context)
-
 @login_required
 def post_activity_view(request, slug, day_number=None):
-    """Post an activity for a specific day/milestone"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
     
     if day_number is None:
         day_number = journey.get_current_day()
-        if journey.journey_type == 'milestone':
-            # For milestones, suggest the next available milestone number
-            existing_count = journey.activities.count()
-            day_number = existing_count + 1
     
-    # Check if day is locked (only for daily challenges)
-    if journey.is_day_locked(day_number):
-        messages.error(request, f'This day/milestone is not available yet.')
-        return redirect('journey_detail', slug=journey.slug)
-    
-    # Get existing activity if any
     existing_activity = journey.get_activity_for_day(day_number)
     
     if request.method == 'POST':
-        form = ActivityForm(
-            request.POST, 
-            request.FILES, 
-            instance=existing_activity,
-            journey=journey,
-            day_number=day_number
-        )
-        if form.is_valid():
-            activity = form.save(commit=False)
-            activity.journey = journey
-            activity.day_number_field = day_number  # ← ENSURE THIS IS SET
-            activity.save()
-            
-            if journey.journey_type == 'milestone':
-                messages.success(request, f'Milestone {day_number} posted successfully!')
+        content = request.POST.get('content')
+        file_url = request.POST.get('file_url')
+        is_video = request.POST.get('is_video') == 'true'
+        actual_date = request.POST.get('actual_date')
+        day = request.POST.get('day_number_field') or day_number  # ← FALLBACK
+        clear_existing = request.POST.get('clear_existing') == 'true'
+        
+        if content and file_url:
+            if existing_activity and not clear_existing:
+                # Update existing
+                existing_activity.content = content
+                existing_activity.file = file_url
+                existing_activity.is_video = is_video
+                if actual_date:
+                    existing_activity.actual_date = actual_date
+                existing_activity.save()
             else:
-                messages.success(request, f'Day {day_number} posted successfully!')
-            return redirect('journey_detail', slug=journey.slug)
+                # Create new - ENSURE day_number_field is set
+                Activity.objects.create(
+                    journey=journey,
+                    content=content,
+                    day_number_field=day or day_number,  # ← EXPLICITLY SET
+                    file=file_url,
+                    is_video=is_video,
+                    actual_date=actual_date if actual_date else None,
+                )
+            
+            messages.success(request, 'Activity posted!')
+            return redirect('journey_detail', slug=slug)
         else:
-            print("Form errors:", form.errors)  # Debug
-    else:
-        form = ActivityForm(
-            instance=existing_activity,
-            journey=journey,
-            day_number=day_number,
-            initial={
-                'content': existing_activity.content if existing_activity else '',
-                'actual_date': existing_activity.actual_date if existing_activity else None,
-            }
-        )
+            messages.error(request, 'Please provide content and media.')
     
     context = {
-        'form': form,
         'journey': journey,
         'day_number': day_number,
         'existing_activity': existing_activity,
+        'form': ActivityForm(initial={'day_number_field': day_number}),  # ← ADD FORM
+        'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/post_activity.html', context)
+
 @login_required
 def delete_activity_view(request, activity_id):
     """Delete an activity"""

@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # =====================================================
 SECRET_KEY = env('SECRET_KEY', default='unsafe-secret-key-for-development-only')
-DEBUG = env.bool('DEBUG', default=True)  # Set to True for development
+DEBUG = env.bool('DEBUG', default=True)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     'localhost',
@@ -93,20 +93,31 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.cloudinary_config',  # Add this for Cloudinary config in templates
             ],
         },
     },
 ]
 
 # =====================================================
-# DATABASE
+# DATABASE - FIXED FOR NEONDB
 # =====================================================
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
+        conn_max_age=0,  # Disable persistent connections (fixes NeonDB SSL issues)
+        conn_health_checks=True,  # Check connection before using
         ssl_require=True,
     )
+}
+
+# Add connection options for stability
+DATABASES['default']['OPTIONS'] = {
+    'connect_timeout': 10,
+    'keepalives': 1,
+    'keepalives_idle': 30,
+    'keepalives_interval': 10,
+    'keepalives_count': 5,
 }
 
 # =====================================================
@@ -123,27 +134,16 @@ CSRF_TRUSTED_ORIGINS = [
 # AUTH
 # =====================================================
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-)
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 SITE_ID = 1
-
-SITE_URL = 'http://localhost:8000'  # Development
+SITE_URL = 'http://localhost:8000'
 SITE_DOMAIN = 'localhost'
 SITE_NAME = "RallyNex"
 
@@ -151,11 +151,9 @@ SITE_NAME = "RallyNex"
 # LOGIN/LOGOUT
 # =====================================================
 LOGIN_URL = 'login'
-
 LOGOUT_REDIRECT_URL = 'landing'
-
-
 LOGIN_REDIRECT_URL = '/onboarding/'
+
 # =====================================================
 # LOCALIZATION
 # =====================================================
@@ -174,7 +172,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
 
 # =====================================================
-# CLOUDINARY
+# CLOUDINARY - PRODUCTION READY
 # =====================================================
 CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")

@@ -36,6 +36,7 @@
         font-size: 20px;
         transition: background 0.2s;
         flex-shrink: 0;
+        text-decoration: none;
     }
     
     .back-btn:hover {
@@ -131,7 +132,6 @@
         justify-content: space-between;
     }
     
-    /* Date Field Special Styling for Milestones */
     .date-field-highlight {
         background: rgba(139, 92, 246, 0.05);
         border-color: rgba(139, 92, 246, 0.3) !important;
@@ -141,7 +141,7 @@
         border-color: #8b5cf6 !important;
     }
     
-    /* File Upload */
+    /* File Upload - DIRECT TO CLOUDINARY */
     .file-upload-area {
         border: 2px dashed #333;
         border-radius: 16px;
@@ -173,8 +173,35 @@
         color: #666;
     }
     
-    .file-upload-area input {
+    /* Progress Bar */
+    .upload-progress {
+        margin-top: 16px;
         display: none;
+    }
+    
+    .upload-progress.active {
+        display: block;
+    }
+    
+    .progress-track {
+        height: 6px;
+        background: #1a1a1a;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: #3b82f6;
+        width: 0%;
+        transition: width 0.3s;
+    }
+    
+    .progress-text {
+        text-align: center;
+        margin-top: 8px;
+        color: #888;
+        font-size: 13px;
     }
     
     /* Preview */
@@ -184,6 +211,11 @@
         border-radius: 12px;
         overflow: hidden;
         background: #0a0a0a;
+        display: none;
+    }
+    
+    .media-preview.active {
+        display: block;
     }
     
     .media-preview img,
@@ -238,6 +270,20 @@
     }
     
     /* Error */
+    .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 20px;
+        color: #ef4444;
+        display: none;
+    }
+    
+    .error-message.active {
+        display: block;
+    }
+    
     .errorlist {
         list-style: none;
         padding: 12px 16px;
@@ -270,6 +316,27 @@
         background: transparent;
         color: #fff;
         border: 1px solid #333;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background: #fff;
+        color: #0a0a0a;
+        border: none;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     /* Source Info */
@@ -356,6 +423,11 @@
     </div>
     {% endif %}
     
+    {# Error Message #}
+    <div class="error-message" id="errorMessage">
+        <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
+    </div>
+    
     {# Form Errors #}
     {% if form.errors %}
     <ul class="errorlist">
@@ -367,10 +439,16 @@
     </ul>
     {% endif %}
     
-    {# Post Form #}
-    <form method="post" enctype="multipart/form-data" class="post-card">
+    {# Post Form - DIRECT TO CLOUDINARY #}
+    <form method="post" class="post-card" id="postForm">
         {% csrf_token %}
-        {{ form.day_number_field }}
+        
+        {# CRITICAL: Day number field with explicit value #}
+        <input type="hidden" name="day_number_field" value="{{ day_number }}">
+        
+        {# Hidden fields for Cloudinary upload #}
+        <input type="hidden" name="file_url" id="fileUrl">
+        <input type="hidden" name="is_video" id="isVideo">
         
         <div class="form-group">
             <label for="id_content">
@@ -387,12 +465,9 @@
                 <span>Be authentic - your followers want the real journey</span>
                 <span id="charCount">0/500</span>
             </div>
-            {% if form.content.errors %}
-                <p class="field-error">{{ form.content.errors.0 }}</p>
-            {% endif %}
         </div>
         
-        {# NEW: Actual Date Field for Milestone Journeys #}
+        {# Actual Date Field for Milestone Journeys #}
         {% if journey.journey_type == 'milestone' %}
         <div class="form-group">
             <label for="id_actual_date">
@@ -413,17 +488,15 @@
                 <span>Currently set to: <strong>{{ existing_activity.actual_date|date:"F j, Y" }}</strong></span>
             </div>
             {% endif %}
-            {% if form.actual_date.errors %}
-                <p class="field-error">{{ form.actual_date.errors.0 }}</p>
-            {% endif %}
         </div>
         {% endif %}
         
+        {# Media Upload - DIRECT TO CLOUDINARY #}
         <div class="form-group">
-            <label>Media (Optional)</label>
+            <label>Media (Required)</label>
             
             {% if existing_activity and existing_activity.file %}
-            <div class="media-preview" id="existingPreview">
+            <div class="media-preview active" id="existingPreview">
                 {% if existing_activity.is_video %}
                     <video src="{{ existing_activity.file.url }}" controls></video>
                 {% else %}
@@ -436,33 +509,35 @@
             <input type="hidden" name="clear_existing" id="clearExisting" value="false">
             {% endif %}
             
-            <div class="file-upload-area" onclick="document.getElementById('id_file').click()" id="uploadArea" 
+            <div class="file-upload-area" id="uploadArea" 
                  style="{% if existing_activity and existing_activity.file %}display: none;{% endif %}">
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p>Click to upload a photo or video</p>
-                <p class="small">Supports images and videos up to 100MB</p>
-                <input type="file" name="file" id="id_file" accept="image/*,video/*">
+                <p class="small">Uploads directly • Max 100MB • Progress bar included</p>
             </div>
             
-            <div class="media-preview" id="newPreview" style="display: none;">
+            <div class="upload-progress" id="uploadProgress">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Uploading... 0%</div>
+            </div>
+            
+            <div class="media-preview" id="newPreview">
                 <img id="previewImage" src="" alt="Preview" style="display: none;">
                 <video id="previewVideo" controls style="display: none;"></video>
                 <button type="button" class="remove-media" onclick="clearNewMedia()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            {% if form.file.errors %}
-                <p class="field-error">{{ form.file.errors.0 }}</p>
-            {% endif %}
         </div>
         
         {# Source Info (if imported) #}
-        {% if existing_activity and existing_activity.imported_from %}
+        {% if existing_activity and existing_activity.source_url %}
         <div class="source-info">
-            <i class="fab fa-{{ existing_activity.imported_from.platform }}"></i>
+            <i class="fas fa-link"></i>
             <p>
-                Imported from {{ existing_activity.imported_from.get_platform_display }}
+                Source: 
                 <a href="{{ existing_activity.source_url }}" target="_blank">View Original <i class="fas fa-external-link-alt"></i></a>
             </p>
         </div>
@@ -472,7 +547,7 @@
             <a href="{% url 'journey_content' slug=journey.slug %}" class="btn btn-secondary">
                 Cancel
             </a>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary" id="submitBtn" {% if not existing_activity %}disabled{% endif %}>
                 <i class="fas fa-{% if existing_activity %}save{% else %}paper-plane{% endif %}"></i>
                 {% if existing_activity %}Update{% else %}Post{% endif %} 
                 {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
@@ -504,7 +579,11 @@
     
 </div>
 
+{# Cloudinary Upload Widget #}
+<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 <script>
+    const cloudName = '{{ CLOUDINARY_CLOUD_NAME }}';
+    
     // Character counter
     const textarea = document.getElementById('id_content');
     const charCount = document.getElementById('charCount');
@@ -512,64 +591,126 @@
     function updateCharCount() {
         const count = textarea.value.length;
         charCount.textContent = count + '/500';
-        if (count > 450) {
-            charCount.style.color = '#f59e0b';
-        } else {
-            charCount.style.color = '#666';
-        }
+        charCount.style.color = count > 450 ? '#f59e0b' : '#666';
     }
     
     textarea.addEventListener('input', updateCharCount);
     updateCharCount();
     
-    // File upload preview
-    const fileInput = document.getElementById('id_file');
-    const uploadArea = document.getElementById('uploadArea');
-    const newPreview = document.getElementById('newPreview');
-    const previewImage = document.getElementById('previewImage');
-    const previewVideo = document.getElementById('previewVideo');
-    
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Cloudinary Upload Widget
+    const widget = cloudinary.createUploadWidget({
+        cloudName: cloudName,
+        uploadPreset: 'rallynex_upload',
+        sources: ['local', 'camera', 'url'],
+        maxFileSize: 100000000,
+        clientAllowedFormats: ['image', 'video'],
+        showUploadMoreButton: false,
+        styles: {
+            palette: {
+                window: "#0a0a0a",
+                windowBorder: "#3b82f6",
+                tabIcon: "#fff",
+                menuIcons: "#aaa",
+                textDark: "#fff",
+                textLight: "#888",
+                link: "#3b82f6",
+                action: "#3b82f6",
+                inProgress: "#3b82f6",
+                complete: "#22c55e",
+                error: "#ef4444",
+                sourceBg: "#111"
+            }
+        }
+    }, (error, result) => {
+        if (error) {
+            showError('Upload failed: ' + error);
+            return;
+        }
         
-        uploadArea.style.display = 'none';
-        newPreview.style.display = 'block';
+        if (result && result.event === "success") {
+            // Upload complete
+            document.getElementById('fileUrl').value = result.info.secure_url;
+            document.getElementById('isVideo').value = result.info.resource_type === 'video';
+            
+            // Hide progress
+            document.getElementById('uploadProgress').classList.remove('active');
+            
+            // Show preview
+            const previewArea = document.getElementById('newPreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewVideo = document.getElementById('previewVideo');
+            
+            if (result.info.resource_type === 'video') {
+                previewVideo.src = result.info.secure_url;
+                previewVideo.style.display = 'block';
+                previewImage.style.display = 'none';
+            } else {
+                previewImage.src = result.info.secure_url;
+                previewImage.style.display = 'block';
+                previewVideo.style.display = 'none';
+            }
+            
+            previewArea.classList.add('active');
+            document.getElementById('uploadArea').style.display = 'none';
+            
+            // Enable submit button
+            document.getElementById('submitBtn').disabled = false;
+            
+            // Hide error if any
+            document.getElementById('errorMessage').classList.remove('active');
+        }
         
-        const url = URL.createObjectURL(file);
-        
-        if (file.type.startsWith('image/')) {
-            previewImage.src = url;
-            previewImage.style.display = 'block';
-            previewVideo.style.display = 'none';
-        } else if (file.type.startsWith('video/')) {
-            previewVideo.src = url;
-            previewVideo.style.display = 'block';
-            previewImage.style.display = 'none';
+        if (result && result.event === "progress") {
+            const percent = Math.round(result.info.progress.percent);
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = `Uploading... ${percent}%`;
         }
     });
     
+    // Open widget when upload area is clicked
+    document.getElementById('uploadArea').addEventListener('click', () => {
+        document.getElementById('errorMessage').classList.remove('active');
+        document.getElementById('uploadProgress').classList.add('active');
+        widget.open();
+    });
+    
     function clearNewMedia() {
-        fileInput.value = '';
-        uploadArea.style.display = 'block';
-        newPreview.style.display = 'none';
-        previewImage.src = '';
-        previewVideo.src = '';
+        document.getElementById('fileUrl').value = '';
+        document.getElementById('isVideo').value = '';
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('newPreview').classList.remove('active');
+        document.getElementById('previewImage').src = '';
+        document.getElementById('previewVideo').src = '';
+        document.getElementById('submitBtn').disabled = true;
     }
     
     function clearExistingMedia() {
         document.getElementById('existingPreview').style.display = 'none';
         document.getElementById('clearExisting').value = 'true';
-        uploadArea.style.display = 'block';
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('submitBtn').disabled = true;
     }
     
-    // Set default date to today if empty (optional)
+    function showError(msg) {
+        document.getElementById('errorText').textContent = msg;
+        document.getElementById('errorMessage').classList.add('active');
+        document.getElementById('uploadProgress').classList.remove('active');
+    }
+    
+    // Set default date
     const dateInput = document.getElementById('id_actual_date');
     if (dateInput && !dateInput.value) {
         // Uncomment to auto-fill today's date
         // const today = new Date().toISOString().split('T')[0];
         // dateInput.value = today;
     }
+    
+    // For existing content, file is already uploaded
+    {% if existing_activity and existing_activity.file %}
+    document.getElementById('fileUrl').value = '{{ existing_activity.file.url }}';
+    document.getElementById('isVideo').value = '{{ existing_activity.is_video|yesno:"true,false" }}';
+    document.getElementById('submitBtn').disabled = false;
+    {% endif %}
 </script>
 
 {% endblock %}
