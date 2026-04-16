@@ -701,7 +701,7 @@ def post_activity_view(request, slug, day_number=None):
                 )
             
             messages.success(request, 'Activity posted!')
-            return redirect('journey_detail', slug=slug)
+            return redirect('journey_content', slug=slug)
         else:
             messages.error(request, 'Please provide content and media.')
     
