@@ -6,9 +6,7 @@
 
 {% block extra_css %}
 <style>
-    * {
-        -webkit-tap-highlight-color: transparent;
-    }
+    * { -webkit-tap-highlight-color: transparent; }
     
     .journey-container {
         max-width: 430px;
@@ -53,975 +51,293 @@
         filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
     }
     
-    .path-node {
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .path-node:hover {
-        transform: scale(1.2);
-    }
-    
-    .path-node.completed {
-        fill: #22c55e;
-        stroke: #22c55e;
-        stroke-width: 2;
-    }
-    
-    .path-node.current {
-        fill: #fff;
-        stroke: #fff;
-        stroke-width: 3;
-        animation: pulseNode 2s infinite;
-    }
-    
-    .path-node.locked {
-        fill: #1a1a1a;
-        stroke: #444;
-        stroke-width: 2;
-    }
-    
-    .path-node.available {
-        fill: #f59e0b;
-        stroke: #f59e0b;
-        stroke-width: 2;
-    }
+    .path-node { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .path-node:hover { transform: scale(1.2); }
+    .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
+    .path-node.current { fill: #fff; stroke: #fff; stroke-width: 3; animation: pulseNode 2s infinite; }
+    .path-node.locked { fill: #1a1a1a; stroke: #444; stroke-width: 2; }
+    .path-node.available { fill: #f59e0b; stroke: #f59e0b; stroke-width: 2; }
     
     @keyframes pulseNode {
-        0%, 100% { 
-            r: 10px;
-            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
-        }
-        50% { 
-            r: 12px;
-            filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6));
-        }
+        0%, 100% { r: 10px; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
+        50% { r: 12px; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)); }
     }
     
-    .node-glow {
-        animation: pulseGlow 2s infinite;
-    }
-    
-    @keyframes pulseGlow {
-        0%, 100% { 
-            opacity: 0.2;
-            r: 16px;
-        }
-        50% { 
-            opacity: 0.4;
-            r: 20px;
-        }
-    }
+    .node-glow { animation: pulseGlow 2s infinite; }
+    @keyframes pulseGlow { 0%, 100% { opacity: 0.2; r: 16px; } 50% { opacity: 0.4; r: 20px; } }
     
     .node-label-svg {
-        font-weight: 700;
-        font-size: 9px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        pointer-events: none;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
+        pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
-    .path-line {
-        stroke-dasharray: 1000;
-        stroke-dashoffset: 1000;
-        animation: drawLine 1.8s ease-out forwards;
-    }
-    
-    @keyframes drawLine {
-        to { stroke-dashoffset: 0; }
-    }
+    .path-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.8s ease-out forwards; }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
     
     .hero-stats {
-        position: absolute;
-        bottom: 16px;
-        left: 16px;
-        right: 16px;
-        display: flex;
-        justify-content: space-around;
-        z-index: 10;
-        background: rgba(10, 10, 10, 0.7);
-        backdrop-filter: blur(10px);
-        padding: 12px 8px;
-        border-radius: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-around;
+        z-index: 10; background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(10px);
+        padding: 12px 8px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.05);
     }
     
-    .hero-stat {
-        text-align: center;
-    }
-    
-    .hero-stat .value {
-        font-size: 22px;
-        font-weight: 800;
-        color: #fff;
-        line-height: 1.2;
-    }
-    
-    .hero-stat .label {
-        font-size: 9px;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+    .hero-stat { text-align: center; }
+    .hero-stat .value { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.2; }
+    .hero-stat .label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     
     .back-btn {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        width: 40px;
-        height: 40px;
-        background: rgba(10, 10, 10, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        z-index: 20;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.2s;
+        position: absolute; top: 16px; left: 16px; width: 40px; height: 40px;
+        background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;
+        cursor: pointer; z-index: 20; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s;
     }
+    .back-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.1); }
     
-    .back-btn:active {
-        transform: scale(0.95);
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .journey-title-top {
-        position: absolute;
-        top: 20px;
-        left: 68px;
-        right: 68px;
-        z-index: 20;
-    }
-    
+    .journey-title-top { position: absolute; top: 20px; left: 68px; right: 68px; z-index: 20; }
     .journey-title-top h2 {
-        font-size: 15px;
-        font-weight: 700;
-        color: #fff;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
-    .creator-info {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-top: 4px;
-    }
-    
+    .creator-info { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
     .creator-avatar {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: #2a2a2a;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        width: 22px; height: 22px; border-radius: 50%; background: #2a2a2a; overflow: hidden;
+        display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255, 255, 255, 0.2);
     }
-    
-    .creator-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .creator-name {
-        font-size: 12px;
-        color: #ccc;
-        font-weight: 500;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
+    .creator-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .creator-name { font-size: 12px; color: #ccc; font-weight: 500; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
     
     .menu-btn {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 40px;
-        height: 40px;
-        background: rgba(10, 10, 10, 0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        z-index: 20;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.2s;
+        position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
+        background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px;
+        cursor: pointer; z-index: 20; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s;
     }
+    .menu-btn:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.1); }
     
-    .menu-btn:active {
-        transform: scale(0.95);
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .progress-section {
-        padding: 16px 20px;
-        background: #0a0a0a;
-    }
-    
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 6px;
-    }
-    
-    .progress-header span {
-        font-size: 12px;
-        font-weight: 600;
-        color: #fff;
-    }
-    
-    .progress-header span:last-child {
-        color: #aaa;
-    }
-    
-    .progress-track {
-        height: 3px;
-        background: #1a1a1a;
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    
+    .progress-section { padding: 16px 20px; background: #0a0a0a; }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .progress-header span { font-size: 12px; font-weight: 600; color: #fff; }
+    .progress-header span:last-child { color: #aaa; }
+    .progress-track { height: 3px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
     .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-        border-radius: 2px;
-        position: relative;
-        transition: width 0.3s ease;
+        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
+        position: relative; transition: width 0.3s ease;
     }
-    
     .progress-fill::after {
-        content: '';
-        position: absolute;
-        right: -5px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 10px;
-        height: 10px;
-        background: #8b5cf6;
-        border-radius: 50%;
-        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
-        border: 2px solid #0a0a0a;
+        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+        width: 10px; height: 10px; background: #8b5cf6; border-radius: 50%;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); border: 2px solid #0a0a0a;
     }
     
-    .stats-cards {
-        display: flex;
-        gap: 10px;
-        padding: 16px 20px;
-    }
-    
+    .stats-cards { display: flex; gap: 10px; padding: 16px 20px; }
     .stat-card {
-        flex: 1;
-        background: #111;
-        border-radius: 14px;
-        padding: 14px 8px;
-        border: 1px solid #222;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        -webkit-tap-highlight-color: transparent;
+        flex: 1; background: #111; border-radius: 14px; padding: 14px 8px; border: 1px solid #222;
+        text-align: center; cursor: pointer; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
     }
+    .stat-card:active { background: #1a1a1a; transform: scale(0.98); }
+    .stat-card i { font-size: 18px; margin-bottom: 6px; color: #fff; opacity: 0.7; }
+    .stat-card .value { font-size: 16px; font-weight: 700; color: #fff; }
+    .stat-card .label { font-size: 9px; color: #666; }
     
-    .stat-card:active {
-        background: #1a1a1a;
-        transform: scale(0.98);
-    }
-    
-    .stat-card i {
-        font-size: 18px;
-        margin-bottom: 6px;
-        color: #fff;
-        opacity: 0.7;
-    }
-    
-    .stat-card .value {
-        font-size: 16px;
-        font-weight: 700;
-        color: #fff;
-    }
-    
-    .stat-card .label {
-        font-size: 9px;
-        color: #666;
-    }
-    
-    /* Cinematic Strip with Desktop Scroll */
-    .cinematic-strip {
-        padding: 16px 0;
-        position: relative;
-    }
-    
-    .strip-header {
-        padding: 0 20px 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .strip-header i {
-        color: #fff;
-        font-size: 13px;
-    }
-    
-    .strip-header h3 {
-        font-size: 13px;
-        font-weight: 600;
-        color: #fff;
-    }
-    
-    .strip-header span {
-        margin-left: auto;
-        font-size: 10px;
-        color: #666;
-    }
+    .cinematic-strip { padding: 16px 0; position: relative; }
+    .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
+    .strip-header i { color: #fff; font-size: 13px; }
+    .strip-header h3 { font-size: 13px; font-weight: 600; color: #fff; }
+    .strip-header span { margin-left: auto; font-size: 10px; color: #666; }
     
     .day-strip {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding: 8px 20px 12px;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        scrollbar-color: #3b82f6 #1a1a1a;
-        cursor: grab;
-        scroll-behavior: smooth;
+        display: flex; gap: 8px; overflow-x: auto; padding: 8px 20px 12px;
+        scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin; scrollbar-color: #3b82f6 #1a1a1a; cursor: grab; scroll-behavior: smooth;
     }
-    
-    .day-strip:active {
-        cursor: grabbing;
-    }
-    
-    .day-strip::-webkit-scrollbar {
-        height: 4px;
-        display: block;
-    }
-    
-    .day-strip::-webkit-scrollbar-track {
-        background: #1a1a1a;
-        border-radius: 2px;
-    }
-    
-    .day-strip::-webkit-scrollbar-thumb {
-        background: #3b82f6;
-        border-radius: 2px;
-    }
-    
-    .day-strip::-webkit-scrollbar-thumb:hover {
-        background: #2563eb;
-    }
+    .day-strip:active { cursor: grabbing; }
+    .day-strip::-webkit-scrollbar { height: 4px; display: block; }
+    .day-strip::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 2px; }
+    .day-strip::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 2px; }
+    .day-strip::-webkit-scrollbar-thumb:hover { background: #2563eb; }
     
     .strip-day {
-        flex: 0 0 95px;
-        scroll-snap-align: start;
-        position: relative;
-        cursor: pointer;
-        transition: all 0.2s;
-        -webkit-tap-highlight-color: transparent;
+        flex: 0 0 95px; scroll-snap-align: start; position: relative; cursor: pointer;
+        transition: all 0.2s; -webkit-tap-highlight-color: transparent;
     }
-    
-    .strip-day:active {
-        transform: scale(0.97);
-    }
-    
-    .strip-day.locked {
-        opacity: 0.4;
-    }
+    .strip-day:active { transform: scale(0.97); }
+    .strip-day.locked { opacity: 0.4; }
     
     .strip-thumbnail {
-        width: 95px;
-        height: 140px;
-        border-radius: 12px;
-        overflow: hidden;
-        position: relative;
-        background: #1a1a1a;
-        border: 1px solid transparent;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        width: 95px; height: 140px; border-radius: 12px; overflow: hidden; position: relative;
+        background: #1a1a1a; border: 1px solid transparent; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
-    
-    .strip-day.current .strip-thumbnail {
-        border-color: #8b5cf6;
-        box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
-    }
-    
-    .strip-thumbnail video,
-    .strip-thumbnail img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+    .strip-day.current .strip-thumbnail { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+    .strip-thumbnail video, .strip-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
     
     .strip-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 10px 6px;
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 6px;
         background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
     }
-    
-    .strip-day-number {
-        font-size: 13px;
-        font-weight: 700;
-        color: #fff;
-        display: block;
-    }
-    
-    .strip-day-status {
-        font-size: 8px;
-        color: #aaa;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
+    .strip-day-number { font-size: 13px; font-weight: 700; color: #fff; display: block; }
+    .strip-day-status { font-size: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
     
     .play-icon-strip {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 30px;
-        height: 30px;
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(5px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 11px;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 30px; height: 30px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 11px;
     }
-    
-    .lock-icon-strip {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        color: #666;
-        font-size: 18px;
-    }
+    .lock-icon-strip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 18px; }
     
     .check-badge {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        width: 18px;
-        height: 18px;
-        background: #22c55e;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 9px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+        background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
-    /* Desktop Scroll Controls */
-    .scroll-controls {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-top: 8px;
-        padding: 0 20px;
-    }
-    
+    .scroll-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 0 20px; }
     .scroll-btn {
-        width: 32px;
-        height: 32px;
-        background: #1a1a1a;
-        border: 1px solid #333;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #aaa;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 12px;
+        width: 32px; height: 32px; background: #1a1a1a; border: 1px solid #333; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; color: #aaa; cursor: pointer;
+        transition: all 0.2s; font-size: 12px;
     }
+    .scroll-btn:hover { background: #2a2a2a; color: #fff; border-color: #3b82f6; }
+    .scroll-btn:active { transform: scale(0.95); }
+    .scroll-indicator { font-size: 11px; color: #666; min-width: 60px; text-align: center; }
     
-    .scroll-btn:hover {
-        background: #2a2a2a;
-        color: #fff;
-        border-color: #3b82f6;
-    }
-    
-    .scroll-btn:active {
-        transform: scale(0.95);
-    }
-    
-    .scroll-indicator {
-        font-size: 11px;
-        color: #666;
-        min-width: 60px;
-        text-align: center;
-    }
-    
-    /* Hide scroll controls on mobile */
-    @media (max-width: 768px) {
-        .scroll-controls {
-            display: none;
-        }
-        
-        .day-strip::-webkit-scrollbar {
-            display: none;
-        }
-    }
+    @media (max-width: 768px) { .scroll-controls { display: none; } .day-strip::-webkit-scrollbar { display: none; } }
     
     .current-day-hero {
-        margin: 8px 20px 16px;
-        border-radius: 20px;
-        overflow: hidden;
-        position: relative;
-        height: 400px;
-        cursor: pointer;
-        border: 1px solid #2a2a2a;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        margin: 8px 20px 16px; border-radius: 20px; overflow: hidden; position: relative;
+        min-height: 300px; cursor: pointer; border: 1px solid #2a2a2a;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); background: #000;
+        display: flex; align-items: center; justify-content: center;
     }
-    
-    .current-day-hero video,
-    .current-day-hero img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+    .current-day-hero video, .current-day-hero img { width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; }
     
     .hero-content {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 40px 18px 18px;
-        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 18px 18px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); pointer-events: none;
     }
+    .hero-content * { pointer-events: auto; }
     
     .hero-badge {
-        display: inline-block;
-        background: #fff;
-        color: #0a0a0a;
-        padding: 4px 10px;
-        border-radius: 30px;
-        font-size: 10px;
-        font-weight: 600;
-        margin-bottom: 10px;
+        display: inline-block; background: #fff; color: #0a0a0a; padding: 4px 10px;
+        border-radius: 30px; font-size: 10px; font-weight: 600; margin-bottom: 10px;
     }
-    
-    .hero-badge.milestone-badge {
-        background: #8b5cf6;
-        color: #fff;
-    }
+    .hero-badge.milestone-badge { background: #8b5cf6; color: #fff; }
     
     .hero-day-title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 6px;
-        color: #fff;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        font-size: 20px; font-weight: 700; margin-bottom: 6px; color: #fff;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    
     .hero-day-desc {
-        font-size: 13px;
-        color: #aaa;
-        margin-bottom: 14px;
-        line-height: 1.5;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        font-size: 13px; color: #aaa; margin-bottom: 14px; line-height: 1.5;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     
-    .hero-actions {
-        display: flex;
-        gap: 20px;
-    }
-    
+    .hero-actions { display: flex; gap: 20px; }
     .hero-action {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: #fff;
-        font-size: 13px;
-        cursor: pointer;
-        transition: opacity 0.2s;
-        padding: 4px 0;
+        display: flex; align-items: center; gap: 5px; color: #fff; font-size: 13px;
+        cursor: pointer; transition: opacity 0.2s; padding: 4px 0;
     }
-    
-    .hero-action:active {
-        opacity: 0.6;
-    }
-    
-    .hero-action i {
-        color: #888;
-        font-size: 18px;
-    }
-    
-    .hero-action.loved i {
-        color: #ef4444;
-    }
+    .hero-action:active { opacity: 0.6; }
+    .hero-action i { color: #888; font-size: 18px; }
+    .hero-action.loved i { color: #ef4444; }
     
     .hero-play-btn {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 55px;
-        height: 55px;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 22px;
-        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 55px; height: 55px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 22px; border: 1.5px solid rgba(255, 255, 255, 0.2); pointer-events: none;
     }
     
-    .action-buttons {
-        display: flex;
-        gap: 10px;
-        padding: 0 20px 20px;
-    }
-    
+    .action-buttons { display: flex; gap: 10px; padding: 0 20px 20px; }
     .action-btn {
-        flex: 1;
-        padding: 13px;
-        border-radius: 30px;
-        font-weight: 600;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: none;
+        flex: 1; padding: 13px; border-radius: 30px; font-weight: 600; font-size: 13px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        cursor: pointer; transition: all 0.2s; border: none;
     }
+    .action-btn:active { transform: scale(0.98); }
+    .action-btn-primary { background: #fff; color: #0a0a0a; }
+    .action-btn-outline { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }
+    .action-btn-outline.saved { background: #3b82f6; border-color: #3b82f6; }
     
-    .action-btn:active {
-        transform: scale(0.98);
-    }
+    .comments-section { padding: 20px; border-top: 1px solid #1a1a1a; background: #0a0a0a; }
+    .comments-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .comments-header h4 { font-size: 13px; font-weight: 600; }
     
-    .action-btn-primary {
-        background: #fff;
-        color: #0a0a0a;
-    }
-    
-    .action-btn-outline {
-        background: transparent;
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    .action-btn-outline.saved {
-        background: #3b82f6;
-        border-color: #3b82f6;
-    }
-    
-    .comments-section {
-        padding: 20px;
-        border-top: 1px solid #1a1a1a;
-        background: #0a0a0a;
-    }
-    
-    .comments-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 14px;
-    }
-    
-    .comments-header h4 {
-        font-size: 13px;
-        font-weight: 600;
-    }
-    
-    .comment-item {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 14px;
-    }
-    
+    .comment-item { display: flex; gap: 10px; margin-bottom: 14px; }
     .comment-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #1a1a1a;
-        flex-shrink: 0;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #2a2a2a;
+        width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; flex-shrink: 0;
+        overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #2a2a2a;
     }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-content { flex: 1; }
+    .comment-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .comment-username { font-weight: 600; font-size: 12px; }
+    .comment-time { font-size: 10px; color: #666; }
+    .comment-text { font-size: 13px; color: #ddd; line-height: 1.4; margin-bottom: 6px; }
+    .comment-actions { display: flex; gap: 14px; }
+    .comment-action { font-size: 11px; color: #888; cursor: pointer; }
+    .comment-action i { margin-right: 3px; }
     
-    .comment-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .comment-content {
-        flex: 1;
-    }
-    
-    .comment-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 3px;
-    }
-    
-    .comment-username {
-        font-weight: 600;
-        font-size: 12px;
-    }
-    
-    .comment-time {
-        font-size: 10px;
-        color: #666;
-    }
-    
-    .comment-text {
-        font-size: 13px;
-        color: #ddd;
-        line-height: 1.4;
-        margin-bottom: 6px;
-    }
-    
-    .comment-actions {
-        display: flex;
-        gap: 14px;
-    }
-    
-    .comment-action {
-        font-size: 11px;
-        color: #888;
-        cursor: pointer;
-    }
-    
-    .comment-action i {
-        margin-right: 3px;
-    }
-    
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #000;
-        z-index: 1000;
-    }
-    
-    .modal.active {
-        display: block;
-    }
-    
-    .modal-content {
-        width: 100%;
-        max-width: 430px;
-        margin: 0 auto;
-        height: 100%;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-    }
-    
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 1000; }
+    .modal.active { display: block; }
+    .modal-content { width: 100%; max-width: 430px; margin: 0 auto; height: 100%; position: relative; display: flex; flex-direction: column; }
     .modal-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        z-index: 10;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
+        position: absolute; top: 0; left: 0; right: 0; padding: 16px; display: flex; align-items: center; gap: 10px;
+        z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
     }
-    
     .modal-close {
-        width: 40px;
-        height: 40px;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        border: none;
+        width: 40px; height: 40px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 18px; cursor: pointer; border: none;
     }
-    
     .modal-day {
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        padding: 5px 14px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #fff;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 5px 14px;
+        border-radius: 30px; font-size: 12px; font-weight: 600; color: #fff;
     }
-    
-    .modal-media {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #0a0a0a;
-    }
-    
-    .modal-media video,
-    .modal-media img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
+    .modal-media { flex: 1; display: flex; align-items: center; justify-content: center; background: #0a0a0a; }
+    .modal-media video, .modal-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; }
     
     .modal-footer {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 25px 18px 18px;
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 25px 18px 18px;
         background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
     }
-    
-    .modal-caption {
-        color: #fff;
-        font-size: 13px;
-        margin-bottom: 14px;
-        line-height: 1.5;
-    }
-    
-    .modal-actions {
-        display: flex;
-        gap: 20px;
-    }
-    
+    .modal-caption { color: #fff; font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 20px; }
     .modal-action {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 13px;
-        cursor: pointer;
-        padding: 8px 0;
+        display: flex; align-items: center; gap: 5px; background: none; border: none;
+        color: #fff; font-size: 13px; cursor: pointer; padding: 8px 0;
     }
-    
-    .modal-action i {
-        font-size: 20px;
-        color: #aaa;
-    }
+    .modal-action i { font-size: 20px; color: #aaa; }
     
     .modal-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 8px;
-        pointer-events: none;
+        position: absolute; top: 50%; transform: translateY(-50%); width: 100%;
+        display: flex; justify-content: space-between; padding: 0 8px; pointer-events: none;
     }
-    
     .modal-nav-btn {
-        width: 40px;
-        height: 40px;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        pointer-events: auto;
+        width: 40px; height: 40px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 18px; cursor: pointer; pointer-events: auto;
         border: 1px solid rgba(255,255,255,0.1);
     }
     
-    .milestone-date {
-        color: #888;
-        font-size: 11px;
-        margin-top: 3px;
-    }
-    
-    .milestone-date i {
-        margin-right: 3px;
-    }
+    .milestone-date { color: #888; font-size: 11px; margin-top: 3px; }
+    .milestone-date i { margin-right: 3px; }
     
     .comment-form-container textarea {
-        resize: none;
-        font-family: inherit;
-        font-size: 13px;
+        resize: none; font-family: inherit; font-size: 13px; width: 100%;
+        padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 12px; color: #fff;
     }
-    
-    .comment-form-container textarea:focus {
-        outline: none;
-        border-color: #3b82f6;
-    }
+    .comment-form-container textarea:focus { outline: none; border-color: #3b82f6; }
     
     @media (max-width: 380px) {
-        .journey-hero {
-            height: 340px;
-        }
-        
-        .hero-stats .value {
-            font-size: 20px;
-        }
-        
-        .strip-day {
-            flex: 0 0 85px;
-        }
-        
-        .strip-thumbnail {
-            width: 85px;
-            height: 125px;
-        }
-        
-        .current-day-hero {
-            height: 360px;
-        }
+        .journey-hero { height: 340px; }
+        .hero-stats .value { font-size: 20px; }
+        .strip-day { flex: 0 0 85px; }
+        .strip-thumbnail { width: 85px; height: 125px; }
     }
     
-    button, 
-    .stat-card, 
-    .strip-day, 
-    .hero-action, 
-    .action-btn,
-    .back-btn,
-    .menu-btn {
-        min-height: 44px;
-        min-width: 44px;
-    }
-    
-    .hero-action {
-        min-height: 44px;
-        display: flex;
-        align-items: center;
-    }
+    button, .stat-card, .strip-day, .hero-action, .action-btn, .back-btn, .menu-btn { min-height: 44px; min-width: 44px; }
+    .hero-action { min-height: 44px; display: flex; align-items: center; }
 </style>
 {% endblock %}
 
@@ -1030,13 +346,8 @@
 <div class="journey-container">
     
     <div class="journey-hero">
-        <div class="back-btn" onclick="history.back()">
-            <i class="fas fa-arrow-left"></i>
-        </div>
-        
-        <div class="menu-btn" onclick="toggleMenu()">
-            <i class="fas fa-ellipsis-h"></i>
-        </div>
+        <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
+        <div class="menu-btn" onclick="toggleMenu()"><i class="fas fa-ellipsis-h"></i></div>
         
         <div class="journey-title-top">
             <h2>{{ journey.title }}</h2>
@@ -1057,18 +368,9 @@
         </div>
         
         <div class="hero-stats">
-            <div class="hero-stat">
-                <div class="value">{{ current_day }}</div>
-                <div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days{% endif %}</div>
-            </div>
-            <div class="hero-stat">
-                <div class="value">{{ journey.duration }}</div>
-                <div class="label">Total</div>
-            </div>
-            <div class="hero-stat">
-                <div class="value">{{ journey.get_follower_count }}</div>
-                <div class="label">Followers</div>
-            </div>
+            <div class="hero-stat"><div class="value">{{ current_day }}</div><div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days{% endif %}</div></div>
+            <div class="hero-stat"><div class="value">{{ journey.duration }}</div><div class="label">Total</div></div>
+            <div class="hero-stat"><div class="value">{{ journey.get_follower_count }}</div><div class="label">Followers</div></div>
         </div>
     </div>
     
@@ -1083,21 +385,9 @@
     </div>
     
     <div class="stats-cards">
-        <div class="stat-card">
-            <i class="fas fa-users"></i>
-            <div class="value">{{ journey.get_follower_count }}</div>
-            <div class="label">Followers</div>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-heart"></i>
-            <div class="value" id="loveCount">{{ journey.get_love_count }}</div>
-            <div class="label">Loves</div>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-comment"></i>
-            <div class="value">{{ journey.get_comment_count }}</div>
-            <div class="label">Comments</div>
-        </div>
+        <div class="stat-card"><i class="fas fa-users"></i><div class="value">{{ journey.get_follower_count }}</div><div class="label">Followers</div></div>
+        <div class="stat-card"><i class="fas fa-heart"></i><div class="value" id="loveCount">{{ journey.get_love_count }}</div><div class="label">Loves</div></div>
+        <div class="stat-card"><i class="fas fa-comment"></i><div class="value">{{ journey.get_comment_count }}</div><div class="label">Comments</div></div>
     </div>
     
     <div class="cinematic-strip">
@@ -1110,15 +400,7 @@
         <div class="day-strip" id="dayStrip">
             {% for day_num in total_days_range %}
                 {% with activity=activities_by_day|get_item:day_num %}
-                
-                {% if journey.journey_type == 'milestone' %}
-                    <div class="strip-day {% if activity %}completed{% else %}available{% endif %}" 
-                         onclick="openDay({{ day_num }})">
-                {% else %}
-                    <div class="strip-day {% if day_num < current_day %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %}" 
-                         onclick="{% if day_num <= current_day %}openDay({{ day_num }}){% endif %}">
-                {% endif %}
-                
+                <div class="strip-day {% if activity %}completed{% else %}available{% endif %}" onclick="openModal({{ day_num }})">
                     <div class="strip-thumbnail">
                         {% if activity and activity.file %}
                             {% if activity.is_video %}
@@ -1126,33 +408,18 @@
                             {% else %}
                                 <img src="{{ activity.file.url }}" alt="">
                             {% endif %}
+                        {% elif activity and activity.thumbnail %}
+                            <img src="{{ activity.thumbnail.url }}" alt="">
                         {% else %}
                             <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-direction:column;">
                                 <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}image{% endif %}" style="color:#444;font-size:18px;"></i>
                             </div>
                         {% endif %}
-                        
-                        {% if activity %}
-                        <div class="check-badge"><i class="fas fa-check"></i></div>
-                        {% endif %}
-                        
-                        {% if activity and activity.file %}
-                        <div class="play-icon-strip"><i class="fas fa-play"></i></div>
-                        {% elif journey.journey_type == 'daily' and day_num > current_day %}
-                        <div class="lock-icon-strip"><i class="fas fa-lock"></i></div>
-                        {% endif %}
-                        
+                        {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
+                        {% if activity and activity.file %}<div class="play-icon-strip"><i class="fas fa-play"></i></div>{% endif %}
                         <div class="strip-overlay">
-                            <span class="strip-day-number">
-                                {% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}
-                            </span>
-                            <span class="strip-day-status">
-                                {% if journey.journey_type == 'milestone' %}
-                                    {% if activity %}Done{% else %}Open{% endif %}
-                                {% else %}
-                                    {% if day_num < current_day %}Done{% elif day_num == current_day %}📍 Now{% else %}Locked{% endif %}
-                                {% endif %}
-                            </span>
+                            <span class="strip-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
+                            <span class="strip-day-status">{% if activity %}Done{% else %}Open{% endif %}</span>
                         </div>
                     </div>
                 </div>
@@ -1160,111 +427,90 @@
             {% endfor %}
         </div>
         
-        {# Desktop Scroll Controls #}
         <div class="scroll-controls">
-            <button class="scroll-btn" onclick="scrollStrip(-200)">
-                <i class="fas fa-chevron-left"></i>
-            </button>
+            <button class="scroll-btn" onclick="scrollStrip(-200)"><i class="fas fa-chevron-left"></i></button>
             <span class="scroll-indicator" id="scrollIndicator">1/{{ journey.duration }}</span>
-            <button class="scroll-btn" onclick="scrollStrip(200)">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+            <button class="scroll-btn" onclick="scrollStrip(200)"><i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
     
     {% if current_activity %}
-    <div class="current-day-hero" onclick="openDay({{ current_day }})">
-        {% if current_activity.is_video %}
-            <video src="{{ current_activity.file.url }}" muted loop playsinline autoplay></video>
+    <div class="current-day-hero" onclick="openModal({{ current_day }})">
+        {% if current_activity.file %}
+            {% if current_activity.is_video %}
+                <video src="{{ current_activity.file.url }}" controls playsinline></video>
+            {% else %}
+                <img src="{{ current_activity.file.url }}" alt="{{ current_activity.content|truncatechars:50 }}">
+            {% endif %}
+        {% elif current_activity.source_url %}
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#888;text-align:center;">
+                <i class="fas fa-link" style="font-size:48px;margin-bottom:16px;"></i>
+                <p style="margin-bottom:16px;">Content from {{ current_activity.source_platform|default:'social media' }}</p>
+                <a href="{{ current_activity.source_url }}" target="_blank" class="action-btn action-btn-primary" onclick="event.stopPropagation();">
+                    <i class="fas fa-external-link-alt"></i> View Original
+                </a>
+            </div>
         {% else %}
-            <img src="{{ current_activity.file.url }}" alt="">
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:250px;color:#888;background:#111;">
+                <i class="fas fa-image" style="font-size:48px;"></i>
+            </div>
         {% endif %}
         
-        <div class="hero-play-btn">
-            <i class="fas fa-play"></i>
-        </div>
+        <div class="hero-play-btn"><i class="fas fa-play"></i></div>
         
         <div class="hero-content">
             <span class="hero-badge {% if journey.journey_type == 'milestone' %}milestone-badge{% endif %}">
-                {% if journey.journey_type == 'milestone' %}
-                    MILESTONE {{ current_day }}
-                {% else %}
-                    DAY {{ current_day }} · CURRENT
-                {% endif %}
+                {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }} · CURRENT{% endif %}
             </span>
-            <h3 class="hero-day-title">
-                {{ current_activity.content|truncatechars:40 }}
-            </h3>
-            <p class="hero-day-desc">
-                {{ current_activity.content|truncatechars:100 }}
-            </p>
+            <h3 class="hero-day-title">{{ current_activity.content|truncatechars:40 }}</h3>
+            <p class="hero-day-desc">{{ current_activity.content|truncatechars:100 }}</p>
             {% if journey.journey_type == 'milestone' and current_activity.actual_date %}
-            <p class="milestone-date">
-                <i class="fas fa-calendar-check"></i> {{ current_activity.actual_date|date:"F j, Y" }}
-            </p>
+            <p class="milestone-date"><i class="fas fa-calendar-check"></i> {{ current_activity.actual_date|date:"F j, Y" }}</p>
             {% endif %}
             <div class="hero-actions">
-                <span class="hero-action" onclick="event.stopPropagation(); toggleLove()">
-                    <i class="fas fa-heart" id="heroLoveIcon"></i>
-                    <span id="heroLoveCount">{{ current_activity.get_love_count }}</span>
+                <span class="hero-action" onclick="event.stopPropagation(); toggleLove({{ current_activity.id }})">
+                    <i class="far fa-heart"></i> <span id="love-count-{{ current_activity.id }}">{{ current_activity.get_love_count }}</span>
                 </span>
                 <span class="hero-action" onclick="event.stopPropagation(); scrollToComments()">
-                    <i class="fas fa-comment"></i>
-                    <span id="heroCommentCount">{{ current_activity.get_comment_count }}</span>
+                    <i class="far fa-comment"></i> {{ current_activity.get_comment_count }}
                 </span>
                 <span class="hero-action" onclick="event.stopPropagation(); shareJourney()">
-                    <i class="fas fa-share-alt"></i>
-                    <span>Share</span>
+                    <i class="fas fa-share-alt"></i> Share
                 </span>
             </div>
         </div>
     </div>
     {% else %}
-    <div class="current-day-hero" style="display: flex; align-items: center; justify-content: center; background: #111;">
-        <div style="text-align: center; color: #888;">
-            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-plus{% endif %}" style="font-size: 40px; margin-bottom: 12px;"></i>
+    <div class="current-day-hero" style="display:flex;align-items:center;justify-content:center;background:#111;min-height:250px;">
+        <div style="text-align:center;color:#888;">
+            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-plus{% endif %}" style="font-size:40px;margin-bottom:12px;"></i>
             <p>No content yet</p>
             {% if user == journey.creator.user %}
-            <a href="{% url 'post_activity' slug=journey.slug %}" class="btn btn-primary" style="margin-top: 12px;">
-                Post Update
-            </a>
+            <a href="{% url 'post_activity' slug=journey.slug %}" class="action-btn action-btn-primary" style="margin-top:12px;">Post Update</a>
             {% endif %}
         </div>
     </div>
     {% endif %}
     
     <div class="action-buttons">
-        <button class="action-btn action-btn-outline {% if is_saved %}saved{% endif %}" id="saveBtn" onclick="toggleSave()">
-            <i class="fas fa-bookmark"></i>
-            <span id="saveText">{% if is_saved %}Saved{% else %}Save{% endif %}</span>
+        <button class="action-btn action-btn-outline {% if is_saved %}saved{% endif %}" onclick="toggleSave()">
+            <i class="far fa-bookmark"></i> <span id="saveText">{% if is_saved %}Saved{% else %}Save{% endif %}</span>
         </button>
-        
-        {% if journey.funding_enabled %}
-        <a href="{% url 'donate' slug=journey.slug %}" class="action-btn action-btn-primary">
-            <i class="fas fa-hand-holding-heart"></i>
-            Support
-        </a>
-        {% else %}
-        <button class="action-btn action-btn-primary" id="followBtn" onclick="toggleFollow()">
-            <i class="fas fa-user-plus"></i>
-            <span id="followText">{% if is_following %}Following{% else %}Follow{% endif %}</span>
+        <button class="action-btn action-btn-primary" onclick="toggleFollow()">
+            <i class="fas fa-user-plus"></i> <span id="followText">{% if is_following %}Following{% else %}Follow{% endif %}</span>
         </button>
-        {% endif %}
     </div>
     
     <div class="comments-section" id="comments">
-        <div class="comments-header">
-            <h4>Comments (<span id="commentCount">{{ recent_comments|length }}</span>)</h4>
-        </div>
-        
-        <div class="comments-list" id="commentsList">
+        <div class="comments-header"><h4>Comments ({{ recent_comments|length }})</h4></div>
+        <div class="comments-list">
             {% for comment in recent_comments %}
             <div class="comment-item">
                 <div class="comment-avatar">
                     {% if comment.user.profile.image %}
-                        <img src="{{ comment.user.profile.image.url }}" alt="{{ comment.user.username }}">
+                        <img src="{{ comment.user.profile.image.url }}" alt="">
                     {% else %}
-                        <i class="fas fa-user" style="font-size:12px;color:#888;"></i>
+                        <i class="fas fa-user"></i>
                     {% endif %}
                 </div>
                 <div class="comment-content">
@@ -1276,41 +522,36 @@
                 </div>
             </div>
             {% empty %}
-            <p style="color: #888; text-align: center; padding: 20px;" id="emptyCommentsMsg">No comments yet. Be the first!</p>
+            <p style="color:#888;text-align:center;padding:20px;">No comments yet.</p>
             {% endfor %}
         </div>
         
         {% if user.is_authenticated %}
-        <div class="comment-form-container" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid #222;">
-            <form id="commentForm" onsubmit="submitComment(event)">
+        <div class="comment-form-container" style="margin-top:16px;padding-top:14px;border-top:1px solid #222;">
+            <form onsubmit="submitComment(event)">
                 {% csrf_token %}
                 <input type="hidden" id="commentActivityId" value="{{ current_activity.id|default:'' }}">
-                <div style="display: flex; gap: 10px;">
-                    <div class="comment-avatar" style="width: 32px; height: 32px;">
+                <div style="display:flex;gap:10px;">
+                    <div class="comment-avatar" style="width:32px;height:32px;">
                         {% if user.profile.image %}
-                            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
+                            <img src="{{ user.profile.image.url }}" alt="">
                         {% else %}
-                            <i class="fas fa-user" style="font-size:14px;color:#888;"></i>
+                            <i class="fas fa-user"></i>
                         {% endif %}
                     </div>
-                    <div style="flex: 1;">
-                        <textarea id="commentContent" 
-                                  placeholder="Add a comment..." 
-                                  rows="2"
-                                  style="width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 12px; color: #fff; font-size: 13px; resize: none; font-family: inherit;"></textarea>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-                            <button type="submit" class="btn btn-primary" style="padding: 7px 18px; font-size: 12px;">
-                                <i class="fas fa-paper-plane"></i> Post
-                            </button>
+                    <div style="flex:1;">
+                        <textarea id="commentContent" placeholder="Add a comment..." rows="2"></textarea>
+                        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+                            <button type="submit" class="action-btn action-btn-primary" style="padding:7px 18px;font-size:12px;">Post</button>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
         {% else %}
-        <div style="margin-top: 16px; padding: 14px; text-align: center; background: #111; border-radius: 12px;">
-            <p style="color: #888; margin-bottom: 10px; font-size: 13px;">Log in to leave a comment</p>
-            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline" style="font-size: 12px;">Log in</a>
+        <div style="margin-top:16px;padding:14px;text-align:center;background:#111;border-radius:12px;">
+            <p style="color:#888;margin-bottom:10px;">Log in to leave a comment</p>
+            <a href="{% url 'login' %}?next={{ request.path }}" class="action-btn action-btn-outline">Log in</a>
         </div>
         {% endif %}
     </div>
@@ -1319,38 +560,21 @@
 <div class="modal" id="mediaModal">
     <div class="modal-content">
         <div class="modal-header">
-            <button class="modal-close" onclick="closeModal()">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             <span class="modal-day" id="modalDay">Day 1</span>
         </div>
-        
         <div class="modal-media" id="modalMedia"></div>
-        
         <div class="modal-footer">
             <p class="modal-caption" id="modalCaption"></p>
             <div class="modal-actions">
-                <button class="modal-action" onclick="toggleLove()">
-                    <i class="far fa-heart"></i>
-                    <span id="modalLoveCount">0</span>
-                </button>
-                <button class="modal-action" onclick="scrollToComments(); closeModal();">
-                    <i class="far fa-comment"></i>
-                    <span id="modalCommentCount">0</span>
-                </button>
-                <button class="modal-action" onclick="shareJourney()">
-                    <i class="fas fa-share-alt"></i>
-                </button>
+                <button class="modal-action" onclick="toggleLoveFromModal()"><i class="far fa-heart"></i> <span id="modalLoveCount">0</span></button>
+                <button class="modal-action" onclick="scrollToComments();closeModal();"><i class="far fa-comment"></i></button>
+                <button class="modal-action" onclick="shareJourney()"><i class="fas fa-share-alt"></i></button>
             </div>
         </div>
-        
         <div class="modal-nav">
-            <button class="modal-nav-btn" onclick="prevDay()">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="modal-nav-btn" onclick="nextDay()">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+            <button class="modal-nav-btn" onclick="prevDay()"><i class="fas fa-chevron-left"></i></button>
+            <button class="modal-nav-btn" onclick="nextDay()"><i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
 </div>
@@ -1363,208 +587,131 @@
     const journeyType = '{{ journey.journey_type }}';
     const currentDay = {{ current_day }};
     const totalDays = {{ journey.duration }};
-    const activities = {{ activities_json|safe }};
     let currentModalDay = currentDay;
-    let isFollowing = {{ is_following|yesno:"true,false" }};
-    let isSaved = {{ is_saved|yesno:"true,false" }};
+    let currentActivityId = {{ current_activity.id|default:'null' }};
+    
+    // Activities data from Django
+    const activitiesData = {
+        {% for day, activity in activities_by_day.items %}
+            {{ day }}: {
+                id: {{ activity.id }},
+                content: "{{ activity.content|escapejs }}",
+                fileUrl: "{% if activity.file %}{{ activity.file.url }}{% endif %}",
+                isVideo: {{ activity.is_video|yesno:"true,false" }},
+                sourceUrl: "{{ activity.source_url|default:''|escapejs }}",
+                sourcePlatform: "{{ activity.source_platform|default:''|escapejs }}",
+                loveCount: {{ activity.get_love_count }},
+                commentCount: {{ activity.get_comment_count }}
+            },
+        {% endfor %}
+    };
     
     function getCSRFToken() {
         return document.querySelector('meta[name="csrf-token"]')?.content || '';
     }
     
-    // ============================================================
-    // MEANDERING JOURNEY PATH VISUALIZATION
-    // ============================================================
     function drawMeanderingPath() {
         const svg = document.querySelector('.path-svg');
         if (!svg) return;
-        
         svg.innerHTML = '';
-        
         const totalNodes = totalDays;
         const completed = currentDay;
         const progressColor = journeyType === 'milestone' ? '#8b5cf6' : '#3b82f6';
-        
-        const points = [];
-        const nodePositions = [];
-        
+        const points = [], nodePositions = [];
         for (let i = 0; i < totalNodes; i++) {
             const x = 40 + (i / (totalNodes - 1)) * 320;
-            const wave = Math.sin(i * 0.7) * 22;
-            const y = 70 + wave;
-            
-            points.push({ x, y });
-            nodePositions.push({ x, y, day: i + 1 });
+            const y = 70 + Math.sin(i * 0.7) * 22;
+            points.push({ x: x, y: y });
+            nodePositions.push({ x: x, y: y, day: i + 1 });
         }
-        
-        let pathD = `M ${points[0].x} ${points[0].y}`;
+        let pathD = 'M ' + points[0].x + ' ' + points[0].y;
         for (let i = 1; i < points.length; i++) {
-            const prev = points[i - 1];
-            const curr = points[i];
-            const cp1x = prev.x + (curr.x - prev.x) * 0.35;
-            const cp1y = prev.y;
-            const cp2x = curr.x - (curr.x - prev.x) * 0.35;
-            const cp2y = curr.y;
-            pathD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y}`;
+            const p = points[i-1], c = points[i];
+            pathD += ' C ' + (p.x + (c.x-p.x)*0.35) + ' ' + p.y + ', ' + (c.x - (c.x-p.x)*0.35) + ' ' + c.y + ', ' + c.x + ' ' + c.y;
         }
-        
         const bgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
         bgPath.setAttribute('d', pathD);
         bgPath.setAttribute('stroke', '#2a2a2a');
         bgPath.setAttribute('stroke-width', '3');
         bgPath.setAttribute('fill', 'none');
-        bgPath.setAttribute('stroke-linecap', 'round');
         bgPath.setAttribute('class', 'path-line');
         svg.appendChild(bgPath);
-        
         if (completed > 0 && totalNodes > 1) {
-            const progressPoints = points.slice(0, completed);
-            let progressD = `M ${progressPoints[0].x} ${progressPoints[0].y}`;
-            for (let i = 1; i < progressPoints.length; i++) {
-                const prev = progressPoints[i - 1];
-                const curr = progressPoints[i];
-                const cp1x = prev.x + (curr.x - prev.x) * 0.35;
-                const cp1y = prev.y;
-                const cp2x = curr.x - (curr.x - prev.x) * 0.35;
-                const cp2y = curr.y;
-                progressD += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y}`;
+            const progPoints = points.slice(0, completed);
+            let progD = 'M ' + progPoints[0].x + ' ' + progPoints[0].y;
+            for (let i = 1; i < progPoints.length; i++) {
+                const p = progPoints[i-1], c = progPoints[i];
+                progD += ' C ' + (p.x + (c.x-p.x)*0.35) + ' ' + p.y + ', ' + (c.x - (c.x-p.x)*0.35) + ' ' + c.y + ', ' + c.x + ' ' + c.y;
             }
-            
-            const progressPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            progressPath.setAttribute('d', progressD);
-            progressPath.setAttribute('stroke', progressColor);
-            progressPath.setAttribute('stroke-width', '4');
-            progressPath.setAttribute('fill', 'none');
-            progressPath.setAttribute('stroke-linecap', 'round');
-            progressPath.style.strokeDasharray = '1000';
-            progressPath.style.strokeDashoffset = '1000';
-            progressPath.style.animation = 'drawLine 1.5s ease-out forwards';
-            svg.appendChild(progressPath);
+            const progPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            progPath.setAttribute('d', progD);
+            progPath.setAttribute('stroke', progressColor);
+            progPath.setAttribute('stroke-width', '4');
+            progPath.setAttribute('fill', 'none');
+            progPath.style.strokeDasharray = '1000';
+            progPath.style.strokeDashoffset = '1000';
+            progPath.style.animation = 'drawLine 1.5s ease-out forwards';
+            svg.appendChild(progPath);
         }
-        
-        let nodesToShow = [];
-        if (totalNodes <= 8) {
-            for (let i = 0; i < nodePositions.length; i++) {
-                nodesToShow.push(nodePositions[i]);
-            }
-        } else {
-            const step = Math.floor(totalNodes / 7);
-            nodesToShow.push(nodePositions[0]);
-            for (let i = step; i < totalNodes - 1; i += step) {
-                nodesToShow.push(nodePositions[i]);
-            }
-            nodesToShow.push(nodePositions[totalNodes - 1]);
-        }
-        
+        let nodesToShow = totalNodes <= 8 ? nodePositions : [nodePositions[0], ...nodePositions.filter((_,i) => i%Math.floor(totalNodes/7)===0).slice(1), nodePositions[totalNodes-1]];
         nodesToShow.forEach(pos => {
-            const day = pos.day;
-            let status;
-            if (day <= completed) {
-                status = 'completed';
-            } else if (day === completed + 1 && journeyType === 'daily') {
-                status = 'current';
-            } else if (journeyType === 'milestone') {
-                status = 'available';
-            } else {
-                status = 'locked';
-            }
-            
+            let status = pos.day <= completed ? 'completed' : (pos.day === completed+1 && journeyType==='daily' ? 'current' : (journeyType==='milestone' ? 'available' : 'locked'));
             if (status === 'current') {
-                const glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                glow.setAttribute('cx', pos.x);
-                glow.setAttribute('cy', pos.y);
-                glow.setAttribute('r', '18');
-                glow.setAttribute('fill', 'none');
-                glow.setAttribute('stroke', progressColor);
-                glow.setAttribute('stroke-width', '1.5');
-                glow.setAttribute('opacity', '0.3');
-                glow.setAttribute('class', 'node-glow');
-                svg.appendChild(glow);
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                g.setAttribute('cx', pos.x); g.setAttribute('cy', pos.y); g.setAttribute('r', '18');
+                g.setAttribute('fill', 'none'); g.setAttribute('stroke', progressColor);
+                g.setAttribute('stroke-width', '1.5'); g.setAttribute('opacity', '0.3');
+                g.setAttribute('class', 'node-glow'); svg.appendChild(g);
             }
-            
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute('cx', pos.x);
-            circle.setAttribute('cy', pos.y);
-            circle.setAttribute('r', status === 'current' ? '10' : '8');
-            circle.setAttribute('class', `path-node ${status}`);
-            circle.setAttribute('data-day', day);
-            circle.setAttribute('onclick', `openDay(${day})`);
-            svg.appendChild(circle);
-            
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
+            c.setAttribute('r', status === 'current' ? '10' : '8');
+            c.setAttribute('class', 'path-node ' + status);
+            c.setAttribute('data-day', pos.day);
+            c.setAttribute('onclick', 'openModal(' + pos.day + ')');
+            svg.appendChild(c);
             if (status === 'completed') {
-                const check = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                check.setAttribute('x', pos.x);
-                check.setAttribute('y', pos.y + 3);
-                check.setAttribute('text-anchor', 'middle');
-                check.setAttribute('fill', '#fff');
-                check.setAttribute('font-size', '8');
-                check.setAttribute('font-weight', 'bold');
-                check.textContent = '✓';
-                svg.appendChild(check);
+                const ch = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                ch.setAttribute('x', pos.x); ch.setAttribute('y', pos.y+3);
+                ch.setAttribute('text-anchor', 'middle'); ch.setAttribute('fill', '#fff');
+                ch.setAttribute('font-size', '8'); ch.textContent = '✓'; svg.appendChild(ch);
             }
-            
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute('x', pos.x);
-            text.setAttribute('y', pos.y + 24);
-            text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('class', 'node-label-svg');
-            text.setAttribute('fill', status === 'current' ? '#fff' : (status === 'completed' ? '#22c55e' : '#888'));
-            
-            if (journeyType === 'milestone') {
-                text.textContent = `M${day}`;
-            } else {
-                if (day === 1) {
-                    text.textContent = 'START';
-                } else if (day === totalNodes) {
-                    text.textContent = 'FINISH';
-                } else {
-                    text.textContent = `Day ${day}`;
-                }
-            }
-            svg.appendChild(text);
+            const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t.setAttribute('x', pos.x); t.setAttribute('y', pos.y+24);
+            t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'node-label-svg');
+            t.setAttribute('fill', status==='current'?'#fff':(status==='completed'?'#22c55e':'#888'));
+            t.textContent = journeyType==='milestone' ? 'M'+pos.day : (pos.day===1?'START':(pos.day===totalDays?'FINISH':'Day '+pos.day));
+            svg.appendChild(t);
         });
     }
     
-    // Desktop Scroll Functions
-    function scrollStrip(delta) {
-        const strip = document.getElementById('dayStrip');
-        strip.scrollBy({ left: delta, behavior: 'smooth' });
-        updateScrollIndicator();
-    }
+    function scrollStrip(d) { const s=document.getElementById('dayStrip'); s.scrollBy({left:d,behavior:'smooth'}); updateScrollIndicator(); }
+    function updateScrollIndicator() { const s=document.getElementById('dayStrip'); const p=s.scrollLeft/(s.scrollWidth-s.clientWidth); document.getElementById('scrollIndicator').textContent = (Math.round(p*(totalDays-1))+1)+'/'+totalDays; }
     
-    function updateScrollIndicator() {
-        const strip = document.getElementById('dayStrip');
-        const scrollPercent = strip.scrollLeft / (strip.scrollWidth - strip.clientWidth);
-        const currentPage = Math.round(scrollPercent * (totalDays - 1)) + 1;
-        document.getElementById('scrollIndicator').textContent = `${currentPage}/${totalDays}`;
-    }
-    
-    function openDay(day) {
-        if (journeyType === 'daily' && day > currentDay) {
-            alert('Day ' + day + ' unlocks soon!');
-            return;
-        }
-        
-        const activity = activities[day];
-        if (!activity) {
-            alert('No content posted for ' + (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day);
-            return;
-        }
+    function openModal(day) {
+        const a = activitiesData[day];
+        if (!a) { alert('No content for day ' + day); return; }
         
         currentModalDay = day;
+        currentActivityId = a.id;
+        
         document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
-        document.getElementById('modalCaption').textContent = activity.content;
-        document.getElementById('modalLoveCount').textContent = activity.loveCount || 0;
-        document.getElementById('modalCommentCount').textContent = activity.commentCount || 0;
+        document.getElementById('modalCaption').textContent = a.content;
+        document.getElementById('modalLoveCount').textContent = a.loveCount;
+        document.getElementById('commentActivityId').value = a.id;
         
-        const commentActivityId = document.getElementById('commentActivityId');
-        if (commentActivityId) commentActivityId.value = activity.id;
+        const m = document.getElementById('modalMedia');
         
-        const mediaContainer = document.getElementById('modalMedia');
-        if (activity.isVideo) {
-            mediaContainer.innerHTML = `<video src="${activity.fileUrl}" controls playsinline autoplay></video>`;
+        if (a.fileUrl) {
+            if (a.isVideo) {
+                m.innerHTML = '<video src="' + a.fileUrl + '" controls playsinline autoplay style="width:100%;height:100%;object-fit:contain;"></video>';
+            } else {
+                m.innerHTML = '<img src="' + a.fileUrl + '" style="width:100%;height:100%;object-fit:contain;">';
+            }
+        } else if (a.sourceUrl) {
+            m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#888;padding:20px;text-align:center;"><i class="fas fa-link" style="font-size:48px;margin-bottom:16px;"></i><p style="margin-bottom:16px;">Content from ' + (a.sourcePlatform || 'social media') + '</p><a href="' + a.sourceUrl + '" target="_blank" class="action-btn action-btn-primary"><i class="fas fa-external-link-alt"></i> View Original</a></div>';
         } else {
-            mediaContainer.innerHTML = `<img src="${activity.fileUrl}" style="width:100%;height:100%;object-fit:contain;">`;
+            m.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;"><i class="fas fa-image" style="font-size:48px;"></i></div>';
         }
         
         document.getElementById('mediaModal').classList.add('active');
@@ -1574,113 +721,69 @@
     function closeModal() {
         document.getElementById('mediaModal').classList.remove('active');
         document.body.style.overflow = '';
-        const video = document.querySelector('#modalMedia video');
-        if (video) video.pause();
     }
     
-    function prevDay() {
-        if (currentModalDay > 1) openDay(currentModalDay - 1);
-    }
+    function prevDay() { if (currentModalDay > 1) openModal(currentModalDay - 1); }
+    function nextDay() { if (currentModalDay < totalDays) openModal(currentModalDay + 1); }
     
-    function nextDay() {
-        if (journeyType === 'daily' && currentModalDay >= currentDay) return;
-        if (currentModalDay < totalDays) openDay(currentModalDay + 1);
-    }
-    
-    function toggleFollow() {
-        fetch(`/api/journey/${journeySlug}/follow/`, {
+    function toggleLove(activityId) {
+        if (!activityId) activityId = currentActivityId;
+        fetch('/api/activity/' + activityId + '/love/', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
         })
         .then(r => r.json())
         .then(d => {
-            isFollowing = d.following;
-            const btn = document.getElementById('followText');
-            if (btn) btn.textContent = isFollowing ? 'Following' : 'Follow';
+            const countEl = document.getElementById('love-count-' + activityId);
+            if (countEl) countEl.textContent = d.love_count;
+            document.getElementById('modalLoveCount').textContent = d.love_count;
+        });
+    }
+    
+    function toggleLoveFromModal() { toggleLove(currentActivityId); }
+    
+    function toggleFollow() {
+        fetch('/api/journey/' + journeySlug + '/follow/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
+        })
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('followText').textContent = d.following ? 'Following' : 'Follow';
         });
     }
     
     function toggleSave() {
-        fetch(`/api/journey/${journeySlug}/save/`, {
+        fetch('/api/journey/' + journeySlug + '/save/', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
         })
         .then(r => r.json())
         .then(d => {
-            isSaved = d.saved;
-            const btn = document.getElementById('saveBtn');
-            const text = document.getElementById('saveText');
-            if (isSaved) {
-                btn.classList.add('saved');
-                text.textContent = 'Saved';
-            } else {
-                btn.classList.remove('saved');
-                text.textContent = 'Save';
-            }
+            const btn = document.getElementById('saveText');
+            btn.textContent = d.saved ? 'Saved' : 'Save';
+            btn.parentElement.classList.toggle('saved', d.saved);
         });
     }
     
-    function toggleLove() {
-        const activityId = activities[currentModalDay]?.id;
-        if (!activityId) return;
-        
-        fetch(`/api/activity/${activityId}/love/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(d => {
-            document.getElementById('modalLoveCount').textContent = d.love_count || 0;
-            const heroCount = document.getElementById('heroLoveCount');
-            if (heroCount && currentModalDay === currentDay) heroCount.textContent = d.love_count;
-        });
-    }
-    
-    function submitComment(event) {
-        event.preventDefault();
-        const activityId = document.getElementById('commentActivityId').value;
+    function submitComment(e) {
+        e.preventDefault();
         const content = document.getElementById('commentContent').value.trim();
+        if (!content) return;
         
-        if (!activityId || !content) return;
-        
-        fetch(`/api/activity/${activityId}/comment/`, {
+        fetch('/api/activity/' + currentActivityId + '/comment/', {
             method: 'POST',
             headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `content=${encodeURIComponent(content)}`
+            body: 'content=' + encodeURIComponent(content)
         })
         .then(r => r.json())
         .then(d => {
-            if (d.success) {
-                document.getElementById('commentContent').value = '';
-                const list = document.getElementById('commentsList');
-                const empty = document.getElementById('emptyCommentsMsg');
-                if (empty) empty.remove();
-                
-                const avatar = document.querySelector('.comment-form-container .comment-avatar').innerHTML;
-                const comment = document.createElement('div');
-                comment.className = 'comment-item';
-                comment.innerHTML = `<div class="comment-avatar">${avatar}</div>
-                    <div class="comment-content">
-                        <div class="comment-header"><span class="comment-username">@${d.comment.user}</span><span class="comment-time">just now</span></div>
-                        <p class="comment-text">${d.comment.content.replace(/</g, '&lt;')}</p>
-                    </div>`;
-                list.insertBefore(comment, list.firstChild);
-                
-                document.getElementById('commentCount').textContent = d.comment_count;
-                const heroCount = document.getElementById('heroCommentCount');
-                if (heroCount) heroCount.textContent = d.comment_count;
-            }
+            if (d.success) location.reload();
         });
     }
     
     function shareJourney() {
-        const url = window.location.href;
-        fetch(`/api/journey/${journeySlug}/share/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({platform: 'copy'})
-        });
-        navigator.clipboard?.writeText(url).then(() => alert('🔗 Link copied!'));
+        navigator.clipboard?.writeText(window.location.href).then(() => alert('Link copied!'));
     }
     
     function scrollToComments() {
@@ -1688,21 +791,8 @@
     }
     
     function toggleMenu() {
-        const action = prompt('Options:\n1. Share\n2. Report\n3. Cancel\n\nEnter number:');
-        if (action === '1') shareJourney();
-        else if (action === '2' && confirm('Report this journey?')) window.location.href = `/api/journey/${journeySlug}/report/`;
+        if (confirm('Share this journey?')) shareJourney();
     }
-    
-    // Video autoplay observer
-    const observer = new IntersectionObserver((e) => {
-        e.forEach(entry => {
-            const v = entry.target.querySelector('video');
-            if (v) entry.isIntersecting ? v.play().catch(()=>{}) : v.pause();
-        });
-    }, {threshold: 0.5});
-    document.querySelectorAll('.strip-day').forEach(d => observer.observe(d));
-    const heroV = document.querySelector('.current-day-hero video');
-    if (heroV) observer.observe(document.querySelector('.current-day-hero'));
     
     document.getElementById('mediaModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
     document.addEventListener('keydown', e => {
@@ -1712,14 +802,12 @@
         else if (e.key === 'ArrowRight') nextDay();
     });
     
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
         drawMeanderingPath();
-        const act = activities[currentDay];
-        if (act) document.getElementById('commentActivityId').value = act.id;
-        
-        const strip = document.getElementById('dayStrip');
-        strip.addEventListener('scroll', updateScrollIndicator);
+        const a = activitiesData[currentDay];
+        if (a) document.getElementById('commentActivityId').value = a.id;
+        const s = document.getElementById('dayStrip');
+        s.addEventListener('scroll', updateScrollIndicator);
         updateScrollIndicator();
     });
 </script>

@@ -457,6 +457,10 @@ class Activity(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    source_url = models.URLField(blank=True, help_text="Original social media URL")
+    source_platform = models.CharField(max_length=20, blank=True, help_text="tiktok, youtube, instagram, facebook")
+    # Embed
+    embed_html = models.TextField(blank=True, help_text="Embed HTML for social media content")
     
     class Meta:
         ordering = ['day_number_field']

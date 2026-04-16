@@ -143,6 +143,14 @@ urlpatterns = [
     # TINYMCE (for blog)
     # ============================================================================
     path('tinymce/', include('tinymce.urls')),
+
+
+   # preview api
+    path('api/preview/', views.api_preview_url, name='api_preview_url'),
+
+    # Preview & Claim
+    path('preview/<slug:slug>/', views.preview_journey_view, name='preview_journey'),
+    path('claim/<slug:slug>/', views.claim_journey_view, name='claim_journey'),
 ]
 
 # ============================================================================

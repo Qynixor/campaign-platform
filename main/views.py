@@ -161,18 +161,22 @@ def parse_day_from_caption(caption):
                 return day
     return None
 
-
 def detect_platform_from_url(url):
     """Detect social platform from URL"""
+    if not url:
+        return None
+    url = url.lower()
     if 'tiktok.com' in url:
         return 'tiktok'
     elif 'instagram.com' in url:
         return 'instagram'
     elif 'youtube.com' in url or 'youtu.be' in url:
         return 'youtube'
+    elif 'facebook.com' in url or 'fb.com' in url:
+        return 'facebook'
+    elif 'twitter.com' in url or 'x.com' in url: 
+        return 'twitter'
     return None
-
-
 # ============================================================================
 # AUTHENTICATION VIEWS
 # ============================================================================
@@ -182,17 +186,28 @@ def signup_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     
+    # Get the next URL from query parameters
+    next_url = request.GET.get('next', '')
+    
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, f'Welcome to Rallynex, {user.username}!')
-            return redirect('dashboard')
+            
+            # Redirect to next URL if provided, otherwise onboarding
+            if next_url:
+                return redirect(next_url)
+            return redirect('onboarding')
     else:
         form = SignUpForm()
     
-    return render(request, 'auth/signup.html', {'form': form})
+    # Pass next_url to template to preserve it in the form
+    return render(request, 'auth/signup.html', {
+        'form': form,
+        'next_url': next_url
+    })
 
 
 def login_view(request):
@@ -330,6 +345,8 @@ def discover_view(request):
     }
     
     return render(request, 'discover.html', context)
+import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 def journey_detail_view(request, slug):
     """View a single journey"""
@@ -388,14 +405,21 @@ def journey_detail_view(request, slug):
             'content': activity.content,
             'fileUrl': activity.file.url if activity.file else None,
             'isVideo': activity.is_video,
+            'thumbnailUrl': activity.thumbnail.url if activity.thumbnail else None,
+            'source_url': activity.source_url or '',
+            'source_platform': getattr(activity, 'source_platform', ''),
+            'embedHtml': activity.embed_html or '',
             'loveCount': activity.get_love_count(),
             'commentCount': activity.get_comment_count(),
         }
     
+    # Use DjangoJSONEncoder to handle special characters
+    activities_json_str = json.dumps(activities_json, cls=DjangoJSONEncoder)
+    
     context = {
         'journey': journey,
         'activities_by_day': activities_by_day,
-        'activities_json': json.dumps(activities_json),
+        'activities_json': activities_json_str,
         'current_day': current_day,
         'current_activity': current_activity,
         'is_following': is_following,
@@ -816,22 +840,193 @@ def disconnect_social_view(request, connection_id):
     
     return redirect('social_connections')
 
+@login_required
+def quick_import_view(request):
+    profile = get_user_profile(request.user)
+    
+    if request.method == 'POST':
+        form = QuickImportForm(request.POST, user=request.user)
+        if form.is_valid():
+            url = form.cleaned_data['url']
+            journey = form.cleaned_data['journey']
+            day_number = form.cleaned_data['day_number']
+            platform = form.cleaned_data.get('detected_platform') or detect_platform_from_url(url)
+            caption = request.POST.get('caption', '').strip()
+            
+            if not caption:
+                caption = f"Imported from {platform.title() if platform else 'Social Media'}"
+            
+            # Use update_or_create
+            activity, created = Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day_number,
+                defaults={
+                    'content': caption,
+                    'source_url': url,
+                    'source_platform': platform or '',
+                    'is_video': False,
+                }
+            )
+            
+            if created:
+                messages.success(request, f'✅ Content imported to Day {day_number}!')
+            else:
+                messages.success(request, f'✅ Day {day_number} updated with new content!')
+            
+            return redirect('journey_detail', slug=journey.slug)
+    else:
+        form = QuickImportForm(user=request.user)
+    
+    return render(request, 'dashboard/quick_import.html', {'form': form})
+
+
+def generate_embed_html(url, platform):
+    """Generate embed HTML when oEmbed fails"""
+    if platform == 'youtube':
+        video_id = extract_youtube_id(url)
+        if video_id:
+            return f'<iframe width="100%" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
+    
+    elif platform == 'tiktok':
+        return f'<blockquote class="tiktok-embed" cite="{url}"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>'
+    
+    elif platform == 'instagram':
+        return f'<blockquote class="instagram-media" data-instgrm-permalink="{url}"></blockquote><script async src="//www.instagram.com/embed.js"></script>'
+    
+    elif platform == 'facebook':
+        return f'<iframe src="https://www.facebook.com/plugins/post.php?href={requests.utils.quote(url)}&width=350" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>'
+    
+    return ''
+
+
+def extract_youtube_id(url):
+    """Extract YouTube video ID from URL"""
+    import re
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
+        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+def get_embed_html_from_url(url, platform):
+    """Generate embed HTML for platforms"""
+    if platform == 'tiktok':
+        return f'<blockquote class="tiktok-embed" cite="{url}"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>'
+    
+    elif platform == 'instagram':
+        return f'<blockquote class="instagram-media" data-instgrm-permalink="{url}"></blockquote><script async src="//www.instagram.com/embed.js"></script>'
+    
+    elif platform == 'youtube':
+        video_id = extract_youtube_video_id(url)
+        if video_id:
+            return f'<iframe width="100%" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
+    
+    elif platform == 'facebook':
+        return f'<iframe src="https://www.facebook.com/plugins/post.php?href={requests.utils.quote(url)}&width=350" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>'
+    
+    return None
+
+
+def extract_youtube_video_id(url):
+    """Extract video ID from YouTube URL"""
+    import re
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
+        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+def fetch_oembed_data(url, platform):
+    import requests
+    
+    oembed_endpoints = {
+        'tiktok': 'https://www.tiktok.com/oembed',
+        'youtube': 'https://www.youtube.com/oembed',
+        'instagram': 'https://graph.facebook.com/v18.0/instagram_oembed',
+        'facebook': 'https://graph.facebook.com/v18.0/oembed_post',
+        'twitter': 'https://publish.twitter.com/oembed',  # Works with x.com too
+    }
+    
+    endpoint = oembed_endpoints.get(platform)
+    if not endpoint:
+        return None
+    
+    # Convert x.com to twitter.com for better compatibility
+    if platform == 'twitter':
+        url = url.replace('x.com', 'twitter.com')
+    
+    try:
+        response = requests.get(endpoint, params={'url': url, 'omit_script': '0'}, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            # Twitter returns 'author_name' and 'html'
+            return {
+                'title': data.get('author_name', '') + ': ' + data.get('title', ''),
+                'thumbnail_url': '',
+                'author_name': data.get('author_name', ''),
+                'html': data.get('html', ''),
+            }
+    except Exception as e:
+        print(f"oEmbed fetch error for {platform}: {e}")
+    
+    return None
+
+@login_required
+def api_preview_url(request):
+    url = request.GET.get('url', '').strip()
+    if not url:
+        return JsonResponse({'success': False, 'error': 'No URL provided'})
+    
+    platform = detect_platform_from_url(url)
+    if not platform:
+        return JsonResponse({'success': False, 'error': 'Unsupported platform'})
+    
+    oembed_data = fetch_oembed_data(url, platform)
+    
+    if oembed_data:
+        return JsonResponse({
+            'success': True,
+            'platform': platform,
+            'title': oembed_data.get('title', ''),
+            'thumbnail_url': oembed_data.get('thumbnail_url', ''),
+            'author_name': oembed_data.get('author_name', ''),
+            'html': oembed_data.get('html', ''),
+        })
+    
+    # Fallback for Twitter/X
+    if platform == 'twitter':
+        return JsonResponse({
+            'success': True,
+            'platform': platform,
+            'title': 'Tweet',
+            'thumbnail_url': '',
+            'author_name': url.split('/')[3] if len(url.split('/')) > 3 else '',
+            'html': '',
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Could not fetch media'})
 
 @login_required
 def import_queue_view(request):
     """View and manage imported content queue"""
     profile = get_user_profile(request.user)
     
-    # Get user's journeys for filter
     journeys = Journey.objects.filter(creator=profile)
     
-    # Get pending imports
+    # Include both connected and manual imports
     imports = ImportedContent.objects.filter(
-        social_connection__user=request.user,
+        Q(social_connection__user=request.user) | Q(social_connection__isnull=True),
         status='pending'
     ).select_related('social_connection').order_by('-posted_at')
     
-    # Filter by journey if specified
     journey_id = request.GET.get('journey')
     if journey_id:
         imports = imports.filter(assigned_journey_id=journey_id)
@@ -843,56 +1038,6 @@ def import_queue_view(request):
     }
     
     return render(request, 'dashboard/import_queue.html', context)
-
-
-@login_required
-def quick_import_view(request):
-    """Quick import from social media via paste link"""
-    profile = get_user_profile(request.user)
-    
-    if request.method == 'POST':
-        form = QuickImportForm(request.POST, user=request.user)
-        if form.is_valid():
-            url = form.cleaned_data['url']
-            journey = form.cleaned_data['journey']
-            day_number = form.cleaned_data['day_number']
-            platform = form.cleaned_data.get('detected_platform')
-            
-            # Create imported content record
-            imported = ImportedContent.objects.create(
-                social_connection=None,  # Manual import
-                platform=platform,
-                platform_post_id=f"manual_{timezone.now().timestamp()}",
-                platform_url=url,
-                caption=f"Imported from {platform}",
-                media_url=url,
-                media_type='video' if 'video' in url else 'image',
-                posted_at=timezone.now(),
-                detected_day=day_number,
-                assigned_journey=journey,
-                assigned_day=day_number,
-                status='assigned',
-                processed_at=timezone.now()
-            )
-            
-            # Create activity
-            activity = Activity.objects.create(
-                journey=journey,
-                content=imported.caption,
-                source_url=url,
-                day_number_field=day_number,
-                imported_from=imported
-            )
-            
-            imported.created_activity = activity
-            imported.save()
-            
-            messages.success(request, f'Content imported to Day {day_number}!')
-            return redirect('journey_content', slug=journey.slug)
-    else:
-        form = QuickImportForm(user=request.user)
-    
-    return render(request, 'dashboard/quick_import.html', {'form': form})
 
 
 @login_required
@@ -1510,3 +1655,52 @@ def handler500(request):
 def handler403(request, exception):
     """Custom 403 page"""
     return render(request, 'errors/403.html', status=403)
+
+
+
+def preview_journey_view(request, slug):
+    """Public preview page - no login required"""
+    journey = get_object_or_404(
+        Journey.objects.select_related('creator__user').prefetch_related('activities'),
+        slug=slug,
+        is_public=True,
+        is_active=True
+    )
+    
+    # Check if journey is already claimed by a real user
+    is_claimed = not journey.creator.user.username.startswith('rallynex')
+    
+    # Get activities organized by day
+    activities_by_day = journey.get_all_activities_by_day()
+    current_day = journey.get_current_day()
+    current_activity = activities_by_day.get(current_day)
+    
+    context = {
+        'journey': journey,
+        'activities_by_day': activities_by_day,
+        'current_day': current_day,
+        'current_activity': current_activity,
+        'is_claimed': is_claimed,
+        'total_days_range': range(1, journey.duration + 1),
+    }
+    
+    return render(request, 'journey/preview.html', context)
+
+
+@login_required
+def claim_journey_view(request, slug):
+    """Claim a preview journey after signup"""
+    journey = get_object_or_404(Journey, slug=slug, is_public=True)
+    
+    # Check if already claimed
+    if not journey.creator.user.username.startswith('rallynex'):
+        messages.warning(request, 'This journey has already been claimed.')
+        return redirect('journey_detail', slug=slug)
+    
+    # Transfer ownership to the logged-in user
+    profile = get_user_profile(request.user)
+    journey.creator = profile
+    journey.save()
+    
+    messages.success(request, f'🎉 You now own "{journey.title}"! Start adding more content.')
+    return redirect('journey_detail', slug=slug)

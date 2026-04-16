@@ -1,0 +1,489 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ journey.title }} | Preview | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    * { -webkit-tap-highlight-color: transparent; }
+    
+    .preview-container {
+        max-width: 430px;
+        margin: 0 auto;
+        background: #0a0a0a;
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+    
+    .preview-banner {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #fff;
+    }
+    
+    .preview-banner span {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .preview-banner i {
+        margin-right: 8px;
+    }
+    
+    .claim-banner {
+        background: #111;
+        border-bottom: 1px solid #222;
+        padding: 16px 20px;
+        text-align: center;
+    }
+    
+    .claim-banner h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+    
+    .claim-banner p {
+        color: #888;
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+    
+    .claim-btn {
+        display: block;
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    
+    .claim-btn:hover {
+        transform: scale(1.02);
+    }
+    
+    .claimed-badge {
+        background: #22c55e;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .journey-hero {
+        position: relative;
+        height: 280px;
+        background: linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%);
+        overflow: hidden;
+    }
+    
+    .journey-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    .journey-path-visual {
+        position: relative;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 10px;
+    }
+    
+    .path-svg {
+        width: 100%;
+        height: 140px;
+        display: block;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    }
+    
+    .path-node { cursor: default; transition: all 0.3s; }
+    .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
+    .path-node.current { fill: #fff; stroke: #fff; stroke-width: 3; animation: pulseNode 2s infinite; }
+    .path-node.locked { fill: #1a1a1a; stroke: #444; stroke-width: 2; }
+    .path-node.available { fill: #f59e0b; stroke: #f59e0b; stroke-width: 2; }
+    
+    @keyframes pulseNode {
+        0%, 100% { r: 10px; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
+        50% { r: 12px; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)); }
+    }
+    
+    .node-label-svg {
+        font-weight: 700; font-size: 9px; text-transform: uppercase;
+        pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .hero-stats {
+        position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-around;
+        z-index: 10; background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(10px);
+        padding: 12px 8px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .hero-stat { text-align: center; }
+    .hero-stat .value { font-size: 22px; font-weight: 800; color: #fff; }
+    .hero-stat .label { font-size: 9px; color: #888; text-transform: uppercase; }
+    
+    .journey-title-top {
+        position: absolute; top: 20px; left: 20px; right: 20px; z-index: 20;
+    }
+    
+    .journey-title-top h2 {
+        font-size: 18px; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .creator-info { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .creator-avatar {
+        width: 22px; height: 22px; border-radius: 50%; background: #2a2a2a;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .creator-name { font-size: 12px; color: #ccc; }
+    
+    .progress-section { padding: 16px 20px; background: #0a0a0a; }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .progress-header span { font-size: 12px; font-weight: 600; color: #fff; }
+    .progress-track { height: 3px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
+    .progress-fill {
+        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+    
+    .cinematic-strip { padding: 16px 0; }
+    .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
+    .strip-header i { color: #fff; font-size: 13px; }
+    .strip-header h3 { font-size: 13px; font-weight: 600; color: #fff; }
+    
+    .day-strip {
+        display: flex; gap: 8px; overflow-x: auto; padding: 8px 20px 12px;
+        scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; cursor: grab;
+    }
+    .day-strip::-webkit-scrollbar { display: none; }
+    
+    .strip-day {
+        flex: 0 0 85px; scroll-snap-align: start; position: relative;
+        transition: all 0.2s;
+    }
+    
+    .strip-thumbnail {
+        width: 85px; height: 125px; border-radius: 12px; overflow: hidden;
+        background: #1a1a1a; border: 1px solid transparent;
+    }
+    .strip-thumbnail video, .strip-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .strip-overlay {
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 4px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    }
+    .strip-day-number { font-size: 12px; font-weight: 700; color: #fff; display: block; }
+    .strip-day-status { font-size: 8px; color: #aaa; text-transform: uppercase; }
+    
+    .check-badge {
+        position: absolute; top: 6px; right: 6px; width: 16px; height: 16px;
+        background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 8px;
+    }
+    
+    .current-day-hero {
+        margin: 8px 20px 16px; border-radius: 20px; overflow: hidden;
+        min-height: 250px; border: 1px solid #2a2a2a; background: #000;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .current-day-hero video, .current-day-hero img { width: 100%; height: auto; max-height: 400px; object-fit: contain; }
+    
+    .hero-content {
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 30px 16px 16px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+    }
+    
+    .hero-badge {
+        display: inline-block; background: #fff; color: #0a0a0a; padding: 4px 10px;
+        border-radius: 30px; font-size: 10px; font-weight: 600; margin-bottom: 8px;
+    }
+    
+    .hero-day-title {
+        font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #fff;
+    }
+    
+    .hero-day-desc {
+        font-size: 12px; color: #aaa; line-height: 1.4;
+    }
+    
+    .footer-claim {
+        padding: 20px;
+        background: #0a0a0a;
+        border-top: 1px solid #1a1a1a;
+    }
+    
+    .rallynex-brand {
+        text-align: center; padding: 20px; color: #666; font-size: 12px;
+        border-top: 1px solid #1a1a1a; margin-top: 20px;
+    }
+    
+    .rallynex-brand span {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="preview-container">
+    
+    {# Preview Banner #}
+    <div class="preview-banner">
+        <span><i class="fas fa-eye"></i> Preview Mode</span>
+        <span>👤 @{{ journey.creator.user.username }}</span>
+    </div>
+    
+    {# Claim Banner - Only show if not claimed #}
+    {% if not is_claimed %}
+    <div class="claim-banner">
+        <h3>Want this journey?</h3>
+        <p>This is a preview. Claim it to make it yours and start adding more content.</p>
+        <a href="{% url 'signup' %}?next={% url 'claim_journey' slug=journey.slug %}" class="claim-btn">
+            <i class="fas fa-flag-checkered"></i> Claim This Journey
+        </a>
+        <p style="margin-top: 12px; font-size: 12px;">
+            Already have an account? 
+            <a href="{% url 'login' %}?next={% url 'claim_journey' slug=journey.slug %}" style="color: #3b82f6;">Log in</a>
+        </p>
+    </div>
+    {% else %}
+    <div class="claim-banner">
+        <span class="claimed-badge"><i class="fas fa-check-circle"></i> Claimed by @{{ journey.creator.user.username }}</span>
+    </div>
+    {% endif %}
+    
+    {# Hero Section #}
+    <div class="journey-hero">
+        <div class="journey-title-top">
+            <h2>{{ journey.title }}</h2>
+            <div class="creator-info">
+                <div class="creator-avatar">
+                    {% if journey.creator.image %}
+                        <img src="{{ journey.creator.image.url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    {% else %}
+                        <i class="fas fa-user" style="font-size:10px;color:#888;"></i>
+                    {% endif %}
+                </div>
+                <span class="creator-name">@{{ journey.creator.user.username }}</span>
+            </div>
+        </div>
+        
+        <div class="journey-path-visual">
+            <svg class="path-svg" viewBox="0 0 400 140" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="value">{{ current_day }}</div>
+                <div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days{% endif %}</div>
+            </div>
+            <div class="hero-stat">
+                <div class="value">{{ journey.duration }}</div>
+                <div class="label">Total</div>
+            </div>
+        </div>
+    </div>
+    
+    {# Progress Bar #}
+    <div class="progress-section">
+        <div class="progress-header">
+            <span>Journey Progress</span>
+            <span>{{ current_day }}/{{ journey.duration }} · {{ journey.get_progress_percentage }}%</span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+        </div>
+    </div>
+    
+    {# Day Strip #}
+    <div class="cinematic-strip">
+        <div class="strip-header">
+            <i class="fas fa-film"></i>
+            <h3>{% if journey.journey_type == 'milestone' %}All Milestones{% else %}All Days{% endif %}</h3>
+        </div>
+        
+        <div class="day-strip">
+            {% for day_num in total_days_range %}
+                {% with activity=activities_by_day|get_item:day_num %}
+                <div class="strip-day">
+                    <div class="strip-thumbnail">
+                        {% if activity and activity.file %}
+                            {% if activity.is_video %}
+                                <video src="{{ activity.file.url }}" muted loop playsinline></video>
+                            {% else %}
+                                <img src="{{ activity.file.url }}" alt="">
+                            {% endif %}
+                        {% else %}
+                            <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-image" style="color:#444;font-size:16px;"></i>
+                            </div>
+                        {% endif %}
+                        {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
+                        <div class="strip-overlay">
+                            <span class="strip-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
+                            <span class="strip-day-status">{% if activity %}Done{% else %}Open{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    {# Current Day #}
+    {% if current_activity %}
+    <div class="current-day-hero">
+        {% if current_activity.file %}
+            {% if current_activity.is_video %}
+                <video src="{{ current_activity.file.url }}" controls playsinline></video>
+            {% else %}
+                <img src="{{ current_activity.file.url }}" alt="">
+            {% endif %}
+        {% else %}
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;">
+                <i class="fas fa-image" style="font-size:40px;"></i>
+            </div>
+        {% endif %}
+        
+        <div class="hero-content">
+            <span class="hero-badge">{% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }}{% endif %}</span>
+            <h3 class="hero-day-title">{{ current_activity.content|truncatechars:40 }}</h3>
+            <p class="hero-day-desc">{{ current_activity.content|truncatechars:80 }}</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    {# Footer Claim #}
+    <div class="footer-claim">
+        {% if not is_claimed %}
+        <a href="{% url 'signup' %}?next={% url 'claim_journey' slug=journey.slug %}" class="claim-btn">
+            <i class="fas fa-flag-checkered"></i> Claim This Journey (Free)
+        </a>
+        <p style="text-align:center; margin-top:12px; color:#888; font-size:12px;">
+            Takes 1 minute — no credit card required
+        </p>
+        {% else %}
+        <a href="{% url 'journey_detail' slug=journey.slug %}" class="claim-btn" style="background:#22c55e;">
+            <i class="fas fa-external-link-alt"></i> View Full Journey
+        </a>
+        {% endif %}
+    </div>
+    
+    {# Rallynex Brand #}
+    <div class="rallynex-brand">
+        Powered by <span>Rallynex</span> · Turn content into journeys
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const journeyType = '{{ journey.journey_type }}';
+    const currentDay = {{ current_day }};
+    const totalDays = {{ journey.duration }};
+    
+    function drawMeanderingPath() {
+        const svg = document.querySelector('.path-svg');
+        if (!svg) return;
+        svg.innerHTML = '';
+        const totalNodes = totalDays;
+        const completed = currentDay;
+        const progressColor = journeyType === 'milestone' ? '#8b5cf6' : '#3b82f6';
+        const points = [], nodePositions = [];
+        for (let i = 0; i < totalNodes; i++) {
+            const x = 40 + (i / (totalNodes - 1)) * 320;
+            const y = 70 + Math.sin(i * 0.7) * 22;
+            points.push({ x: x, y: y });
+            nodePositions.push({ x: x, y: y, day: i + 1 });
+        }
+        let pathD = 'M ' + points[0].x + ' ' + points[0].y;
+        for (let i = 1; i < points.length; i++) {
+            const p = points[i-1], c = points[i];
+            pathD += ' C ' + (p.x + (c.x-p.x)*0.35) + ' ' + p.y + ', ' + (c.x - (c.x-p.x)*0.35) + ' ' + c.y + ', ' + c.x + ' ' + c.y;
+        }
+        const bgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        bgPath.setAttribute('d', pathD);
+        bgPath.setAttribute('stroke', '#2a2a2a');
+        bgPath.setAttribute('stroke-width', '3');
+        bgPath.setAttribute('fill', 'none');
+        bgPath.setAttribute('class', 'path-line');
+        svg.appendChild(bgPath);
+        if (completed > 0 && totalNodes > 1) {
+            const progPoints = points.slice(0, completed);
+            let progD = 'M ' + progPoints[0].x + ' ' + progPoints[0].y;
+            for (let i = 1; i < progPoints.length; i++) {
+                const p = progPoints[i-1], c = progPoints[i];
+                progD += ' C ' + (p.x + (c.x-p.x)*0.35) + ' ' + p.y + ', ' + (c.x - (c.x-p.x)*0.35) + ' ' + c.y + ', ' + c.x + ' ' + c.y;
+            }
+            const progPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            progPath.setAttribute('d', progD);
+            progPath.setAttribute('stroke', progressColor);
+            progPath.setAttribute('stroke-width', '4');
+            progPath.setAttribute('fill', 'none');
+            progPath.style.strokeDasharray = '1000';
+            progPath.style.strokeDashoffset = '1000';
+            progPath.style.animation = 'drawLine 1.5s ease-out forwards';
+            svg.appendChild(progPath);
+        }
+        let nodesToShow = totalNodes <= 8 ? nodePositions : [nodePositions[0], ...nodePositions.filter((_,i) => i%Math.floor(totalNodes/7)===0).slice(1), nodePositions[totalNodes-1]];
+        nodesToShow.forEach(pos => {
+            let status = pos.day <= completed ? 'completed' : (pos.day === completed+1 && journeyType==='daily' ? 'current' : (journeyType==='milestone' ? 'available' : 'locked'));
+            if (status === 'current') {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                g.setAttribute('cx', pos.x); g.setAttribute('cy', pos.y); g.setAttribute('r', '18');
+                g.setAttribute('fill', 'none'); g.setAttribute('stroke', progressColor);
+                g.setAttribute('stroke-width', '1.5'); g.setAttribute('opacity', '0.3');
+                g.setAttribute('class', 'node-glow'); svg.appendChild(g);
+            }
+            const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
+            c.setAttribute('r', status === 'current' ? '10' : '8');
+            c.setAttribute('class', 'path-node ' + status);
+            svg.appendChild(c);
+            if (status === 'completed') {
+                const ch = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                ch.setAttribute('x', pos.x); ch.setAttribute('y', pos.y+3);
+                ch.setAttribute('text-anchor', 'middle'); ch.setAttribute('fill', '#fff');
+                ch.setAttribute('font-size', '8'); ch.textContent = '✓'; svg.appendChild(ch);
+            }
+            const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t.setAttribute('x', pos.x); t.setAttribute('y', pos.y+24);
+            t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'node-label-svg');
+            t.setAttribute('fill', status==='current'?'#fff':(status==='completed'?'#22c55e':'#888'));
+            t.textContent = journeyType==='milestone' ? 'M'+pos.day : (pos.day===1?'START':(pos.day===totalNodes?'FINISH':'Day '+pos.day));
+            svg.appendChild(t);
+        });
+    }
+    
+    drawMeanderingPath();
+</script>
+{% endblock %}

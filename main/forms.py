@@ -654,7 +654,7 @@ class ActivityForm(forms.ModelForm):
         return activity
 
 class QuickImportForm(forms.Form):
-    """Quick import from social media via paste link"""
+    """Smart Import - Paste link, auto-detect platform, preview content"""
     
     url = forms.URLField(
         widget=forms.URLInput(attrs={
@@ -680,6 +680,32 @@ class QuickImportForm(forms.Form):
         })
     )
     
+    # NEW: Caption field (editable by user)
+    caption = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Describe this update...',
+            'rows': 2
+        })
+    )
+    
+    # NEW: Hidden fields for platform detection and embed data
+    detected_platform = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    embed_html = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    thumbnail_url = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -688,20 +714,29 @@ class QuickImportForm(forms.Form):
             self.fields['journey'].queryset = Journey.objects.filter(
                 creator__user=user,
                 is_active=True
-            )
+            ).order_by('-created_at')
     
     def clean_url(self):
-        url = self.cleaned_data.get('url', '')
+        url = self.cleaned_data.get('url', '').strip()
         
-        # Basic platform detection
+        if not url:
+            raise ValidationError('Please enter a URL.')
+        
+        # Platform detection
+        platform = None
         if 'tiktok.com' in url:
             platform = 'tiktok'
         elif 'instagram.com' in url:
             platform = 'instagram'
         elif 'youtube.com' in url or 'youtu.be' in url:
             platform = 'youtube'
+        elif 'facebook.com' in url or 'fb.com' in url:
+            platform = 'facebook'
+        elif 'twitter.com' in url or 'x.com' in url:
+            platform = 'twitter'
         else:
-            raise ValidationError('Please enter a valid TikTok, Instagram, or YouTube URL.')
+
+            raise ValidationError('Please enter a valid TikTok, Instagram, YouTube, Facebook or X/Twitter URL.')
         
         self.cleaned_data['detected_platform'] = platform
         return url
@@ -710,16 +745,56 @@ class QuickImportForm(forms.Form):
         day_number = self.cleaned_data.get('day_number')
         journey = self.cleaned_data.get('journey')
         
-        if journey and day_number:
+        if not day_number:
+            raise ValidationError('Please enter a day number.')
+        
+        if day_number < 1:
+            raise ValidationError('Day number must be at least 1.')
+        
+        if journey:
+            # Check if day is locked (only for daily challenges)
             if journey.is_day_locked(day_number):
-                raise ValidationError(f"Day {day_number} is not available yet.")
+                if journey.journey_type == 'daily':
+                    raise ValidationError(f"Day {day_number} is not available yet.")
             
-            # Check if day already has content
-            if Activity.objects.filter(journey=journey, day_number_field=day_number).exists():
-                raise ValidationError(f"Day {day_number} already has content. This will override it.")
+            # Check if day already has content (warning, not error)
+            existing = Activity.objects.filter(journey=journey, day_number_field=day_number).first()
+            if existing:
+                # Store existing activity for warning message
+                self.existing_activity = existing
         
         return day_number
-
+    
+    def clean_caption(self):
+        caption = self.cleaned_data.get('caption', '').strip()
+        
+        # If no caption provided, we'll generate one in the view
+        return caption
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Ensure journey belongs to the user
+        journey = cleaned_data.get('journey')
+        user = self.initial.get('user') or (hasattr(self, 'user') and self.user)
+        
+        if journey and user:
+            if journey.creator.user != user:
+                raise ValidationError('You do not have permission to import to this journey.')
+        
+        return cleaned_data
+    
+    def get_detected_platform(self):
+        """Helper to get detected platform"""
+        return self.cleaned_data.get('detected_platform')
+    
+    def has_existing_activity(self):
+        """Check if day already has content"""
+        return hasattr(self, 'existing_activity')
+    
+    def get_existing_activity(self):
+        """Get existing activity if any"""
+        return getattr(self, 'existing_activity', None)
 
 # ============================================================================
 # SOCIAL CONNECTION FORMS

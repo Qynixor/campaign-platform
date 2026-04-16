@@ -139,6 +139,23 @@
         font-size: 12px;
         margin-top: 4px;
     }
+    
+    .claim-notice {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        color: #3b82f6;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .claim-notice i {
+        font-size: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -150,6 +167,13 @@
             <h1 class="auth-title">Create account</h1>
             <p class="auth-subtitle">Start your journey with Rallynex</p>
         </div>
+        
+        {% if next_url and 'claim' in next_url %}
+        <div class="claim-notice">
+            <i class="fas fa-flag-checkered"></i>
+            <span>You're one step away from claiming your journey!</span>
+        </div>
+        {% endif %}
         
         {% if form.errors %}
         <ul class="errorlist">
@@ -163,6 +187,10 @@
         
         <form method="post" class="auth-form">
             {% csrf_token %}
+            
+            {% if next_url %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            {% endif %}
             
             <div class="form-group">
                 <label for="id_username">Username</label>
@@ -224,13 +252,18 @@
             </div>
             
             <button type="submit" class="auth-btn">
-                <i class="fas fa-user-plus"></i> Create Account
+                <i class="fas fa-user-plus"></i> 
+                {% if next_url and 'claim' in next_url %}
+                    Create Account & Claim Journey
+                {% else %}
+                    Create Account
+                {% endif %}
             </button>
         </form>
         
         <div class="auth-footer">
             Already have an account? 
-            <a href="{% url 'login' %}">Log in</a>
+            <a href="{% url 'login' %}{% if next_url %}?next={{ next_url }}{% endif %}">Log in</a>
         </div>
         
         <div class="auth-footer" style="margin-top: 16px; font-size: 12px;">

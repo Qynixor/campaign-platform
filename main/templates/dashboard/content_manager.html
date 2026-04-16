@@ -9,28 +9,30 @@
     .manager-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 30px 20px;
+        padding: 20px 12px;
     }
     
+    /* Mobile-optimized header */
     .manager-header {
         display: flex;
         align-items: center;
-        gap: 20px;
-        margin-bottom: 30px;
+        gap: 12px;
+        margin-bottom: 20px;
         flex-wrap: wrap;
     }
     
     .back-btn {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         background: #1a1a1a;
-        border-radius: 12px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 20px;
+        font-size: 18px;
         transition: background 0.2s;
+        flex-shrink: 0;
     }
     
     .back-btn:hover {
@@ -39,35 +41,55 @@
     
     .manager-title {
         flex: 1;
+        min-width: 0;
     }
     
     .manager-title h1 {
-        font-size: 24px;
+        font-size: 18px;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .manager-title p {
         color: #888;
-        font-size: 14px;
+        font-size: 12px;
     }
     
+    .view-public-btn {
+        padding: 8px 14px;
+        background: transparent;
+        border: 1px solid #333;
+        border-radius: 20px;
+        color: #fff;
+        font-size: 12px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .view-public-btn i {
+        font-size: 12px;
+    }
+    
+    /* Compact progress summary */
     .progress-summary {
         background: #111;
         border: 1px solid #222;
-        border-radius: 16px;
-        padding: 20px 24px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 20px;
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 20px;
     }
     
     .progress-stats {
         display: flex;
-        gap: 40px;
+        justify-content: space-around;
+        margin-bottom: 16px;
     }
     
     .progress-stat {
@@ -75,31 +97,34 @@
     }
     
     .progress-stat .value {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 700;
+        line-height: 1.2;
     }
     
     .progress-stat .label {
-        font-size: 12px;
+        font-size: 10px;
         color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
     
     .progress-bar-large {
-        width: 300px;
+        width: 100%;
     }
     
     .progress-bar-large .progress-track {
-        height: 8px;
+        height: 6px;
         background: #2a2a2a;
-        border-radius: 4px;
+        border-radius: 3px;
         overflow: hidden;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     
     .progress-bar-large .progress-fill {
         height: 100%;
         background: #3b82f6;
-        border-radius: 4px;
+        border-radius: 3px;
     }
     
     .progress-bar-large.milestone .progress-fill {
@@ -107,44 +132,61 @@
     }
     
     .progress-text {
-        font-size: 14px;
+        font-size: 12px;
         color: #888;
     }
     
-    /* Day/Milestone Grid */
+    /* Mobile Gallery Grid - Many smaller columns */
     .day-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
     }
     
+    /* Tablet and up - more columns */
+    @media (min-width: 500px) {
+        .day-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .day-grid {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        .manager-container {
+            padding: 30px 20px;
+        }
+    }
+    
+    @media (min-width: 1000px) {
+        .day-grid {
+            grid-template-columns: repeat(6, 1fr);
+        }
+    }
+    
+    /* Compact day cards */
     .day-card {
         background: #111;
         border: 1px solid #222;
-        border-radius: 16px;
+        border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
         position: relative;
     }
     
-    .day-card:hover {
-        border-color: #3b82f6;
-        transform: translateY(-2px);
+    .day-card:active {
+        transform: scale(0.98);
     }
     
-    .day-card.milestone-card:hover {
-        border-color: #8b5cf6;
+    .day-card.milestone-card {
+        border-color: rgba(139, 92, 246, 0.3);
     }
     
     .day-card.locked {
         opacity: 0.5;
         cursor: not-allowed;
-    }
-    
-    .day-card.locked:hover {
-        border-color: #222;
-        transform: none;
     }
     
     .day-thumbnail {
@@ -164,143 +206,182 @@
     }
     
     .day-thumbnail i {
-        font-size: 32px;
+        font-size: 24px;
         color: #444;
     }
     
+    /* Compact badges */
     .day-badge {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 4px;
+        right: 4px;
+        z-index: 2;
+    }
+    
+    .badge-completed,
+    .badge-current,
+    .badge-milestone,
+    .badge-locked,
+    .badge-available {
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
     
     .badge-completed {
         background: #22c55e;
         color: #fff;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
     }
     
     .badge-current {
         background: #3b82f6;
         color: #fff;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
     }
     
     .badge-milestone {
         background: #8b5cf6;
         color: #fff;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
     }
     
     .badge-locked {
         background: #666;
         color: #fff;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
     }
     
     .badge-available {
         background: #f59e0b;
         color: #fff;
-        padding: 4px 8px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
     }
     
+    /* Compact info section */
     .day-info {
-        padding: 12px;
+        padding: 8px 6px;
     }
     
     .day-number {
-        font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 4px;
+        font-weight: 700;
+        font-size: 13px;
+        margin-bottom: 2px;
+        line-height: 1.2;
     }
     
     .day-status {
-        font-size: 11px;
+        font-size: 9px;
         color: #888;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
     
     .milestone-date-badge {
-        font-size: 10px;
+        font-size: 8px;
         color: #8b5cf6;
-        margin-top: 4px;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
     }
     
+    .milestone-date-badge i {
+        font-size: 8px;
+    }
+    
+    /* Compact actions */
     .day-actions {
         display: flex;
-        gap: 4px;
-        padding: 0 12px 12px;
+        gap: 3px;
+        padding: 0 6px 8px;
     }
     
     .day-action {
         flex: 1;
-        padding: 6px;
+        padding: 5px 3px;
         background: #1a1a1a;
-        border-radius: 6px;
+        border-radius: 5px;
         text-align: center;
-        font-size: 11px;
+        font-size: 9px;
         color: #aaa;
-        transition: all 0.2s;
+        transition: all 0.15s;
+        text-decoration: none;
+        white-space: nowrap;
     }
     
-    .day-action:hover {
+    .day-action i {
+        font-size: 10px;
+        margin-right: 2px;
+    }
+    
+    .day-action:active {
         background: #2a2a2a;
         color: #fff;
     }
     
-    /* Quick Post Section */
+    /* Quick Import - Compact */
     .quick-post {
         background: #111;
         border: 1px solid #222;
-        border-radius: 16px;
-        padding: 24px;
-        margin-top: 30px;
+        border-radius: 14px;
+        padding: 16px;
+        margin-top: 24px;
     }
     
     .quick-post h3 {
-        font-size: 18px;
-        margin-bottom: 16px;
+        font-size: 14px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
     
     .quick-post-form {
         display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 8px;
     }
     
     .quick-post-form input {
-        flex: 1;
-        padding: 12px 16px;
+        width: 100%;
+        padding: 12px 14px;
         background: #0a0a0a;
         border: 1px solid #333;
-        border-radius: 12px;
+        border-radius: 10px;
         color: #fff;
         font-size: 14px;
     }
     
     .quick-post-form input[type="number"] {
-        width: 100px;
-        flex: 0 0 auto;
+        width: 100%;
     }
     
-    /* Empty State */
+    .quick-post-form button {
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+    
+    @media (min-width: 500px) {
+        .quick-post-form {
+            flex-direction: row;
+        }
+        .quick-post-form input[type="number"] {
+            width: 100px;
+        }
+        .quick-post-form button {
+            width: auto;
+        }
+    }
+    
+    /* Journey type specific */
+    .milestone-mode .badge-current {
+        background: #8b5cf6;
+    }
+    
+    /* Empty state */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -311,11 +392,6 @@
         color: #333;
         margin-bottom: 16px;
     }
-    
-    /* Journey type specific */
-    .milestone-mode .badge-current {
-        background: #8b5cf6;
-    }
 </style>
 {% endblock %}
 
@@ -323,7 +399,7 @@
 
 <div class="manager-container {% if journey.journey_type == 'milestone' %}milestone-mode{% endif %}">
     
-    {# Header #}
+    {# Mobile-Optimized Header #}
     <div class="manager-header">
         <a href="{% url 'my_journeys' %}" class="back-btn">
             <i class="fas fa-arrow-left"></i>
@@ -332,37 +408,31 @@
             <h1>{{ journey.title }}</h1>
             <p>
                 {% if journey.journey_type == 'milestone' %}
-                    Content Manager · Milestone-by-milestone organization
+                    {{ activities|length }}/{{ journey.duration }} milestones
                 {% else %}
-                    Content Manager · Day-by-day organization
+                    Day {{ current_day }}/{{ journey.duration }}
                 {% endif %}
             </p>
         </div>
-        <a href="{% url 'journey_detail' slug=journey.slug %}" class="btn btn-outline" target="_blank">
-            <i class="fas fa-eye"></i> View Public Page
+        <a href="{% url 'journey_detail' slug=journey.slug %}" class="view-public-btn" target="_blank">
+            <i class="fas fa-eye"></i> View
         </a>
     </div>
     
-    {# Progress Summary #}
+    {# Compact Progress Summary #}
     <div class="progress-summary">
         <div class="progress-stats">
             <div class="progress-stat">
                 <div class="value">{{ current_day }}</div>
-                <div class="label">
-                    {% if journey.journey_type == 'milestone' %}Completed{% else %}Current Day{% endif %}
-                </div>
+                <div class="label">Current</div>
             </div>
             <div class="progress-stat">
                 <div class="value">{{ journey.duration }}</div>
-                <div class="label">
-                    {% if journey.journey_type == 'milestone' %}Total Milestones{% else %}Total Days{% endif %}
-                </div>
+                <div class="label">Total</div>
             </div>
             <div class="progress-stat">
                 <div class="value">{{ activities|length }}</div>
-                <div class="label">
-                    {% if journey.journey_type == 'milestone' %}Milestones Posted{% else %}Days Posted{% endif %}
-                </div>
+                <div class="label">Posted</div>
             </div>
         </div>
         
@@ -374,17 +444,15 @@
         </div>
     </div>
     
-    {# Day/Milestone Grid #}
+    {# Mobile Gallery Grid - Many Smaller Columns #}
     <div class="day-grid">
         {% for day_num in day_range %}
             {% with activity=activities|get_item:day_num %}
             
             {% if journey.journey_type == 'milestone' %}
-                {# Milestone Journey - Never locked #}
                 <div class="day-card milestone-card"
                      onclick="window.location.href='{% url 'post_activity_day' slug=journey.slug day_number=day_num %}'">
             {% else %}
-                {# Daily Challenge - Calendar locking #}
                 <div class="day-card {% if day_num > current_day %}locked{% endif %}"
                      onclick="{% if day_num <= current_day %}window.location.href='{% url 'post_activity_day' slug=journey.slug day_number=day_num %}'{% endif %}">
             {% endif %}
@@ -402,18 +470,14 @@
                     
                     <div class="day-badge">
                         {% if activity %}
-                            <span class="badge-completed"><i class="fas fa-check"></i> Posted</span>
+                            <span class="badge-completed"><i class="fas fa-check"></i></span>
                         {% elif journey.journey_type == 'daily' and day_num > current_day %}
-                            <span class="badge-locked"><i class="fas fa-lock"></i> Locked</span>
+                            <span class="badge-locked"><i class="fas fa-lock"></i></span>
                         {% elif journey.journey_type == 'daily' and day_num == current_day %}
-                            <span class="badge-current">📍 Current</span>
+                            <span class="badge-current">📍</span>
                         {% else %}
                             <span class="badge-available">
-                                {% if journey.journey_type == 'milestone' %}
-                                    📍 Ready
-                                {% else %}
-                                    ⚠️ Needs Post
-                                {% endif %}
+                                {% if journey.journey_type == 'milestone' %}📍{% else %}⚠️{% endif %}
                             </span>
                         {% endif %}
                     </div>
@@ -421,22 +485,18 @@
                 
                 <div class="day-info">
                     <div class="day-number">
-                        {% if journey.journey_type == 'milestone' %}
-                            Milestone {{ day_num }}
-                        {% else %}
-                            Day {{ day_num }}
-                        {% endif %}
+                        {% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}
                     </div>
                     <div class="day-status">
                         {% if activity %}
-                            {{ activity.content|truncatechars:30 }}
+                            {{ activity.content|truncatechars:20 }}
                             {% if journey.journey_type == 'milestone' and activity.actual_date %}
                                 <div class="milestone-date-badge">
-                                    <i class="fas fa-calendar-check"></i> {{ activity.actual_date|date:"M d, Y" }}
+                                    <i class="fas fa-calendar-check"></i> {{ activity.actual_date|date:"M d" }}
                                 </div>
                             {% endif %}
                         {% else %}
-                            No content yet
+                            Tap to post
                         {% endif %}
                     </div>
                 </div>
@@ -450,7 +510,7 @@
                     {% if activity %}
                     <a href="{% url 'delete_activity' activity_id=activity.id %}" 
                        class="day-action" 
-                       onclick="return confirm('Delete this content?')">
+                       onclick="event.stopPropagation(); return confirm('Delete?')">
                         <i class="fas fa-trash"></i>
                     </a>
                     {% endif %}
@@ -466,11 +526,11 @@
     <div class="quick-post">
         <h3>
             <i class="fas fa-cloud-upload-alt" style="color: #3b82f6;"></i>
-            Quick Import from Social
+            Quick Import
         </h3>
         <form method="get" action="{% url 'quick_import' %}" class="quick-post-form">
             <input type="hidden" name="journey" value="{{ journey.id }}">
-            <input type="text" name="url" placeholder="Paste TikTok or Instagram link...">
+            <input type="text" name="url" placeholder="Paste TikTok/IG/YouTube link...">
             <input type="number" name="day_number" placeholder="Day" min="1" max="{{ journey.duration }}">
             <button type="submit" class="btn btn-primary">Import</button>
         </form>
