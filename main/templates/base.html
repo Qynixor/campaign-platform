@@ -30,23 +30,40 @@
     {# Canonical URL #}
     <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
     
-    {# PWA Manifest #}
-    <link rel="manifest" href="{% static 'icons/site.webmanifest' %}">
+    {# PWA Manifest - CRITICAL FIX #}
+    <link rel="manifest" href="{% static 'site.webmanifest' %}">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Rallynex">
     <meta name="application-name" content="Rallynex">
     <meta name="msapplication-TileColor" content="#000000">
+    <meta name="msapplication-TileImage" content="{% static 'icons/icon-192x192.png' %}">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
     
-    {# Apple Touch Icon #}
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/apple-touch-icon.png' %}">
+    {# Apple Touch Icons #}
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="apple-touch-icon" sizes="120x120" href="{% static 'icons/icon-192x192.png' %}">
+    
+    {# iOS Splash Screens - Using available icons #}
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="{% static 'icons/icon-512x512.png' %}">
     
     {# Favicons #}
     <link rel="icon" type="image/svg+xml" href="{% static 'icons/favicon.svg' %}">
     <link rel="icon" type="image/png" sizes="96x96" href="{% static 'icons/icon-96x96.png' %}">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/icon-512x512.png' %}">
     
     {# Preconnect #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -625,116 +642,175 @@
     </nav>
     {% endif %}
     
-    {# PWA Scripts #}
+    {# PWA Scripts - COMPLETELY FIXED #}
     <script>
-        // Service Worker Registration - FIXED PATH
-        if ('serviceWorker' in navigator) {
-            let refreshing = false;
+        (function() {
+            'use strict';
             
-            // Use Django static tag for correct path
-            const swUrl = "{% static 'sw.js' %}";
-            
-            navigator.serviceWorker.register(swUrl).then(function(registration) {
-                console.log('ServiceWorker registered successfully:', registration);
+            // Service Worker Registration - FIXED PATH
+            if ('serviceWorker' in navigator) {
+                let refreshing = false;
                 
-                // Check for updates
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    console.log('ServiceWorker update found');
+                // CRITICAL: Register at root level with correct scope
+                const swUrl = '/sw.js';
+                
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register(swUrl, {
+                        scope: '/'
+                    }).then(function(registration) {
+                        console.log('✅ ServiceWorker registered successfully with scope:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            console.log('🔄 ServiceWorker update found');
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🆕 New version available');
+                                    const updateNotification = document.getElementById('updateNotification');
+                                    if (updateNotification) {
+                                        updateNotification.classList.add('show');
+                                    }
+                                }
+                            });
+                        });
+                    }).catch(function(error) {
+                        console.error('❌ ServiceWorker registration failed:', error);
+                    });
                     
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            document.getElementById('updateNotification')?.classList.add('show');
+                    // Handle controller change
+                    navigator.serviceWorker.addEventListener('controllerchange', function() {
+                        if (!refreshing) {
+                            refreshing = true;
+                            console.log('🔄 Controller changed, reloading...');
+                            window.location.reload();
                         }
                     });
                 });
-            }).catch(function(error) {
-                console.log('ServiceWorker registration failed:', error);
-            });
+            }
             
-            // Handle controller change
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    window.location.reload();
+            // Update button handler
+            document.addEventListener('DOMContentLoaded', function() {
+                const updateBtn = document.getElementById('updateBtn');
+                if (updateBtn) {
+                    updateBtn.addEventListener('click', function() {
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(function(registration) {
+                                if (registration.waiting) {
+                                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                }
+                                const updateNotification = document.getElementById('updateNotification');
+                                if (updateNotification) {
+                                    updateNotification.classList.remove('show');
+                                }
+                            });
+                        }
+                    });
                 }
             });
-        }
-        
-        // Update button
-        document.getElementById('updateBtn')?.addEventListener('click', () => {
-            navigator.serviceWorker.ready.then(registration => {
-                registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
-            });
-            document.getElementById('updateNotification')?.classList.remove('show');
-        });
-        
-        // PWA Install Prompt
-        let deferredPrompt;
-        const installPrompt = document.getElementById('pwaInstallPrompt');
-        const installBtn = document.getElementById('pwaInstallBtn');
-        const installClose = document.getElementById('pwaInstallClose');
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
             
-            // Show prompt after 3 seconds if not dismissed
-            setTimeout(() => {
-                if (installPrompt && !localStorage.getItem('pwaPromptDismissed')) {
-                    installPrompt.classList.add('show');
-                }
-            }, 3000);
-        });
-        
-        installBtn?.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response: ${outcome}`);
-                deferredPrompt = null;
-            }
-            installPrompt?.classList.remove('show');
-        });
-        
-        installClose?.addEventListener('click', () => {
-            installPrompt?.classList.remove('show');
-            localStorage.setItem('pwaPromptDismissed', Date.now());
-        });
-        
-        // Track PWA installation
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA installed');
-            installPrompt?.classList.remove('show');
-        });
-        
-        // Online/Offline detection
-        function updateOnlineStatus() {
-            const indicator = document.getElementById('offlineIndicator');
-            if (!navigator.onLine) {
-                indicator?.classList.add('show');
-            } else {
-                indicator?.classList.remove('show');
-            }
-        }
-        
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus();
-        
-        // Auto-dismiss messages
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(function(alert) {
-                    alert.style.transition = 'opacity 0.3s';
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 300);
+            // PWA Install Prompt - FIXED
+            let deferredPrompt;
+            const installPrompt = document.getElementById('pwaInstallPrompt');
+            const installBtn = document.getElementById('pwaInstallBtn');
+            const installClose = document.getElementById('pwaInstallClose');
+            
+            window.addEventListener('beforeinstallprompt', function(e) {
+                // Prevent Chrome 67 and earlier from automatically showing the prompt
+                e.preventDefault();
+                // Stash the event so it can be triggered later
+                deferredPrompt = e;
+                
+                console.log('📱 beforeinstallprompt fired');
+                
+                // Show prompt after 3 seconds if not previously dismissed
+                setTimeout(function() {
+                    if (installPrompt && !localStorage.getItem('pwaPromptDismissed')) {
+                        const dismissed = localStorage.getItem('pwaPromptDismissed');
+                        if (!dismissed || (Date.now() - parseInt(dismissed)) > 7 * 24 * 60 * 60 * 1000) {
+                            installPrompt.classList.add('show');
+                        }
+                    }
+                }, 3000);
+            });
+            
+            if (installBtn) {
+                installBtn.addEventListener('click', async function() {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const choiceResult = await deferredPrompt.userChoice;
+                        console.log(`👤 User response: ${choiceResult.outcome}`);
+                        deferredPrompt = null;
+                    } else {
+                        // Fallback for browsers that don't support beforeinstallprompt
+                        alert('To install Rallynex:\n\n• Chrome: Tap menu ⋮ → "Install app"\n• Safari: Tap Share → "Add to Home Screen"\n• Edge: Tap menu ⋯ → "Apps" → "Install"');
+                    }
+                    if (installPrompt) {
+                        installPrompt.classList.remove('show');
+                    }
                 });
-            }, 5000);
-        });
+            }
+            
+            if (installClose) {
+                installClose.addEventListener('click', function() {
+                    if (installPrompt) {
+                        installPrompt.classList.remove('show');
+                    }
+                    localStorage.setItem('pwaPromptDismissed', Date.now().toString());
+                });
+            }
+            
+            // Track PWA installation
+            window.addEventListener('appinstalled', function() {
+                console.log('🎉 PWA installed successfully');
+                if (installPrompt) {
+                    installPrompt.classList.remove('show');
+                }
+                deferredPrompt = null;
+            });
+            
+            // Check if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('📱 Running in standalone mode (installed PWA)');
+            }
+            
+            // Online/Offline detection
+            function updateOnlineStatus() {
+                const indicator = document.getElementById('offlineIndicator');
+                if (!navigator.onLine) {
+                    if (indicator) indicator.classList.add('show');
+                    console.log('📴 Offline');
+                } else {
+                    if (indicator) indicator.classList.remove('show');
+                    console.log('🌐 Online');
+                }
+            }
+            
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            window.addEventListener('load', updateOnlineStatus);
+            
+            // Auto-dismiss messages
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    document.querySelectorAll('.alert').forEach(function(alert) {
+                        alert.style.transition = 'opacity 0.3s';
+                        alert.style.opacity = '0';
+                        setTimeout(function() { alert.remove(); }, 300);
+                    });
+                }, 5000);
+            });
+            
+            // Debug helper
+            console.log('🔍 PWA Debug Info:');
+            console.log('  - Manifest:', document.querySelector('link[rel="manifest"]')?.href || 'Not found');
+            console.log('  - Service Worker:', navigator.serviceWorker ? 'Supported' : 'Not supported');
+            console.log('  - HTTPS:', location.protocol === 'https:' ? 'Yes' : 'No (localhost OK)');
+            console.log('  - Display Mode:', window.matchMedia('(display-mode: standalone)').matches ? 'Standalone' : 'Browser');
+        })();
     </script>
     
     {% block extra_js %}{% endblock %}
 </body>
 </html>
-    
