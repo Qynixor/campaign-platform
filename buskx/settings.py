@@ -107,10 +107,19 @@ TEMPLATES = [
 # DATABASE - NEONDB PRODUCTION READY
 # =====================================================
 import ssl
+import sys
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-if DATABASE_URL:
+# Check if running collectstatic - use dummy database
+if 'collectstatic' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+elif DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -126,9 +135,6 @@ if DATABASE_URL:
 else:
     # Fallback - will error clearly if DATABASE_URL is missing
     raise ValueError("DATABASE_URL environment variable is not set")
-
-
-
 
 # Add connection options for stability
 DATABASES['default']['OPTIONS'] = {
