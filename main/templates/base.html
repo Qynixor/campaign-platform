@@ -1,19 +1,66 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    {# Primary Meta Tags #}
     <title>{% block title %}Rallynex{% endblock %}</title>
+    <meta name="title" content="{% block meta_title %}Rallynex - Turn Content Into Structured Journeys{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Organize your content into daily challenges and milestone journeys. Build community, raise funds, and document your progress.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}journey, daily challenge, milestone tracker, content organizer, creator platform, fundraising, community building{% endblock %}">
+    <meta name="author" content="Rallynex">
+    <meta name="robots" content="index, follow">
     
-    {# Fonts #}
+    {# Open Graph / Facebook #}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% block og_title %}Rallynex - Turn Content Into Structured Journeys{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Organize your content into daily challenges and milestone journeys. Build community, raise funds, and document your progress.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.png' %}{% endblock %}">
+    <meta property="og:site_name" content="Rallynex">
+    
+    {# Twitter Card #}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Rallynex - Turn Content Into Structured Journeys{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Organize your content into daily challenges and milestone journeys.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.png' %}{% endblock %}">
+    
+    {# Canonical URL #}
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    
+    {# PWA Manifest #}
+    <link rel="manifest" href="{% static 'icons/site.webmanifest' %}">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Rallynex">
+    <meta name="application-name" content="Rallynex">
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    
+    {# Apple Touch Icon #}
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/apple-touch-icon.png' %}">
+    
+    {# Favicons #}
+    <link rel="icon" type="image/svg+xml" href="{% static 'icons/favicon.svg' %}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{% static 'icons/icon-96x96.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192x192.png' %}">
+    
+    {# Preconnect #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    {# Fonts #}
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     {# Font Awesome #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {# CSRF Token #}
     <meta name="csrf-token" content="{{ csrf_token }}">
+    
     <style>
         * {
             margin: 0;
@@ -27,6 +74,7 @@
             min-height: 100vh;
             color: #fff;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
         
         a {
@@ -105,10 +153,6 @@
             cursor: pointer;
         }
         
-        .alert-close:hover {
-            opacity: 1;
-        }
-        
         /* Buttons */
         .btn {
             display: inline-flex;
@@ -131,7 +175,6 @@
         
         .btn-primary:hover {
             background: #e5e5e5;
-            transform: scale(1.02);
         }
         
         .btn-outline {
@@ -142,16 +185,6 @@
         
         .btn-outline:hover {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-        
-        .btn-large {
-            padding: 16px 32px;
-            font-size: 16px;
-        }
-        
-        .btn-block {
-            width: 100%;
         }
         
         /* Navigation */
@@ -202,6 +235,98 @@
             display: flex;
             align-items: center;
             gap: 16px;
+        }
+        
+        /* PWA Install Prompt */
+        .pwa-install-prompt {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #3b82f6;
+            border-radius: 16px;
+            padding: 16px 20px;
+            z-index: 99;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .pwa-install-prompt.show {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .pwa-install-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .pwa-install-text i {
+            font-size: 32px;
+            color: #3b82f6;
+        }
+        
+        .pwa-install-text div {
+            font-size: 14px;
+        }
+        
+        .pwa-install-text small {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .pwa-install-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .pwa-install-close {
+            background: none;
+            border: none;
+            color: #666;
+            margin-left: 12px;
+            font-size: 18px;
+        }
+        
+        /* Offline Indicator */
+        .offline-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ef4444;
+            color: white;
+            text-align: center;
+            padding: 4px;
+            font-size: 12px;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .offline-indicator.show {
+            display: block;
         }
         
         /* Mobile Bottom Navigation */
@@ -266,7 +391,6 @@
         .footer-brand p {
             color: #888;
             font-size: 14px;
-            line-height: 1.6;
         }
         
         .footer-links h4 {
@@ -286,7 +410,6 @@
         .footer-links a {
             color: #888;
             font-size: 14px;
-            transition: color 0.2s;
         }
         
         .footer-links a:hover {
@@ -298,6 +421,37 @@
             padding-top: 30px;
             border-top: 1px solid #222;
             color: #666;
+            font-size: 14px;
+        }
+        
+        /* Update Notification */
+        .update-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .update-notification.show {
+            display: flex;
+        }
+        
+        .update-btn {
+            background: white;
+            color: #3b82f6;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
             font-size: 14px;
         }
         
@@ -328,6 +482,18 @@
 </head>
 <body>
     
+    {# Offline Indicator #}
+    <div class="offline-indicator" id="offlineIndicator">
+        <i class="fas fa-wifi-slash"></i> You're offline. Some features may be unavailable.
+    </div>
+    
+    {# Update Notification #}
+    <div class="update-notification" id="updateNotification">
+        <i class="fas fa-sync-alt"></i>
+        <span>New version available</span>
+        <button class="update-btn" id="updateBtn">Update</button>
+    </div>
+    
     {# Navigation #}
     <nav class="navbar">
         <div class="container">
@@ -354,6 +520,19 @@
             </div>
         </div>
     </nav>
+    
+    {# PWA Install Prompt #}
+    <div class="pwa-install-prompt" id="pwaInstallPrompt">
+        <div class="pwa-install-text">
+            <i class="fas fa-mobile-alt"></i>
+            <div>
+                <strong>Install Rallynex</strong><br>
+                <small>Get the app experience on your phone</small>
+            </div>
+        </div>
+        <button class="pwa-install-btn" id="pwaInstallBtn">Install</button>
+        <button class="pwa-install-close" id="pwaInstallClose">&times;</button>
+    </div>
     
     {# Messages #}
     {% if messages %}
@@ -445,8 +624,100 @@
     </nav>
     {% endif %}
     
+    {# PWA Scripts #}
     <script>
-        // Auto-hide messages after 5 seconds
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            let refreshing = false;
+            
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('ServiceWorker registered');
+                
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            document.getElementById('updateNotification').classList.add('show');
+                        }
+                    });
+                });
+            }).catch(function(error) {
+                console.log('ServiceWorker registration failed:', error);
+            });
+            
+            // Handle controller change
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+        }
+        
+        // Update button
+        document.getElementById('updateBtn')?.addEventListener('click', () => {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+            });
+            document.getElementById('updateNotification').classList.remove('show');
+        });
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installPrompt = document.getElementById('pwaInstallPrompt');
+        const installBtn = document.getElementById('pwaInstallBtn');
+        const installClose = document.getElementById('pwaInstallClose');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show prompt after 3 seconds if not dismissed
+            setTimeout(() => {
+                if (installPrompt && !localStorage.getItem('pwaPromptDismissed')) {
+                    installPrompt.classList.add('show');
+                }
+            }, 3000);
+        });
+        
+        installBtn?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response: ${outcome}`);
+                deferredPrompt = null;
+            }
+            installPrompt.classList.remove('show');
+        });
+        
+        installClose?.addEventListener('click', () => {
+            installPrompt.classList.remove('show');
+            localStorage.setItem('pwaPromptDismissed', Date.now());
+        });
+        
+        // Track PWA installation
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installed');
+            installPrompt?.classList.remove('show');
+        });
+        
+        // Online/Offline detection
+        function updateOnlineStatus() {
+            const indicator = document.getElementById('offlineIndicator');
+            if (!navigator.onLine) {
+                indicator?.classList.add('show');
+            } else {
+                indicator?.classList.remove('show');
+            }
+        }
+        
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+        
+        // Auto-dismiss messages
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 document.querySelectorAll('.alert').forEach(function(alert) {

@@ -23,8 +23,31 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from django.conf.urls.static import static
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.views.decorators.cache import cache_page
+import json
+import os
+
+
+def service_worker_view(request):
+    sw_path = os.path.join(settings.BASE_DIR, 'static', 'sw.js')
+    with open(sw_path, 'r') as f:
+        sw_content = f.read()
+    return HttpResponse(sw_content, content_type='application/javascript')
+
+def offline_view(request):
+    return render(request, 'offline.html')
+
 
 urlpatterns = [
+
+    # PWA URLs - Must be at root level
+  
+    path('sw.js', service_worker_view, name='service_worker'),
+    path('offline/', offline_view, name='offline'),
+
     # Admin
     path('admin/', admin.site.urls),
     
