@@ -627,20 +627,24 @@
     
     {# PWA Scripts #}
     <script>
-        // Service Worker Registration
+        // Service Worker Registration - FIXED PATH
         if ('serviceWorker' in navigator) {
             let refreshing = false;
             
-            navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                console.log('ServiceWorker registered');
+            // Use Django static tag for correct path
+            const swUrl = "{% static 'sw.js' %}";
+            
+            navigator.serviceWorker.register(swUrl).then(function(registration) {
+                console.log('ServiceWorker registered successfully:', registration);
                 
                 // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
+                    console.log('ServiceWorker update found');
                     
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            document.getElementById('updateNotification').classList.add('show');
+                            document.getElementById('updateNotification')?.classList.add('show');
                         }
                     });
                 });
@@ -662,7 +666,7 @@
             navigator.serviceWorker.ready.then(registration => {
                 registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
             });
-            document.getElementById('updateNotification').classList.remove('show');
+            document.getElementById('updateNotification')?.classList.remove('show');
         });
         
         // PWA Install Prompt
@@ -690,11 +694,11 @@
                 console.log(`User response: ${outcome}`);
                 deferredPrompt = null;
             }
-            installPrompt.classList.remove('show');
+            installPrompt?.classList.remove('show');
         });
         
         installClose?.addEventListener('click', () => {
-            installPrompt.classList.remove('show');
+            installPrompt?.classList.remove('show');
             localStorage.setItem('pwaPromptDismissed', Date.now());
         });
         
@@ -729,6 +733,10 @@
             }, 5000);
         });
     </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
     
     {% block extra_js %}{% endblock %}
 </body>

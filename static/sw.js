@@ -1,236 +1,82 @@
-// sw.js - Service Worker for Rallynex PWA
+// sw.js - Rallynex PWA Service Worker
+const CACHE_NAME = 'rallynex-v2';
+const STATIC_CACHE = 'rallynex-static-v2';
 
-const CACHE_NAME = 'rallynex-v1.0.0';
-const DYNAMIC_CACHE = 'rallynex-dynamic-v1';
-
-// Assets to cache on install
-const STATIC_ASSETS = [
+// Files to cache immediately
+const STATIC_FILES = [
     '/',
-    '/static/css/',
-    '/static/js/',
-    '/static/images/',
     '/static/icons/icon-96x96.png',
     '/static/icons/icon-192x192.png',
-    '/static/icons/favicon.svg',
-    '/offline/'
+    '/static/icons/icon-512x512.png'
 ];
 
-// Install event - cache static assets
+// Install event - cache static files
 self.addEventListener('install', event => {
-    console.log('[Service Worker] Installing...');
-    
+    console.log('[SW] Installing...');
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => {
-                console.log('[Service Worker] Caching static assets');
-                return cache.addAll(STATIC_ASSETS);
-            })
-            .then(() => {
-                return self.skipWaiting();
-            })
+        caches.open(STATIC_CACHE).then(cache => {
+            console.log('[SW] Caching static files');
+            return cache.addAll(STATIC_FILES);
+        }).then(() => {
+            return self.skipWaiting();
+        })
     );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean old caches
 self.addEventListener('activate', event => {
-    console.log('[Service Worker] Activating...');
-    
+    console.log('[SW] Activating...');
     event.waitUntil(
-        caches.keys()
-            .then(cacheNames => {
-                return Promise.all(
-                    cacheNames.map(cache => {
-                        if (cache !== CACHE_NAME && cache !== DYNAMIC_CACHE) {
-                            console.log('[Service Worker] Deleting old cache:', cache);
-                            return caches.delete(cache);
-                        }
-                    })
-                );
-            })
-            .then(() => {
-                return self.clients.claim();
-            })
+        caches.keys().then(keys => {
+            return Promise.all(
+                keys.filter(key => key !== STATIC_CACHE && key !== CACHE_NAME)
+                    .map(key => caches.delete(key))
+            );
+        }).then(() => {
+            return self.clients.claim();
+        })
     );
 });
 
-// Fetch event - network first with cache fallback
+// Fetch event - simple cache-first strategy
 self.addEventListener('fetch', event => {
-    const { request } = event;
+    const request = event.request;
     const url = new URL(request.url);
     
-    // Skip cross-origin requests
-    if (!url.origin.includes(self.location.origin)) {
+    // Skip non-GET requests
+    if (request.method !== 'GET') {
+        event.respondWith(fetch(request));
         return;
     }
     
-    // HTML - Network first, fallback to cache, then offline page
-    if (request.mode === 'navigate' || 
-        (request.method === 'GET' && request.headers.get('accept').includes('text/html'))) {
-        
-        event.respondWith(
-            fetch(request)
-                .then(response => {
-                    const clonedResponse = response.clone();
-                    caches.open(DYNAMIC_CACHE).then(cache => {
-                        cache.put(request, clonedResponse);
-                    });
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(request)
-                        .then(cachedResponse => {
-                            return cachedResponse || caches.match('/offline/');
-                        });
-                })
-        );
-        return;
-    }
-    
-    // Static assets - Cache first, network fallback
-    if (request.url.includes('/static/') || 
-        request.url.includes('/media/') ||
-        request.destination === 'image' ||
-        request.destination === 'font' ||
-        request.destination === 'style' ||
-        request.destination === 'script') {
-        
-        event.respondWith(
-            caches.match(request)
-                .then(cachedResponse => {
-                    if (cachedResponse) {
-                        return cachedResponse;
-                    }
-                    
-                    return fetch(request)
-                        .then(response => {
-                            const clonedResponse = response.clone();
-                            caches.open(DYNAMIC_CACHE).then(cache => {
-                                cache.put(request, clonedResponse);
-                            });
-                            return response;
-                        })
-                        .catch(error => {
-                            if (request.destination === 'image') {
-                                return caches.match('/static/images/fallback-image.png');
-                            }
-                            throw error;
-                        });
-                })
-        );
-        return;
-    }
-    
-    // API calls - Network only
+    // Skip API calls
     if (url.pathname.includes('/api/')) {
         event.respondWith(fetch(request));
         return;
     }
     
-    // Default - Network first with cache fallback
+    // For static assets and pages
     event.respondWith(
-        fetch(request)
-            .then(response => {
-                const clonedResponse = response.clone();
-                caches.open(DYNAMIC_CACHE).then(cache => {
-                    cache.put(request, clonedResponse);
-                });
-                return response;
-            })
-            .catch(() => {
-                return caches.match(request);
-            })
-    );
-});
-
-// Push notification event
-self.addEventListener('push', event => {
-    let data = { title: 'Rallynex', body: 'New update available!' };
-    
-    if (event.data) {
-        try {
-            data = event.data.json();
-        } catch (e) {
-            data.body = event.data.text();
-        }
-    }
-    
-    const options = {
-        body: data.body,
-        icon: '/static/icons/icon-192x192.png',
-        badge: '/static/icons/icon-96x96.png',
-        vibrate: [200, 100, 200],
-        data: {
-            url: data.url || '/',
-            dateOfArrival: Date.now()
-        },
-        actions: [
-            {
-                action: 'open',
-                title: 'Open'
-            },
-            {
-                action: 'close',
-                title: 'Close'
+        caches.match(request).then(cachedResponse => {
+            if (cachedResponse) {
+                return cachedResponse;
             }
-        ]
-    };
-    
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
-});
-
-// Notification click event
-self.addEventListener('notificationclick', event => {
-    event.notification.close();
-    
-    if (event.action === 'close') {
-        return;
-    }
-    
-    const urlToOpen = event.notification.data.url || '/';
-    
-    event.waitUntil(
-        clients.matchAll({ type: 'window' })
-            .then(windowClients => {
-                for (let client of windowClients) {
-                    if (client.url.includes(urlToOpen) && 'focus' in client) {
-                        return client.focus();
-                    }
+            return fetch(request).then(response => {
+                // Cache valid responses
+                if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(STATIC_CACHE).then(cache => {
+                        cache.put(request, responseClone);
+                    });
                 }
-                if (clients.openWindow) {
-                    return clients.openWindow(urlToOpen);
-                }
-            })
-    );
-});
-
-// Background sync for offline actions
-self.addEventListener('sync', event => {
-    if (event.tag === 'sync-posts') {
-        event.waitUntil(syncPosts());
-    }
-});
-
-async function syncPosts() {
-    try {
-        const cache = await caches.open(DYNAMIC_CACHE);
-        const requests = await cache.keys();
-        const offlineActions = requests.filter(req => req.url.includes('/api/offline-actions'));
-        
-        for (const request of offlineActions) {
-            const response = await cache.match(request);
-            const data = await response.json();
-            
-            await fetch('/api/sync/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                return response;
             });
-            
-            await cache.delete(request);
-        }
-    } catch (error) {
-        console.error('Background sync failed:', error);
-    }
-}
+        }).catch(() => {
+            // Fallback for offline
+            if (url.pathname.includes('/static/icons/')) {
+                return caches.match('/static/icons/icon-192x192.png');
+            }
+            return new Response('Offline - Rallynex', { status: 200 });
+        })
+    );
+});
