@@ -102,14 +102,33 @@ TEMPLATES = [
 # =====================================================
 # DATABASE - FIXED FOR NEONDB
 # =====================================================
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=0,  # Disable persistent connections (fixes NeonDB SSL issues)
-        conn_health_checks=True,  # Check connection before using
-        ssl_require=True,
-    )
-}
+
+# =====================================================
+# DATABASE - NEONDB PRODUCTION READY
+# =====================================================
+import ssl
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+    # Force SSL for NeonDB
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'connect_timeout': 30,
+    }
+else:
+    # Fallback - will error clearly if DATABASE_URL is missing
+    raise ValueError("DATABASE_URL environment variable is not set")
+
+print(f"✅ Database connected to: {DATABASES['default'].get('HOST', 'unknown')}")
+
 
 # Add connection options for stability
 DATABASES['default']['OPTIONS'] = {
