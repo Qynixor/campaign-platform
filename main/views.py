@@ -562,19 +562,30 @@ def create_journey_view(request):
         if form.is_valid():
             journey = form.save(commit=False)
             journey.creator = profile
-            journey.save()
             
-            # Save tags from form
+            # Handle Cloudinary cover image
+            cover_image_url = request.POST.get('cover_image_url')
+            cover_image_public_id = request.POST.get('cover_image_public_id')
+            
+            if cover_image_url and cover_image_public_id:
+                journey.cover_image_url = cover_image_url
+                journey.cover_image_public_id = cover_image_public_id
+                journey.cover_image = cover_image_public_id  # ← QUICK FIX - ONE LINE
+            
+            journey.save()
             form.save()
             
             messages.success(request, f'Journey "{journey.title}" created successfully!')
             return redirect('journey_content', slug=journey.slug)
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = JourneyForm()
     
     context = {
         'form': form,
         'is_editing': False,
+        'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/journey_form.html', context)
@@ -589,7 +600,20 @@ def edit_journey_view(request, slug):
     if request.method == 'POST':
         form = JourneyForm(request.POST, request.FILES, instance=journey)
         if form.is_valid():
-            journey = form.save()
+            journey = form.save(commit=False)
+            
+            # Handle Cloudinary cover image
+            cover_image_url = request.POST.get('cover_image_url')
+            cover_image_public_id = request.POST.get('cover_image_public_id')
+            
+            if cover_image_url and cover_image_public_id:
+                journey.cover_image_url = cover_image_url
+                journey.cover_image_public_id = cover_image_public_id
+                journey.cover_image = cover_image_public_id  # ← QUICK FIX
+            
+            journey.save()
+            form.save()
+            
             messages.success(request, f'Journey "{journey.title}" updated!')
             return redirect('my_journeys')
     else:
@@ -599,6 +623,7 @@ def edit_journey_view(request, slug):
         'form': form,
         'journey': journey,
         'is_editing': True,
+        'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/journey_form.html', context)
@@ -611,18 +636,21 @@ def journey_settings_view(request, slug):
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
     if request.method == 'POST':
-        form = JourneySettingsForm(request.POST, instance=journey)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Settings updated!')
-            return redirect('journey_detail', slug=journey.slug)
-    else:
-        form = JourneySettingsForm(instance=journey)
+        # Update settings directly from POST data
+        journey.is_public = request.POST.get('is_public') == 'on'
+        journey.allow_comments = request.POST.get('allow_comments') == 'on'
+        journey.auto_import_enabled = request.POST.get('auto_import_enabled') == 'on'
+        journey.import_hashtag = request.POST.get('import_hashtag', '')
+        journey.save()
+        
+        messages.success(request, 'Settings updated!')
+        return redirect('my_journeys')
     
-    return render(request, 'dashboard/journey_settings.html', {
-        'form': form,
+    context = {
         'journey': journey,
-    })
+    }
+    
+    return render(request, 'dashboard/journey_settings.html', context)
 
 
 @login_required
@@ -640,7 +668,6 @@ def delete_journey_view(request, slug):
     return render(request, 'dashboard/journey_confirm_delete.html', {
         'journey': journey,
     })
-
 
 # ============================================================================
 # ACTIVITY / CONTENT VIEWS
@@ -663,6 +690,7 @@ def journey_content_view(request, slug):
     }
     
     return render(request, 'dashboard/content_manager.html', context)
+
 @login_required
 def post_activity_view(request, slug, day_number=None):
     journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
@@ -677,30 +705,27 @@ def post_activity_view(request, slug, day_number=None):
         file_url = request.POST.get('file_url')
         is_video = request.POST.get('is_video') == 'true'
         actual_date = request.POST.get('actual_date')
-        day = request.POST.get('day_number_field') or day_number  # ← FALLBACK
+        day = request.POST.get('day_number_field') or day_number
         clear_existing = request.POST.get('clear_existing') == 'true'
         
         if content and file_url:
-            if existing_activity and not clear_existing:
-                # Update existing
-                existing_activity.content = content
-                existing_activity.file = file_url
-                existing_activity.is_video = is_video
-                if actual_date:
-                    existing_activity.actual_date = actual_date
-                existing_activity.save()
-            else:
-                # Create new - ENSURE day_number_field is set
-                Activity.objects.create(
-                    journey=journey,
-                    content=content,
-                    day_number_field=day or day_number,  # ← EXPLICITLY SET
-                    file=file_url,
-                    is_video=is_video,
-                    actual_date=actual_date if actual_date else None,
-                )
+            # Use update_or_create to avoid duplicate key errors
+            activity, created = Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day or day_number,
+                defaults={
+                    'content': content,
+                    'file': file_url,
+                    'is_video': is_video,
+                    'actual_date': actual_date if actual_date else None,
+                }
+            )
             
-            messages.success(request, 'Activity posted!')
+            if created:
+                messages.success(request, 'Activity posted!')
+            else:
+                messages.success(request, 'Activity updated!')
+            
             return redirect('journey_content', slug=slug)
         else:
             messages.error(request, 'Please provide content and media.')
@@ -709,11 +734,12 @@ def post_activity_view(request, slug, day_number=None):
         'journey': journey,
         'day_number': day_number,
         'existing_activity': existing_activity,
-        'form': ActivityForm(initial={'day_number_field': day_number}),  # ← ADD FORM
+        'form': ActivityForm(initial={'day_number_field': day_number}),
         'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/post_activity.html', context)
+
 
 @login_required
 def delete_activity_view(request, activity_id):
