@@ -71,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'main.middleware.NonWWWRedirectMiddleware', 
 ]
 
 ROOT_URLCONF = 'buskx.urls'
@@ -296,3 +297,8 @@ LOGGING = {
 }
 
 
+# Force non-www domain (rallynex.com instead of www.rallynex.com)
+PREPEND_WWW = False
+
+# Canonical URL settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
