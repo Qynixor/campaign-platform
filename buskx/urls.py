@@ -5,38 +5,43 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView
-from django.http import HttpResponse, Http404
+from django.views.generic import RedirectView, TemplateView
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.staticfiles.finders import find
+from django.contrib.sitemaps.views import sitemap
 import os
+
+# Import your sitemaps
+from main.sitemaps import StaticViewSitemap, JourneySitemap, BlogSitemap, CreatorProfileSitemap
+
+# Sitemap configuration
+sitemaps = {
+    'static': StaticViewSitemap,
+    'journeys': JourneySitemap,
+    'blog': BlogSitemap,
+    'creators': CreatorProfileSitemap,
+}
 
 
 def service_worker_view(request):
-    """
-    Serve service worker from main/static/main/js/sw.js
-    """
-    # Try multiple possible locations in order of priority
-    sw_paths = [
-        os.path.join(settings.BASE_DIR, 'main', 'static', 'main', 'js', 'sw.js'),
-        os.path.join(settings.BASE_DIR, 'static', 'main', 'js', 'sw.js'),
-        find('main/js/sw.js'),  # Django static finder
-    ]
+    """Serve service worker from static files with correct MIME type."""
+    sw_path = find('main/js/sw.js')
     
-    sw_content = None
-    for sw_path in sw_paths:
-        if sw_path and os.path.exists(sw_path):
-            with open(sw_path, 'r') as f:
-                sw_content = f.read()
-            break
+    if not sw_path:
+        fallback_path = os.path.join(settings.BASE_DIR, 'main', 'static', 'main', 'js', 'sw.js')
+        if os.path.exists(fallback_path):
+            sw_path = fallback_path
     
-    if sw_content is None:
-        raise Http404("Service Worker not found at main/static/main/js/sw.js")
+    if sw_path and os.path.exists(sw_path):
+        with open(sw_path, 'r') as f:
+            sw_content = f.read()
+        response = HttpResponse(sw_content, content_type='application/javascript')
+        response['Service-Worker-Allowed'] = '/'
+        response['Cache-Control'] = 'no-cache, max-age=0'
+        return response
     
-    response = HttpResponse(sw_content, content_type='application/javascript')
-    response['Service-Worker-Allowed'] = '/'
-    response['Cache-Control'] = 'no-cache, max-age=0'
-    return response
+    return HttpResponse("Service Worker not found", status=404)
 
 
 def offline_view(request):
@@ -45,45 +50,43 @@ def offline_view(request):
 
 
 def manifest_view(request):
-    """
-    Serve manifest.json from main/static/main/js/manifest.json
-    """
-    manifest_paths = [
-        os.path.join(settings.BASE_DIR, 'main', 'static', 'main', 'js', 'manifest.json'),
-        os.path.join(settings.BASE_DIR, 'static', 'main', 'js', 'manifest.json'),
-        find('main/js/manifest.json'),
-    ]
+    """Serve manifest.json from static files."""
+    manifest_path = find('main/js/manifest.json')
     
-    manifest_content = None
-    for manifest_path in manifest_paths:
-        if manifest_path and os.path.exists(manifest_path):
-            with open(manifest_path, 'r') as f:
-                manifest_content = f.read()
-            break
+    if not manifest_path:
+        fallback_path = os.path.join(settings.BASE_DIR, 'main', 'static', 'main', 'js', 'manifest.json')
+        if os.path.exists(fallback_path):
+            manifest_path = fallback_path
     
-    if manifest_content is None:
-        raise Http404("Manifest not found at main/static/main/js/manifest.json")
+    if manifest_path and os.path.exists(manifest_path):
+        with open(manifest_path, 'r') as f:
+            manifest_content = f.read()
+        return HttpResponse(manifest_content, content_type='application/manifest+json')
     
-    return HttpResponse(manifest_content, content_type='application/manifest+json')
+    return HttpResponse("Manifest not found", status=404)
 
 
 urlpatterns = [
-    # PWA URLs - MUST be at root level
+    # ==================== PWA URLs ====================
     path('sw.js', service_worker_view, name='service_worker'),
     path('offline/', offline_view, name='offline'),
     path('manifest.json', manifest_view, name='manifest'),
     
-    # Admin
+    # ==================== SEO URLs ====================
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    
+    # ==================== Admin ====================
     path('admin/', admin.site.urls),
     
-    # Main app - includes all core functionality
+    # ==================== Main App ====================
     path('', include('main.urls')),
     
-    # TinyMCE (for blog content editor)
+    # ==================== TinyMCE ====================
     path('tinymce/', include('tinymce.urls')),
     
-    # Favicon redirect
-    path('favicon.ico', RedirectView.as_view(url='/static/main/icons/favicon.ico', permanent=True)),
+    # ==================== Favicon ====================
+    path('favicon.ico', RedirectView.as_view(url='/static/icons/favicon.ico', permanent=True)),
 ]
 
 # Serve media and static files in development
@@ -91,7 +94,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     
-    # Django Debug Toolbar (if installed)
     try:
         import debug_toolbar
         urlpatterns = [
