@@ -21,7 +21,7 @@ from .models import (
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
     Donation, Notification, PostJourneyProduct,
-    Report, Blog, FAQ
+    Report, Blog, FAQ, JourneyTemplate  
 )
 from .forms import (
     SignUpForm, LoginForm, ProfileForm,
@@ -1720,3 +1720,127 @@ def claim_journey_view(request, slug):
     
     messages.success(request, f'🎉 You now own "{journey.title}"! Start adding more content.')
     return redirect('journey_detail', slug=slug)
+
+def template_store_view(request):
+    """Template marketplace — browse and purchase"""
+    templates = JourneyTemplate.objects.filter(is_active=True)
+    
+    categories = {}
+    for cat_key, cat_name in Journey.CATEGORY_CHOICES:
+        cat_templates = templates.filter(category=cat_key)
+        if cat_templates.exists():
+            categories[cat_name] = {
+                'key': cat_key,
+                'templates': cat_templates,
+            }
+    
+    user_journeys = []
+    if request.user.is_authenticated:
+        profile = get_user_profile(request.user)
+        user_journeys = Journey.objects.filter(creator=profile, is_active=True)
+    
+    context = {
+        'categories': categories,
+        'user_journeys': user_journeys,
+    }
+    
+    return render(request, 'templates/store.html', context)
+
+
+@login_required
+def purchase_template_view(request, template_id):
+    """Buy a template — apply to new or existing journey"""
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    profile = get_user_profile(request.user)
+    user_journeys = Journey.objects.filter(creator=profile, is_active=True)
+    
+    context = {
+        'template': template,
+        'user_journeys': user_journeys,
+        'paypal_client_id': getattr(settings, 'PAYPAL_CLIENT_ID', ''),
+    }
+    
+    return render(request, 'templates/purchase.html', context)
+
+
+@login_required
+@require_POST
+def apply_template_to_journey(request, template_id):
+    """Apply purchased template style to an existing journey"""
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    journey_id = request.POST.get('journey_id')
+    
+    journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
+    
+    # Update journey with template style
+    journey.template_style = template.template_style
+    journey.save(update_fields=['template_style', 'updated_at'])
+    
+    template.usage_count += 1
+    template.save(update_fields=['usage_count'])
+    
+    messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
+    return redirect('journey_detail', slug=journey.slug)
+
+
+@login_required
+@require_POST
+def complete_template_purchase_view(request, template_id):
+    """Complete purchase — create new journey with ALL activities pre-filled"""
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    profile = get_user_profile(request.user)
+    
+    paypal_order_id = request.POST.get('paypal_order_id')
+    
+    if not paypal_order_id and not template.is_free:
+        messages.error(request, 'Payment verification failed.')
+        return redirect('purchase_template', template_id=template.id)
+    
+    # Create the journey
+    journey = Journey.objects.create(
+        creator=profile,
+        title=template.title,
+        description=template.description,
+        category=template.category,
+        journey_type=template.journey_type,
+        duration=template.duration,
+        milestones=template.milestones,
+        template_style=template.template_style,
+        cover_image=template.cover_image if template.cover_image else None,
+        is_public=True,
+        is_active=True,
+        published_at=timezone.now(),
+    )
+    
+    # AUTO-CREATE activities from template milestones
+    activities_created = 0
+    if template.milestones:
+        for milestone in template.milestones:
+            day_num = milestone.get('day', 1)
+            title = milestone.get('title', f'Day {day_num}')
+            description = milestone.get('description', '')
+            
+            # Combine title and description for the activity content
+            content = f"{title}\n\n{description}" if description else title
+            
+            # Use update_or_create to avoid duplicates
+            activity, created = Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day_num,
+                defaults={
+                    'content': content,
+                    'published_at': timezone.now(),
+                }
+            )
+            if created:
+                activities_created += 1
+    
+    template.usage_count += 1
+    template.save(update_fields=['usage_count'])
+    
+    if activities_created > 0:
+        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! Just add your photos and videos.')
+    else:
+        messages.success(request, f'Journey "{journey.title}" created! Start posting your content.')
+    
+    return redirect('journey_detail', slug=journey.slug)

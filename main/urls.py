@@ -151,6 +151,10 @@ urlpatterns = [
     # Preview & Claim
     path('preview/<slug:slug>/', views.preview_journey_view, name='preview_journey'),
     path('claim/<slug:slug>/', views.claim_journey_view, name='claim_journey'),
+    path('templates/', views.template_store_view, name='template_store'),
+path('templates/<int:template_id>/', views.purchase_template_view, name='purchase_template'),
+path('templates/<int:template_id>/apply/', views.apply_template_to_journey, name='apply_template'),
+path('templates/<int:template_id>/complete/', views.complete_template_purchase_view, name='complete_template_purchase'),
 ]
 
 # ============================================================================

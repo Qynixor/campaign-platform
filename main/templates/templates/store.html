@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Template Store | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    * { -webkit-tap-highlight-color: transparent; }
+    
+    .store-container {
+        max-width: 480px;
+        margin: 0 auto;
+        background: #0a0a0a;
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+    
+    .store-header {
+        padding: 20px 20px 12px;
+        position: sticky;
+        top: 0;
+        background: #0a0a0a;
+        z-index: 10;
+    }
+    
+    .store-header h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+    
+    .store-header p {
+        font-size: 13px;
+        color: #888;
+    }
+    
+    .category-section {
+        padding: 0 16px;
+        margin-bottom: 24px;
+    }
+    
+    .category-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+        margin: 16px 0 12px;
+    }
+    
+    .template-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    
+    .template-card {
+        background: #111;
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #1a1a1a;
+        text-decoration: none;
+        display: block;
+    }
+    
+    .template-card:active { transform: scale(0.97); background: #1a1a1a; }
+    
+    .template-cover {
+        width: 100%;
+        height: 120px;
+        background: #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .template-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .template-cover i {
+        font-size: 36px;
+        color: #333;
+    }
+    
+    .template-style-badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    
+    .badge-fitness { background: #ef4444; color: #fff; }
+    .badge-portfolio { background: #3b82f6; color: #fff; }
+    .badge-startup { background: #22c55e; color: #0a0a0a; }
+    .badge-default { background: #666; color: #fff; }
+    
+    .template-info {
+        padding: 12px;
+    }
+    
+    .template-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+    
+    .template-meta {
+        font-size: 10px;
+        color: #666;
+        margin-bottom: 8px;
+    }
+    
+    .template-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .template-price {
+        font-size: 18px;
+        font-weight: 800;
+        color: #fff;
+    }
+    
+    .template-price.free { color: #22c55e; }
+    
+    .template-buy-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        border: none;
+        background: #fff;
+        color: #0a0a0a;
+        cursor: pointer;
+    }
+    
+    .template-buy-btn.free-btn {
+        background: #22c55e;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+    
+    @media (max-width: 380px) {
+        .template-cover { height: 100px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="store-container">
+    
+    <div class="store-header">
+        <a href="{% url 'dashboard' %}" style="color:#888;font-size:13px;text-decoration:none;">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <h1>Template Store</h1>
+        <p>Premium timeline styles for your journey</p>
+    </div>
+    
+    {% if categories %}
+        {% for cat_name, cat_data in categories.items %}
+        <div class="category-section">
+            <div class="category-title">{{ cat_name }}</div>
+            <div class="template-grid">
+                {% for template in cat_data.templates %}
+                <a href="{% url 'purchase_template' template.id %}" class="template-card">
+                    <div class="template-cover">
+                        {% if template.cover_image %}
+                            <img src="{{ template.cover_image.url }}" alt="{{ template.title }}">
+                        {% else %}
+                            <i class="fas fa-map"></i>
+                        {% endif %}
+                        <span class="template-style-badge badge-{{ template.template_style }}">
+                            {{ template.template_style }}
+                        </span>
+                    </div>
+                    <div class="template-info">
+                        <div class="template-name">{{ template.title }}</div>
+                        <div class="template-meta">
+                            {{ template.duration }} {% if template.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                            · {{ template.usage_count }} sold
+                        </div>
+                        <div class="template-price-row">
+                            <span class="template-price {% if template.is_free %}free{% endif %}">
+                                {% if template.is_free %}Free{% else %}${{ template.price }}{% endif %}
+                            </span>
+                            <span class="template-buy-btn {% if template.is_free %}free-btn{% endif %}">
+                                {% if template.is_free %}Use{% else %}Buy{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-store" style="font-size:48px;display:block;opacity:0.3;margin-bottom:16px;"></i>
+            <p>No templates yet. Coming soon.</p>
+        </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

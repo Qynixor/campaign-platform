@@ -1,3 +1,6 @@
+Here is the complete `detail.html` with all prompts clickable and linked to the correct edit pages.
+
+```html
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
@@ -17,40 +20,106 @@
         overflow-x: hidden;
     }
     
+    /* DEFAULT */
     .journey-hero {
         position: relative;
         height: 360px;
         background: linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%);
         overflow: hidden;
     }
-    
     .journey-hero::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
         background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
         pointer-events: none;
     }
     
-    .journey-path-visual {
-        position: relative;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px 10px;
+    /* FITNESS */
+    .template-fitness .journey-hero {
+        background: linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 100%);
+    }
+    .template-fitness .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(239, 68, 68, 0.12) 0%, transparent 50%);
+    }
+    .template-fitness .progress-fill {
+        background: linear-gradient(90deg, #ef4444, #f97316);
+    }
+    .template-fitness .progress-fill::after {
+        background: #f97316;
+        box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+    }
+    .template-fitness .path-node.completed { fill: #ef4444; stroke: #ef4444; }
+    .template-fitness .path-node.current { fill: #fff; stroke: #f97316; }
+    .template-fitness .strip-day.current .strip-thumbnail {
+        border-color: #ef4444;
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+    .template-fitness .hero-badge { background: #ef4444; color: #fff; }
+    
+    /* PORTFOLIO */
+    .template-portfolio .journey-hero {
+        background: linear-gradient(180deg, #0a0a0a 0%, #0a0a1a 100%);
+    }
+    .template-portfolio .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.10) 0%, transparent 50%);
+    }
+    .template-portfolio .progress-fill {
+        background: linear-gradient(90deg, #3b82f6, #6366f1);
+    }
+    .template-portfolio .progress-fill::after {
+        background: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+    }
+    .template-portfolio .path-node.completed { fill: #3b82f6; stroke: #3b82f6; }
+    .template-portfolio .path-node.current { fill: #fff; stroke: #6366f1; }
+    .template-portfolio .strip-day.current .strip-thumbnail {
+        border-color: #3b82f6;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+    .template-portfolio .hero-badge { background: #3b82f6; color: #fff; }
+    
+    /* STARTUP */
+    .template-startup .journey-hero {
+        background: linear-gradient(180deg, #0a0a0a 0%, #0a1a0a 100%);
+    }
+    .template-startup .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
+    }
+    .template-startup .progress-fill {
+        background: linear-gradient(90deg, #22c55e, #10b981);
+    }
+    .template-startup .progress-fill::after {
+        background: #10b981;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+    .template-startup .path-node.completed { fill: #22c55e; stroke: #22c55e; }
+    .template-startup .path-node.current { fill: #fff; stroke: #10b981; }
+    .template-startup .strip-day.current .strip-thumbnail {
+        border-color: #22c55e;
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+    .template-startup .hero-badge { background: #22c55e; color: #0a0a0a; }
+    
+    /* SHARED */
+    .progress-fill {
+        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
+        position: relative; transition: width 0.3s ease;
+    }
+    .progress-fill::after {
+        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+        width: 10px; height: 10px; background: #8b5cf6; border-radius: 50%;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); border: 2px solid #0a0a0a;
     }
     
+    .journey-path-visual {
+        position: relative; height: 100%; display: flex;
+        align-items: center; justify-content: center; padding: 20px 10px;
+    }
     .path-svg {
-        width: 100%;
-        height: 140px;
-        display: block;
+        width: 100%; height: 140px; display: block;
         filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
     }
-    
     .path-node { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .path-node:hover { transform: scale(1.2); }
     .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
@@ -62,15 +131,12 @@
         0%, 100% { r: 10px; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
         50% { r: 12px; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)); }
     }
-    
     .node-glow { animation: pulseGlow 2s infinite; }
     @keyframes pulseGlow { 0%, 100% { opacity: 0.2; r: 16px; } 50% { opacity: 0.4; r: 20px; } }
-    
     .node-label-svg {
         font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
         pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
-    
     .path-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.8s ease-out forwards; }
     @keyframes drawLine { to { stroke-dashoffset: 0; } }
     
@@ -79,7 +145,6 @@
         z-index: 10; background: rgba(10, 10, 10, 0.7); backdrop-filter: blur(10px);
         padding: 12px 8px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.05);
     }
-    
     .hero-stat { text-align: center; }
     .hero-stat .value { font-size: 22px; font-weight: 800; color: #fff; line-height: 1.2; }
     .hero-stat .label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
@@ -97,14 +162,13 @@
         font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap;
         overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
-    
     .creator-info { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
     .creator-avatar {
         width: 22px; height: 22px; border-radius: 50%; background: #2a2a2a; overflow: hidden;
         display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255, 255, 255, 0.2);
     }
     .creator-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .creator-name { font-size: 12px; color: #ccc; font-weight: 500; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+    .creator-name { font-size: 12px; color: #ccc; font-weight: 500; }
     
     .menu-btn {
         position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
@@ -119,26 +183,36 @@
     .progress-header span { font-size: 12px; font-weight: 600; color: #fff; }
     .progress-header span:last-child { color: #aaa; }
     .progress-track { height: 3px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
-    .progress-fill {
-        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
-        position: relative; transition: width 0.3s ease;
-    }
-    .progress-fill::after {
-        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
-        width: 10px; height: 10px; background: #8b5cf6; border-radius: 50%;
-        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); border: 2px solid #0a0a0a;
-    }
     
     .stats-cards { display: flex; gap: 10px; padding: 16px 20px; }
     .stat-card {
         flex: 1; background: #111; border-radius: 14px; padding: 14px 8px; border: 1px solid #222;
-        text-align: center; cursor: pointer; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+        text-align: center; cursor: pointer; transition: all 0.2s;
     }
     .stat-card:active { background: #1a1a1a; transform: scale(0.98); }
     .stat-card i { font-size: 18px; margin-bottom: 6px; color: #fff; opacity: 0.7; }
     .stat-card .value { font-size: 16px; font-weight: 700; color: #fff; }
     .stat-card .label { font-size: 9px; color: #666; }
     
+    .creator-prompt {
+        display: inline-block;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        margin-top: 4px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .creator-prompt-link {
+        text-decoration: none;
+    }
+    .creator-prompt-link:hover .creator-prompt {
+        background: rgba(245, 158, 11, 0.25);
+    }
+    
+    /* DEFAULT STRIP */
     .cinematic-strip { padding: 16px 0; position: relative; }
     .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
     .strip-header i { color: #fff; font-size: 13px; }
@@ -158,25 +232,22 @@
     
     .strip-day {
         flex: 0 0 95px; scroll-snap-align: start; position: relative; cursor: pointer;
-        transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+        transition: all 0.2s;
     }
     .strip-day:active { transform: scale(0.97); }
     .strip-day.locked { opacity: 0.4; }
-    
     .strip-thumbnail {
         width: 95px; height: 140px; border-radius: 12px; overflow: hidden; position: relative;
         background: #1a1a1a; border: 1px solid transparent; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
     .strip-day.current .strip-thumbnail { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
     .strip-thumbnail video, .strip-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-    
     .strip-overlay {
         position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 6px;
         background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
     }
     .strip-day-number { font-size: 13px; font-weight: 700; color: #fff; display: block; }
     .strip-day-status { font-size: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
-    
     .play-icon-strip {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 30px; height: 30px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
@@ -184,13 +255,11 @@
         color: #fff; font-size: 11px;
     }
     .lock-icon-strip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; font-size: 18px; }
-    
     .check-badge {
         position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
         background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
-    
     .scroll-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 0 20px; }
     .scroll-btn {
         width: 32px; height: 32px; background: #1a1a1a; border: 1px solid #333; border-radius: 50%;
@@ -200,8 +269,113 @@
     .scroll-btn:hover { background: #2a2a2a; color: #fff; border-color: #3b82f6; }
     .scroll-btn:active { transform: scale(0.95); }
     .scroll-indicator { font-size: 11px; color: #666; min-width: 60px; text-align: center; }
-    
     @media (max-width: 768px) { .scroll-controls { display: none; } .day-strip::-webkit-scrollbar { display: none; } }
+    
+    /* FITNESS GALLERY */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding: 0 16px 16px;
+    }
+    .gallery-item {
+        aspect-ratio: 1;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        background: #1a1a1a;
+        transition: transform 0.2s;
+    }
+    .gallery-item:active { transform: scale(0.96); }
+    .gallery-item img, .gallery-item video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .gallery-item-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+        flex-direction: column; opacity: 0; transition: opacity 0.2s;
+    }
+    .gallery-item:hover .gallery-item-overlay { opacity: 1; }
+    .gallery-day-number { font-size: 18px; font-weight: 800; color: #fff; }
+    .gallery-check {
+        position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
+        background: #22c55e; border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; color: #fff; font-size: 9px;
+    }
+    .gallery-empty {
+        display: flex; align-items: center; justify-content: center;
+        color: #444; font-size: 20px; font-weight: 700;
+    }
+    .gallery-edit-link {
+        text-decoration: none;
+        display: block;
+    }
+    
+    /* PORTFOLIO CARDS */
+    .portfolio-list {
+        display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px;
+    }
+    .portfolio-card {
+        display: flex; gap: 12px; background: #111; border-radius: 14px; padding: 10px;
+        cursor: pointer; transition: all 0.2s; border: 1px solid #1a1a1a; align-items: center;
+    }
+    .portfolio-card:active { background: #1a1a1a; transform: scale(0.98); }
+    .portfolio-card.completed { border-left: 3px solid #3b82f6; }
+    .portfolio-card-thumb {
+        width: 60px; height: 60px; border-radius: 10px; overflow: hidden;
+        background: #1a1a1a; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .portfolio-card-thumb img, .portfolio-card-thumb video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .portfolio-card-thumb i { color: #444; font-size: 20px; }
+    .portfolio-card-info { flex: 1; min-width: 0; }
+    .portfolio-card-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .portfolio-card-meta { font-size: 10px; color: #666; }
+    .portfolio-card-arrow { color: #444; font-size: 14px; }
+    
+    /* STARTUP ROADMAP */
+    .roadmap { padding: 0 16px 16px; position: relative; }
+    .roadmap-line {
+        position: absolute; left: 27px; top: 0; bottom: 0; width: 2px; background: #1a1a1a;
+    }
+    .roadmap-line-progress {
+        position: absolute; left: 27px; top: 0; width: 2px; background: #22c55e;
+        transition: height 0.5s ease;
+    }
+    .roadmap-item {
+        display: flex; gap: 14px; padding: 10px 0; position: relative;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .roadmap-item:active { opacity: 0.7; }
+    .roadmap-dot {
+        width: 16px; height: 16px; border-radius: 50%; border: 2px solid #333;
+        background: #0a0a0a; flex-shrink: 0; margin-top: 2px; z-index: 1; transition: all 0.3s;
+    }
+    .roadmap-item.completed .roadmap-dot { background: #22c55e; border-color: #22c55e; }
+    .roadmap-item.current .roadmap-dot {
+        background: #0a0a0a; border-color: #22c55e;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.4); animation: pulseDot 2s infinite;
+    }
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+    }
+    .roadmap-content { flex: 1; min-width: 0; }
+    .roadmap-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+    .roadmap-item.locked .roadmap-title { color: #555; }
+    .roadmap-item.locked .roadmap-dot { border-color: #222; }
+    .roadmap-meta { font-size: 10px; color: #666; }
+    
+    /* SHOW MORE BUTTON */
+    .show-more-btn {
+        display: block; width: 100%; padding: 12px; margin: 8px 0 16px;
+        background: #111; border: 1px solid #222; border-radius: 12px;
+        color: #888; font-size: 12px; font-weight: 600; cursor: pointer;
+        transition: all 0.2s; text-align: center;
+    }
+    .show-more-btn:active { background: #1a1a1a; color: #fff; }
     
     .current-day-hero {
         margin: 8px 20px 16px; border-radius: 20px; overflow: hidden; position: relative;
@@ -210,19 +384,13 @@
         display: flex; align-items: center; justify-content: center;
     }
     .current-day-hero video, .current-day-hero img { width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; }
-    
     .hero-content {
         position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 18px 18px;
         background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%); pointer-events: none;
     }
     .hero-content * { pointer-events: auto; }
-    
-    .hero-badge {
-        display: inline-block; background: #fff; color: #0a0a0a; padding: 4px 10px;
-        border-radius: 30px; font-size: 10px; font-weight: 600; margin-bottom: 10px;
-    }
+    .hero-badge { display: inline-block; background: #fff; color: #0a0a0a; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 600; margin-bottom: 10px; }
     .hero-badge.milestone-badge { background: #8b5cf6; color: #fff; }
-    
     .hero-day-title {
         font-size: 20px; font-weight: 700; margin-bottom: 6px; color: #fff;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -231,7 +399,6 @@
         font-size: 13px; color: #aaa; margin-bottom: 14px; line-height: 1.5;
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    
     .hero-actions { display: flex; gap: 20px; }
     .hero-action {
         display: flex; align-items: center; gap: 5px; color: #fff; font-size: 13px;
@@ -240,14 +407,12 @@
     .hero-action:active { opacity: 0.6; }
     .hero-action i { color: #888; font-size: 18px; }
     .hero-action.loved i { color: #ef4444; }
-    
     .hero-play-btn {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 55px; height: 55px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px);
         border-radius: 50%; display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 22px; border: 1.5px solid rgba(255, 255, 255, 0.2); pointer-events: none;
     }
-    
     .action-buttons { display: flex; gap: 10px; padding: 0 20px 20px; }
     .action-btn {
         flex: 1; padding: 13px; border-radius: 30px; font-weight: 600; font-size: 13px;
@@ -262,7 +427,6 @@
     .comments-section { padding: 20px; border-top: 1px solid #1a1a1a; background: #0a0a0a; }
     .comments-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .comments-header h4 { font-size: 13px; font-weight: 600; }
-    
     .comment-item { display: flex; gap: 10px; margin-bottom: 14px; }
     .comment-avatar {
         width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; flex-shrink: 0;
@@ -274,9 +438,6 @@
     .comment-username { font-weight: 600; font-size: 12px; }
     .comment-time { font-size: 10px; color: #666; }
     .comment-text { font-size: 13px; color: #ddd; line-height: 1.4; margin-bottom: 6px; }
-    .comment-actions { display: flex; gap: 14px; }
-    .comment-action { font-size: 11px; color: #888; cursor: pointer; }
-    .comment-action i { margin-right: 3px; }
     
     .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #000; z-index: 1000; }
     .modal.active { display: block; }
@@ -290,13 +451,9 @@
         border-radius: 50%; display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 18px; cursor: pointer; border: none;
     }
-    .modal-day {
-        background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 5px 14px;
-        border-radius: 30px; font-size: 12px; font-weight: 600; color: #fff;
-    }
+    .modal-day { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 5px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; color: #fff; }
     .modal-media { flex: 1; display: flex; align-items: center; justify-content: center; background: #0a0a0a; }
     .modal-media video, .modal-media img { width: 100%; height: auto; max-height: 100%; object-fit: contain; }
-    
     .modal-footer {
         position: absolute; bottom: 0; left: 0; right: 0; padding: 25px 18px 18px;
         background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
@@ -308,7 +465,6 @@
         color: #fff; font-size: 13px; cursor: pointer; padding: 8px 0;
     }
     .modal-action i { font-size: 20px; color: #aaa; }
-    
     .modal-nav {
         position: absolute; top: 50%; transform: translateY(-50%); width: 100%;
         display: flex; justify-content: space-between; padding: 0 8px; pointer-events: none;
@@ -319,15 +475,21 @@
         color: #fff; font-size: 18px; cursor: pointer; pointer-events: auto;
         border: 1px solid rgba(255,255,255,0.1);
     }
-    
     .milestone-date { color: #888; font-size: 11px; margin-top: 3px; }
-    .milestone-date i { margin-right: 3px; }
-    
     .comment-form-container textarea {
         resize: none; font-family: inherit; font-size: 13px; width: 100%;
         padding: 10px; background: #0a0a0a; border: 1px solid #333; border-radius: 12px; color: #fff;
     }
     .comment-form-container textarea:focus { outline: none; border-color: #3b82f6; }
+    
+    .template-style-indicator {
+        display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+        border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; margin-left: 8px; vertical-align: middle;
+    }
+    .style-fitness { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .style-portfolio { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .style-startup { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
     
     @media (max-width: 380px) {
         .journey-hero { height: 340px; }
@@ -335,7 +497,6 @@
         .strip-day { flex: 0 0 85px; }
         .strip-thumbnail { width: 85px; height: 125px; }
     }
-    
     button, .stat-card, .strip-day, .hero-action, .action-btn, .back-btn, .menu-btn { min-height: 44px; min-width: 44px; }
     .hero-action { min-height: 44px; display: flex; align-items: center; }
 </style>
@@ -343,14 +504,21 @@
 
 {% block content %}
 
-<div class="journey-container">
+<div class="journey-container template-{{ journey.template_style|default:'default' }}">
     
     <div class="journey-hero">
         <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
         <div class="menu-btn" onclick="toggleMenu()"><i class="fas fa-ellipsis-h"></i></div>
         
         <div class="journey-title-top">
-            <h2>{{ journey.title }}</h2>
+            <h2>
+                {{ journey.title }}
+                {% if journey.template_style and journey.template_style != 'default' %}
+                <span class="template-style-indicator style-{{ journey.template_style }}">
+                    {{ journey.template_style }}
+                </span>
+                {% endif %}
+            </h2>
             <div class="creator-info">
                 <div class="creator-avatar">
                     {% if journey.creator.image %}
@@ -374,6 +542,30 @@
         </div>
     </div>
     
+    <!-- TEMPLATE BANNERS -->
+    {% if journey.template_style == 'fitness' %}
+    <div style="padding:0 20px 16px;">
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:14px;text-align:center;">
+            <span style="color:#ef4444;font-weight:700;font-size:14px;">🏋️ DAY {{ current_day }} OF {{ journey.duration }}</span>
+            <p style="color:#aaa;font-size:12px;margin-top:4px;">Keep pushing. Every day counts.</p>
+        </div>
+    </div>
+    {% elif journey.template_style == 'portfolio' %}
+    <div style="padding:0 20px 16px;">
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:14px;text-align:center;">
+            <span style="color:#3b82f6;font-weight:700;font-size:14px;">💼 MILESTONE {{ current_day }} OF {{ journey.duration }}</span>
+            <p style="color:#aaa;font-size:12px;margin-top:4px;">Building proof, one milestone at a time.</p>
+        </div>
+    </div>
+    {% elif journey.template_style == 'startup' %}
+    <div style="padding:0 20px 16px;">
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:14px;text-align:center;">
+            <span style="color:#22c55e;font-weight:700;font-size:14px;">🚀 DAY {{ current_day }} OF {{ journey.duration }}</span>
+            <p style="color:#aaa;font-size:12px;margin-top:4px;">Building in public. Shipping every day.</p>
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="progress-section">
         <div class="progress-header">
             <span>Journey Progress</span>
@@ -390,13 +582,16 @@
         <div class="stat-card"><i class="fas fa-comment"></i><div class="value">{{ journey.get_comment_count }}</div><div class="label">Comments</div></div>
     </div>
     
+    <!-- ================================================ -->
+    <!-- DEFAULT: Horizontal Strip                         -->
+    <!-- ================================================ -->
+    {% if journey.template_style == 'default' %}
     <div class="cinematic-strip">
         <div class="strip-header">
             <i class="fas fa-film"></i>
             <h3>{% if journey.journey_type == 'milestone' %}All Milestones{% else %}All Days{% endif %}</h3>
             <span>Swipe →</span>
         </div>
-        
         <div class="day-strip" id="dayStrip">
             {% for day_num in total_days_range %}
                 {% with activity=activities_by_day|get_item:day_num %}
@@ -426,13 +621,155 @@
                 {% endwith %}
             {% endfor %}
         </div>
-        
         <div class="scroll-controls">
             <button class="scroll-btn" onclick="scrollStrip(-200)"><i class="fas fa-chevron-left"></i></button>
             <span class="scroll-indicator" id="scrollIndicator">1/{{ journey.duration }}</span>
             <button class="scroll-btn" onclick="scrollStrip(200)"><i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
+    {% endif %}
+    
+    <!-- ================================================ -->
+    <!-- FITNESS: Gallery with Show More                   -->
+    <!-- ================================================ -->
+    {% if journey.template_style == 'fitness' %}
+    <div style="padding:0 20px 12px;display:flex;align-items:center;gap:4px;">
+        <i class="fas fa-th" style="color:#ef4444;font-size:13px;"></i>
+        <h3 style="font-size:13px;font-weight:600;color:#fff;">Progress Gallery</h3>
+    </div>
+    <div class="gallery-grid" id="fitnessGallery">
+        {% for day_num in total_days_range %}
+            {% with activity=activities_by_day|get_item:day_num %}
+            <div class="gallery-item fitness-item {% if forloop.counter > 12 %}hidden-item{% endif %}" 
+                 onclick="openModal({{ day_num }})" 
+                 style="{% if forloop.counter > 12 %}display:none;{% endif %}">
+                {% if activity and activity.file %}
+                    {% if activity.is_video %}
+                        <video src="{{ activity.file.url }}" muted></video>
+                    {% else %}
+                        <img src="{{ activity.file.url }}" alt="">
+                    {% endif %}
+                    <div class="gallery-check"><i class="fas fa-check"></i></div>
+                {% elif activity and activity.thumbnail %}
+                    <img src="{{ activity.thumbnail.url }}" alt="">
+                    <div class="gallery-check"><i class="fas fa-check"></i></div>
+                {% else %}
+                    <div class="gallery-empty">{{ day_num }}</div>
+                {% endif %}
+                <div class="gallery-item-overlay">
+                    <span class="gallery-day-number">Day {{ day_num }}</span>
+                </div>
+            </div>
+            <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="gallery-edit-link" style="display:none;" id="edit-link-{{ day_num }}"></a>
+            {% endwith %}
+        {% endfor %}
+    </div>
+    {% if total_days_range|length > 12 %}
+    <button class="show-more-btn" onclick="showMoreFitness()" id="fitnessShowMoreBtn">
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Days
+    </button>
+    {% endif %}
+    {% if user == journey.creator.user and journey.template_style != 'default' %}
+    <div style="padding:0 20px 16px;text-align:center;">
+        <a href="{% url 'journey_content' slug=journey.slug %}" class="creator-prompt-link">
+            <span class="creator-prompt">📝 This is your template. Click here to manage all days.</span>
+        </a>
+    </div>
+    {% endif %}
+    {% endif %}
+    
+    <!-- ================================================ -->
+    <!-- PORTFOLIO: Cards with Show More                   -->
+    <!-- ================================================ -->
+    {% if journey.template_style == 'portfolio' %}
+    <div style="padding:0 20px 12px;display:flex;align-items:center;gap:4px;">
+        <i class="fas fa-briefcase" style="color:#3b82f6;font-size:13px;"></i>
+        <h3 style="font-size:13px;font-weight:600;color:#fff;">Project Milestones</h3>
+    </div>
+    <div class="portfolio-list" id="portfolioList">
+        {% for day_num in total_days_range %}
+            {% with activity=activities_by_day|get_item:day_num %}
+            <div class="portfolio-card portfolio-item {% if activity %}completed{% endif %} {% if forloop.counter > 5 %}hidden-item{% endif %}" 
+                 onclick="openModal({{ day_num }})"
+                 style="{% if forloop.counter > 5 %}display:none;{% endif %}">
+                <div class="portfolio-card-thumb">
+                    {% if activity and activity.file %}
+                        {% if activity.is_video %}
+                            <video src="{{ activity.file.url }}" muted></video>
+                        {% else %}
+                            <img src="{{ activity.file.url }}" alt="">
+                        {% endif %}
+                    {% else %}
+                        <i class="fas fa-code"></i>
+                    {% endif %}
+                </div>
+                <div class="portfolio-card-info">
+                    <div class="portfolio-card-title">
+                        {% if activity %}{{ activity.content|truncatechars:40 }}{% else %}Milestone {{ day_num }}{% endif %}
+                    </div>
+                    <div class="portfolio-card-meta">
+                        Milestone {{ day_num }} of {{ journey.duration }}
+                        {% if activity %} · ✅ Complete{% else %} · ⏳ Pending{% endif %}
+                    </div>
+                    {% if user == journey.creator.user and activity %}
+                    <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
+                        <span class="creator-prompt">📝 Click to edit this milestone</span>
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="portfolio-card-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+    {% if total_days_range|length > 5 %}
+    <button class="show-more-btn" onclick="showMorePortfolio()" id="portfolioShowMoreBtn">
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Milestones
+    </button>
+    {% endif %}
+    {% endif %}
+    
+    <!-- ================================================ -->
+    <!-- STARTUP: Roadmap with Show More                   -->
+    <!-- ================================================ -->
+    {% if journey.template_style == 'startup' %}
+    <div style="padding:0 20px 12px;display:flex;align-items:center;gap:4px;">
+        <i class="fas fa-rocket" style="color:#22c55e;font-size:13px;"></i>
+        <h3 style="font-size:13px;font-weight:600;color:#fff;">Launch Roadmap</h3>
+    </div>
+    <div class="roadmap" id="startupRoadmap">
+        <div class="roadmap-line"></div>
+        <div class="roadmap-line-progress" style="height: {{ journey.get_progress_percentage }}%;"></div>
+        {% for day_num in total_days_range %}
+            {% with activity=activities_by_day|get_item:day_num %}
+            <div class="roadmap-item roadmap-milestone {% if activity %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %} {% if forloop.counter > 8 %}hidden-item{% endif %}" 
+                 onclick="openModal({{ day_num }})"
+                 style="{% if forloop.counter > 8 %}display:none;{% endif %}">
+                <div class="roadmap-dot"></div>
+                <div class="roadmap-content">
+                    <div class="roadmap-title">
+                        {% if activity %}{{ activity.content|truncatechars:50 }}{% else %}Day {{ day_num }}{% endif %}
+                    </div>
+                    <div class="roadmap-meta">
+                        Day {{ day_num }} of {{ journey.duration }}
+                        {% if activity %} · ✅ Shipped{% elif day_num == current_day %} · 🚀 In Progress{% else %} · 🔒 Locked{% endif %}
+                    </div>
+                    {% if user == journey.creator.user and activity %}
+                    <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
+                        <span class="creator-prompt">📝 Click to edit this milestone</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+    {% if total_days_range|length > 8 %}
+    <button class="show-more-btn" onclick="showMoreStartup()" id="startupShowMoreBtn">
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Days
+    </button>
+    {% endif %}
+    {% endif %}
     
     {% if current_activity %}
     <div class="current-day-hero" onclick="openModal({{ current_day }})">
@@ -463,6 +800,11 @@
                 {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }} · CURRENT{% endif %}
             </span>
             <h3 class="hero-day-title">{{ current_activity.content|truncatechars:40 }}</h3>
+            {% if user == journey.creator.user and journey.template_style != 'default' %}
+            <a href="{% url 'post_activity_day' slug=journey.slug day_number=current_day %}" class="creator-prompt-link" onclick="event.stopPropagation();">
+                <span class="creator-prompt" style="margin-bottom:6px;">📝 Click to edit with your own content</span>
+            </a>
+            {% endif %}
             <p class="hero-day-desc">{{ current_activity.content|truncatechars:100 }}</p>
             {% if journey.journey_type == 'milestone' and current_activity.actual_date %}
             <p class="milestone-date"><i class="fas fa-calendar-check"></i> {{ current_activity.actual_date|date:"F j, Y" }}</p>
@@ -590,7 +932,6 @@
     let currentModalDay = currentDay;
     let currentActivityId = {{ current_activity.id|default:'null' }};
     
-    // Activities data from Django
     const activitiesData = {
         {% for day, activity in activities_by_day.items %}
             {{ day }}: {
@@ -685,81 +1026,74 @@
         });
     }
     
-    function scrollStrip(d) { const s=document.getElementById('dayStrip'); s.scrollBy({left:d,behavior:'smooth'}); updateScrollIndicator(); }
-    function updateScrollIndicator() { const s=document.getElementById('dayStrip'); const p=s.scrollLeft/(s.scrollWidth-s.clientWidth); document.getElementById('scrollIndicator').textContent = (Math.round(p*(totalDays-1))+1)+'/'+totalDays; }
+    function scrollStrip(d) { const s=document.getElementById('dayStrip'); if(s){s.scrollBy({left:d,behavior:'smooth'}); updateScrollIndicator();} }
+    function updateScrollIndicator() { const s=document.getElementById('dayStrip'); if(!s)return; const p=s.scrollLeft/(s.scrollWidth-s.clientWidth); const el=document.getElementById('scrollIndicator'); if(el)el.textContent=(Math.round(p*(totalDays-1))+1)+'/'+totalDays; }
+    
+    function showMoreFitness() {
+        document.querySelectorAll('#fitnessGallery .hidden-item').forEach(el => el.style.display = 'block');
+        const btn = document.getElementById('fitnessShowMoreBtn');
+        if(btn) btn.style.display = 'none';
+    }
+    function showMorePortfolio() {
+        document.querySelectorAll('#portfolioList .hidden-item').forEach(el => el.style.display = 'flex');
+        const btn = document.getElementById('portfolioShowMoreBtn');
+        if(btn) btn.style.display = 'none';
+    }
+    function showMoreStartup() {
+        document.querySelectorAll('#startupRoadmap .hidden-item').forEach(el => el.style.display = 'flex');
+        const btn = document.getElementById('startupShowMoreBtn');
+        if(btn) btn.style.display = 'none';
+    }
     
     function openModal(day) {
         const a = activitiesData[day];
         if (!a) { alert('No content for day ' + day); return; }
-        
-        currentModalDay = day;
-        currentActivityId = a.id;
-        
+        currentModalDay = day; currentActivityId = a.id;
         document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
         document.getElementById('modalCaption').textContent = a.content;
         document.getElementById('modalLoveCount').textContent = a.loveCount;
         document.getElementById('commentActivityId').value = a.id;
-        
         const m = document.getElementById('modalMedia');
-        
         if (a.fileUrl) {
-            if (a.isVideo) {
-                m.innerHTML = '<video src="' + a.fileUrl + '" controls playsinline autoplay style="width:100%;height:100%;object-fit:contain;"></video>';
-            } else {
-                m.innerHTML = '<img src="' + a.fileUrl + '" style="width:100%;height:100%;object-fit:contain;">';
-            }
+            if (a.isVideo) { m.innerHTML = '<video src="' + a.fileUrl + '" controls playsinline autoplay style="width:100%;height:100%;object-fit:contain;"></video>'; }
+            else { m.innerHTML = '<img src="' + a.fileUrl + '" style="width:100%;height:100%;object-fit:contain;">'; }
         } else if (a.sourceUrl) {
             m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#888;padding:20px;text-align:center;"><i class="fas fa-link" style="font-size:48px;margin-bottom:16px;"></i><p style="margin-bottom:16px;">Content from ' + (a.sourcePlatform || 'social media') + '</p><a href="' + a.sourceUrl + '" target="_blank" class="action-btn action-btn-primary"><i class="fas fa-external-link-alt"></i> View Original</a></div>';
         } else {
             m.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;"><i class="fas fa-image" style="font-size:48px;"></i></div>';
         }
-        
         document.getElementById('mediaModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
     
-    function closeModal() {
-        document.getElementById('mediaModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
+    function closeModal() { document.getElementById('mediaModal').classList.remove('active'); document.body.style.overflow = ''; }
     function prevDay() { if (currentModalDay > 1) openModal(currentModalDay - 1); }
     function nextDay() { if (currentModalDay < totalDays) openModal(currentModalDay + 1); }
     
     function toggleLove(activityId) {
         if (!activityId) activityId = currentActivityId;
         fetch('/api/activity/' + activityId + '/love/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(d => {
+            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
+        }).then(r => r.json()).then(d => {
             const countEl = document.getElementById('love-count-' + activityId);
             if (countEl) countEl.textContent = d.love_count;
             document.getElementById('modalLoveCount').textContent = d.love_count;
         });
     }
-    
     function toggleLoveFromModal() { toggleLove(currentActivityId); }
     
     function toggleFollow() {
         fetch('/api/journey/' + journeySlug + '/follow/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(d => {
+            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
+        }).then(r => r.json()).then(d => {
             document.getElementById('followText').textContent = d.following ? 'Following' : 'Follow';
         });
     }
     
     function toggleSave() {
         fetch('/api/journey/' + journeySlug + '/save/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(d => {
+            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
+        }).then(r => r.json()).then(d => {
             const btn = document.getElementById('saveText');
             btn.textContent = d.saved ? 'Saved' : 'Save';
             btn.parentElement.classList.toggle('saved', d.saved);
@@ -770,29 +1104,15 @@
         e.preventDefault();
         const content = document.getElementById('commentContent').value.trim();
         if (!content) return;
-        
         fetch('/api/activity/' + currentActivityId + '/comment/', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
+            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'content=' + encodeURIComponent(content)
-        })
-        .then(r => r.json())
-        .then(d => {
-            if (d.success) location.reload();
-        });
+        }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
     }
     
-    function shareJourney() {
-        navigator.clipboard?.writeText(window.location.href).then(() => alert('Link copied!'));
-    }
-    
-    function scrollToComments() {
-        document.getElementById('comments').scrollIntoView({behavior: 'smooth'});
-    }
-    
-    function toggleMenu() {
-        if (confirm('Share this journey?')) shareJourney();
-    }
+    function shareJourney() { navigator.clipboard?.writeText(window.location.href).then(() => alert('Link copied!')); }
+    function scrollToComments() { document.getElementById('comments').scrollIntoView({behavior: 'smooth'}); }
+    function toggleMenu() { if (confirm('Share this journey?')) shareJourney(); }
     
     document.getElementById('mediaModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
     document.addEventListener('keydown', e => {
@@ -806,9 +1126,12 @@
         drawMeanderingPath();
         const a = activitiesData[currentDay];
         if (a) document.getElementById('commentActivityId').value = a.id;
-        const s = document.getElementById('dayStrip');
-        s.addEventListener('scroll', updateScrollIndicator);
-        updateScrollIndicator();
+        if (document.getElementById('dayStrip')) {
+            const s = document.getElementById('dayStrip');
+            s.addEventListener('scroll', updateScrollIndicator);
+            updateScrollIndicator();
+        }
     });
 </script>
 {% endblock %}
+```

@@ -1,0 +1,409 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ template.title }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .purchase-container {
+        max-width: 480px;
+        margin: 0 auto;
+        background: #0a0a0a;
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+    
+    .purchase-header {
+        padding: 20px;
+    }
+    
+    .back-link {
+        color: #888;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 16px;
+    }
+    
+    .template-preview {
+        width: 100%;
+        height: 180px;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    
+    .preview-fitness { background: linear-gradient(135deg, #1a0a0a, #0a0a0a); border: 2px solid #ef4444; }
+    .preview-portfolio { background: linear-gradient(135deg, #0a0a1a, #0a0a0a); border: 2px solid #3b82f6; }
+    .preview-startup { background: linear-gradient(135deg, #0a1a0a, #0a0a0a); border: 2px solid #22c55e; }
+    .preview-default { background: #111; border: 2px solid #333; }
+    
+    .template-preview i {
+        font-size: 56px;
+        opacity: 0.3;
+    }
+    
+    .preview-label {
+        position: absolute;
+        bottom: 12px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    
+    .purchase-title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 8px;
+    }
+    
+    .purchase-desc {
+        font-size: 14px;
+        color: #aaa;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    .purchase-meta {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .meta-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #1a1a1a;
+        color: #aaa;
+    }
+    
+    .apply-section {
+        padding: 0 20px;
+        margin-bottom: 24px;
+    }
+    
+    .apply-section h3 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 12px;
+    }
+    
+    .journey-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    
+    .journey-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        background: #111;
+        border-radius: 12px;
+        border: 1px solid #1a1a1a;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        color: #fff;
+    }
+    
+    .journey-option:active { background: #1a1a1a; }
+    
+    .journey-option.selected {
+        border-color: #fff;
+        background: #1a1a1a;
+    }
+    
+    .journey-option i {
+        color: #888;
+        font-size: 16px;
+    }
+    
+    .journey-option .journey-name {
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .journey-option .journey-type {
+        font-size: 10px;
+        color: #666;
+    }
+    
+    .purchase-footer {
+        position: sticky;
+        bottom: 0;
+        background: #0a0a0a;
+        padding: 16px 20px;
+        border-top: 1px solid #1a1a1a;
+    }
+    
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .price-label {
+        font-size: 13px;
+        color: #888;
+    }
+    
+    .price-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #fff;
+    }
+    
+    .price-value.free {
+        color: #22c55e;
+    }
+    
+    .btn-main {
+        width: 100%;
+        padding: 14px;
+        border-radius: 30px;
+        font-size: 15px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-main:active { transform: scale(0.98); }
+    .btn-main.primary { background: #fff; color: #0a0a0a; }
+    .btn-main.success { background: #22c55e; color: #0a0a0a; }
+    .btn-main:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    .guarantee {
+        text-align: center;
+        font-size: 10px;
+        color: #555;
+        margin-top: 8px;
+    }
+    
+    .paypal-container {
+        margin-top: 12px;
+    }
+    
+    @media (max-width: 380px) {
+        .purchase-title {
+            font-size: 20px;
+        }
+        .template-preview {
+            height: 170px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="purchase-container">
+    
+    <div class="purchase-header">
+        <a href="{% url 'template_store' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i> Template Store
+        </a>
+        
+        <div class="template-preview preview-{{ template.template_style }}">
+            {% if template.cover_image %}
+                <img src="{{ template.cover_image.url }}" alt="{{ template.title }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+                <i class="fas fa-map"></i>
+            {% endif %}
+            <span class="preview-label" style="background:{% if template.template_style == 'fitness' %}#ef4444{% elif template.template_style == 'portfolio' %}#3b82f6{% elif template.template_style == 'startup' %}#22c55e{% else %}#666{% endif %};color:#fff;">
+                {{ template.template_style }}
+            </span>
+        </div>
+        
+        <h1 class="purchase-title">{{ template.title }}</h1>
+        <p class="purchase-desc">{{ template.description }}</p>
+        
+        <div class="purchase-meta">
+            <span class="meta-badge">{{ template.get_category_display }}</span>
+            <span class="meta-badge">{{ template.duration }} {% if template.journey_type == 'milestone' %}milestones{% else %}days{% endif %}</span>
+            <span class="meta-badge">{{ template.usage_count }} sold</span>
+        </div>
+    </div>
+    
+    {% if user_journeys %}
+    <div class="apply-section">
+        <h3>Apply to an existing journey</h3>
+        <div class="journey-list" id="journeyList">
+            {% for journey in user_journeys %}
+            <div class="journey-option" data-journey-id="{{ journey.id }}" onclick="selectJourney({{ journey.id }}, this)">
+                <i class="fas fa-route"></i>
+                <div>
+                    <div class="journey-name">{{ journey.title }}</div>
+                    <div class="journey-type">{{ journey.get_category_display }} · {{ journey.get_follower_count }} followers</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if template.is_free %}
+        <form method="POST" action="{% url 'apply_template' template.id %}" id="applyForm">
+            {% csrf_token %}
+            <input type="hidden" name="journey_id" id="selectedJourneyId" value="">
+            <button type="submit" class="btn-main success" id="applyBtn" disabled>
+                <i class="fas fa-paint-brush"></i> Apply Style to Selected Journey
+            </button>
+        </form>
+        {% else %}
+        <button class="btn-main primary" id="applyBtn" disabled onclick="purchaseAndApply()">
+            <i class="fas fa-paint-brush"></i> Buy & Apply — ${{ template.price }}
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div style="padding:0 20px;text-align:center;">
+        <p style="color:#888;font-size:13px;margin-bottom:12px;">— or —</p>
+    </div>
+    
+    <div style="padding:0 20px;">
+        {% if template.is_free %}
+        <form method="POST" action="{% url 'complete_template_purchase' template.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="paypal_order_id" value="free">
+            <button type="submit" class="btn-main success">
+                <i class="fas fa-plus"></i> Create New Journey with This Style
+            </button>
+        </form>
+        {% else %}
+        <button class="btn-main primary" id="newJourneyBtn" onclick="purchaseNew()">
+            <i class="fas fa-plus"></i> Buy & Create New Journey — ${{ template.price }}
+        </button>
+        <div class="paypal-container" id="paypal-button-container" style="display:none;"></div>
+        {% endif %}
+    </div>
+    
+    <div class="purchase-footer">
+        <p class="guarantee">
+            <i class="fas fa-shield-alt"></i> One-time payment. Style stays forever.
+        </p>
+    </div>
+    
+</div>
+
+{% if not template.is_free and paypal_client_id %}
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
+<script>
+    let paypalMode = 'new';
+    let selectedJourney = null;
+    
+    function selectJourney(id, element) {
+        document.querySelectorAll('.journey-option').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedJourney = id;
+        document.getElementById('selectedJourneyId').value = id;
+        document.getElementById('applyBtn').disabled = false;
+    }
+    
+    function purchaseAndApply() {
+        if (!selectedJourney) {
+            alert('Select a journey first');
+            return;
+        }
+        paypalMode = 'apply';
+        document.getElementById('paypal-button-container').style.display = 'block';
+        document.getElementById('applyBtn').style.display = 'none';
+    }
+    
+    function purchaseNew() {
+        paypalMode = 'new';
+        document.getElementById('paypal-button-container').style.display = 'block';
+        document.getElementById('newJourneyBtn').style.display = 'none';
+    }
+    
+    paypal.Buttons({
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: { value: '{{ template.price }}' },
+                    description: '{{ template.title|escapejs }} - Rallynex Template'
+                }]
+            });
+        },
+        onApprove: function(data, actions) {
+            return actions.order.capture().then(function(details) {
+                let form = document.createElement('form');
+                form.method = 'POST';
+                
+                if (paypalMode === 'new') {
+                    form.action = '{% url "complete_template_purchase" template.id %}';
+                } else {
+                    form.action = '{% url "apply_template" template.id %}';
+                }
+                
+                let csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+                form.appendChild(csrfInput);
+                
+                let orderInput = document.createElement('input');
+                orderInput.type = 'hidden';
+                orderInput.name = 'paypal_order_id';
+                orderInput.value = data.orderID;
+                form.appendChild(orderInput);
+                
+                if (paypalMode === 'apply') {
+                    let journeyInput = document.createElement('input');
+                    journeyInput.type = 'hidden';
+                    journeyInput.name = 'journey_id';
+                    journeyInput.value = selectedJourney;
+                    form.appendChild(journeyInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+            });
+        },
+        onCancel: function() {
+            document.getElementById('paypal-button-container').style.display = 'none';
+            document.getElementById('applyBtn').style.display = 'flex';
+            document.getElementById('newJourneyBtn').style.display = 'flex';
+        },
+        onError: function(err) {
+            document.getElementById('paypal-button-container').style.display = 'none';
+            document.getElementById('applyBtn').style.display = 'flex';
+            document.getElementById('newJourneyBtn').style.display = 'flex';
+            alert('Payment failed. Please try again.');
+        }
+    }).render('#paypal-button-container');
+</script>
+{% elif not template.is_free %}
+<script>
+    function purchaseAndApply() {
+        if (!selectedJourney) {
+            alert('Select a journey first');
+            return;
+        }
+        alert('Payment system coming soon.');
+    }
+    function purchaseNew() {
+        alert('Payment system coming soon.');
+    }
+</script>
+{% endif %}
+
+{% endblock %}

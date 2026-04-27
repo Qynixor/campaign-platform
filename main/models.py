@@ -261,7 +261,8 @@ class Journey(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
-    
+    # Template tracking
+    template_style = models.CharField(max_length=20, default='default')    
     class Meta:
         ordering = ['-created_at']
         indexes = [
@@ -916,3 +917,37 @@ def delete_journey_files(sender, instance, **kwargs):
     if instance.cover_video:
         from cloudinary.uploader import destroy
         destroy(instance.cover_video.public_id, resource_type="video")
+
+
+class JourneyTemplate(models.Model):
+    """Pre-built journey templates creators can purchase"""
+    
+    CATEGORY_CHOICES = Journey.CATEGORY_CHOICES
+    JOURNEY_TYPES = Journey.JOURNEY_TYPES
+    
+    STYLE_CHOICES = [
+        ('default', 'Default'),
+        ('fitness', 'Fitness'),
+        ('portfolio', 'Portfolio'),
+        ('startup', 'Startup'),
+    ]
+    
+    title = models.CharField(max_length=100)
+    description = models.TextField(max_length=500)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    journey_type = models.CharField(max_length=20, choices=JOURNEY_TYPES, default='daily')
+    duration = models.PositiveIntegerField(default=30)
+    milestones = models.JSONField(default=list, blank=True)
+    template_style = models.CharField(max_length=20, choices=STYLE_CHOICES, default='default')
+    price = models.DecimalField(max_digits=6, decimal_places=2, default=10.00)
+    is_free = models.BooleanField(default=False)
+    cover_image = CloudinaryField('image', folder='template_covers', null=True, blank=True)
+    usage_count = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['category', '-usage_count']
+    
+    def __str__(self):
+        return f"{self.title} — ${self.price}"

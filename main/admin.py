@@ -8,7 +8,7 @@ from .models import (
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
     Donation, Notification, PostJourneyProduct,
-    Report, Blog, FAQ
+    Report, Blog, FAQ, JourneyTemplate
 )
 
 
@@ -20,7 +20,7 @@ class ReadOnlyMixin:
     """Make fields read-only after creation"""
     
     def get_readonly_fields(self, request, obj=None):
-        if obj:  # Editing existing object
+        if obj:
             return self.readonly_fields + ('created_at',)
         return self.readonly_fields
 
@@ -222,21 +222,20 @@ class JourneyTagInline(admin.TabularInline):
 # ============================================================================
 # JOURNEY ADMIN
 # ============================================================================
+
 @admin.register(Journey)
 class JourneyAdmin(admin.ModelAdmin):
     list_display = ['get_cover', 'title', 'creator', 'category', 'journey_type', 'get_progress', 'get_stats', 'is_public', 'created_at']
     list_filter = ['category', 'journey_type', 'is_public', 'is_active', 'is_featured', 'funding_enabled', 'created_at']
     search_fields = ['title', 'description', 'creator__user__username', 'slug']
     readonly_fields = ['slug', 'view_count', 'unique_viewers', 'total_watch_time', 'created_at', 'updated_at', 'get_absolute_url']
-    prepopulated_fields = {'slug': ('title',)}
     autocomplete_fields = ['creator']
-    # REMOVED: filter_horizontal = ['tags']
     
     inlines = [ActivityInline, JourneyFollowInline, DonationInline, JourneyTagInline]
     
     fieldsets = (
         ('Basic Info', {
-            'fields': ('creator', 'title', 'slug', 'description', 'category', 'journey_type')
+            'fields': ('creator', 'title', 'slug', 'description', 'category', 'journey_type', 'template_style')
         }),
         ('Visuals', {
             'fields': ('cover_image', 'cover_video')
@@ -311,6 +310,18 @@ class JourneyAdmin(admin.ModelAdmin):
         updated = queryset.update(is_public=False)
         self.message_user(request, f'{updated} journeys made private.')
     make_private.short_description = 'Make private'
+
+
+# ============================================================================
+# JOURNEY TEMPLATE ADMIN
+# ============================================================================
+
+@admin.register(JourneyTemplate)
+class JourneyTemplateAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'template_style', 'price', 'is_free', 'usage_count', 'is_active')
+    list_filter = ('category', 'template_style', 'is_free', 'is_active')
+    search_fields = ('title', 'description')
+
 
 # ============================================================================
 # ACTIVITY ADMIN
