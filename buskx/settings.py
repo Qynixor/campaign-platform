@@ -150,8 +150,8 @@ DATABASES['default']['OPTIONS'] = {
 # CSRF
 # =====================================================
 CSRF_TRUSTED_ORIGINS = [
-    'https://rallynex.com',
     'https://www.rallynex.com',
+    'https://rallynex.com',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
