@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 {% load static %}
 
@@ -151,28 +150,6 @@
         border-top: 1px solid #1a1a1a;
     }
     
-    .price-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-    
-    .price-label {
-        font-size: 13px;
-        color: #888;
-    }
-    
-    .price-value {
-        font-size: 28px;
-        font-weight: 800;
-        color: #fff;
-    }
-    
-    .price-value.free {
-        color: #22c55e;
-    }
-    
     .btn-main {
         width: 100%;
         padding: 14px;
@@ -202,6 +179,43 @@
     
     .paypal-container {
         margin-top: 12px;
+    }
+    
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(10, 10, 10, 0.95);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .loading-overlay.active {
+        display: flex;
+    }
+    
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #333;
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        color: #aaa;
+        font-size: 14px;
     }
     
     @media (max-width: 380px) {
@@ -304,6 +318,11 @@
     
 </div>
 
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Processing payment...</div>
+</div>
+
 {% if not template.is_free and paypal_client_id %}
 <script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency=USD"></script>
 <script>
@@ -326,70 +345,95 @@
         paypalMode = 'apply';
         document.getElementById('paypal-button-container').style.display = 'block';
         document.getElementById('applyBtn').style.display = 'none';
+        renderPaypalButtons();
     }
     
     function purchaseNew() {
         paypalMode = 'new';
         document.getElementById('paypal-button-container').style.display = 'block';
         document.getElementById('newJourneyBtn').style.display = 'none';
+        renderPaypalButtons();
     }
     
-    paypal.Buttons({
-        createOrder: function(data, actions) {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: { value: '{{ template.price }}' },
-                    description: '{{ template.title|escapejs }} - Rallynex Template'
-                }]
-            });
-        },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
-                let form = document.createElement('form');
-                form.method = 'POST';
-                
-                if (paypalMode === 'new') {
-                    form.action = '{% url "complete_template_purchase" template.id %}';
-                } else {
-                    form.action = '{% url "apply_template" template.id %}';
-                }
-                
-                let csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = '{{ csrf_token }}';
-                form.appendChild(csrfInput);
-                
-                let orderInput = document.createElement('input');
-                orderInput.type = 'hidden';
-                orderInput.name = 'paypal_order_id';
-                orderInput.value = data.orderID;
-                form.appendChild(orderInput);
-                
-                if (paypalMode === 'apply') {
-                    let journeyInput = document.createElement('input');
-                    journeyInput.type = 'hidden';
-                    journeyInput.name = 'journey_id';
-                    journeyInput.value = selectedJourney;
-                    form.appendChild(journeyInput);
-                }
-                
-                document.body.appendChild(form);
-                form.submit();
-            });
-        },
-        onCancel: function() {
-            document.getElementById('paypal-button-container').style.display = 'none';
-            document.getElementById('applyBtn').style.display = 'flex';
-            document.getElementById('newJourneyBtn').style.display = 'flex';
-        },
-        onError: function(err) {
-            document.getElementById('paypal-button-container').style.display = 'none';
-            document.getElementById('applyBtn').style.display = 'flex';
-            document.getElementById('newJourneyBtn').style.display = 'flex';
-            alert('Payment failed. Please try again.');
+    function submitViaFetch(orderID) {
+        // Show loading overlay
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        let url;
+        let formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        formData.append('paypal_order_id', orderID);
+        
+        if (paypalMode === 'new') {
+            url = '{% url "complete_template_purchase" template.id %}';
+        } else {
+            url = '{% url "apply_template" template.id %}';
+            formData.append('journey_id', selectedJourney);
         }
-    }).render('#paypal-button-container');
+        
+        // Use fetch instead of form.submit() - NO BROWSER POPUP
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text();
+            }
+        })
+        .then(function(html) {
+            if (html) {
+                document.documentElement.innerHTML = html;
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            document.getElementById('loadingOverlay').classList.remove('active');
+            alert('Something went wrong. Please try again.');
+        });
+    }
+    
+    function renderPaypalButtons() {
+        document.getElementById('paypal-button-container').innerHTML = '';
+        
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: { value: '{{ template.price }}' },
+                        description: '{{ template.title|escapejs }} - Rallynex Template'
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    // Use fetch instead of form.submit()
+                    // This prevents the fake browser popup
+                    submitViaFetch(data.orderID);
+                });
+            },
+            onCancel: function() {
+                document.getElementById('paypal-button-container').style.display = 'none';
+                if (document.getElementById('applyBtn')) {
+                    document.getElementById('applyBtn').style.display = 'flex';
+                }
+                document.getElementById('newJourneyBtn').style.display = 'flex';
+            },
+            onError: function(err) {
+                document.getElementById('paypal-button-container').style.display = 'none';
+                if (document.getElementById('applyBtn')) {
+                    document.getElementById('applyBtn').style.display = 'flex';
+                }
+                document.getElementById('newJourneyBtn').style.display = 'flex';
+                alert('Payment failed. Please try again.');
+            }
+        }).render('#paypal-button-container');
+    }
 </script>
 {% elif not template.is_free %}
 <script>
