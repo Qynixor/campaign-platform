@@ -148,39 +148,262 @@
         display: flex;
         gap: 24px;
         align-items: center;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-2px);
+        border-color: #3b82f6;
     }
     
     .team-avatar {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: #1a1a1a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 140px;
+        height: 140px;
+        border-radius: 16px;
+        overflow: hidden;
         flex-shrink: 0;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #000;
+        border: 3px solid #3b82f6;
     }
     
-    .team-avatar i {
-        font-size: 48px;
+    .team-avatar:hover {
+        transform: scale(1.05);
+        border-color: #60a5fa;
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+    }
+    
+    .team-avatar canvas.avatar-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+    
+    .team-avatar .avatar-fallback {
+        width: 100%;
+        height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .team-avatar .avatar-fallback i {
+        font-size: 56px;
         color: #3b82f6;
     }
     
+    .team-avatar-click-hint {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 3;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    
+    .team-avatar:hover .team-avatar-click-hint {
+        opacity: 1;
+    }
+    
     .team-info h4 {
-        font-size: 20px;
-        margin-bottom: 4px;
+        font-size: 22px;
+        margin-bottom: 6px;
+        color: #fff;
     }
     
     .team-role {
         color: #3b82f6;
         font-size: 14px;
+        font-weight: 600;
         margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .team-bio {
         color: #888;
-        font-size: 14px;
+        font-size: 15px;
         line-height: 1.6;
+    }
+    
+    .team-social {
+        margin-top: 16px;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .team-social a {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #888;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .team-social a:hover {
+        background: #3b82f6;
+        color: #fff;
+        transform: translateY(-2px);
+    }
+    
+    /* Image Popup Modal */
+    .image-popup-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .image-popup-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+    
+    .image-popup-container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+    
+    .image-popup-content {
+        position: relative;
+        max-width: 500px;
+        max-height: 500px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 4px solid #3b82f6;
+        box-shadow: 0 0 40px rgba(59, 130, 246, 0.3), 0 20px 60px rgba(0, 0, 0, 0.5);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
+        background: #000;
+    }
+    
+    .image-popup-overlay.active .image-popup-content {
+        transform: scale(1);
+    }
+    
+    .image-popup-content img {
+        width: 100%;
+        height: auto;
+        max-height: 80vh;
+        object-fit: contain;
+        display: block;
+    }
+    
+    .popup-close {
+        width: 56px;
+        height: 56px;
+        background: #ffffff;
+        border: 3px solid #3b82f6;
+        border-radius: 50%;
+        color: #ef4444;
+        font-size: 28px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        z-index: 2;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        font-weight: bold;
+        line-height: 1;
+    }
+    
+    .popup-close:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+        transform: rotate(90deg) scale(1.1);
+        box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+    }
+    
+    .popup-close:active {
+        transform: rotate(90deg) scale(0.95);
+    }
+    
+    @media (max-width: 768px) {
+        .about-hero h1 {
+            font-size: 36px;
+        }
+        
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .team-card {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .team-social {
+            justify-content: center;
+        }
+        
+        .team-avatar {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .mission-section,
+        .story-content,
+        .cta-section {
+            padding: 32px 24px;
+        }
+        
+        .image-popup-content {
+            max-width: 90vw;
+        }
+        
+        .popup-close {
+            width: 48px;
+            height: 48px;
+            font-size: 24px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .image-popup-content {
+            max-width: 85vw;
+        }
+        
+        .popup-close {
+            width: 44px;
+            height: 44px;
+            font-size: 22px;
+        }
     }
     
     .cta-section {
@@ -202,29 +425,19 @@
         margin-bottom: 32px;
     }
     
-    @media (max-width: 768px) {
-        .about-hero h1 {
-            font-size: 36px;
-        }
-        
-        .features-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .team-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .team-card {
-            flex-direction: column;
-            text-align: center;
-        }
-        
-        .mission-section,
-        .story-content,
-        .cta-section {
-            padding: 32px 24px;
-        }
+    .btn-large {
+        padding: 16px 32px;
+        font-size: 18px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-large:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
     }
 </style>
 {% endblock %}
@@ -233,50 +446,47 @@
 
 <div class="about-container">
     
-    {# Hero #}
     <div class="about-hero">
-        <h1>Organize Your Journey</h1>
-        <p>Rallynex helps creators structure their content, build community, and raise funds—all in one beautiful timeline.</p>
+        <h1>Progress Deserves a Home</h1>
+        <p>Rallynex is the platform where creators, builders, and changemakers document their journey — structured, shareable, and built for accountability.</p>
     </div>
     
-    {# Mission #}
     <div class="mission-section">
         <h2>Our Mission</h2>
-        <p>We believe transparency builds trust. Rallynex exists so real creators and organizations can showcase their work openly—giving supporters a clear, undeniable view of every step of the journey. No fakes, no scams, just real progress.</p>
+        <p>Most progress is invisible. Rallynex makes it public — turning scattered updates into a timeline that builds trust, attracts supporters, and proves the work behind every outcome.</p>
     </div>
     
-    {# Features #}
     <div class="features-grid">
         <div class="feature-card">
             <div class="feature-icon">
                 <i class="fas fa-calendar-alt"></i>
             </div>
-            <h3>Structured Timeline</h3>
-            <p>Organize your content day-by-day or milestone-by-milestone. Your followers see the full journey at a glance.</p>
+            <h3>Timeline Structure</h3>
+            <p>Organize progress by milestones. Followers see the full story — not isolated posts.</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">
                 <i class="fas fa-link"></i>
             </div>
-            <h3>Quick Import</h3>
-            <p>Import content from any social platform using file URLs. Just paste a link and it's added to your journey—no API connections needed.</p>
+            <h3>Import by URL</h3>
+            <p>Pull content from anywhere. Aggregate work from across platforms into one timeline.</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">
                 <i class="fas fa-users"></i>
             </div>
-            <h3>Community Building</h3>
-            <p>Followers can comment on each day, track your progress, and become part of your story.</p>
+            <h3>Community</h3>
+            <p>Comments, encouragement, and conversation around every milestone you share.</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">
                 <i class="fas fa-hand-holding-heart"></i>
             </div>
-            <h3>Fundraising</h3>
-            <p>Enable donations for your journey. Raise funds for causes you care about.</p>
+            <h3>Direct Support</h3>
+            <p>Accept donations directly on your journey. Fund causes, projects, and creative work.</p>
         </div>
         
         <div class="feature-card">
@@ -284,56 +494,147 @@
                 <i class="fas fa-chart-line"></i>
             </div>
             <h3>Analytics</h3>
-            <p>Track views, engagement, and follower growth. Understand what resonates with your audience.</p>
+            <p>Track views, engagement, and audience growth. Know what resonates.</p>
         </div>
         
         <div class="feature-card">
             <div class="feature-icon">
                 <i class="fas fa-share-alt"></i>
             </div>
-            <h3>Share Anywhere</h3>
-            <p>Your journey has a unique link. Share it on your social bios, emails, or anywhere.</p>
+            <h3>One Link</h3>
+            <p>Every journey gets a unique URL. Share it anywhere — bio, email, social, anywhere.</p>
         </div>
     </div>
     
-    {# Story #}
     <div class="story-section">
-        <h2>Why I Built Rallynex</h2>
+        <h2>Why This Exists</h2>
         <div class="story-content">
-            <p>In my country, I've watched too many young people rally behind wealthy individuals on social media—men and women claiming to run NGOs, collecting serious money from supporters. But in reality, most own no NGO at all. They're scamming people who genuinely want to help.</p>
-            <p>I searched the internet for a tool where honest, hardworking individuals running real causes could showcase their work transparently. Something where supporters could click a link in a profile and see the entire journey unfold—proof that the work is real. I found nothing.</p>
-            <p>So I built Rallynex. Alone. No team, no funding—just a belief that transparency can stop the scamming. With Rallynex, real creators and organizations can document their journey day by day. Supporters can watch the progress, comment, and trust what they see. No more blind faith. No more stolen money. Just verified, visible work.</p>
-            <p>This is just the beginning. Every journey shared on Rallynex is one step closer to a world where trust is built on proof, not promises.</p>
+            <p>The internet celebrates results. Finished products. Launch days. Before-and-after photos. But the months between — the iterations, setbacks, and daily discipline — remain invisible.</p>
+            <p>That gap matters. Trust is built in the process, not the announcement. Followers invest in people they've watched grow, not static profiles.</p>
+            <p>Rallynex gives that process a structure. A single timeline where every step is visible, every milestone is documented, and progress becomes the content.</p>
+            <p>Built solo. Bootstrapped. No outside funding — just conviction that transparency changes how people build online.</p>
         </div>
     </div>
     
-    {# Team #}
     <div class="team-section">
-        <h2>Meet the Builder</h2>
+        <h2>Built By</h2>
         <div class="team-grid">
             <div class="team-card">
-                <div class="team-avatar">
-                    <i class="fas fa-user"></i>
+                <div class="team-avatar" onclick="openImagePopup('{% static 'images/profile2.png' %}')">
+                    <canvas class="avatar-canvas" width="280" height="280" data-src="{% static 'images/profile2.png' %}"></canvas>
+                    <div class="avatar-fallback">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="team-avatar-click-hint">Click to view</div>
                 </div>
                 <div class="team-info">
-                    <h4>Ito Bata</h4>
-                    <div class="team-role">Founder & Solo Builder</div>
-                    <p class="team-bio">Built Rallynex from scratch to fight fake NGOs and give honest creators a platform to prove their work. Running it solo—coding, designing, and supporting users every day.</p>
+                    <h4>Ito-DX</h4>
+                    <div class="team-role">Founder & Solo Developer</div>
+                    <p class="team-bio">Product design, full-stack development, and growth — shipped by one person, for people who take their progress seriously.</p>
+                    <div class="team-social">
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    {# CTA #}
     <div class="cta-section">
-        <h2>Ready to Start Your Journey?</h2>
-        <p>Join the movement toward transparent, verifiable content creation.</p>
+        <h2>Start Documenting Your Journey</h2>
+        <p>One timeline. Real progress. Your audience is waiting to follow along.</p>
         <a href="{% url 'signup' %}" class="btn btn-primary btn-large">
-            Get Started — It's Free
+            Create Your Journey — Free
             <i class="fas fa-arrow-right"></i>
         </a>
     </div>
     
 </div>
 
+<div class="image-popup-overlay" id="imagePopup">
+    <div class="image-popup-container">
+        <div class="image-popup-content">
+            <img src="" alt="Profile Picture" id="popupImage">
+        </div>
+        <button class="popup-close" onclick="closeImagePopup()" title="Close">
+            ✕
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Render PNG onto canvas with black background to eliminate white dots/artifacts
+    (function() {
+        const canvas = document.querySelector('.avatar-canvas');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = canvas.getAttribute('data-src');
+        
+        img.onload = function() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const imgRatio = img.width / img.height;
+            const canvasRatio = canvas.width / canvas.height;
+            
+            let drawWidth, drawHeight, offsetX, offsetY;
+            
+            if (imgRatio > canvasRatio) {
+                drawHeight = canvas.height;
+                drawWidth = img.width * (canvas.height / img.height);
+                offsetX = (canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            } else {
+                drawWidth = canvas.width;
+                drawHeight = img.height * (canvas.width / img.width);
+                offsetX = 0;
+                offsetY = (canvas.height - drawHeight) / 2;
+            }
+            
+            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+        };
+        
+        img.onerror = function() {
+            canvas.style.display = 'none';
+            const fallback = canvas.nextElementSibling;
+            if (fallback && fallback.classList.contains('avatar-fallback')) {
+                fallback.style.display = 'flex';
+            }
+        };
+    })();
+    
+    function openImagePopup(imageSrc) {
+        const overlay = document.getElementById('imagePopup');
+        const popupImage = document.getElementById('popupImage');
+        
+        popupImage.src = imageSrc;
+        
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeImagePopup() {
+        const overlay = document.getElementById('imagePopup');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    document.getElementById('imagePopup').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImagePopup();
+        }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImagePopup();
+        }
+    });
+</script>
 {% endblock %}
