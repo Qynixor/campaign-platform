@@ -1,7 +1,137 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{# ===== SEO BLOCKS FOR BLOG DETAIL PAGE ===== #}
 {% block title %}{{ blog.title }} | Rallynex Blog{% endblock %}
+
+{% block meta_title %}{{ blog.title }}{% if blog.subtitle %} - {{ blog.subtitle }}{% endif %}{% endblock %}
+
+{% block meta_description %}{{ blog.meta_description|default:blog.excerpt|default:blog.content|striptags|truncatewords:35 }}{% endblock %}
+
+{% block meta_keywords %}{{ blog.title }}, {% if blog.category %}{{ blog.get_category_display }}, {% endif %}blog, rallynex, {% if blog.tags %}{{ blog.tags|join:", " }}{% endif %}journey platform, content organization, daily challenges, milestone tracker{% endblock %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_title %}{{ blog.title }} | Rallynex Blog{% endblock %}
+
+{% block og_description %}{{ blog.meta_description|default:blog.excerpt|default:blog.content|striptags|truncatewords:35 }}{% endblock %}
+
+{% block og_image %}{% if blog.featured_image %}{{ blog.featured_image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/og-blog.jpg' %}{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ blog.title }} | Rallynex{% endblock %}
+
+{% block twitter_description %}{{ blog.meta_description|default:blog.excerpt|default:blog.content|striptags|truncatewords:35 }}{% endblock %}
+
+{% block twitter_image %}{% if blog.featured_image %}{{ blog.featured_image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/og-blog.jpg' %}{% endif %}{% endblock %}
+
+{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
+
+{# Blog-specific structured data for Google rich results #}
+{% block extra_schema %}
+{# Article structured data #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "{{ blog.title|escapejs }}",
+    "description": "{{ blog.meta_description|default:blog.excerpt|default:blog.content|striptags|truncatewords:40|escapejs }}",
+    "url": "{{ request.build_absolute_uri }}",
+    "datePublished": "{{ blog.published_at|date:'c' }}",
+    "dateModified": "{{ blog.updated_at|date:'c' }}",
+    "author": {
+        "@type": "Person",
+        "name": "{{ blog.author.username|escapejs }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/profile/{{ blog.author.username }}/"
+    },
+    {% if blog.featured_image %}
+    "image": {
+        "@type": "ImageObject",
+        "url": "{{ blog.featured_image.url }}",
+        "width": 1200,
+        "height": 630
+    },
+    {% endif %}
+    "publisher": {
+        "@type": "Organization",
+        "name": "Rallynex",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}"
+        }
+    },
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.build_absolute_uri }}"
+    },
+    "keywords": "{{ blog.tags|join:', '|default:blog.category|default:'' }}",
+    "articleSection": "{{ blog.get_category_display|default:'General' }}",
+    "wordCount": {{ blog.content|striptags|wordcount|default:0 }},
+    "timeRequired": "PT{{ blog.read_time_minutes|default:5 }}M",
+    "interactionStatistic": [
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/ViewAction",
+            "userInteractionCount": {{ blog.view_count|default:0 }}
+        }
+    ]
+}
+</script>
+
+{# Breadcrumb structured data #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Blog",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/blog/"
+        },
+        {% if blog.category %}
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "{{ blog.get_category_display }}",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/blog/?category={{ blog.category }}"
+        },
+        {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "{{ blog.title|escapejs|truncatewords:5 }}",
+            "item": "{{ request.build_absolute_uri }}"
+        }
+        {% else %}
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "{{ blog.title|escapejs|truncatewords:5 }}",
+            "item": "{{ request.build_absolute_uri }}"
+        }
+        {% endif %}
+    ]
+}
+</script>
+
+{# Speakable schema for Google Assistant/voice search #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "SpeakableSpecification",
+    "xpath": [
+        "/html/head/meta[@name='description']/@content",
+        "/html/head/meta[@property='og:description']/@content"
+    ]
+}
+</script>
+{% endblock %}
 
 {% block extra_css %}
 <style>

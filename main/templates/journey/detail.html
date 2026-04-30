@@ -3,7 +3,97 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{# ===== SEO BLOCKS FOR JOURNEY DETAIL PAGE ===== #}
 {% block title %}{{ journey.title }} | Rallynex{% endblock %}
+
+{% block meta_title %}{{ journey.title }}{% if journey.subtitle %} - {{ journey.subtitle }}{% endif %}{% endblock %}
+
+{% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Join this journey on Rallynex and track progress through daily challenges and milestones." }}{% endblock %}
+
+{% block meta_keywords %}{{ journey.title }}, journey, {% if journey.category %}{{ journey.category }}, {% endif %}daily challenge, milestone tracker, content journey, rallynex{% endblock %}
+
+{% block og_title %}{{ journey.title }} | Rallynex Journey{% endblock %}
+
+{% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Track progress, join the community, and complete this journey on Rallynex." }}{% endblock %}
+
+{% block og_image %}{% if journey.cover_image %}{{ journey.cover_image.url }}{% elif featured_activity and featured_activity.file %}{{ featured_activity.file.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ journey.title }} | Rallynex{% endblock %}
+
+{% block twitter_description %}{{ journey.description|striptags|truncatewords:30 }}{% endblock %}
+
+{% block twitter_image %}{% if journey.cover_image %}{{ journey.cover_image.url }}{% elif featured_activity and featured_activity.file %}{{ featured_activity.file.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}{% endif %}{% endblock %}
+
+{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
+
+{# Journey-specific structured data for rich Google results #}
+{% block extra_schema %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    "name": "{{ journey.title|escapejs }}",
+    "description": "{{ journey.description|striptags|escapejs|truncatewords:50 }}",
+    "url": "{{ request.build_absolute_uri }}",
+    {% if journey.cover_image %}
+    "image": "{{ journey.cover_image.url }}",
+    {% endif %}
+    "author": {
+        "@type": "Person",
+        "name": "{{ journey.creator.user.username|escapejs }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/profile/{{ journey.creator.user.username }}/"
+    },
+    "dateCreated": "{{ journey.created_at|date:'c' }}",
+    "dateModified": "{{ journey.updated_at|date:'c' }}",
+    "interactionStatistic": [
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/FollowAction",
+            "userInteractionCount": {{ journey.get_follower_count }}
+        },
+        {
+            "@type": "InteractionCounter",
+            "interactionType": "https://schema.org/LikeAction",
+            "userInteractionCount": {{ journey.get_love_count }}
+        }
+    ],
+    "potentialAction": {
+        "@type": "JoinAction",
+        "name": "Follow Journey",
+        "target": "{{ request.build_absolute_uri }}"
+    }
+}
+</script>
+
+{# Breadcrumb structured data #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Discover",
+            "item": "{{ request.scheme }}://{{ request.get_host }}/discover/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "{{ journey.title|escapejs|truncatewords:5 }}",
+            "item": "{{ request.build_absolute_uri }}"
+        }
+    ]
+}
+</script>
+{% endblock %}
 
 {% block extra_css %}
 <style>
