@@ -251,7 +251,6 @@ class ProfileForm(forms.ModelForm):
 # ============================================================================
 # JOURNEY FORMS
 # ============================================================================
-
 class JourneyForm(forms.ModelForm):
     """Create/Edit a journey"""
     
@@ -288,149 +287,32 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    cover_image = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'journey_covers',
-            'transformation': [
-                {'width': 800, 'height': 800, 'crop': 'fill'},
-                {'quality': 'auto:best', 'fetch_format': 'auto'}
-            ],
-            'format': 'webp'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'image/*'
-        })
-    )
+    # ==================== NEW: TEMPLATE STYLE SELECTION ====================
+    TEMPLATE_STYLE_CHOICES = [
+        ('default', '📱 Classic — Simple day-by-day strip, works for everything'),
+        ('fitness', '🏋️ Fitness — Progress gallery, workout counter, red energy theme'),
+        ('portfolio', '💼 Portfolio — Professional cards, milestone dates, blue trust theme'),
+        ('startup', '🚀 Startup — Build-in-public roadmap, shipping tracker, green theme'),
+    ]
     
-    cover_video = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'journey_covers',
-            'resource_type': 'video',
-            'transformation': [
-                {'quality': 'auto:best'}
-            ]
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'video/*'
-        })
-    )
-    
-    duration = forms.IntegerField(
-        min_value=1,
-        max_value=365,
-        initial=30,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'min': 1,
-            'max': 365
-        })
-    )
-    
-    start_date = forms.DateTimeField(
-        required=False,
-        widget=forms.DateTimeInput(attrs={
-            'class': 'form-input',
-            'type': 'datetime-local'
-        })
-    )
-    
-    # Settings
-    is_public = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    allow_comments = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    auto_import_enabled = forms.BooleanField(
-        required=False,
-        initial=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox',
-            'data-trigger': 'auto-import-toggle'
-        })
-    )
-    
-    import_hashtag = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '#MyJourney'
-        })
-    )
-    
-    # Funding (optional)
-    funding_enabled = forms.BooleanField(
-        required=False,
-        initial=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox',
-            'data-trigger': 'funding-toggle'
-        })
-    )
-    
-    funding_goal = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=1,
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': '1000.00',
-            'step': '0.01'
-        })
-    )
-    
-    funding_description = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'What will the funds be used for?',
-            'rows': 3
-        })
-    )
-    
-    # Tags
-    tags_input = forms.CharField(
-        max_length=200,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'fitness, health, challenge (comma separated)'
+    template_style = forms.ChoiceField(
+        choices=TEMPLATE_STYLE_CHOICES,
+        widget=forms.RadioSelect(attrs={
+            'class': 'template-style-radio'
         }),
-        help_text='Enter tags separated by commas'
+        initial='default',
+        label='🎨 Journey Display Style',
+        help_text='How your journey looks to followers. Pick the vibe that matches your goal.'
     )
+    # ========================================================================
     
-    # Milestones (for milestone journeys)
-    milestones_input = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Enter each milestone on a new line...',
-            'rows': 5
-        }),
-        help_text='Enter each milestone on a new line'
-    )
+    # ... rest of your existing fields (cover_image, cover_video, duration, etc.) ...
     
     class Meta:
         model = Journey
         fields = [
             'title', 'description', 'category', 'journey_type',
+            'template_style',  # ← ADD THIS
             'cover_image', 'cover_video', 'duration', 'start_date',
             'is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag',
             'funding_enabled', 'funding_goal', 'funding_description'
@@ -439,8 +321,10 @@ class JourneyForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # If editing existing journey, populate tags and milestones
         if self.instance and self.instance.pk:
+            # Populate template_style for editing
+            self.fields['template_style'].initial = self.instance.template_style or 'default'
+            
             # Populate tags
             tags = self.instance.tags.all()
             if tags.exists():
@@ -450,48 +334,33 @@ class JourneyForm(forms.ModelForm):
             if self.instance.milestones:
                 self.fields['milestones_input'].initial = '\n'.join(self.instance.milestones)
     
-    def clean_title(self):
-        title = self.cleaned_data.get('title', '')
-        if len(title) < 3:
-            raise ValidationError('Title must be at least 3 characters.')
-        if len(title) > 100:
-            raise ValidationError('Title must be 100 characters or less.')
-        return title
+    # ... keep all your existing clean_* methods ...
     
-    def clean_description(self):
-        description = self.cleaned_data.get('description', '')
-        if len(description) < 10:
-            raise ValidationError('Description must be at least 10 characters.')
-        return description
-    
-    def clean_import_hashtag(self):
-        hashtag = self.cleaned_data.get('import_hashtag', '')
-        if hashtag and not hashtag.startswith('#'):
-            hashtag = '#' + hashtag
-        return hashtag
-    
-    def clean_funding_goal(self):
-        funding_enabled = self.cleaned_data.get('funding_enabled', False)
-        funding_goal = self.cleaned_data.get('funding_goal')
+    def clean(self):
+        cleaned_data = super().clean()
+        template_style = cleaned_data.get('template_style')
+        category = cleaned_data.get('category')
+        journey_type = cleaned_data.get('journey_type')
         
-        if funding_enabled:
-            if not funding_goal or funding_goal < 1:
-                raise ValidationError('Funding goal must be at least $1 when funding is enabled.')
+        # Smart defaults based on template style
+        if template_style and template_style != 'default':
+            style_category_map = {
+                'fitness': 'fitness',
+                'portfolio': 'creative',
+                'startup': 'business',
+            }
+            if template_style in style_category_map:
+                cleaned_data['category'] = style_category_map[template_style]
+            
+            style_type_map = {
+                'fitness': 'daily',
+                'portfolio': 'milestone',
+                'startup': 'daily',
+            }
+            if template_style in style_type_map:
+                cleaned_data['journey_type'] = style_type_map[template_style]
         
-        return funding_goal
-    
-    def clean_start_date(self):
-        start_date = self.cleaned_data.get('start_date')
-        if not start_date:
-            start_date = timezone.now()
-        return start_date
-    
-    def clean_milestones_input(self):
-        milestones_text = self.cleaned_data.get('milestones_input', '')
-        if milestones_text:
-            milestones = [m.strip() for m in milestones_text.split('\n') if m.strip()]
-            return milestones
-        return []
+        return cleaned_data
     
     def save(self, commit=True):
         journey = super().save(commit=False)
@@ -499,20 +368,42 @@ class JourneyForm(forms.ModelForm):
         if commit:
             journey.save()
             
-            # Save milestones
-            if self.cleaned_data.get('journey_type') == 'milestone':
-                journey.milestones = self.cleaned_data.get('milestones_input', [])
-                journey.save(update_fields=['milestones'])
+            # Auto-generate milestones based on template
+            milestones = self.cleaned_data.get('milestones_input', [])
+            if not milestones:
+                if journey.template_style == 'startup':
+                    journey.milestones = [
+                        "Idea Validation & Research",
+                        "MVP Planning & Wireframes",
+                        "First Prototype Built",
+                        "User Testing Round 1",
+                        "Iterate Based on Feedback",
+                        "Beta Launch",
+                        "First Paying Customer",
+                        "Public Launch 🚀",
+                    ]
+                elif journey.template_style == 'portfolio':
+                    journey.milestones = [
+                        "Project Kickoff",
+                        "Research & Discovery",
+                        "First Draft Complete",
+                        "Client Review",
+                        "Revisions & Polish",
+                        "Final Delivery ✅",
+                    ]
+                else:
+                    journey.milestones = milestones
+            else:
+                journey.milestones = milestones
+            
+            journey.save(update_fields=['milestones'])
             
             # Save tags
             tags_input = self.cleaned_data.get('tags_input', '')
             if tags_input:
-                # Clear existing tags
                 journey.tags.clear()
-                
-                # Add new tags
                 tag_names = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
-                for tag_name in tag_names[:10]:  # Limit to 10 tags
+                for tag_name in tag_names[:10]:
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     journey.tags.add(tag)
         

@@ -152,7 +152,7 @@
         color: #fff;
     }
     
-    /* File Upload - Same as activity form */
+    /* File Upload */
     .file-upload-area {
         border: 2px dashed #333;
         border-radius: 16px;
@@ -184,7 +184,7 @@
         color: #666;
     }
     
-    /* Progress Bar - Same as activity form */
+    /* Upload Progress */
     .upload-progress {
         margin-top: 16px;
         display: none;
@@ -215,7 +215,7 @@
         font-size: 13px;
     }
     
-    /* Preview - Same as activity form */
+    /* Media Preview */
     .media-preview {
         margin-top: 20px;
         position: relative;
@@ -257,7 +257,7 @@
         background: rgba(239, 68, 68, 0.8);
     }
     
-    /* Error Message - Same as activity form */
+    /* Error Message */
     .error-message {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.3);
@@ -403,7 +403,6 @@
         display: block;
     }
     
-    /* Field visibility classes */
     .field-hidden {
         display: none !important;
     }
@@ -423,7 +422,6 @@
         margin-right: 8px;
     }
     
-    /* Daily challenge note */
     .daily-note {
         background: rgba(59, 130, 246, 0.1);
         border: 1px solid rgba(59, 130, 246, 0.3);
@@ -437,6 +435,138 @@
     .daily-note i {
         color: #3b82f6;
         margin-right: 8px;
+    }
+    
+    /* ==================== TEMPLATE STYLE CARDS ==================== */
+    .template-style-intro {
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .template-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .template-card {
+        position: relative;
+        background: #0a0a0a;
+        border: 2px solid #222;
+        border-radius: 16px;
+        padding: 20px 16px;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .template-card:hover {
+        border-color: #444;
+        background: #111;
+        transform: translateY(-2px);
+    }
+    
+    .template-card:has(input:checked) {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.06);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+    }
+    
+    .template-card-icon {
+        font-size: 36px;
+        line-height: 1;
+    }
+    
+    .template-card-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+    }
+    
+    .template-card-desc {
+        font-size: 12px;
+        color: #888;
+        line-height: 1.4;
+        max-width: 200px;
+    }
+    
+    .template-card-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #333;
+        color: #aaa;
+        font-size: 9px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .template-badge-fitness {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+    
+    .template-badge-portfolio {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+    }
+    
+    .template-badge-startup {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+    
+    .template-style-radio {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .template-card:has(input:checked) .template-card-icon {
+        animation: popIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes popIn {
+        0% { transform: scale(0.8); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+    
+    /* Mobile: stack cards vertically */
+    @media (max-width: 480px) {
+        .template-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .template-card {
+            flex-direction: row;
+            text-align: left;
+            gap: 14px;
+            padding: 16px;
+        }
+        
+        .template-card-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        
+        .template-card-desc {
+            max-width: none;
+        }
+        
+        .template-card-badge {
+            position: static;
+        }
     }
 </style>
 {% endblock %}
@@ -466,7 +596,6 @@
     </ul>
     {% endif %}
     
-    {# Error Message Container #}
     <div class="error-message" id="errorMessage">
         <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
     </div>
@@ -474,7 +603,7 @@
     <form method="post" class="form-card" id="journeyForm">
         {% csrf_token %}
         
-        {# Basic Info Section #}
+        {# ==================== BASIC INFO SECTION ==================== #}
         <div class="form-section">
             <h3 class="section-title">
                 <i class="fas fa-info-circle"></i>
@@ -529,7 +658,73 @@
             </div>
         </div>
         
-        {# Cover Image Section - EXACT SAME METHOD AS ACTIVITY FORM #}
+        {# ==================== TEMPLATE STYLE SECTION ==================== #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-palette"></i>
+                Journey Display Style
+            </h3>
+            
+            <p class="template-style-intro">
+                Choose how your journey will look to followers. Each style has a unique layout, color theme, and vibe.
+            </p>
+            
+            <div class="template-cards">
+                {# DEFAULT #}
+                <label class="template-card">
+                    <input type="radio" name="template_style" value="default" 
+                           {% if form.template_style.value == 'default' or not form.template_style.value %}checked{% endif %}
+                           class="template-style-radio">
+                    <div class="template-card-icon">📱</div>
+                    <div class="template-card-name">Classic</div>
+                    <div class="template-card-desc">Simple day-by-day strip. Clean, minimal, works for everything.</div>
+                    <div class="template-card-badge">Default</div>
+                </label>
+                
+                {# FITNESS #}
+                <label class="template-card">
+                    <input type="radio" name="template_style" value="fitness"
+                           {% if form.template_style.value == 'fitness' %}checked{% endif %}
+                           class="template-style-radio">
+                    <div class="template-card-icon">🏋️</div>
+                    <div class="template-card-name">Fitness</div>
+                    <div class="template-card-desc">Progress gallery layout, workout counter, bold red energy theme.</div>
+                    <div class="template-card-badge template-badge-fitness">Workout</div>
+                </label>
+                
+                {# PORTFOLIO #}
+                <label class="template-card">
+                    <input type="radio" name="template_style" value="portfolio"
+                           {% if form.template_style.value == 'portfolio' %}checked{% endif %}
+                           class="template-style-radio">
+                    <div class="template-card-icon">💼</div>
+                    <div class="template-card-name">Portfolio</div>
+                    <div class="template-card-desc">Professional milestone cards, real dates, build trust with proof.</div>
+                    <div class="template-card-badge template-badge-portfolio">Pro</div>
+                </label>
+                
+                {# STARTUP #}
+                <label class="template-card">
+                    <input type="radio" name="template_style" value="startup"
+                           {% if form.template_style.value == 'startup' %}checked{% endif %}
+                           class="template-style-radio">
+                    <div class="template-card-icon">🚀</div>
+                    <div class="template-card-name">Startup</div>
+                    <div class="template-card-desc">Build-in-public roadmap, shipping tracker, green growth theme.</div>
+                    <div class="template-card-badge template-badge-startup">Build</div>
+                </label>
+            </div>
+            
+            {% if form.template_style.errors %}
+                <p class="field-error">{{ form.template_style.errors.0 }}</p>
+            {% endif %}
+            
+            <p class="form-hint" style="margin-top: 12px;">
+                <i class="fas fa-info-circle"></i> You can change this anytime. Each style comes with smart defaults for your journey type.
+            </p>
+        </div>
+        
+        {# ==================== COVER IMAGE SECTION ==================== #}
         <div class="form-section">
             <h3 class="section-title">
                 <i class="fas fa-image"></i>
@@ -539,18 +734,15 @@
             <div class="form-group">
                 <label>Journey Cover (Required)</label>
                 
-                {# Hidden fields for Cloudinary data #}
                 <input type="hidden" name="cover_image_url" id="coverImageUrl" value="{{ form.cover_image_url.value|default:'' }}">
                 <input type="hidden" name="cover_image_public_id" id="coverImagePublicId" value="{{ form.cover_image_public_id.value|default:'' }}">
                 
-                {# Upload Area - Same as activity form #}
                 <div class="file-upload-area" id="uploadArea" style="{% if form.cover_image_url.value %}display: none;{% endif %}">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <p>Click to upload a cover image</p>
                     <p class="small">Uploads directly • Max 5MB • JPG, PNG, WebP</p>
                 </div>
                 
-                {# Progress Bar - Same as activity form #}
                 <div class="upload-progress" id="uploadProgress">
                     <div class="progress-track">
                         <div class="progress-fill" id="progressFill"></div>
@@ -558,7 +750,6 @@
                     <div class="progress-text" id="progressText">Uploading... 0%</div>
                 </div>
                 
-                {# Preview - Same as activity form #}
                 <div class="media-preview {% if form.cover_image_url.value %}active{% endif %}" id="coverPreview">
                     <img id="previewImage" src="{{ form.cover_image_url.value|default:'' }}" alt="Cover Preview">
                     <button type="button" class="remove-media" onclick="clearCoverImage()">
@@ -570,14 +761,13 @@
             </div>
         </div>
         
-        {# Structure Section #}
+        {# ==================== STRUCTURE SECTION ==================== #}
         <div class="form-section">
             <h3 class="section-title">
                 <i class="fas fa-calendar-alt"></i>
                 Journey Structure
             </h3>
             
-            {# Daily Challenge Fields #}
             <div id="dailyFields">
                 <div class="daily-note">
                     <i class="fas fa-info-circle"></i>
@@ -602,7 +792,6 @@
                 </div>
             </div>
             
-            {# Milestone Journey Fields #}
             <div id="milestoneFields" style="display: none;">
                 <div class="milestone-note">
                     <i class="fas fa-info-circle"></i>
@@ -632,7 +821,7 @@
             </div>
         </div>
         
-        {# Settings Section #}
+        {# ==================== SETTINGS SECTION ==================== #}
         <div class="form-section">
             <h3 class="section-title">
                 <i class="fas fa-cog"></i>
@@ -653,11 +842,9 @@
                        {% if form.allow_comments.value|default:True %}checked{% endif %}>
                 <label for="id_allow_comments">Allow Comments</label>
             </div>
-            
-           
         </div>
         
-        {# Funding Section (Optional) #}
+        {# ==================== FUNDING SECTION ==================== #}
         <div class="form-section">
             <div class="collapsible">
                 <div class="collapsible-header" onclick="toggleCollapsible(this)">
@@ -693,7 +880,7 @@
             </div>
         </div>
         
-        {# Tags Section #}
+        {# ==================== TAGS SECTION ==================== #}
         <div class="form-section">
             <h3 class="section-title">
                 <i class="fas fa-tags"></i>
@@ -709,7 +896,7 @@
             </div>
         </div>
         
-        {# Form Actions #}
+        {# ==================== FORM ACTIONS ==================== #}
         <div class="form-actions">
             {% if is_editing %}
             <a href="{% url 'delete_journey' slug=journey.slug %}" class="btn btn-danger" 
@@ -731,13 +918,13 @@
     </form>
 </div>
 
-{# Cloudinary Upload Widget - EXACT SAME AS ACTIVITY FORM #}
+{# Cloudinary Upload Widget #}
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
 <script>
     const cloudName = '{{ CLOUDINARY_CLOUD_NAME }}';
     
-    // Cloudinary Upload Widget - Same configuration as activity form
+    // Cloudinary Upload Widget
     const widget = cloudinary.createUploadWidget({
         cloudName: cloudName,
         uploadPreset: 'rallynex_upload',
@@ -770,14 +957,11 @@
         }
         
         if (result && result.event === "success") {
-            // Upload complete
             document.getElementById('coverImageUrl').value = result.info.secure_url;
             document.getElementById('coverImagePublicId').value = result.info.public_id;
             
-            // Hide progress
             document.getElementById('uploadProgress').classList.remove('active');
             
-            // Show preview
             const previewArea = document.getElementById('coverPreview');
             const previewImage = document.getElementById('previewImage');
             
@@ -785,10 +969,7 @@
             previewArea.classList.add('active');
             document.getElementById('uploadArea').style.display = 'none';
             
-            // Enable submit button
             document.getElementById('submitBtn').disabled = false;
-            
-            // Hide error if any
             document.getElementById('errorMessage').classList.remove('active');
         }
         
@@ -799,7 +980,6 @@
         }
     });
     
-    // Open widget when upload area is clicked - Same as activity form
     document.getElementById('uploadArea').addEventListener('click', () => {
         document.getElementById('errorMessage').classList.remove('active');
         document.getElementById('uploadProgress').classList.add('active');
@@ -821,27 +1001,64 @@
         document.getElementById('uploadProgress').classList.remove('active');
     }
     
-    // Journey type toggle
+    // ==================== TEMPLATE STYLE SMART DEFAULTS ====================
+    const templateRadios = document.querySelectorAll('.template-style-radio');
+    const categorySelect = document.getElementById('id_category');
     const journeyTypeSelect = document.getElementById('id_journey_type');
-    const dailyFields = document.getElementById('dailyFields');
-    const milestoneFields = document.getElementById('milestoneFields');
-    const autoImportSection = document.getElementById('autoImportSection');
     const durationInput = document.getElementById('id_duration');
     const milestoneCountInput = document.getElementById('id_milestone_count');
+    
+    const templateDefaults = {
+        'fitness': { category: 'fitness', journey_type: 'daily', duration: 30 },
+        'portfolio': { category: 'creative', journey_type: 'milestone', duration: 6 },
+        'startup': { category: 'business', journey_type: 'daily', duration: 30 },
+        'default': { category: '', journey_type: 'daily', duration: 30 },
+    };
+    
+    let userOverrodeCategory = false;
+    let userOverrodeType = false;
+    
+    templateRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const style = this.value;
+            const defaults = templateDefaults[style];
+            
+            if (defaults && !userOverrodeCategory && defaults.category) {
+                categorySelect.value = defaults.category;
+            }
+            if (defaults && !userOverrodeType && defaults.journey_type) {
+                journeyTypeSelect.value = defaults.journey_type;
+                toggleJourneyTypeFields();
+            }
+            if (defaults && defaults.duration) {
+                if (durationInput) durationInput.value = defaults.duration;
+                if (milestoneCountInput) milestoneCountInput.value = defaults.duration;
+            }
+        });
+    });
+    
+    if (categorySelect) {
+        categorySelect.addEventListener('change', () => { userOverrodeCategory = true; });
+    }
+    if (journeyTypeSelect) {
+        journeyTypeSelect.addEventListener('change', () => { userOverrodeType = true; });
+    }
+    
+    // ==================== JOURNEY TYPE TOGGLE ====================
+    const dailyFields = document.getElementById('dailyFields');
+    const milestoneFields = document.getElementById('milestoneFields');
     
     function toggleJourneyTypeFields() {
         if (journeyTypeSelect.value === 'milestone') {
             dailyFields.style.display = 'none';
             milestoneFields.style.display = 'block';
-            autoImportSection.style.display = 'none';
             
-            if (milestoneCountInput) {
+            if (milestoneCountInput && durationInput) {
                 durationInput.value = milestoneCountInput.value;
             }
         } else {
             dailyFields.style.display = 'block';
             milestoneFields.style.display = 'none';
-            autoImportSection.style.display = 'block';
             
             if (durationInput && milestoneCountInput) {
                 milestoneCountInput.value = durationInput.value;
@@ -862,14 +1079,14 @@
     journeyTypeSelect.addEventListener('change', toggleJourneyTypeFields);
     toggleJourneyTypeFields();
     
-    // Funding toggle
+    // ==================== FUNDING TOGGLE ====================
     const fundingCheckbox = document.getElementById('id_funding_enabled');
     const fundingFields = document.getElementById('fundingFields');
     
     function toggleFundingFields() {
-        if (fundingCheckbox.checked) {
+        if (fundingCheckbox && fundingCheckbox.checked) {
             fundingFields.style.display = 'block';
-        } else {
+        } else if (fundingFields) {
             fundingFields.style.display = 'none';
         }
     }
@@ -879,13 +1096,13 @@
         toggleFundingFields();
     }
     
-    // Collapsible
+    // ==================== COLLAPSIBLE ====================
     function toggleCollapsible(header) {
         header.classList.toggle('active');
         header.nextElementSibling.classList.toggle('active');
     }
     
-    // Milestone management
+    // ==================== MILESTONE MANAGEMENT ====================
     const milestoneInput = document.getElementById('milestoneInput');
     const milestoneList = document.getElementById('milestoneList');
     const milestonesInput = document.getElementById('milestonesInput');
