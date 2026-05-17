@@ -287,7 +287,6 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    # ==================== NEW: TEMPLATE STYLE SELECTION ====================
     TEMPLATE_STYLE_CHOICES = [
         ('default', '📱 Classic — Simple day-by-day strip, works for everything'),
         ('fitness', '🏋️ Fitness — Progress gallery, workout counter, red energy theme'),
@@ -304,16 +303,154 @@ class JourneyForm(forms.ModelForm):
         label='🎨 Journey Display Style',
         help_text='How your journey looks to followers. Pick the vibe that matches your goal.'
     )
-    # ========================================================================
     
-    # ... rest of your existing fields (cover_image, cover_video, duration, etc.) ...
+    cover_image = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'journey_covers',
+            'transformation': [
+                {'width': 1200, 'height': 630, 'crop': 'fill'},
+                {'quality': 'auto:best', 'fetch_format': 'auto'}
+            ],
+            'format': 'webp'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'image/*'
+        })
+    )
+    
+    cover_video = CloudinaryFileField(
+        required=False,
+        options={
+            'folder': 'journey_covers',
+            'resource_type': 'video'
+        },
+        widget=forms.FileInput(attrs={
+            'class': 'form-input',
+            'accept': 'video/*'
+        })
+    )
+    
+    duration = forms.IntegerField(
+        min_value=1,
+        max_value=365,
+        initial=30,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': '30',
+            'min': 1,
+            'max': 365
+        })
+    )
+    
+    # FIXED: Allow creators to jump to their current day
+    current_day_override = forms.IntegerField(
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g., 34',
+            'min': 1
+        }),
+        help_text="Already started? Enter your current day number. Leave blank to start from Day 1."
+    )
+    
+    start_date = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(attrs={
+            'class': 'form-input',
+            'type': 'datetime-local'
+        })
+    )
+    
+    is_public = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    allow_comments = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    auto_import_enabled = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    import_hashtag = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '#MyJourney'
+        })
+    )
+    
+    funding_enabled = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    funding_goal = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-input',
+            'placeholder': '1000.00',
+            'step': '0.01'
+        })
+    )
+    
+    funding_description = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'What are you raising funds for?',
+            'rows': 3
+        })
+    )
+    
+    tags_input = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'fitness, yoga, wellness, challenge'
+        }),
+        help_text="Separate tags with commas (max 10)"
+    )
+    
+    milestones_input = forms.CharField(
+        max_length=2000,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Enter each milestone on a new line...',
+            'rows': 5
+        }),
+        help_text="One milestone per line (for milestone journeys)"
+    )
     
     class Meta:
         model = Journey
         fields = [
             'title', 'description', 'category', 'journey_type',
-            'template_style',  # ← ADD THIS
-            'cover_image', 'cover_video', 'duration', 'start_date',
+            'template_style', 'cover_image', 'cover_video',
+            'duration', 'current_day_override', 'start_date',
             'is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag',
             'funding_enabled', 'funding_goal', 'funding_description'
         ]
@@ -322,24 +459,57 @@ class JourneyForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         if self.instance and self.instance.pk:
-            # Populate template_style for editing
             self.fields['template_style'].initial = self.instance.template_style or 'default'
             
-            # Populate tags
+            # FIXED: Populate current_day_override
+            self.fields['current_day_override'].initial = self.instance.current_day_override
+            
             tags = self.instance.tags.all()
             if tags.exists():
                 self.fields['tags_input'].initial = ', '.join([tag.name for tag in tags])
             
-            # Populate milestones
             if self.instance.milestones:
                 self.fields['milestones_input'].initial = '\n'.join(self.instance.milestones)
     
-    # ... keep all your existing clean_* methods ...
+    def clean_current_day_override(self):
+        override = self.cleaned_data.get('current_day_override')
+        duration = self.cleaned_data.get('duration', 30)
+        
+        if override and override > duration:
+            raise ValidationError(f"Current day can't exceed the duration ({duration} days).")
+        
+        return override
+    
+    def clean_import_hashtag(self):
+        hashtag = self.cleaned_data.get('import_hashtag', '')
+        if hashtag and not hashtag.startswith('#'):
+            hashtag = '#' + hashtag
+        return hashtag
+    
+    def clean_tags_input(self):
+        tags_input = self.cleaned_data.get('tags_input', '')
+        if tags_input:
+            tag_list = [t.strip() for t in tags_input.split(',') if t.strip()]
+            if len(tag_list) > 10:
+                raise ValidationError('You can add a maximum of 10 tags.')
+        return tags_input
+    
+    def clean_milestones_input(self):
+        milestones_input = self.cleaned_data.get('milestones_input', '')
+        journey_type = self.cleaned_data.get('journey_type')
+        
+        if journey_type == 'milestone':
+            milestone_list = [m.strip() for m in milestones_input.split('\n') if m.strip()]
+            duration = self.cleaned_data.get('duration')
+            
+            if duration and len(milestone_list) > duration:
+                raise ValidationError(f"Number of milestones ({len(milestone_list)}) exceeds duration ({duration}).")
+        
+        return milestones_input
     
     def clean(self):
         cleaned_data = super().clean()
         template_style = cleaned_data.get('template_style')
-        category = cleaned_data.get('category')
         journey_type = cleaned_data.get('journey_type')
         
         # Smart defaults based on template style
@@ -357,20 +527,31 @@ class JourneyForm(forms.ModelForm):
                 'portfolio': 'milestone',
                 'startup': 'daily',
             }
-            if template_style in style_type_map:
+            if template_style in style_type_map and not cleaned_data.get('journey_type'):
                 cleaned_data['journey_type'] = style_type_map[template_style]
+        
+        # FIXED: Validate current_day_override against journey_type
+        current_day_override = cleaned_data.get('current_day_override')
+        if current_day_override and journey_type == 'milestone':
+            self.add_error('current_day_override', 'Day override is only for daily challenges, not milestone journeys.')
         
         return cleaned_data
     
     def save(self, commit=True):
         journey = super().save(commit=False)
         
+        # FIXED: Save the override
+        journey.current_day_override = self.cleaned_data.get('current_day_override')
+        
         if commit:
             journey.save()
             
             # Auto-generate milestones based on template
-            milestones = self.cleaned_data.get('milestones_input', [])
-            if not milestones:
+            milestones_input = self.cleaned_data.get('milestones_input', '')
+            if milestones_input:
+                milestone_list = [m.strip() for m in milestones_input.split('\n') if m.strip()]
+                journey.milestones = milestone_list
+            elif not journey.milestones:
                 if journey.template_style == 'startup':
                     journey.milestones = [
                         "Idea Validation & Research",
@@ -391,12 +572,8 @@ class JourneyForm(forms.ModelForm):
                         "Revisions & Polish",
                         "Final Delivery ✅",
                     ]
-                else:
-                    journey.milestones = milestones
-            else:
-                journey.milestones = milestones
             
-            journey.save(update_fields=['milestones'])
+            journey.save(update_fields=['milestones', 'current_day_override'])
             
             # Save tags
             tags_input = self.cleaned_data.get('tags_input', '')
@@ -408,7 +585,6 @@ class JourneyForm(forms.ModelForm):
                     journey.tags.add(tag)
         
         return journey
-
 
 class JourneySettingsForm(forms.ModelForm):
     """Quick settings update for existing journey"""

@@ -131,7 +131,6 @@
         margin-top: 4px;
     }
     
-    /* Checkbox */
     .checkbox-group {
         display: flex;
         align-items: center;
@@ -152,7 +151,6 @@
         color: #fff;
     }
     
-    /* File Upload */
     .file-upload-area {
         border: 2px dashed #333;
         border-radius: 16px;
@@ -184,7 +182,6 @@
         color: #666;
     }
     
-    /* Upload Progress */
     .upload-progress {
         margin-top: 16px;
         display: none;
@@ -215,7 +212,6 @@
         font-size: 13px;
     }
     
-    /* Media Preview */
     .media-preview {
         margin-top: 20px;
         position: relative;
@@ -257,7 +253,6 @@
         background: rgba(239, 68, 68, 0.8);
     }
     
-    /* Error Message */
     .error-message {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.3);
@@ -272,7 +267,6 @@
         display: block;
     }
     
-    /* Form Actions */
     .form-actions {
         display: flex;
         gap: 12px;
@@ -329,7 +323,6 @@
         background: rgba(239, 68, 68, 0.1);
     }
     
-    /* Milestone Input */
     .milestone-input-container {
         border: 1px solid #333;
         border-radius: 12px;
@@ -377,7 +370,6 @@
         padding: 4px 8px;
     }
     
-    /* Collapsible */
     .collapsible-header {
         display: flex;
         align-items: center;
@@ -437,7 +429,22 @@
         margin-right: 8px;
     }
     
-    /* ==================== TEMPLATE STYLE CARDS ==================== */
+    /* Override field styling */
+    .override-note {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 20px;
+        color: #aaa;
+        font-size: 13px;
+    }
+    
+    .override-note i {
+        color: #22c55e;
+        margin-right: 8px;
+    }
+    
     .template-style-intro {
         color: #888;
         font-size: 14px;
@@ -542,7 +549,6 @@
         100% { transform: scale(1); }
     }
     
-    /* Mobile: stack cards vertically */
     @media (max-width: 480px) {
         .template-cards {
             grid-template-columns: 1fr;
@@ -670,7 +676,6 @@
             </p>
             
             <div class="template-cards">
-                {# DEFAULT #}
                 <label class="template-card">
                     <input type="radio" name="template_style" value="default" 
                            {% if form.template_style.value == 'default' or not form.template_style.value %}checked{% endif %}
@@ -681,7 +686,6 @@
                     <div class="template-card-badge">Default</div>
                 </label>
                 
-                {# FITNESS #}
                 <label class="template-card">
                     <input type="radio" name="template_style" value="fitness"
                            {% if form.template_style.value == 'fitness' %}checked{% endif %}
@@ -692,7 +696,6 @@
                     <div class="template-card-badge template-badge-fitness">Workout</div>
                 </label>
                 
-                {# PORTFOLIO #}
                 <label class="template-card">
                     <input type="radio" name="template_style" value="portfolio"
                            {% if form.template_style.value == 'portfolio' %}checked{% endif %}
@@ -703,7 +706,6 @@
                     <div class="template-card-badge template-badge-portfolio">Pro</div>
                 </label>
                 
-                {# STARTUP #}
                 <label class="template-card">
                     <input type="radio" name="template_style" value="startup"
                            {% if form.template_style.value == 'startup' %}checked{% endif %}
@@ -789,6 +791,28 @@
                                value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
                         <p class="form-hint">Leave empty to start immediately</p>
                     </div>
+                </div>
+                
+                {# NEW: Current Day Override #}
+                <div class="override-note">
+                    <i class="fas fa-fast-forward"></i>
+                    Already started your challenge? Enter your current day below and we'll unlock all previous days automatically.
+                </div>
+                
+                <div class="form-group" id="overrideGroup">
+                    <label for="id_current_day_override">
+                        <i class="fas fa-forward"></i> Current Day (Optional)
+                    </label>
+                    <input type="number" name="current_day_override" id="id_current_day_override" 
+                           value="{{ form.current_day_override.value|default:'' }}"
+                           min="1" max="365"
+                           placeholder="e.g., 34">
+                    <p class="form-hint">
+                        If you're already on Day 34 of 75 Hard, enter 34. Days 1–33 will unlock automatically. Leave blank to start from Day 1.
+                    </p>
+                    {% if form.current_day_override.errors %}
+                        <p class="field-error">{{ form.current_day_override.errors.0 }}</p>
+                    {% endif %}
                 </div>
             </div>
             
@@ -918,13 +942,11 @@
     </form>
 </div>
 
-{# Cloudinary Upload Widget #}
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
 <script>
     const cloudName = '{{ CLOUDINARY_CLOUD_NAME }}';
     
-    // Cloudinary Upload Widget
     const widget = cloudinary.createUploadWidget({
         cloudName: cloudName,
         uploadPreset: 'rallynex_upload',
@@ -1047,11 +1069,13 @@
     // ==================== JOURNEY TYPE TOGGLE ====================
     const dailyFields = document.getElementById('dailyFields');
     const milestoneFields = document.getElementById('milestoneFields');
+    const overrideGroup = document.getElementById('overrideGroup');
     
     function toggleJourneyTypeFields() {
         if (journeyTypeSelect.value === 'milestone') {
             dailyFields.style.display = 'none';
             milestoneFields.style.display = 'block';
+            if (overrideGroup) overrideGroup.style.display = 'none';
             
             if (milestoneCountInput && durationInput) {
                 durationInput.value = milestoneCountInput.value;
@@ -1059,6 +1083,7 @@
         } else {
             dailyFields.style.display = 'block';
             milestoneFields.style.display = 'none';
+            if (overrideGroup) overrideGroup.style.display = 'block';
             
             if (durationInput && milestoneCountInput) {
                 milestoneCountInput.value = durationInput.value;
@@ -1078,6 +1103,33 @@
     
     journeyTypeSelect.addEventListener('change', toggleJourneyTypeFields);
     toggleJourneyTypeFields();
+    
+    // ==================== CURRENT DAY OVERRIDE VALIDATION ====================
+    const currentDayOverride = document.getElementById('id_current_day_override');
+    
+    if (currentDayOverride && durationInput) {
+        currentDayOverride.addEventListener('input', function() {
+            const override = parseInt(this.value);
+            const duration = parseInt(durationInput.value);
+            
+            if (override && duration && override > duration) {
+                this.setCustomValidity(`Current day can't exceed the duration (${duration} days).`);
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        durationInput.addEventListener('input', function() {
+            const override = parseInt(currentDayOverride.value);
+            const duration = parseInt(this.value);
+            
+            if (override && duration && override > duration) {
+                currentDayOverride.setCustomValidity(`Current day can't exceed the duration (${duration} days).`);
+            } else {
+                currentDayOverride.setCustomValidity('');
+            }
+        });
+    }
     
     // ==================== FUNDING TOGGLE ====================
     const fundingCheckbox = document.getElementById('id_funding_enabled');
@@ -1154,7 +1206,6 @@
     
     renderMilestones();
     
-    // Set default start date for milestones
     if (journeyTypeSelect.value === 'milestone') {
         const now = new Date();
         const formatted = now.toISOString().slice(0, 16);
@@ -1164,7 +1215,6 @@
         }
     }
     
-    // Enable submit if editing with existing cover
     {% if form.cover_image_url.value %}
     document.getElementById('submitBtn').disabled = false;
     {% endif %}

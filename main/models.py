@@ -190,7 +190,6 @@ class ImportedContent(models.Model):
 # ============================================================================
 # JOURNEY MODEL
 # ============================================================================
-
 class Journey(models.Model):
     """
     Main Journey model - a structured series of content
@@ -227,7 +226,13 @@ class Journey(models.Model):
     duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
     duration_unit = models.CharField(max_length=10, default='days')
     
-    # For milestone journeys
+    # Allow creators already mid-journey to jump to their current day
+    current_day_override = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Manually set current day for creators already in progress. Overrides calendar calculation."
+    )
+    
     milestones = models.JSONField(default=list, blank=True, help_text="List of milestone descriptions")
     
     start_date = models.DateTimeField(default=timezone.now)
@@ -251,7 +256,7 @@ class Journey(models.Model):
     # ==================== ANALYTICS ====================
     view_count = models.PositiveIntegerField(default=0)
     unique_viewers = models.PositiveIntegerField(default=0)
-    total_watch_time = models.PositiveIntegerField(default=0)  # seconds
+    total_watch_time = models.PositiveIntegerField(default=0)
     
     # ==================== STATUS ====================
     is_active = models.BooleanField(default=True)
@@ -261,8 +266,10 @@ class Journey(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    
     # Template tracking
-    template_style = models.CharField(max_length=20, default='default')    
+    template_style = models.CharField(max_length=20, default='default')
+    
     class Meta:
         ordering = ['-created_at']
         indexes = [
@@ -286,7 +293,10 @@ class Journey(models.Model):
                 counter += 1
             self.slug = slug
         
-        # Calculate end date (only for daily challenges)
+        # Guard against None start_date
+        if not self.start_date:
+            self.start_date = timezone.now()
+        
         if self.duration and self.journey_type == 'daily':
             self.end_date = self.start_date + datetime.timedelta(days=self.duration)
         
@@ -297,9 +307,12 @@ class Journey(models.Model):
     def get_current_day(self):
         """
         Calculate current day based on journey type:
-        - Daily: Based on calendar days elapsed
+        - Daily: Based on calendar days elapsed OR manual override
         - Milestone: Based on number of completed milestones
         """
+        if self.current_day_override:
+            return min(self.current_day_override, self.duration)
+        
         if self.journey_type == 'milestone':
             return self.activities.count()
         
@@ -325,21 +338,18 @@ class Journey(models.Model):
     def is_day_locked(self, day_number):
         """
         Check if a day/milestone is locked.
-        - Daily: Locked if day > current calendar day
-        - Milestone: NEVER locked (can post any milestone anytime)
+        - Daily: Locked if day > current calendar day (respects override)
+        - Milestone: NEVER locked
         """
         if self.journey_type == 'daily':
             current = self.get_current_day()
             return day_number > current
         elif self.journey_type == 'milestone':
-            return False  # Milestone journeys never lock
+            return False
         return False
     
     def get_day_status(self, day_number):
-        """
-        Get status of a specific day/milestone.
-        Returns: 'locked', 'current', 'completed', or 'available'
-        """
+        """Get status of a specific day/milestone."""
         has_content = self.activities.filter(day_number_field=day_number).exists()
         
         if self.journey_type == 'daily':
@@ -363,11 +373,9 @@ class Journey(models.Model):
     # ==================== CONTENT METHODS ====================
     
     def get_activity_for_day(self, day_number):
-        """Get activity for specific day/milestone"""
         return self.activities.filter(day_number_field=day_number).first()
     
     def get_all_activities_by_day(self):
-        """Return dict of day -> activity"""
         activities = {}
         for activity in self.activities.all():
             activities[activity.day_number_field] = activity
