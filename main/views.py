@@ -553,52 +553,89 @@ def my_journeys_view(request):
 # ============================================================================
 @login_required
 def create_journey_view(request):
-    """Create a new journey"""
+    """Create a new journey - DEBUG VERSION"""
     profile = get_user_profile(request.user)
     
+    print("=" * 50)
+    print("CREATE JOURNEY VIEW CALLED")
+    print(f"Request method: {request.method}")
+    print(f"User: {request.user}")
+    print(f"Profile: {profile}")
+    print("=" * 50)
+    
     if request.method == 'POST':
+        print("POST data received:")
+        for key, value in request.POST.items():
+            if key != 'csrfmiddlewaretoken':
+                print(f"  {key}: {value[:100] if value else 'EMPTY'}")
+        
         form = JourneyForm(request.POST, request.FILES)
         
-        # Debug: Print errors to console
-        if not form.is_valid():
-            print("=== FORM ERRORS ===")
-            print(form.errors)
-            messages.error(request, f'Please correct the errors below: {dict(form.errors)}')
+        print(f"Form is valid? {form.is_valid()}")
+        
+        if form.is_valid():
+            print("Form is VALID. Creating journey...")
+            
+            try:
+                journey = form.save(commit=False)
+                journey.creator = profile
+                
+                # Handle Cloudinary cover image
+                cover_image_url = request.POST.get('cover_image_url')
+                cover_image_public_id = request.POST.get('cover_image_public_id')
+                
+                print(f"Cover image URL: {cover_image_url}")
+                print(f"Cover image public ID: {cover_image_public_id}")
+                
+                if cover_image_url and cover_image_public_id:
+                    journey.cover_image_url = cover_image_url
+                    journey.cover_image_public_id = cover_image_public_id
+                    journey.cover_image = cover_image_public_id
+                
+                print(f"About to save journey with title: {journey.title}")
+                journey.save()
+                print(f"Journey saved! ID: {journey.id}")
+                
+                # Save tags
+                tags_input = form.cleaned_data.get('tags_input', '')
+                if tags_input:
+                    tag_names = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
+                    for tag_name in tag_names[:10]:
+                        tag, _ = Tag.objects.get_or_create(name=tag_name)
+                        journey.tags.add(tag)
+                    print(f"Added {len(tag_names)} tags")
+                
+                # Save milestones
+                milestones_input = request.POST.get('milestones_input', '')
+                if milestones_input:
+                    try:
+                        import json
+                        milestones_list = json.loads(milestones_input)
+                        if milestones_list:
+                            journey.milestones = milestones_list
+                            journey.save(update_fields=['milestones'])
+                            print(f"Added {len(milestones_list)} milestones")
+                    except json.JSONDecodeError:
+                        print(f"Milestones not JSON: {milestones_input[:100]}")
+                
+                messages.success(request, f'Journey "{journey.title}" created successfully!')
+                print(f"SUCCESS! Redirecting to journey_content with slug: {journey.slug}")
+                return redirect('journey_content', slug=journey.slug)
+                
+            except Exception as e:
+                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                messages.error(request, f'Error creating journey: {str(e)}')
         else:
-            journey = form.save(commit=False)
-            journey.creator = profile
-            
-            # Handle Cloudinary cover image
-            cover_image_url = request.POST.get('cover_image_url')
-            cover_image_public_id = request.POST.get('cover_image_public_id')
-            
-            if cover_image_url and cover_image_public_id:
-                journey.cover_image_url = cover_image_url
-                journey.cover_image_public_id = cover_image_public_id
-                journey.cover_image = cover_image_public_id
-            
-            # Save the journey once
-            journey.save()
-            
-            # Save tags and milestones (handled by form's save method)
-            # But we already saved with commit=False, so manually save relations
-            form.save_m2m()  # Save many-to-many (tags)
-            
-            # Save milestones if present
-            milestones_input = request.POST.get('milestones_input', '')
-            if milestones_input:
-                try:
-                    import json
-                    milestones_list = json.loads(milestones_input)
-                    journey.milestones = milestones_list
-                    journey.save(update_fields=['milestones'])
-                except:
-                    pass
-            
-            messages.success(request, f'Journey "{journey.title}" created successfully!')
-            return redirect('journey_content', slug=journey.slug)
+            print("Form INVALID. Errors:")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    print(f"  {field}: {error}")
+                    messages.error(request, f'{field}: {error}')
     
     else:
+        print("GET request - showing empty form")
         form = JourneyForm()
     
     context = {
