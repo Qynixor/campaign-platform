@@ -551,7 +551,6 @@ def my_journeys_view(request):
 # ============================================================================
 # JOURNEY CREATION & EDITING
 # ============================================================================
-
 @login_required
 def create_journey_view(request):
     """Create a new journey"""
@@ -559,7 +558,13 @@ def create_journey_view(request):
     
     if request.method == 'POST':
         form = JourneyForm(request.POST, request.FILES)
-        if form.is_valid():
+        
+        # Debug: Print errors to console
+        if not form.is_valid():
+            print("=== FORM ERRORS ===")
+            print(form.errors)
+            messages.error(request, f'Please correct the errors below: {dict(form.errors)}')
+        else:
             journey = form.save(commit=False)
             journey.creator = profile
             
@@ -570,15 +575,29 @@ def create_journey_view(request):
             if cover_image_url and cover_image_public_id:
                 journey.cover_image_url = cover_image_url
                 journey.cover_image_public_id = cover_image_public_id
-                journey.cover_image = cover_image_public_id  # ← QUICK FIX - ONE LINE
+                journey.cover_image = cover_image_public_id
             
+            # Save the journey once
             journey.save()
-            form.save()
+            
+            # Save tags and milestones (handled by form's save method)
+            # But we already saved with commit=False, so manually save relations
+            form.save_m2m()  # Save many-to-many (tags)
+            
+            # Save milestones if present
+            milestones_input = request.POST.get('milestones_input', '')
+            if milestones_input:
+                try:
+                    import json
+                    milestones_list = json.loads(milestones_input)
+                    journey.milestones = milestones_list
+                    journey.save(update_fields=['milestones'])
+                except:
+                    pass
             
             messages.success(request, f'Journey "{journey.title}" created successfully!')
             return redirect('journey_content', slug=journey.slug)
-        else:
-            messages.error(request, 'Please correct the errors below.')
+    
     else:
         form = JourneyForm()
     
@@ -589,7 +608,6 @@ def create_journey_view(request):
     }
     
     return render(request, 'dashboard/journey_form.html', context)
-
 
 @login_required
 def edit_journey_view(request, slug):

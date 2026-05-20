@@ -100,12 +100,9 @@ TEMPLATES = [
     },
 ]
 
-# =====================================================
-# DATABASE - FIXED FOR NEONDB
-# =====================================================
 
 # =====================================================
-# DATABASE - NEONDB PRODUCTION READY
+# DATABASE - NEONDB PRODUCTION READY (FIXED)
 # =====================================================
 import ssl
 import sys
@@ -128,23 +125,19 @@ elif DATABASE_URL:
             conn_health_checks=True,
         )
     }
-    # Force SSL for NeonDB
+    # Add ALL options at once (don't overwrite)
     DATABASES['default']['OPTIONS'] = {
-        'sslmode': 'require',
-        'connect_timeout': 30,
+        'sslmode': 'require',           # Required for NeonDB
+        'connect_timeout': 30,          # Increased timeout
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5,
     }
 else:
     # Fallback - will error clearly if DATABASE_URL is missing
     raise ValueError("DATABASE_URL environment variable is not set")
 
-# Add connection options for stability
-DATABASES['default']['OPTIONS'] = {
-    'connect_timeout': 10,
-    'keepalives': 1,
-    'keepalives_idle': 30,
-    'keepalives_interval': 10,
-    'keepalives_count': 5,
-}
 
 # =====================================================
 # CSRF

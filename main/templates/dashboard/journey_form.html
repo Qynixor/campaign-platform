@@ -286,6 +286,7 @@
         cursor: pointer;
         text-align: center;
         text-decoration: none;
+        display: inline-block;
     }
     
     .btn-secondary:hover {
@@ -300,6 +301,9 @@
         border-radius: 12px;
         font-weight: 600;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .btn-primary:disabled {
@@ -317,6 +321,7 @@
         font-weight: 600;
         cursor: pointer;
         text-decoration: none;
+        display: inline-block;
     }
     
     .btn-danger:hover {
@@ -395,10 +400,6 @@
         display: block;
     }
     
-    .field-hidden {
-        display: none !important;
-    }
-    
     .milestone-note {
         background: rgba(139, 92, 246, 0.1);
         border: 1px solid rgba(139, 92, 246, 0.3);
@@ -429,7 +430,6 @@
         margin-right: 8px;
     }
     
-    /* Override field styling */
     .override-note {
         background: rgba(34, 197, 94, 0.1);
         border: 1px solid rgba(34, 197, 94, 0.3);
@@ -549,6 +549,33 @@
         100% { transform: scale(1); }
     }
     
+    .btn-spinner {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .debug-console {
+        background: #1a1a1a;
+        border: 1px solid #3b82f6;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 20px;
+        font-family: monospace;
+        font-size: 12px;
+        display: none;
+    }
+    
+    .debug-console.active {
+        display: block;
+    }
+    
+    .debug-console pre {
+        margin: 0;
+        white-space: pre-wrap;
+        color: #0f0;
+    }
+    
     @media (max-width: 480px) {
         .template-cards {
             grid-template-columns: 1fr;
@@ -596,7 +623,7 @@
     <ul class="errorlist">
         {% for field, errors in form.errors.items %}
             {% for error in errors %}
-                <li><i class="fas fa-exclamation-circle"></i> {{ field }}: {{ error }}</li>
+                <li><i class="fas fa-exclamation-circle"></i> <strong>{{ field }}:</strong> {{ error }}</li>
             {% endfor %}
         {% endfor %}
     </ul>
@@ -606,7 +633,12 @@
         <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
     </div>
     
-    <form method="post" class="form-card" id="journeyForm">
+    <div class="debug-console" id="debugConsole">
+        <strong>🔍 Debug Information:</strong>
+        <pre id="debugContent"></pre>
+    </div>
+    
+    <form method="post" class="form-card" id="journeyForm" novalidate>
         {% csrf_token %}
         
         {# ==================== BASIC INFO SECTION ==================== #}
@@ -793,7 +825,6 @@
                     </div>
                 </div>
                 
-                {# NEW: Current Day Override #}
                 <div class="override-note">
                     <i class="fas fa-fast-forward"></i>
                     Already started your challenge? Enter your current day below and we'll unlock all previous days automatically.
@@ -923,20 +954,25 @@
         {# ==================== FORM ACTIONS ==================== #}
         <div class="form-actions">
             {% if is_editing %}
-            <a href="{% url 'delete_journey' slug=journey.slug %}" class="btn btn-danger" 
+            <a href="{% url 'delete_journey' slug=journey.slug %}" class="btn-danger" 
                onclick="return confirm('Are you sure you want to delete this journey? This cannot be undone.')">
                 <i class="fas fa-trash"></i> Delete
             </a>
             {% endif %}
             
             <a href="{% if is_editing %}{% url 'my_journeys' %}{% else %}{% url 'dashboard' %}{% endif %}" 
-               class="btn btn-secondary">
+               class="btn-secondary">
                 Cancel
             </a>
             
-            <button type="submit" class="btn btn-primary" id="submitBtn" {% if not form.cover_image_url.value %}disabled{% endif %}>
-                <i class="fas fa-{% if is_editing %}save{% else %}plus{% endif %}"></i>
-                {% if is_editing %}Save Changes{% else %}Create Journey{% endif %}
+            <button type="submit" class="btn-primary" id="submitBtn" {% if not form.cover_image_url.value %}disabled{% endif %}>
+                <span class="btn-text">
+                    <i class="fas fa-{% if is_editing %}save{% else %}plus{% endif %}"></i>
+                    {% if is_editing %}Save Changes{% else %}Create Journey{% endif %}
+                </span>
+                <span class="btn-spinner" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Processing...
+                </span>
             </button>
         </div>
     </form>
@@ -945,6 +981,7 @@
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 
 <script>
+    // Cloudinary Widget Setup
     const cloudName = '{{ CLOUDINARY_CLOUD_NAME }}';
     
     const widget = cloudinary.createUploadWidget({
@@ -1021,6 +1058,53 @@
         document.getElementById('errorText').textContent = msg;
         document.getElementById('errorMessage').classList.add('active');
         document.getElementById('uploadProgress').classList.remove('active');
+    }
+    
+    // ==================== FORM SUBMISSION WITH SPINNER & DEBUG ====================
+    const journeyForm = document.getElementById('journeyForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = submitBtn?.querySelector('.btn-text');
+    const btnSpinner = submitBtn?.querySelector('.btn-spinner');
+    const debugConsole = document.getElementById('debugConsole');
+    const debugContent = document.getElementById('debugContent');
+    
+    if (journeyForm) {
+        journeyForm.addEventListener('submit', function(e) {
+            console.log('=== FORM SUBMISSION STARTED ===');
+            
+            // Show debug console
+            if (debugConsole) {
+                debugConsole.classList.add('active');
+            }
+            
+            // Show spinner, disable button
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                if (btnText) btnText.style.display = 'none';
+                if (btnSpinner) btnSpinner.style.display = 'inline-flex';
+            }
+            
+            // Log all form data to debug console
+            const formData = new FormData(journeyForm);
+            let debugLog = 'Form Data Submitted:\n';
+            debugLog += '=' . repeat(50) + '\n';
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'csrfmiddlewaretoken') {
+                    const displayValue = value.substring ? value.substring(0, 100) : value;
+                    debugLog += `${key}: ${displayValue}\n`;
+                }
+            }
+            debugLog += '=' . repeat(50) + '\n';
+            debugLog += `Submit URL: ${journeyForm.action || window.location.href}\n`;
+            debugLog += `Method: ${journeyForm.method}\n`;
+            
+            if (debugContent) {
+                debugContent.textContent = debugLog;
+            }
+            
+            // Let form submit normally
+            console.log('Submitting form...');
+        });
     }
     
     // ==================== TEMPLATE STYLE SMART DEFAULTS ====================
@@ -1158,7 +1242,13 @@
     const milestoneInput = document.getElementById('milestoneInput');
     const milestoneList = document.getElementById('milestoneList');
     const milestonesInput = document.getElementById('milestonesInput');
-    let milestones = {{ form.milestones_input.value|default:'[]'|safe }};
+    let milestones = [];
+    
+    try {
+        milestones = {{ form.milestones_input.value|default:'[]'|safe }};
+    } catch(e) {
+        milestones = [];
+    }
     
     function renderMilestones() {
         if (!milestoneList) return;
@@ -1168,7 +1258,7 @@
             const item = document.createElement('div');
             item.className = 'milestone-item';
             item.innerHTML = `
-                <span class="milestone-text">${milestone}</span>
+                <span class="milestone-text">${escapeHtml(milestone)}</span>
                 <span class="milestone-remove" onclick="removeMilestone(${index})">
                     <i class="fas fa-times"></i>
                 </span>
@@ -1178,6 +1268,12 @@
         if (milestonesInput) {
             milestonesInput.value = JSON.stringify(milestones);
         }
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function addMilestone(text) {
@@ -1218,6 +1314,13 @@
     {% if form.cover_image_url.value %}
     document.getElementById('submitBtn').disabled = false;
     {% endif %}
+    
+    // Helper for repeat string
+    if (!String.prototype.repeat) {
+        String.prototype.repeat = function(count) {
+            return new Array(count + 1).join(this);
+        };
+    }
 </script>
 
 {% endblock %}
