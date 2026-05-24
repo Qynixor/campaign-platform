@@ -32,7 +32,7 @@ from .forms import (
 )
 
 
-
+from django.http import Http404
 
 def welcome_view(request):
     """Welcome page for creators coming from DMs"""
@@ -347,17 +347,23 @@ def discover_view(request):
     return render(request, 'discover.html', context)
 import json
 from django.core.serializers.json import DjangoJSONEncoder
-
 def journey_detail_view(request, slug):
     """View a single journey"""
-    journey = get_object_or_404(
-        Journey.objects.select_related('creator__user').prefetch_related(
-            'activities', 'tags', 'followers'
-        ),
+    journey_qs = Journey.objects.select_related('creator__user').prefetch_related(
+        'activities', 'tags', 'followers'
+    ).filter(
         slug=slug,
-        is_public=True,
         is_active=True
     )
+    
+    journey = get_object_or_404(journey_qs)
+    
+    # Allow viewing if public OR if user is the creator OR if user is superuser
+    if not journey.is_public:
+        if not request.user.is_authenticated or (
+            request.user != journey.creator.user and not request.user.is_superuser
+        ):
+            raise Http404("Journey not found")
     
     # Track view
     track_journey_view(request, journey)
@@ -430,7 +436,6 @@ def journey_detail_view(request, slug):
     }
     
     return render(request, 'journey/detail.html', context)
-
 
 def creator_profile_view(request, username):
     """View a creator's profile and their journeys"""
@@ -1727,16 +1732,18 @@ def handler403(request, exception):
     """Custom 403 page"""
     return render(request, 'errors/403.html', status=403)
 
-
-
 def preview_journey_view(request, slug):
     """Public preview page - no login required"""
     journey = get_object_or_404(
         Journey.objects.select_related('creator__user').prefetch_related('activities'),
         slug=slug,
-        is_public=True,
         is_active=True
     )
+    
+    # Only show public journeys in preview, or allow superuser
+    if not journey.is_public:
+        if not request.user.is_authenticated or not request.user.is_superuser:
+            raise Http404("Journey not found")
     
     # Check if journey is already claimed by a real user
     is_claimed = not journey.creator.user.username.startswith('rallynex')
@@ -1761,7 +1768,7 @@ def preview_journey_view(request, slug):
 @login_required
 def claim_journey_view(request, slug):
     """Claim a preview journey after signup"""
-    journey = get_object_or_404(Journey, slug=slug, is_public=True)
+    journey = get_object_or_404(Journey, slug=slug)
     
     # Check if already claimed
     if not journey.creator.user.username.startswith('rallynex'):
@@ -1771,10 +1778,13 @@ def claim_journey_view(request, slug):
     # Transfer ownership to the logged-in user
     profile = get_user_profile(request.user)
     journey.creator = profile
+    journey.is_public = True  # Make it public when claimed
     journey.save()
     
     messages.success(request, f'🎉 You now own "{journey.title}"! Start adding more content.')
     return redirect('journey_detail', slug=slug)
+
+
 
 def template_store_view(request):
     """Template marketplace — browse and purchase"""
@@ -1837,7 +1847,6 @@ def apply_template_to_journey(request, template_id):
     messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
     return redirect('journey_detail', slug=journey.slug)
 
-
 @login_required
 @require_POST
 def complete_template_purchase_view(request, template_id):
@@ -1846,12 +1855,20 @@ def complete_template_purchase_view(request, template_id):
     profile = get_user_profile(request.user)
     
     paypal_order_id = request.POST.get('paypal_order_id')
+    current_day = request.POST.get('current_day', '1').strip()
     
     if not paypal_order_id and not template.is_free:
         messages.error(request, 'Payment verification failed.')
         return redirect('purchase_template', template_id=template.id)
     
-    # Create the journey
+    try:
+        day_override = int(current_day)
+        day_override = max(1, min(day_override, template.duration))
+    except (ValueError, TypeError):
+        day_override = 1
+    
+    adjusted_start = timezone.now() - datetime.timedelta(days=day_override - 1)
+    
     journey = Journey.objects.create(
         creator=profile,
         title=template.title,
@@ -1862,23 +1879,21 @@ def complete_template_purchase_view(request, template_id):
         milestones=template.milestones,
         template_style=template.template_style,
         cover_image=template.cover_image if template.cover_image else None,
+        current_day_override=day_override,
+        start_date=adjusted_start,
         is_public=True,
         is_active=True,
         published_at=timezone.now(),
     )
     
-    # AUTO-CREATE activities from template milestones
     activities_created = 0
     if template.milestones:
         for milestone in template.milestones:
             day_num = milestone.get('day', 1)
-            title = milestone.get('title', f'Day {day_num}')
+            title_text = milestone.get('title', f'Day {day_num}')
             description = milestone.get('description', '')
+            content = f"{title_text}\n\n{description}" if description else title_text
             
-            # Combine title and description for the activity content
-            content = f"{title}\n\n{description}" if description else title
-            
-            # Use update_or_create to avoid duplicates
             activity, created = Activity.objects.update_or_create(
                 journey=journey,
                 day_number_field=day_num,
@@ -1894,8 +1909,173 @@ def complete_template_purchase_view(request, template_id):
     template.save(update_fields=['usage_count'])
     
     if activities_created > 0:
-        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! Just add your photos and videos.')
+        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! You are on Day {day_override}.')
     else:
-        messages.success(request, f'Journey "{journey.title}" created! Start posting your content.')
+        messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
     
+    return redirect('journey_detail', slug=journey.slug)
+@login_required
+@require_POST
+def admin_create_journey_from_template(request, template_id):
+    """Admin-only: create a journey from template without payment"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Unauthorized.')
+        return redirect('template_store')
+    
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    profile = get_user_profile(request.user)
+    
+    custom_title = request.POST.get('title', '').strip()
+    current_day = request.POST.get('current_day', '1').strip()
+    
+    journey_title = custom_title if custom_title else template.title
+    
+    try:
+        day_override = int(current_day)
+        day_override = max(1, min(day_override, template.duration))
+    except (ValueError, TypeError):
+        day_override = 1
+    
+    from datetime import timedelta
+    adjusted_start = timezone.now() - timedelta(days=day_override - 1)
+    
+    journey = Journey.objects.create(
+        creator=profile,
+        title=journey_title,
+        description=template.description,
+        category=template.category,
+        journey_type=template.journey_type,
+        duration=template.duration,
+        milestones=template.milestones,
+        template_style=template.template_style,
+        cover_image=template.cover_image if template.cover_image else None,
+        current_day_override=day_override,
+        start_date=adjusted_start,
+        is_public=False,
+        is_active=True,
+        published_at=timezone.now(),
+    )
+    
+    if template.milestones:
+        for milestone in template.milestones:
+            day_num = milestone.get('day', 1)
+            title_text = milestone.get('title', f'Day {day_num}')
+            description = milestone.get('description', '')
+            content = f"{title_text}\n\n{description}" if description else title_text
+            
+            Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day_num,
+                defaults={
+                    'content': content,
+                    'published_at': timezone.now(),
+                }
+            )
+    
+    template.usage_count += 1
+    template.save(update_fields=['usage_count'])
+    
+    messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
+    return redirect('journey_detail', slug=journey.slug)
+
+@login_required
+@require_POST
+def complete_template_purchase_view(request, template_id):
+    """Complete purchase — create new journey with ALL activities pre-filled"""
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    profile = get_user_profile(request.user)
+    
+    paypal_order_id = request.POST.get('paypal_order_id')
+    custom_title = request.POST.get('custom_title', '').strip()
+    current_day = request.POST.get('current_day', '1').strip()
+    
+    journey_title = custom_title if custom_title else template.title
+    
+    if not paypal_order_id and not template.is_free:
+        messages.error(request, 'Payment verification failed.')
+        return redirect('purchase_template', template_id=template.id)
+    
+    try:
+        day_override = int(current_day)
+        day_override = max(1, min(day_override, template.duration))
+    except (ValueError, TypeError):
+        day_override = 1
+    
+    from datetime import timedelta
+    adjusted_start = timezone.now() - timedelta(days=day_override - 1)
+    
+    journey = Journey.objects.create(
+        creator=profile,
+        title=journey_title,
+        description=template.description,
+        category=template.category,
+        journey_type=template.journey_type,
+        duration=template.duration,
+        milestones=template.milestones,
+        template_style=template.template_style,
+        cover_image=template.cover_image if template.cover_image else None,
+        current_day_override=day_override,
+        start_date=adjusted_start,
+        is_public=True,
+        is_active=True,
+        published_at=timezone.now(),
+    )
+    
+    activities_created = 0
+    if template.milestones:
+        for milestone in template.milestones:
+            day_num = milestone.get('day', 1)
+            title_text = milestone.get('title', f'Day {day_num}')
+            description = milestone.get('description', '')
+            content = f"{title_text}\n\n{description}" if description else title_text
+            
+            activity, created = Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day_num,
+                defaults={
+                    'content': content,
+                    'published_at': timezone.now(),
+                }
+            )
+            if created:
+                activities_created += 1
+    
+    template.usage_count += 1
+    template.save(update_fields=['usage_count'])
+    
+    if activities_created > 0:
+        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! You are on Day {day_override}.')
+    else:
+        messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
+    
+    return redirect('journey_detail', slug=journey.slug)
+
+
+@login_required
+@require_POST
+def apply_template_to_journey(request, template_id):
+    """Apply purchased template style to an existing journey"""
+    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+    journey_id = request.POST.get('journey_id')
+    current_day = request.POST.get('current_day', '1').strip()
+    
+    journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
+    
+    # Update journey with template style
+    journey.template_style = template.template_style
+    
+    # Update current day if provided
+    try:
+        day_override = int(current_day)
+        day_override = max(1, min(day_override, journey.duration))
+        journey.current_day_override = day_override
+    except (ValueError, TypeError):
+        pass
+    
+    journey.save(update_fields=['template_style', 'current_day_override', 'updated_at'])
+    
+    template.usage_count += 1
+    template.save(update_fields=['usage_count'])
+    
+    messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
     return redirect('journey_detail', slug=journey.slug)

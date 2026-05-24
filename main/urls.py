@@ -155,6 +155,8 @@ urlpatterns = [
 path('templates/<int:template_id>/', views.purchase_template_view, name='purchase_template'),
 path('templates/<int:template_id>/apply/', views.apply_template_to_journey, name='apply_template'),
 path('templates/<int:template_id>/complete/', views.complete_template_purchase_view, name='complete_template_purchase'),
+
+path('templates/<int:template_id>/admin-create/', views.admin_create_journey_from_template, name='admin_create_journey'),
 ]
 
 # ============================================================================

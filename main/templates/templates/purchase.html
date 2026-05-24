@@ -87,6 +87,78 @@
         color: #aaa;
     }
     
+    .custom-input-section {
+        padding: 0 20px;
+        margin-bottom: 16px;
+    }
+    
+    .custom-input-section label {
+        color: #aaa;
+        font-size: 13px;
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+    
+    .custom-text-input {
+        width: 100%;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .custom-text-input:focus {
+        outline: none;
+        border-color: #fff;
+    }
+    
+    .custom-input-hint {
+        color: #666;
+        font-size: 11px;
+        margin-top: 4px;
+        display: block;
+    }
+    
+    .current-day-section {
+        padding: 0 20px;
+        margin-bottom: 24px;
+    }
+    
+    .current-day-section label {
+        color: #aaa;
+        font-size: 13px;
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+    
+    .current-day-input {
+        width: 100%;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .current-day-input:focus {
+        outline: none;
+        border-color: #fff;
+    }
+    
+    .current-day-hint {
+        color: #666;
+        font-size: 11px;
+        margin-top: 4px;
+        display: block;
+    }
+    
     .apply-section {
         padding: 0 20px;
         margin-bottom: 24px;
@@ -258,6 +330,36 @@
         </div>
     </div>
     
+    <!-- CUSTOM JOURNEY NAME -->
+    <div class="custom-input-section">
+        <label for="customTitleInput">Name your journey</label>
+        <input type="text" 
+               id="customTitleInput" 
+               name="custom_title" 
+               class="custom-text-input" 
+               value="{{ template.title }}" 
+               placeholder="Enter a name for your journey...">
+        <span class="custom-input-hint">
+            Give your journey a unique name. Default is the template name.
+        </span>
+    </div>
+    
+    <!-- CURRENT DAY INPUT -->
+    <div class="current-day-section">
+        <label for="currentDayInput">What day are you currently on?</label>
+        <input type="number" 
+               id="currentDayInput" 
+               name="current_day" 
+               class="current-day-input" 
+               value="1" 
+               min="1" 
+               max="{{ template.duration }}" 
+               placeholder="Enter your current day...">
+        <span class="current-day-hint">
+            Already on Day 15 of your challenge? Set it here and the calendar will adjust automatically.
+        </span>
+    </div>
+    
     {% if user_journeys %}
     <div class="apply-section">
         <h3>Apply to an existing journey</h3>
@@ -277,6 +379,7 @@
         <form method="POST" action="{% url 'apply_template' template.id %}" id="applyForm">
             {% csrf_token %}
             <input type="hidden" name="journey_id" id="selectedJourneyId" value="">
+            <input type="hidden" name="current_day" id="applyCurrentDay" value="1">
             <button type="submit" class="btn-main success" id="applyBtn" disabled>
                 <i class="fas fa-paint-brush"></i> Apply Style to Selected Journey
             </button>
@@ -295,9 +398,11 @@
     
     <div style="padding:0 20px;">
         {% if template.is_free %}
-        <form method="POST" action="{% url 'complete_template_purchase' template.id %}">
+        <form method="POST" action="{% url 'complete_template_purchase' template.id %}" id="newJourneyForm">
             {% csrf_token %}
             <input type="hidden" name="paypal_order_id" value="free">
+            <input type="hidden" name="custom_title" id="newJourneyCustomTitle" value="{{ template.title }}">
+            <input type="hidden" name="current_day" id="newJourneyCurrentDay" value="1">
             <button type="submit" class="btn-main success">
                 <i class="fas fa-plus"></i> Create New Journey with This Style
             </button>
@@ -329,6 +434,17 @@
     let paypalMode = 'new';
     let selectedJourney = null;
     
+    // Sync inputs to hidden fields
+    document.getElementById('customTitleInput').addEventListener('input', function() {
+        document.getElementById('newJourneyCustomTitle').value = this.value;
+    });
+    
+    document.getElementById('currentDayInput').addEventListener('input', function() {
+        const val = this.value;
+        document.getElementById('applyCurrentDay').value = val;
+        document.getElementById('newJourneyCurrentDay').value = val;
+    });
+    
     function selectJourney(id, element) {
         document.querySelectorAll('.journey-option').forEach(el => el.classList.remove('selected'));
         element.classList.add('selected');
@@ -356,13 +472,17 @@
     }
     
     function submitViaFetch(orderID) {
-        // Show loading overlay
         document.getElementById('loadingOverlay').classList.add('active');
+        
+        const customTitle = document.getElementById('customTitleInput').value || '{{ template.title|escapejs }}';
+        const currentDay = document.getElementById('currentDayInput').value || '1';
         
         let url;
         let formData = new FormData();
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
         formData.append('paypal_order_id', orderID);
+        formData.append('custom_title', customTitle);
+        formData.append('current_day', currentDay);
         
         if (paypalMode === 'new') {
             url = '{% url "complete_template_purchase" template.id %}';
@@ -371,7 +491,6 @@
             formData.append('journey_id', selectedJourney);
         }
         
-        // Use fetch instead of form.submit() - NO BROWSER POPUP
         fetch(url, {
             method: 'POST',
             body: formData,
@@ -412,8 +531,6 @@
             },
             onApprove: function(data, actions) {
                 return actions.order.capture().then(function(details) {
-                    // Use fetch instead of form.submit()
-                    // This prevents the fake browser popup
                     submitViaFetch(data.orderID);
                 });
             },
@@ -437,6 +554,14 @@
 </script>
 {% elif not template.is_free %}
 <script>
+    document.getElementById('customTitleInput').addEventListener('input', function() {
+        document.getElementById('newJourneyCustomTitle').value = this.value;
+    });
+    
+    document.getElementById('currentDayInput').addEventListener('input', function() {
+        document.getElementById('newJourneyCurrentDay').value = this.value;
+    });
+    
     function purchaseAndApply() {
         if (!selectedJourney) {
             alert('Select a journey first');
@@ -447,6 +572,17 @@
     function purchaseNew() {
         alert('Payment system coming soon.');
     }
+</script>
+{% else %}
+<script>
+    document.getElementById('customTitleInput').addEventListener('input', function() {
+        document.getElementById('newJourneyCustomTitle').value = this.value;
+    });
+    
+    document.getElementById('currentDayInput').addEventListener('input', function() {
+        document.getElementById('applyCurrentDay').value = this.value;
+        document.getElementById('newJourneyCurrentDay').value = this.value;
+    });
 </script>
 {% endif %}
 

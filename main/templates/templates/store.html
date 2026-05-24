@@ -57,14 +57,17 @@
         background: #111;
         border-radius: 16px;
         overflow: hidden;
-        cursor: pointer;
         transition: all 0.2s;
         border: 1px solid #1a1a1a;
-        text-decoration: none;
-        display: block;
     }
     
     .template-card:active { transform: scale(0.97); background: #1a1a1a; }
+    
+    .template-card a {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
     
     .template-cover {
         width: 100%;
@@ -150,6 +153,43 @@
         background: #22c55e;
     }
     
+    .admin-create-btn {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        background: #8b5cf6;
+        color: #fff;
+        border: none;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .admin-create-btn:hover {
+        background: #7c3aed;
+    }
+    
+    .admin-title-input {
+        width: 100%;
+        padding: 8px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #fff;
+        font-size: 11px;
+        border-radius: 0;
+        box-sizing: border-box;
+    }
+    
+    .admin-title-input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+    }
+    
+    .admin-title-input::placeholder {
+        color: #555;
+    }
+    
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -179,33 +219,46 @@
             <div class="category-title">{{ cat_name }}</div>
             <div class="template-grid">
                 {% for template in cat_data.templates %}
-                <a href="{% url 'purchase_template' template.id %}" class="template-card">
-                    <div class="template-cover">
-                        {% if template.cover_image %}
-                            <img src="{{ template.cover_image.url }}" alt="{{ template.title }}">
-                        {% else %}
-                            <i class="fas fa-map"></i>
-                        {% endif %}
-                        <span class="template-style-badge badge-{{ template.template_style }}">
-                            {{ template.template_style }}
-                        </span>
-                    </div>
-                    <div class="template-info">
-                        <div class="template-name">{{ template.title }}</div>
-                        <div class="template-meta">
-                            {{ template.duration }} {% if template.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
-                            · {{ template.usage_count }} sold
-                        </div>
-                        <div class="template-price-row">
-                            <span class="template-price {% if template.is_free %}free{% endif %}">
-                                {% if template.is_free %}Free{% else %}${{ template.price }}{% endif %}
-                            </span>
-                            <span class="template-buy-btn {% if template.is_free %}free-btn{% endif %}">
-                                {% if template.is_free %}Use{% else %}Buy{% endif %}
+                <div class="template-card">
+                    <a href="{% url 'purchase_template' template.id %}">
+                        <div class="template-cover">
+                            {% if template.cover_image %}
+                                <img src="{{ template.cover_image.url }}" alt="{{ template.title }}">
+                            {% else %}
+                                <i class="fas fa-map"></i>
+                            {% endif %}
+                            <span class="template-style-badge badge-{{ template.template_style }}">
+                                {{ template.template_style }}
                             </span>
                         </div>
-                    </div>
-                </a>
+                        <div class="template-info">
+                            <div class="template-name">{{ template.title }}</div>
+                            <div class="template-meta">
+                                {{ template.duration }} {% if template.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                                · {{ template.usage_count }} sold
+                            </div>
+                            <div class="template-price-row">
+                                <span class="template-price {% if template.is_free %}free{% endif %}">
+                                    {% if template.is_free %}Free{% else %}${{ template.price }}{% endif %}
+                                </span>
+                                <span class="template-buy-btn {% if template.is_free %}free-btn{% endif %}">
+                                    {% if template.is_free %}Use{% else %}Buy{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    {% if request.user.is_superuser %}
+                    <form method="POST" action="{% url 'admin_create_journey' template.id %}">
+                        {% csrf_token %}
+                        <input type="text" name="title" class="admin-title-input" placeholder="Custom journey name..." required>
+                        <input type="number" name="current_day" value="1" min="1" max="{{ template.duration }}" class="admin-title-input" placeholder="Current day (default: 1)" style="margin-top: 4px;">
+                        <button type="submit" class="admin-create-btn">
+                            ⚡ Admin: Create Journey
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
                 {% endfor %}
             </div>
         </div>
