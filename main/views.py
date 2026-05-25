@@ -2079,3 +2079,42 @@ def apply_template_to_journey(request, template_id):
     
     messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
     return redirect('journey_detail', slug=journey.slug)
+
+
+from django.contrib.auth.views import PasswordResetView
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.models import User
+
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'auth/password_reset.html'
+    email_template_name = 'auth/password_reset_email.html'
+    subject_template_name = 'auth/password_reset_subject.txt'
+    success_url = '/password-reset/done/'
+    
+    def form_valid(self, form):
+        email = form.cleaned_data['email']
+        try:
+            user = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_link = f"/password-reset/{uid}/{token}/"
+            self.request.session['reset_link'] = reset_link
+            self.request.session['reset_email'] = email
+        except User.DoesNotExist:
+            self.request.session['reset_link'] = None
+            self.request.session['reset_email'] = email
+        
+        return super().form_valid(form)
+
+from django.contrib.auth.views import PasswordResetDoneView
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'auth/password_reset_done.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reset_link'] = self.request.session.get('reset_link', None)
+        context['reset_email'] = self.request.session.get('reset_email', None)
+        return context
