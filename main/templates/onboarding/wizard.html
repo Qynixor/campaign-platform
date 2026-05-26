@@ -1,40 +1,34 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Discover Your Journey | Rallynex{% endblock %}
+{% block title %}Find Your Perfect Challenge | Rallynex{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+    
+    * { box-sizing: border-box; }
     
     .wizard-container {
-        max-width: 800px;
+        max-width: 680px;
         margin: 0 auto;
-        padding: 60px 24px;
-        min-height: 80vh;
+        padding: 40px 20px 60px;
         font-family: 'Inter', sans-serif;
+        color: #fff;
+        background: #0a0a0a;
+        min-height: 100vh;
     }
     
-    /* Progress Bar */
-    .wizard-progress {
+    .steps-bar {
         display: flex;
-        align-items: center;
         justify-content: center;
-        margin-bottom: 48px;
+        gap: 8px;
+        margin-bottom: 32px;
     }
     
-    .progress-step {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        position: relative;
-        z-index: 2;
-    }
-    
-    .step-number {
-        width: 48px;
-        height: 48px;
+    .step-dot {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         background: #1a1a1a;
         border: 2px solid #333;
@@ -42,494 +36,247 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 18px;
+        font-size: 16px;
         color: #666;
-        transition: all 0.3s ease;
+        transition: all 0.3s;
     }
     
-    .progress-step.active .step-number {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        border-color: transparent;
+    .step-dot.active {
+        background: #3b82f6;
+        border-color: #3b82f6;
         color: #fff;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
     }
     
-    .progress-step.completed .step-number {
+    .step-dot.done {
         background: #22c55e;
         border-color: #22c55e;
         color: #fff;
     }
     
-    .step-label {
-        margin-top: 12px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #666;
-        letter-spacing: 0.3px;
-    }
-    
-    .progress-step.active .step-label {
-        color: #3b82f6;
-    }
-    
-    .progress-step.completed .step-label {
-        color: #22c55e;
-    }
-    
-    .progress-line {
-        width: 80px;
+    .step-connector {
+        width: 60px;
         height: 2px;
-        background: linear-gradient(90deg, #333, #444);
-        margin: 0 8px;
-        margin-bottom: 32px;
-        transition: all 0.3s ease;
+        background: #333;
+        align-self: center;
     }
     
-    .progress-line.completed {
-        background: linear-gradient(90deg, #22c55e, #3b82f6);
+    .step-connector.done {
+        background: #22c55e;
     }
     
-    /* AI Message */
-    .ai-message {
+    .chat-bubble {
         display: flex;
-        gap: 16px;
-        margin-bottom: 32px;
-        align-items: flex-start;
-    }
-    
-    .ai-avatar {
-        width: 56px;
-        height: 56px;
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        flex-shrink: 0;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-    }
-    
-    .ai-bubble {
-        background: linear-gradient(135deg, rgba(17, 17, 17, 0.95), rgba(10, 10, 10, 0.95));
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        border-radius: 20px;
-        padding: 20px 24px;
-        flex: 1;
-    }
-    
-    .ai-bubble p {
-        margin-bottom: 8px;
-        line-height: 1.6;
-    }
-    
-    .ai-bubble strong {
-        color: #3b82f6;
-        font-size: 18px;
-    }
-    
-    .ai-bubble p:last-child {
-        margin-bottom: 0;
-        color: #999;
-        font-size: 14px;
-    }
-    
-    /* Question Cards */
-    .question-card {
-        background: linear-gradient(135deg, #0a0a0a, #0d0d0d);
-        border: 1px solid #222;
-        border-radius: 24px;
-        padding: 28px;
-        margin-bottom: 24px;
-        transition: all 0.3s ease;
-    }
-    
-    .question-card:hover {
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-    
-    .question-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
         gap: 12px;
-        color: #fff;
-    }
-    
-    .question-title i {
-        color: #3b82f6;
-        font-size: 24px;
-    }
-    
-    /* Poll Options */
-    .poll-options {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    
-    .poll-option {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 16px 20px;
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 16px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    
-    .poll-option:hover {
-        border-color: #3b82f6;
-        background: #161616;
-        transform: translateX(4px);
-    }
-    
-    .poll-option.selected {
-        border-color: #3b82f6;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.05));
-        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
-    }
-    
-    .poll-option input {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        accent-color: #3b82f6;
-    }
-    
-    .poll-option span {
-        font-size: 15px;
-        color: #ddd;
-    }
-    
-    /* Pain Points Grid */
-    .pain-points-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    
-    .pain-point {
-        padding: 18px;
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 16px;
-        cursor: pointer;
-        text-align: center;
-        transition: all 0.2s ease;
-    }
-    
-    .pain-point:hover {
-        border-color: #3b82f6;
-        background: #161616;
-        transform: translateY(-2px);
-    }
-    
-    .pain-point.selected {
-        border-color: #3b82f6;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.1));
-        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
-    }
-    
-    .pain-point i {
-        font-size: 32px;
-        display: block;
-        margin-bottom: 10px;
-    }
-    
-    .pain-point span {
-        font-size: 13px;
-        color: #ccc;
-    }
-    
-    /* Interest Tags */
-    .interests-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-    
-    .interest-tag {
-        padding: 12px 24px;
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 50px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 14px;
-        font-weight: 500;
-        color: #ddd;
-    }
-    
-    .interest-tag:hover {
-        border-color: #3b82f6;
-        background: #161616;
-        transform: translateY(-2px);
-    }
-    
-    .interest-tag.selected {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        border-color: transparent;
-        color: #fff;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-    
-    /* Challenge Card */
-    .challenge-card {
-        background: linear-gradient(135deg, #0d0d0d, #0a0a0a);
-        border: 1px solid #222;
-        border-radius: 24px;
-        padding: 28px;
-        margin-bottom: 20px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .challenge-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
-        transform: translateX(-100%);
-        transition: transform 0.5s ease;
-    }
-    
-    .challenge-card:hover::before {
-        transform: translateX(0);
-    }
-    
-    .challenge-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    }
-    
-    .challenge-difficulty {
-        display: inline-block;
-        padding: 6px 14px;
-        border-radius: 50px;
-        font-size: 11px;
-        font-weight: 700;
-        margin-bottom: 16px;
-        letter-spacing: 0.5px;
-    }
-    
-    .difficulty-beginner { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
-    .difficulty-intermediate { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
-    .difficulty-advanced { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
-    
-    .challenge-stats {
-        display: flex;
-        gap: 20px;
-        margin-top: 20px;
-        padding-top: 16px;
-        border-top: 1px solid #222;
-        color: #888;
-        font-size: 13px;
-    }
-    
-    .challenge-stats i {
-        margin-right: 6px;
-        color: #3b82f6;
-    }
-    
-    /* Motivational Message */
-    .motivation-card {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.05));
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        border-radius: 20px;
-        padding: 24px;
-        text-align: center;
         margin-bottom: 28px;
     }
     
-    .motivation-card i {
-        font-size: 48px;
-        color: #3b82f6;
-        margin-bottom: 12px;
+    .chat-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
     }
     
-    .motivation-card p {
-        font-size: 15px;
-        color: #bbb;
-        line-height: 1.6;
-    }
-    
-    /* XP Bar */
-    .xp-bar-container {
-        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+    .chat-text {
+        background: #111;
+        border: 1px solid #222;
         border-radius: 16px;
         padding: 16px 20px;
-        margin-bottom: 32px;
-        border: 1px solid #222;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #ccc;
     }
     
-    .xp-bar {
-        background: #222;
-        border-radius: 12px;
-        height: 10px;
-        overflow: hidden;
+    .chat-text strong {
+        color: #fff;
     }
     
-    .xp-progress {
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
-        background-size: 200% 100%;
-        animation: shimmer 2s ease infinite;
-        width: 0%;
-        height: 100%;
-        transition: width 0.5s ease;
-        border-radius: 12px;
+    .card {
+        background: #111;
+        border: 1px solid #1a1a1a;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
     }
     
-    @keyframes shimmer {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 14px;
+        color: #fff;
     }
     
-    .xp-text {
-        font-size: 13px;
-        color: #888;
-        margin-top: 10px;
-        text-align: right;
-        font-weight: 500;
-    }
-    
-    /* Wizard Actions */
-    .wizard-actions {
+    .option-list {
         display: flex;
-        gap: 16px;
-        margin-top: 40px;
-        padding-top: 24px;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .option {
+        padding: 14px 16px;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #ccc;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .option:hover {
+        border-color: #3b82f6;
+    }
+    
+    .option.selected {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.08);
+    }
+    
+    .option input[type="radio"] {
+        accent-color: #3b82f6;
+        width: 18px;
+        height: 18px;
+    }
+    
+    .tag-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .tag {
+        padding: 10px 18px;
+        background: #0a0a0a;
+        border: 1px solid #222;
+        border-radius: 40px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #ccc;
+        transition: all 0.15s;
+    }
+    
+    .tag:hover {
+        border-color: #3b82f6;
+    }
+    
+    .tag.selected {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: #fff;
+    }
+    
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
     }
     
     .btn {
-        padding: 14px 28px;
+        padding: 14px 24px;
         border-radius: 14px;
         font-weight: 600;
-        font-size: 15px;
-        transition: all 0.2s ease;
+        font-size: 14px;
         cursor: pointer;
         border: none;
         font-family: 'Inter', sans-serif;
+        transition: all 0.15s;
     }
     
     .btn-primary {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        background: #3b82f6;
         color: #fff;
         flex: 1;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
     
     .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        background: #2563eb;
     }
     
-    .btn-outline {
+    .btn-ghost {
         background: transparent;
         border: 1px solid #333;
         color: #fff;
     }
     
-    .btn-outline:hover {
+    .btn-ghost:hover {
         border-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
     }
     
-    /* Create Journey Button */
-    .create-journey-btn {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        width: 100%;
-        padding: 18px;
-        font-size: 16px;
-        font-weight: 700;
+    .challenge-card {
+        background: #111;
+        border: 1px solid #1a1a1a;
         border-radius: 16px;
-        margin-top: 20px;
-    }
-    
-    .skip-link {
-        text-align: center;
-        margin-top: 20px;
-    }
-    
-    .skip-link a {
-        color: #666;
-        font-size: 13px;
+        padding: 20px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
         text-decoration: none;
-        transition: color 0.2s;
+        display: block;
     }
     
-    .skip-link a:hover {
-        color: #3b82f6;
+    .challenge-card:hover {
+        border-color: #3b82f6;
+        transform: translateY(-2px);
     }
     
-    /* Hidden */
+    .challenge-card .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    
+    .badge-easy { background: #22c55e; color: #000; }
+    .badge-medium { background: #f59e0b; color: #000; }
+    .badge-hard { background: #ef4444; color: #fff; }
+    
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        border: 1px solid #3b82f6;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 40px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 999;
+        animation: popUp 0.3s ease;
+    }
+    
+    @keyframes popUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    
     .hidden {
         display: none !important;
     }
     
-    /* Toast */
-    .toast-notification {
-        position: fixed;
-        bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
-        border: 1px solid #3b82f6;
-        color: #fff;
-        padding: 14px 28px;
-        border-radius: 60px;
-        z-index: 1000;
-        animation: slideUp 0.3s ease;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        font-weight: 500;
-        backdrop-filter: blur(10px);
+    .price-tag {
+        color: #22c55e;
+        font-weight: 600;
     }
     
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    }
-    
-    /* Responsive */
-    @media (max-width: 640px) {
-        .wizard-container {
-            padding: 40px 16px;
-        }
-        
-        .progress-line {
-            width: 40px;
-        }
-        
-        .pain-points-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .question-card {
-            padding: 20px;
-        }
-        
-        .btn {
-            padding: 12px 20px;
-        }
+    .redirect-hint {
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+        text-align: center;
     }
 </style>
 {% endblock %}
@@ -538,483 +285,312 @@
 
 <div class="wizard-container">
     
-    <!-- Progress Bar -->
-    <div class="wizard-progress">
-        <div class="progress-step active" id="progressStep1">
-            <div class="step-number">1</div>
-            <span class="step-label">Understand You</span>
+    <div class="steps-bar">
+        <div class="step-dot active" id="dot1">1</div>
+        <div class="step-connector" id="line1"></div>
+        <div class="step-dot" id="dot2">2</div>
+        <div class="step-connector" id="line2"></div>
+        <div class="step-dot" id="dot3">3</div>
+    </div>
+    
+    <!-- STEP 1 -->
+    <div id="step1">
+        <div class="chat-bubble">
+            <div class="chat-avatar">👋</div>
+            <div class="chat-text">
+                <strong>Welcome to Rallynex!</strong><br>
+                Tell us what you're looking for, and we'll recommend the perfect template.
+            </div>
         </div>
-        <div class="progress-line" id="progressLine1"></div>
         
-        <div class="progress-step" id="progressStep2">
-            <div class="step-number">2</div>
-            <span class="step-label">Your Goals</span>
+        <div class="card">
+            <div class="card-title">What's your biggest struggle?</div>
+            <div class="option-list" id="q1">
+                <div class="option" data-value="motivation"><input type="radio" name="struggle"><span>😔 Staying motivated</span></div>
+                <div class="option" data-value="consistency"><input type="radio" name="struggle"><span>⏰ Being consistent</span></div>
+                <div class="option" data-value="accountability"><input type="radio" name="struggle"><span>👥 No accountability</span></div>
+                <div class="option" data-value="tracking"><input type="radio" name="struggle"><span>📊 Tracking progress</span></div>
+                <div class="option" data-value="starting"><input type="radio" name="struggle"><span>🚀 Just getting started</span></div>
+            </div>
         </div>
-        <div class="progress-line" id="progressLine2"></div>
         
-        <div class="progress-step" id="progressStep3">
-            <div class="step-number">3</div>
-            <span class="step-label">Find Your Challenge</span>
+        <div class="card">
+            <div class="card-title">Have you tried a challenge before?</div>
+            <div class="option-list" id="q2">
+                <div class="option" data-value="yes"><input type="radio" name="experience"><span>✅ Yes, but didn't finish</span></div>
+                <div class="option" data-value="no"><input type="radio" name="experience"><span>🌟 No, first time</span></div>
+                <div class="option" data-value="completed"><input type="radio" name="experience"><span>🏆 Yes, completed them</span></div>
+            </div>
+        </div>
+        
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="goTo(2)">Continue →</button>
         </div>
     </div>
     
-    <!-- XP Bar -->
-    <div class="xp-bar-container">
-        <div class="xp-bar">
-            <div class="xp-progress" id="xpProgress"></div>
-        </div>
-        <div class="xp-text" id="xpText">✨ +0 XP · Share your story</div>
-    </div>
-    
-    <!-- STEP 1: What's your story? -->
-    <div class="wizard-step fade-in" id="step1">
-        <div class="ai-message">
-            <div class="ai-avatar">🎯</div>
-            <div class="ai-bubble">
-                <p><strong>Hey there, future legend! 👋</strong></p>
-                <p>We know starting something new is hard. <span style="color: #3b82f6;">73% of people quit within the first month</span>. But not you. Let's change that together.</p>
+    <!-- STEP 2 -->
+    <div id="step2" class="hidden">
+        <div class="chat-bubble">
+            <div class="chat-avatar">💪</div>
+            <div class="chat-text">
+                <strong>Almost there!</strong><br>
+                Pick what excites you most.
             </div>
         </div>
         
-        <!-- Poll: What's holding you back? -->
-        <div class="question-card">
-            <div class="question-title">
-                <i class="fas fa-brain"></i>
-                <span>What's your biggest struggle right now?</span>
-            </div>
-            <div class="poll-options" id="strugglePoll">
-                <div class="poll-option" data-value="motivation">
-                    <input type="radio" name="struggle" value="motivation">
-                    <span>😔 Staying motivated after the first week</span>
-                </div>
-                <div class="poll-option" data-value="consistency">
-                    <input type="radio" name="struggle" value="consistency">
-                    <span>⏰ Being consistent every day</span>
-                </div>
-                <div class="poll-option" data-value="accountability">
-                    <input type="radio" name="struggle" value="accountability">
-                    <span>👥 No one to hold me accountable</span>
-                </div>
-                <div class="poll-option" data-value="tracking">
-                    <input type="radio" name="struggle" value="tracking">
-                    <span>📊 Tracking progress feels overwhelming</span>
-                </div>
-                <div class="poll-option" data-value="starting">
-                    <input type="radio" name="struggle" value="starting">
-                    <span>🚀 Just getting started is the hardest part</span>
-                </div>
+        <div class="card">
+            <div class="card-title">What makes you want to quit? (pick all that apply)</div>
+            <div class="tag-grid" id="q3">
+                <div class="tag" data-value="boring">😴 Gets boring</div>
+                <div class="tag" data-value="busy">⏰ No time</div>
+                <div class="tag" data-value="results">📉 Slow results</div>
+                <div class="tag" data-value="alone">🧍 Feel alone</div>
+                <div class="tag" data-value="forget">🧠 I forget</div>
+                <div class="tag" data-value="overwhelmed">😵 Too much to track</div>
             </div>
         </div>
         
-        <!-- Quick question -->
-        <div class="question-card">
-            <div class="question-title">
-                <i class="fas fa-fire"></i>
-                <span>Have you tried a challenge before?</span>
-            </div>
-            <div class="poll-options" id="experiencePoll">
-                <div class="poll-option" data-value="yes">
-                    <input type="radio" name="experience" value="yes">
-                    <span>✅ Yes, but I struggled to finish</span>
-                </div>
-                <div class="poll-option" data-value="no">
-                    <input type="radio" name="experience" value="no">
-                    <span>🌟 No, this is my first time!</span>
-                </div>
-                <div class="poll-option" data-value="completed">
-                    <input type="radio" name="experience" value="completed">
-                    <span>🏆 Yes, and I've completed challenges before</span>
-                </div>
+        <div class="card">
+            <div class="card-title">What excites you? (pick your favorites)</div>
+            <div class="tag-grid" id="q4">
+                <div class="tag" data-value="fitness">💪 Fitness</div>
+                <div class="tag" data-value="learning">📚 Learning</div>
+                <div class="tag" data-value="creative">🎨 Creative</div>
+                <div class="tag" data-value="business">📈 Business</div>
+                <div class="tag" data-value="mindfulness">🧘 Mindfulness</div>
+                <div class="tag" data-value="money">💰 Money</div>
+                <div class="tag" data-value="relationships">💕 Relationships</div>
+                <div class="tag" data-value="career">💼 Career</div>
             </div>
         </div>
         
-        <div class="wizard-actions">
-            <button class="btn btn-primary" onclick="completeStep1()">
-                Continue →
-            </button>
+        <div class="btn-row">
+            <button class="btn btn-ghost" onclick="goTo(1)">← Back</button>
+            <button class="btn btn-primary" onclick="goTo(3)">See Recommendations →</button>
         </div>
     </div>
     
-    <!-- STEP 2: What drives you? -->
-    <div class="wizard-step hidden fade-in" id="step2">
-        <div class="ai-message">
-            <div class="ai-avatar">💪</div>
-            <div class="ai-bubble">
-                <p><strong>You're not alone in this.</strong></p>
-                <p>Over <span style="color: #3b82f6;">10,000+ people</span> have used Rallynex to finish their challenges. Let's find what will make YOU succeed.</p>
+    <!-- STEP 3 - Simplified: Just recommendations that link to template pages -->
+    <div id="step3" class="hidden">
+        <div class="chat-bubble">
+            <div class="chat-avatar">🎯</div>
+            <div class="chat-text">
+                <strong>Perfect for you!</strong><br>
+                Click any template below to view details and purchase.
             </div>
         </div>
         
-        <!-- Pain points - showing we understand -->
-        <div class="question-card">
-            <div class="question-title">
-                <i class="fas fa-heart-broken"></i>
-                <span>What makes you want to quit? (Select all that apply)</span>
-            </div>
-            <div class="pain-points-grid" id="painPoints">
-                <div class="pain-point" data-value="boring">
-                    <i class="fas fa-bed"></i>
-                    <span>It gets boring</span>
-                </div>
-                <div class="pain-point" data-value="busy">
-                    <i class="fas fa-clock"></i>
-                    <span>Too busy / no time</span>
-                </div>
-                <div class="pain-point" data-value="results">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Don't see results fast</span>
-                </div>
-                <div class="pain-point" data-value="alone">
-                    <i class="fas fa-user-friends"></i>
-                    <span>Feel like I'm alone</span>
-                </div>
-                <div class="pain-point" data-value="forget">
-                    <i class="fas fa-brain"></i>
-                    <span>I just forget</span>
-                </div>
-                <div class="pain-point" data-value="overwhelmed">
-                    <i class="fas fa-tasks"></i>
-                    <span>Too much to track</span>
-                </div>
-            </div>
+        <div id="challengeList"></div>
+        
+        <div class="redirect-hint">
+            ⚡ Click any template to see full details and purchase
         </div>
         
-        <!-- Interests - gamified selection -->
-        <div class="question-card">
-            <div class="question-title">
-                <i class="fas fa-star"></i>
-                <span>What gets you excited? (Pick your favorites)</span>
-            </div>
-            <div class="interests-grid" id="interests">
-                <div class="interest-tag" data-value="fitness">💪 Fitness</div>
-                <div class="interest-tag" data-value="learning">📚 Learning</div>
-                <div class="interest-tag" data-value="creative">🎨 Creative</div>
-                <div class="interest-tag" data-value="business">📈 Business</div>
-                <div class="interest-tag" data-value="mindfulness">🧘 Mindfulness</div>
-                <div class="interest-tag" data-value="money">💰 Money</div>
-                <div class="interest-tag" data-value="relationships">💕 Relationships</div>
-                <div class="interest-tag" data-value="career">💼 Career</div>
-            </div>
-        </div>
-        
-        <div class="wizard-actions">
-            <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
-            <button class="btn btn-primary" onclick="completeStep2()">Continue →</button>
-        </div>
-    </div>
-    
-    <!-- STEP 3: Find your perfect challenge -->
-    <div class="wizard-step hidden fade-in" id="step3">
-        <div class="ai-message">
-            <div class="ai-avatar">🏆</div>
-            <div class="ai-bubble">
-                <p><strong>Based on what you've shared...</strong></p>
-                <p>We've hand-picked challenges that match your style. Research shows: <span style="color: #3b82f6;">people who pick the right challenge are 3x more likely to finish!</span></p>
-            </div>
-        </div>
-        
-        <!-- Recommended Challenges -->
-        <div id="recommendedChallenges"></div>
-        
-        <!-- Motivational Message -->
-        <div class="motivation-card" id="motivationMessage" style="display: none;">
-            <i class="fas fa-rocket"></i>
-            <p><strong>You've got this!</strong> 87% of people who start a challenge with community support finish it. Ready to begin your journey?</p>
-        </div>
-        
-        <!-- Create Journey Button - Redirects to create_journey URL -->
-        <div class="create-journey-section">
-            <a href="{% url 'create_journey' %}" class="btn btn-primary create-journey-btn" id="createJourneyBtn">
-                <i class="fas fa-plus-circle"></i> Create Your Journey →
+        <div style="margin-top: 24px;">
+            <a href="{% url 'create_journey' %}" class="btn-outline-full" style="display: block; width: 100%; padding: 14px; background: transparent; border: 1px solid #333; border-radius: 14px; color: #fff; font-size: 14px; font-weight: 600; text-align: center; text-decoration: none;">
+                ✨ Or create a custom journey
             </a>
-            <div class="skip-link">
-                <a href="{% url 'dashboard' %}">Maybe later →</a>
-            </div>
+        </div>
+        
+        <div class="skip">
+            <a href="{% url 'dashboard' %}">Skip for now → Go to dashboard</a>
         </div>
     </div>
     
 </div>
 
 <script>
-    let currentStep = 1;
-    let userData = {
-        struggle: null,
-        experience: null,
-        pains: [],
-        interests: []
+    var answers = { 
+        struggle: '', 
+        experience: '', 
+        pains: [], 
+        interests: [] 
     };
-    let xp = 0;
     
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        setupPollListeners();
-        setupPainPointListeners();
-        setupInterestListeners();
-        updateXP(0);
+    // Option click handlers
+    document.querySelectorAll('#q1 .option, #q2 .option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            var parent = this.parentElement;
+            parent.querySelectorAll('.option').forEach(function(o) { 
+                o.classList.remove('selected'); 
+            });
+            this.classList.add('selected');
+            this.querySelector('input').checked = true;
+        });
     });
     
-    function setupPollListeners() {
-        document.querySelectorAll('.poll-option').forEach(option => {
-            const radio = option.querySelector('input');
-            option.addEventListener('click', () => {
-                radio.checked = true;
-                // Remove selected class from siblings
-                option.parentElement.querySelectorAll('.poll-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                option.classList.add('selected');
-                
-                // Store data
-                if (option.parentElement.id === 'strugglePoll') {
-                    userData.struggle = radio.value;
-                } else if (option.parentElement.id === 'experiencePoll') {
-                    userData.experience = radio.value;
-                    if (radio.value === 'no') {
-                        updateXP(10, "First-timer! Exciting! ✨");
-                    } else if (radio.value === 'yes') {
-                        updateXP(5, "This time will be different! 💪");
-                    } else {
-                        updateXP(20, "Experienced champion! 🏆");
-                    }
-                }
-            });
+    // Tag click handlers
+    document.querySelectorAll('#q3 .tag, #q4 .tag').forEach(function(tag) {
+        tag.addEventListener('click', function() {
+            this.classList.toggle('selected');
         });
+    });
+    
+    function toast(msg) {
+        var t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(function() { t.remove(); }, 2500);
     }
     
-    function setupPainPointListeners() {
-        document.querySelectorAll('.pain-point').forEach(point => {
-            point.addEventListener('click', () => {
-                const value = point.dataset.value;
-                if (point.classList.contains('selected')) {
-                    point.classList.remove('selected');
-                    userData.pains = userData.pains.filter(p => p !== value);
-                } else {
-                    point.classList.add('selected');
-                    userData.pains.push(value);
-                    updateXP(5, "Thanks for being honest! 🙏");
-                }
+    function goTo(step) {
+        if (step >= 2) {
+            var q1 = document.querySelector('#q1 .option.selected');
+            var q2 = document.querySelector('#q2 .option.selected');
+            if (!q1 || !q2) {
+                toast('Please answer all questions first');
+                return;
+            }
+            answers.struggle = q1.dataset.value;
+            answers.experience = q2.dataset.value;
+        }
+        
+        if (step >= 3) {
+            answers.pains = [];
+            document.querySelectorAll('#q3 .tag.selected').forEach(function(t) {
+                answers.pains.push(t.dataset.value);
             });
-        });
-    }
-    
-    function setupInterestListeners() {
-        document.querySelectorAll('.interest-tag').forEach(tag => {
-            tag.addEventListener('click', () => {
-                const value = tag.dataset.value;
-                if (tag.classList.contains('selected')) {
-                    tag.classList.remove('selected');
-                    userData.interests = userData.interests.filter(i => i !== value);
-                } else {
-                    tag.classList.add('selected');
-                    userData.interests.push(value);
-                    updateXP(5, "Great choice! 🎯");
-                }
+            answers.interests = [];
+            document.querySelectorAll('#q4 .tag.selected').forEach(function(t) {
+                answers.interests.push(t.dataset.value);
             });
-        });
-    }
-    
-    function updateXP(amount, message = null) {
-        xp += amount;
-        const progress = Math.min((xp / 100) * 100, 100);
-        document.getElementById('xpProgress').style.width = progress + '%';
-        
-        if (message) {
-            document.getElementById('xpText').innerHTML = `✨ +${amount} XP · ${message}`;
-            setTimeout(() => {
-                document.getElementById('xpText').innerHTML = `✨ ${xp}/100 XP · Keep going!`;
-            }, 2000);
-        } else {
-            document.getElementById('xpText').innerHTML = `✨ ${xp}/100 XP · Keep going!`;
-        }
-    }
-    
-    function completeStep1() {
-        if (!userData.struggle) {
-            showToast("Tell us what's holding you back - we're here to help! 🙏");
-            return;
-        }
-        if (!userData.experience) {
-            showToast("Have you tried challenges before? This helps us personalize! ✨");
-            return;
-        }
-        updateXP(25, "Great insights! 🎉");
-        goToStep(2);
-        
-        // Show motivational message based on struggle
-        if (userData.struggle === 'motivation') {
-            showToast("🔥 We've got motivation hacks just for you!");
-        } else if (userData.struggle === 'accountability') {
-            showToast("👥 Community accountability is powerful. We'll help you find your tribe!");
-        }
-    }
-    
-    function completeStep2() {
-        if (userData.interests.length === 0) {
-            showToast("Pick at least one interest so we can find the perfect challenge for you! 🎯");
-            return;
-        }
-        updateXP(25, "Almost there! 🚀");
-        generateRecommendations();
-        goToStep(3);
-    }
-    
-    function generateRecommendations() {
-        const container = document.getElementById('recommendedChallenges');
-        let challenges = [];
-        
-        // Smart recommendations based on interests and struggles
-        if (userData.interests.includes('fitness')) {
-            challenges.push({
-                name: '🔥 75 Hard Challenge',
-                description: 'Transform your mental toughness with daily workouts, diet, and reading',
-                duration: 75,
-                difficulty: 'advanced',
-                completion: '87% finish with accountability',
-                icon: '💪'
-            });
-            challenges.push({
-                name: '🏃‍♂️ 30-Day Fitness Kickstart',
-                description: 'Perfect for building daily exercise habits without overwhelm',
-                duration: 30,
-                difficulty: 'beginner',
-                completion: '94% recommend this starter challenge',
-                icon: '🏃'
-            });
+            if (answers.interests.length === 0) {
+                toast('Pick at least one interest to get recommendations');
+                return;
+            }
+            buildRecommendations();
         }
         
-        if (userData.interests.includes('learning')) {
-            challenges.push({
-                name: '📚 30-Day Learning Sprint',
-                description: 'Learn something new every day for 30 days',
-                duration: 30,
-                difficulty: 'beginner',
-                completion: '91% built lasting learning habits',
-                icon: '📚'
-            });
-        }
-        
-        if (userData.interests.includes('creative')) {
-            challenges.push({
-                name: '🎨 Creative 100',
-                description: '100 days of creative output - build your portfolio',
-                duration: 100,
-                difficulty: 'intermediate',
-                completion: '78% completed their best work',
-                icon: '🎨'
-            });
-        }
-        
-        if (userData.interests.includes('mindfulness')) {
-            challenges.push({
-                name: '🧘 90-Day Mindfulness Journey',
-                description: 'Meditation, journaling, and self-discovery',
-                duration: 90,
-                difficulty: 'intermediate',
-                completion: '89% reported less stress',
-                icon: '🧘'
-            });
-        }
-        
-        if (userData.interests.includes('business')) {
-            challenges.push({
-                name: '📈 100-Day Business Builder',
-                description: 'Launch or grow your business in 100 days',
-                duration: 100,
-                difficulty: 'advanced',
-                completion: '76% saw revenue growth',
-                icon: '📈'
-            });
-        }
-        
-        // Default challenge if no matches
-        if (challenges.length === 0) {
-            challenges.push({
-                name: '🌟 30-Day Growth Challenge',
-                description: 'Small daily actions that compound into big results',
-                duration: 30,
-                difficulty: 'beginner',
-                completion: '96% felt more productive',
-                icon: '🌟'
-            });
-        }
-        
-        // Add accountability bonus
-        if (userData.pains.includes('alone')) {
-            challenges[0].description += ' · Includes community support!';
-        }
-        
-        // Render challenges
-        container.innerHTML = challenges.map(challenge => `
-            <div class="challenge-card" onclick="selectChallenge('${challenge.name}', ${challenge.duration})">
-                <div class="challenge-difficulty difficulty-${challenge.difficulty}">
-                    ${challenge.difficulty.toUpperCase()}
-                </div>
-                <div style="font-size: 40px; margin-bottom: 12px;">${challenge.icon}</div>
-                <h3 style="margin-bottom: 12px; font-size: 20px;">${challenge.name}</h3>
-                <p style="color: #aaa; font-size: 14px; margin-bottom: 16px; line-height: 1.5;">${challenge.description}</p>
-                <div class="challenge-stats">
-                    <span><i class="fas fa-calendar"></i> ${challenge.duration} days</span>
-                    <span><i class="fas fa-chart-line"></i> ${challenge.completion}</span>
-                </div>
-            </div>
-        `).join('');
-        
-        document.getElementById('motivationMessage').style.display = 'block';
-        updateXP(20, "Ready to start? 🎯");
-    }
-    
-    function selectChallenge(name, duration) {
-        // Store selected challenge in localStorage or session
-        sessionStorage.setItem('selected_challenge', JSON.stringify({
-            name: name,
-            duration: duration,
-            interests: userData.interests,
-            pains: userData.pains
-        }));
-        
-        showToast(`✨ "${name}" selected! Click "Create Your Journey" to begin!`);
-        
-        // Highlight the create button
-        const createBtn = document.getElementById('createJourneyBtn');
-        createBtn.style.transform = 'scale(1.02)';
-        setTimeout(() => {
-            createBtn.style.transform = '';
-        }, 500);
-    }
-    
-    function goToStep(step) {
         document.getElementById('step1').classList.add('hidden');
         document.getElementById('step2').classList.add('hidden');
         document.getElementById('step3').classList.add('hidden');
+        document.getElementById('step' + step).classList.remove('hidden');
         
-        document.getElementById(`step${step}`).classList.remove('hidden');
-        
-        for (let i = 1; i <= 3; i++) {
-            const stepEl = document.getElementById(`progressStep${i}`);
-            stepEl.classList.remove('active', 'completed');
-            if (i < step) {
-                stepEl.classList.add('completed');
-            } else if (i === step) {
-                stepEl.classList.add('active');
-            }
+        for (var i = 1; i <= 3; i++) {
+            var dot = document.getElementById('dot' + i);
+            dot.classList.remove('active', 'done');
+            if (i < step) dot.classList.add('done');
+            if (i === step) dot.classList.add('active');
         }
+        document.getElementById('line1').classList.toggle('done', step > 1);
+        document.getElementById('line2').classList.toggle('done', step > 2);
         
-        document.getElementById('progressLine1').classList.toggle('completed', step > 1);
-        document.getElementById('progressLine2').classList.toggle('completed', step > 2);
-        
-        currentStep = step;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
-    function showToast(message) {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = message;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
+    function buildRecommendations() {
+        var list = document.getElementById('challengeList');
+        var recommendations = [];
+        
+        // Match templates to user interests
+        if (answers.interests.indexOf('fitness') !== -1) {
+            recommendations.push({ 
+                id: 37,
+                title: '30-Day Body Transformation', 
+                desc: 'Daily workouts, meal tracking, and progress photos.', 
+                icon: '💪', 
+                difficulty: 'easy', 
+                duration: 30,
+                price: '$10'
+            });
+            recommendations.push({ 
+                id: 39,
+                title: '75 Hard Challenge', 
+                desc: '75 days of mental toughness. Two workouts, diet, reading.', 
+                icon: '🔥', 
+                difficulty: 'hard', 
+                duration: 75,
+                price: '$15'
+            });
+            recommendations.push({ 
+                id: 40,
+                title: '30-Day Yoga Journey', 
+                desc: 'From beginner to flowing with confidence.', 
+                icon: '🧘', 
+                difficulty: 'easy', 
+                duration: 30,
+                price: '$10'
+            });
+        }
+        
+        if (answers.interests.indexOf('learning') !== -1 || answers.interests.indexOf('career') !== -1) {
+            recommendations.push({ 
+                id: 51,
+                title: '100 Days of Code Challenge', 
+                desc: 'Code every day. Build your portfolio.', 
+                icon: '💻', 
+                difficulty: 'medium', 
+                duration: 100,
+                price: '$12'
+            });
+        }
+        
+        if (answers.interests.indexOf('creative') !== -1) {
+            recommendations.push({ 
+                id: 47,
+                title: 'Photography 30-Day Challenge', 
+                desc: 'One photo a day. Master composition and lighting.', 
+                icon: '📸', 
+                difficulty: 'easy', 
+                duration: 30,
+                price: '$10'
+            });
+        }
+        
+        if (answers.interests.indexOf('business') !== -1 || answers.interests.indexOf('money') !== -1) {
+            recommendations.push({ 
+                id: 50,
+                title: 'SaaS Launch — 60 Day Build', 
+                desc: 'Build and launch your product in 60 days.', 
+                icon: '🚀', 
+                difficulty: 'hard', 
+                duration: 60,
+                price: '$15'
+            });
+        }
+        
+        // Default fallback
+        if (recommendations.length === 0) {
+            recommendations.push({ 
+                id: 37,
+                title: '30-Day Body Transformation', 
+                desc: 'The perfect starter challenge for any goal.', 
+                icon: '💪', 
+                difficulty: 'easy', 
+                duration: 30,
+                price: '$10'
+            });
+            recommendations.push({ 
+                id: 51,
+                title: '100 Days of Code Challenge', 
+                desc: 'Learn to code and build real projects.', 
+                icon: '💻', 
+                difficulty: 'medium', 
+                duration: 100,
+                price: '$12'
+            });
+        }
+        
+        // Render clickable cards that redirect to template page
+        var html = '';
+        recommendations.forEach(function(t) {
+            html += '<a href="/templates/' + t.id + '/" class="challenge-card">';
+            html += '<span class="badge badge-' + t.difficulty + '">' + t.difficulty.toUpperCase() + ' • ' + t.duration + ' days</span>';
+            html += '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;">';
+            html += '<span style="font-size:36px;">' + t.icon + '</span>';
+            html += '<div style="flex:1;">';
+            html += '<div style="font-weight:700;font-size:16px;margin-bottom:4px;">' + t.title + '</div>';
+            html += '<div style="font-size:13px;color:#888;margin-bottom:6px;">' + t.desc + '</div>';
+            html += '<div style="display:flex;gap:12px;font-size:12px;">';
+            html += '<span class="price-tag">' + t.price + '</span>';
+            html += '<span style="color:#666;">✨ Pre-filled daily activities</span>';
+            html += '</div>';
+            html += '</div>';
+            html += '<span style="color:#3b82f6;font-size:20px;">→</span>';
+            html += '</div></a>';
+        });
+        list.innerHTML = html;
     }
 </script>
 

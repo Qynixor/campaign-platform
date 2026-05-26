@@ -98,15 +98,49 @@ def api_quick_create_journey(request):
 
 
 
+from django.core.serializers import json
+from django.core.serializers.json import DjangoJSONEncoder
 
-@login_required
 def onboarding_wizard_view(request):
-    """Onboarding wizard for new users"""
-    return render(request, 'onboarding/wizard.html')
+    """Onboarding wizard for new users with template recommendations"""
+    
+    # Get all active templates for recommendations
+    templates = JourneyTemplate.objects.filter(is_active=True)
+    
+    # Prepare template data for JavaScript
+    template_data = []
+    for t in templates:
+        template_data.append({
+            'id': t.id,
+            'title': t.title,
+            'description': t.description,
+            'category': t.category,
+            'duration': t.duration,
+            'price': 'FREE' if t.is_free else f'${t.price:.2f}' if hasattr(t, 'price') and t.price else '$9.99',
+            'difficulty': getattr(t, 'difficulty', 'medium'),
+            'icon': get_template_icon(t.category),
+        })
+    
+    context = {
+        'template_data': json.dumps(template_data, cls=DjangoJSONEncoder),
+    }
+    
+    return render(request, 'onboarding/wizard.html', context)
 
-
-
-
+def get_template_icon(category):
+    """Get emoji icon for template category"""
+    icons = {
+        'fitness': '💪',
+        'health': '🧘',
+        'learning': '📚',
+        'creative': '🎨',
+        'business': '📈',
+        'mindfulness': '🧘',
+        'money': '💰',
+        'relationships': '💕',
+        'career': '💼',
+    }
+    return icons.get(category, '🎯')
 
 # ============================================================================
 # HELPER FUNCTIONS
