@@ -928,11 +928,12 @@ def quick_import_view(request):
             day_number = form.cleaned_data['day_number']
             platform = form.cleaned_data.get('detected_platform') or detect_platform_from_url(url)
             caption = request.POST.get('caption', '').strip()
+            embed_html = request.POST.get('embed_html', '').strip()
+            thumbnail_url = request.POST.get('thumbnail_url', '').strip()
             
             if not caption:
                 caption = f"Imported from {platform.title() if platform else 'Social Media'}"
             
-            # Use update_or_create
             activity, created = Activity.objects.update_or_create(
                 journey=journey,
                 day_number_field=day_number,
@@ -940,6 +941,7 @@ def quick_import_view(request):
                     'content': caption,
                     'source_url': url,
                     'source_platform': platform or '',
+                    'embed_html': embed_html,
                     'is_video': False,
                 }
             )
@@ -947,14 +949,13 @@ def quick_import_view(request):
             if created:
                 messages.success(request, f'✅ Content imported to Day {day_number}!')
             else:
-                messages.success(request, f'✅ Day {day_number} updated with new content!')
+                messages.success(request, f'✅ Day {day_number} updated!')
             
             return redirect('journey_detail', slug=journey.slug)
     else:
         form = QuickImportForm(user=request.user)
     
     return render(request, 'dashboard/quick_import.html', {'form': form})
-
 
 def generate_embed_html(url, platform):
     """Generate embed HTML when oEmbed fails"""
@@ -1019,7 +1020,6 @@ def extract_youtube_video_id(url):
         if match:
             return match.group(1)
     return None
-
 def fetch_oembed_data(url, platform):
     import requests
     
@@ -1028,25 +1028,34 @@ def fetch_oembed_data(url, platform):
         'youtube': 'https://www.youtube.com/oembed',
         'instagram': 'https://graph.facebook.com/v18.0/instagram_oembed',
         'facebook': 'https://graph.facebook.com/v18.0/oembed_post',
-        'twitter': 'https://publish.twitter.com/oembed',  # Works with x.com too
+        'twitter': 'https://publish.twitter.com/oembed',
     }
     
     endpoint = oembed_endpoints.get(platform)
     if not endpoint:
         return None
     
-    # Convert x.com to twitter.com for better compatibility
+    # Convert x.com to twitter.com for oEmbed compatibility
+    request_url = url
     if platform == 'twitter':
-        url = url.replace('x.com', 'twitter.com')
+        request_url = url.replace('x.com', 'twitter.com')
     
     try:
-        response = requests.get(endpoint, params={'url': url, 'omit_script': '0'}, timeout=10)
+        params = {'url': request_url, 'omit_script': '1'}
+        
+        # Twitter needs these params for richer data
+        if platform == 'twitter':
+            params['dnt'] = '1'
+            params['hide_thread'] = '1'
+            params['theme'] = 'dark'
+        
+        response = requests.get(endpoint, params=params, timeout=10)
+        
         if response.status_code == 200:
             data = response.json()
-            # Twitter returns 'author_name' and 'html'
             return {
-                'title': data.get('author_name', '') + ': ' + data.get('title', ''),
-                'thumbnail_url': '',
+                'title': data.get('title', ''),
+                'thumbnail_url': data.get('thumbnail_url', ''),
                 'author_name': data.get('author_name', ''),
                 'html': data.get('html', ''),
             }
@@ -1054,6 +1063,7 @@ def fetch_oembed_data(url, platform):
         print(f"oEmbed fetch error for {platform}: {e}")
     
     return None
+
 
 @login_required
 def api_preview_url(request):
@@ -1065,9 +1075,10 @@ def api_preview_url(request):
     if not platform:
         return JsonResponse({'success': False, 'error': 'Unsupported platform'})
     
+    # Try oEmbed first
     oembed_data = fetch_oembed_data(url, platform)
     
-    if oembed_data:
+    if oembed_data and (oembed_data.get('thumbnail_url') or oembed_data.get('html')):
         return JsonResponse({
             'success': True,
             'platform': platform,
@@ -1077,18 +1088,40 @@ def api_preview_url(request):
             'html': oembed_data.get('html', ''),
         })
     
-    # Fallback for Twitter/X
+    # Fallback: generate embed HTML for known platforms
+    embed_html = generate_embed_html(url, platform)
+    
+    # For Twitter/X, try to extract a meaningful preview
     if platform == 'twitter':
+        parts = url.rstrip('/').split('/')
+        username = parts[3] if len(parts) > 3 else ''
+        tweet_id = parts[5] if len(parts) > 5 else ''
+        
+        # Twitter doesn't provide thumbnails via oEmbed without auth
+        # Use a placeholder card that shows the tweet context
         return JsonResponse({
             'success': True,
             'platform': platform,
-            'title': 'Tweet',
+            'title': f'Tweet by @{username}',
             'thumbnail_url': '',
-            'author_name': url.split('/')[3] if len(url.split('/')) > 3 else '',
-            'html': '',
+            'author_name': f'@{username}',
+            'html': embed_html if embed_html else '',
+            'embed_available': bool(embed_html),
         })
     
-    return JsonResponse({'success': False, 'error': 'Could not fetch media'})
+    # For other platforms, return what we have
+    return JsonResponse({
+        'success': True,
+        'platform': platform,
+        'title': f'{platform.title()} Post',
+        'thumbnail_url': '',
+        'author_name': '',
+        'html': embed_html if embed_html else '',
+        'embed_available': bool(embed_html),
+    })
+
+
+
 
 @login_required
 def import_queue_view(request):

@@ -1,4 +1,4 @@
-
+```html
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
@@ -17,13 +17,29 @@
 
 {% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Track progress, join the community, and complete this journey on Rallynex." }}{% endblock %}
 
-{% block og_image %}{% if journey.cover_image %}{{ journey.cover_image.url }}{% elif featured_activity and featured_activity.file %}{{ featured_activity.file.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}{% endif %}{% endblock %}
+{% block og_image %}
+    {% if journey.cover_image %}
+        {{ journey.cover_image.url }}
+    {% elif journey.cover_video %}
+        {{ journey.cover_video.url }}
+    {% else %}
+        {{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-og-default.png' %}
+    {% endif %}
+{% endblock %}
 
 {% block twitter_title %}{{ journey.title }} | Rallynex{% endblock %}
 
 {% block twitter_description %}{{ journey.description|striptags|truncatewords:30 }}{% endblock %}
 
-{% block twitter_image %}{% if journey.cover_image %}{{ journey.cover_image.url }}{% elif featured_activity and featured_activity.file %}{{ featured_activity.file.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}{% endif %}{% endblock %}
+{% block twitter_image %}
+    {% if journey.cover_image %}
+        {{ journey.cover_image.url }}
+    {% elif journey.cover_video %}
+        {{ journey.cover_video.url }}
+    {% else %}
+        {{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-og-default.png' %}
+    {% endif %}
+{% endblock %}
 
 {% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
 
@@ -42,7 +58,7 @@
     "author": {
         "@type": "Person",
         "name": "{{ journey.creator.user.username|escapejs }}",
-        "url": "{{ request.scheme }}://{{ request.get_host }}/profile/{{ journey.creator.user.username }}/"
+        "url": "{{ request.scheme }}://{{ request.get_host }}/@{{ journey.creator.user.username }}/"
     },
     "dateCreated": "{{ journey.created_at|date:'c' }}",
     "dateModified": "{{ journey.updated_at|date:'c' }}",
@@ -440,6 +456,7 @@
     .roadmap-dot {
         width: 16px; height: 16px; border-radius: 50%; border: 2px solid #333;
         background: #0a0a0a; flex-shrink: 0; margin-top: 2px; z-index: 1; transition: all 0.3s;
+        position: relative;
     }
     .roadmap-item.completed .roadmap-dot { background: #22c55e; border-color: #22c55e; }
     .roadmap-item.current .roadmap-dot {
@@ -455,6 +472,16 @@
     .roadmap-item.locked .roadmap-title { color: #555; }
     .roadmap-item.locked .roadmap-dot { border-color: #222; }
     .roadmap-meta { font-size: 10px; color: #666; }
+    .roadmap-source-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: #3b82f6;
+        text-decoration: none;
+        margin-top: 3px;
+    }
+    .roadmap-source-link:hover { text-decoration: underline; }
     
     /* SHOW MORE BUTTON */
     .show-more-btn {
@@ -693,9 +720,15 @@
                             {% endif %}
                         {% elif activity and activity.thumbnail %}
                             <img src="{{ activity.thumbnail.url }}" alt="">
+                        {% elif activity and activity.source_platform %}
+                            <div style="width:100%;height:100%;background:linear-gradient(135deg, #1a1a1a, #111);display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                                <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:28px;margin-bottom:4px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#3b82f6;{% endif %}"></i>
+                                <span style="font-size:8px;color:#555;text-transform:uppercase;">{{ activity.source_platform }}</span>
+                            </div>
                         {% else %}
-                            <div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                                <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}image{% endif %}" style="color:#444;font-size:18px;"></i>
+                            <div style="width:100%;height:100%;background:linear-gradient(135deg, #1a1a1a, #111);display:flex;align-items:center;justify-content:center;flex-direction:column;">
+                                <span style="font-size:24px;font-weight:800;color:#333;">{{ day_num }}</span>
+                                <span style="font-size:8px;color:#555;">{% if journey.journey_type == 'milestone' %}MILESTONE{% else %}DAY{% endif %}</span>
                             </div>
                         {% endif %}
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
@@ -741,6 +774,10 @@
                 {% elif activity and activity.thumbnail %}
                     <img src="{{ activity.thumbnail.url }}" alt="">
                     <div class="gallery-check"><i class="fas fa-check"></i></div>
+                {% elif activity and activity.source_platform %}
+                    <div style="width:100%;height:100%;background:linear-gradient(135deg, #1a0a0a, #0a0a0a);display:flex;align-items:center;justify-content:center;">
+                        <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:20px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#ef4444;{% endif %}"></i>
+                    </div>
                 {% else %}
                     <div class="gallery-empty">{{ day_num }}</div>
                 {% endif %}
@@ -787,6 +824,8 @@
                         {% else %}
                             <img src="{{ activity.file.url }}" alt="">
                         {% endif %}
+                    {% elif activity and activity.source_platform %}
+                        <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:18px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#3b82f6;{% endif %}"></i>
                     {% else %}
                         <i class="fas fa-code"></i>
                     {% endif %}
@@ -799,6 +838,11 @@
                         Milestone {{ day_num }} of {{ journey.duration }}
                         {% if activity %} · ✅ Complete{% else %} · ⏳ Pending{% endif %}
                     </div>
+                    {% if activity and activity.source_url %}
+                    <a href="{{ activity.source_url }}" target="_blank" class="roadmap-source-link" onclick="event.stopPropagation();">
+                        <i class="fas fa-external-link-alt"></i> View on {{ activity.source_platform|title }}
+                    </a>
+                    {% endif %}
                     {% if user == journey.creator.user and activity %}
                     <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
                         <span class="creator-prompt">📝 Click to edit this milestone</span>
@@ -833,15 +877,32 @@
             <div class="roadmap-item roadmap-milestone {% if activity %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %} {% if forloop.counter > 8 %}hidden-item{% endif %}" 
                  onclick="openModal({{ day_num }})"
                  style="{% if forloop.counter > 8 %}display:none;{% endif %}">
-                <div class="roadmap-dot"></div>
+                <div class="roadmap-dot">
+                    {% if activity and not activity.file and activity.source_platform %}
+                        <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:8px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#22c55e;{% endif %}"></i>
+                    {% endif %}
+                </div>
                 <div class="roadmap-content">
                     <div class="roadmap-title">
-                        {% if activity %}{{ activity.content|truncatechars:50 }}{% else %}Day {{ day_num }}{% endif %}
+                        {% if activity and activity.file %}
+                            📎 {{ activity.content|truncatechars:50 }}
+                        {% elif activity and activity.source_platform %}
+                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="margin-right:4px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#22c55e;{% endif %}"></i> {{ activity.content|truncatechars:50 }}
+                        {% elif activity %}
+                            {{ activity.content|truncatechars:50 }}
+                        {% else %}
+                            Day {{ day_num }}
+                        {% endif %}
                     </div>
                     <div class="roadmap-meta">
                         Day {{ day_num }} of {{ journey.duration }}
                         {% if activity %} · ✅ Shipped{% elif day_num == current_day %} · 🚀 In Progress{% else %} · 🔒 Locked{% endif %}
                     </div>
+                    {% if activity and activity.source_url %}
+                    <a href="{{ activity.source_url }}" target="_blank" class="roadmap-source-link" onclick="event.stopPropagation();">
+                        <i class="fas fa-external-link-alt"></i> View on {{ activity.source_platform|title }}
+                    </a>
+                    {% endif %}
                     {% if user == journey.creator.user and activity %}
                     <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
                         <span class="creator-prompt">📝 Click to edit this milestone</span>
@@ -868,26 +929,36 @@
                 <img src="{{ current_activity.file.url }}" alt="{{ current_activity.content|truncatechars:50 }}">
             {% endif %}
         {% elif current_activity.source_url %}
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#888;text-align:center;">
-                <i class="fas fa-link" style="font-size:48px;margin-bottom:16px;"></i>
-                <p style="margin-bottom:16px;">Content from {{ current_activity.source_platform|default:'social media' }}</p>
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;{% if current_activity.source_platform == 'tiktok' %}background:linear-gradient(135deg, #001a1a, #0a0a0a);{% elif current_activity.source_platform == 'instagram' %}background:linear-gradient(135deg, #1a0010, #0a0a0a);{% elif current_activity.source_platform == 'youtube' %}background:linear-gradient(135deg, #1a0000, #0a0a0a);{% elif current_activity.source_platform == 'twitter' %}background:linear-gradient(135deg, #001020, #0a0a0a);{% else %}background:linear-gradient(135deg, #111, #0a0a0a);{% endif %}">
+                <i class="fab fa-{% if current_activity.source_platform == 'twitter' %}x-twitter{% elif current_activity.source_platform == 'tiktok' %}tiktok{% elif current_activity.source_platform == 'youtube' %}youtube{% elif current_activity.source_platform == 'instagram' %}instagram{% elif current_activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:64px;margin-bottom:16px;{% if current_activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif current_activity.source_platform == 'instagram' %}color:#dc2743;{% elif current_activity.source_platform == 'youtube' %}color:#ff0000;{% elif current_activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif current_activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#3b82f6;{% endif %}"></i>
+                <p style="margin-bottom:16px;color:#aaa;">Content from <strong style="color:#fff;">{{ current_activity.source_platform|title|default:'Social Media' }}</strong></p>
                 <a href="{{ current_activity.source_url }}" target="_blank" class="action-btn action-btn-primary" onclick="event.stopPropagation();">
                     <i class="fas fa-external-link-alt"></i> View Original
                 </a>
             </div>
         {% else %}
-            <div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:250px;color:#888;background:#111;">
-                <i class="fas fa-image" style="font-size:48px;"></i>
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:250px;color:#888;background:#111;flex-direction:column;gap:8px;">
+                <i class="fas fa-pen-to-square" style="font-size:40px;opacity:0.3;"></i>
+                <span style="font-size:13px;">{{ current_activity.content|truncatechars:60 }}</span>
             </div>
         {% endif %}
         
+        {% if current_activity.file and current_activity.is_video %}
         <div class="hero-play-btn"><i class="fas fa-play"></i></div>
+        {% elif not current_activity.file %}
+        <div class="hero-play-btn"><i class="fas fa-expand"></i></div>
+        {% endif %}
         
         <div class="hero-content">
             <span class="hero-badge {% if journey.journey_type == 'milestone' %}milestone-badge{% endif %}">
                 {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }} · CURRENT{% endif %}
             </span>
             <h3 class="hero-day-title">{{ current_activity.content|truncatechars:40 }}</h3>
+            {% if current_activity.source_url %}
+            <a href="{{ current_activity.source_url }}" target="_blank" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;color:#3b82f6;font-size:11px;text-decoration:none;margin-bottom:4px;">
+                <i class="fas fa-external-link-alt"></i> View on {{ current_activity.source_platform|title|default:'Social Media' }}
+            </a>
+            {% endif %}
             {% if user == journey.creator.user and journey.template_style != 'default' %}
             <a href="{% url 'post_activity_day' slug=journey.slug day_number=current_day %}" class="creator-prompt-link" onclick="event.stopPropagation();">
                 <span class="creator-prompt" style="margin-bottom:6px;">📝 Click to edit with your own content</span>
@@ -1027,8 +1098,8 @@
                 content: "{{ activity.content|escapejs }}",
                 fileUrl: "{% if activity.file %}{{ activity.file.url }}{% endif %}",
                 isVideo: {{ activity.is_video|yesno:"true,false" }},
-                sourceUrl: "{{ activity.source_url|default:''|escapejs }}",
-                sourcePlatform: "{{ activity.source_platform|default:''|escapejs }}",
+                sourceUrl: "{% if activity.source_url %}{{ activity.source_url|escapejs }}{% endif %}",
+                sourcePlatform: "{% if activity.source_platform %}{{ activity.source_platform|escapejs }}{% endif %}",
                 loveCount: {{ activity.get_love_count }},
                 commentCount: {{ activity.get_comment_count }}
             },
@@ -1146,9 +1217,23 @@
             if (a.isVideo) { m.innerHTML = '<video src="' + a.fileUrl + '" controls playsinline autoplay style="width:100%;height:100%;object-fit:contain;"></video>'; }
             else { m.innerHTML = '<img src="' + a.fileUrl + '" style="width:100%;height:100%;object-fit:contain;">'; }
         } else if (a.sourceUrl) {
-            m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#888;padding:20px;text-align:center;"><i class="fas fa-link" style="font-size:48px;margin-bottom:16px;"></i><p style="margin-bottom:16px;">Content from ' + (a.sourcePlatform || 'social media') + '</p><a href="' + a.sourceUrl + '" target="_blank" class="action-btn action-btn-primary"><i class="fas fa-external-link-alt"></i> View Original</a></div>';
+            const platform = a.sourcePlatform || 'link';
+            const platformColors = {
+                'tiktok': { color: '#00f2ea', bg: 'linear-gradient(135deg, #001a1a, #0a0a0a)' },
+                'instagram': { color: '#dc2743', bg: 'linear-gradient(135deg, #1a0010, #0a0a0a)' },
+                'youtube': { color: '#ff0000', bg: 'linear-gradient(135deg, #1a0000, #0a0a0a)' },
+                'twitter': { color: '#1DA1F2', bg: 'linear-gradient(135deg, #001020, #0a0a0a)' },
+                'facebook': { color: '#1877f2', bg: 'linear-gradient(135deg, #001030, #0a0a0a)' }
+            };
+            const pc = platformColors[platform] || { color: '#3b82f6', bg: 'linear-gradient(135deg, #111, #0a0a0a)' };
+            const iconClass = {
+                'tiktok': 'fa-tiktok', 'instagram': 'fa-instagram', 'youtube': 'fa-youtube',
+                'twitter': 'fa-x-twitter', 'facebook': 'fa-facebook'
+            }[platform] || 'fa-link';
+            
+            m.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;text-align:center;background:' + pc.bg + ';"><i class="fab ' + iconClass + '" style="font-size:64px;margin-bottom:16px;color:' + pc.color + ';"></i><p style="margin-bottom:16px;color:#aaa;">Content from <strong style="color:#fff;">' + platform.charAt(0).toUpperCase() + platform.slice(1) + '</strong></p><a href="' + a.sourceUrl + '" target="_blank" class="action-btn action-btn-primary"><i class="fas fa-external-link-alt"></i> View Original</a></div>';
         } else {
-            m.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;"><i class="fas fa-image" style="font-size:48px;"></i></div>';
+            m.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;flex-direction:column;gap:12px;"><i class="fas fa-pen-to-square" style="font-size:40px;opacity:0.3;"></i><span style="font-size:13px;">' + a.content + '</span></div>';
         }
         document.getElementById('mediaModal').classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -1222,3 +1307,4 @@
     });
 </script>
 {% endblock %}
+```

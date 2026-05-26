@@ -1,139 +1,123 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Quick Import | Rallynex{% endblock %}
+{% block title %}Import Content | Rallynex{% endblock %}
 
 {% block extra_css %}
 <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    
     .import-container {
-        max-width: 650px;
+        max-width: 680px;
         margin: 0 auto;
-        padding: 40px 20px;
+        padding: 24px 16px 60px;
     }
     
     .import-header {
         text-align: center;
-        margin-bottom: 32px;
+        margin-bottom: 24px;
     }
     
-    .import-icon {
-        width: 80px;
-        height: 80px;
-        background: rgba(59, 130, 246, 0.1);
+    .import-header .icon-circle {
+        width: 64px;
+        height: 64px;
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.15);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 20px;
+        margin: 0 auto 16px;
     }
     
-    .import-icon i {
-        font-size: 40px;
+    .import-header .icon-circle i {
+        font-size: 28px;
         color: #3b82f6;
     }
     
-    .import-title {
-        font-size: 24px;
+    .import-header h1 {
+        font-size: 22px;
         font-weight: 700;
-        margin-bottom: 8px;
+        color: #fff;
+        margin-bottom: 4px;
     }
     
-    .import-subtitle {
+    .import-header p {
+        font-size: 13px;
         color: #888;
-        font-size: 14px;
     }
     
-    .import-card {
+    /* URL INPUT BAR */
+    .url-bar {
+        display: flex;
+        gap: 0;
         background: #111;
         border: 1px solid #222;
-        border-radius: 20px;
-        padding: 32px;
-    }
-    
-    .form-group {
-        margin-bottom: 24px;
-    }
-    
-    .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 500;
+        border-radius: 16px;
+        overflow: hidden;
         margin-bottom: 8px;
-        color: #aaa;
-    }
-    
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 14px 16px;
-        background: #0a0a0a;
-        border: 1px solid #333;
-        border-radius: 12px;
-        color: #fff;
-        font-size: 15px;
-        outline: none;
         transition: border-color 0.2s;
-        font-family: inherit;
     }
     
-    .form-group textarea {
-        resize: vertical;
-        min-height: 80px;
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
+    .url-bar:focus-within {
         border-color: #3b82f6;
     }
     
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+    .url-bar input {
+        flex: 1;
+        padding: 16px;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 15px;
+        outline: none;
+        font-family: inherit;
     }
     
-    .errorlist {
-        list-style: none;
-        padding: 12px 16px;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-radius: 12px;
-        margin-bottom: 20px;
-        color: #ef4444;
-        font-size: 14px;
+    .url-bar input::placeholder {
+        color: #555;
     }
     
-    .platform-detected {
+    .url-bar .paste-btn {
+        padding: 0 20px;
+        background: transparent;
+        border: none;
+        color: #3b82f6;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .url-bar .paste-btn:hover {
+        color: #60a5fa;
+    }
+    
+    .platform-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 12px;
-        background: #1a1a1a;
+        padding: 6px 14px;
         border-radius: 30px;
         font-size: 12px;
-        color: #aaa;
-        margin-top: 8px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        transition: all 0.2s;
     }
     
-    .platform-detected i { font-size: 14px; }
-    .platform-detected.tiktok i { color: #00f2ea; }
-    .platform-detected.instagram i { 
-        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .platform-detected.youtube i { color: #ff0000; }
-    .platform-detected.facebook i { color: #1877f2; }
-    .platform-detected.twitter i { color: #1DA1F2; }
+    .platform-badge.tiktok { background: rgba(0, 242, 234, 0.1); color: #00f2ea; }
+    .platform-badge.instagram { background: rgba(220, 39, 67, 0.1); color: #dc2743; }
+    .platform-badge.youtube { background: rgba(255, 0, 0, 0.1); color: #ff0000; }
+    .platform-badge.facebook { background: rgba(24, 119, 242, 0.1); color: #1877f2; }
+    .platform-badge.twitter { background: rgba(29, 161, 242, 0.1); color: #1DA1F2; }
     
+    /* PREVIEW CARD */
     .preview-card {
-        margin-top: 24px;
-        padding: 20px;
-        background: #0a0a0a;
-        border: 1px solid #333;
-        border-radius: 16px;
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 20px;
         display: none;
     }
     
@@ -141,33 +125,18 @@
         display: block;
     }
     
-    .preview-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-    }
-    
-    .preview-header h4 {
-        font-size: 14px;
-        font-weight: 600;
-        color: #fff;
-    }
-    
-    .preview-thumbnail {
+    .preview-media {
         width: 100%;
-        max-width: 400px;
-        margin: 0 auto 16px;
-        border-radius: 12px;
-        overflow: hidden;
         background: #000;
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 200px;
         position: relative;
+        overflow: hidden;
     }
     
-    .preview-thumbnail img {
+    .preview-media img {
         width: 100%;
         height: auto;
         max-height: 400px;
@@ -175,158 +144,247 @@
         display: block;
     }
     
-    .preview-thumbnail .play-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60px;
-        height: 60px;
-        background: rgba(0,0,0,0.7);
-        border-radius: 50%;
+    .preview-media .embed-container {
+        width: 100%;
+        padding: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #fff;
-        font-size: 24px;
-        border: 2px solid rgba(255,255,255,0.3);
     }
     
-    .preview-thumbnail .embed-placeholder {
+    .preview-media .embed-container iframe {
+        max-width: 100%;
+        border-radius: 8px;
+    }
+    
+    .preview-media .embed-container blockquote {
+        margin: 0;
+        width: 100%;
+    }
+    
+    .preview-media .no-preview {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         padding: 40px;
-        background: #1a1a1a;
-        color: #888;
-        width: 100%;
+        color: #555;
+        text-align: center;
     }
     
-    .preview-caption {
-        color: #ddd;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 16px;
-        padding: 12px;
-        background: #111;
-        border-radius: 8px;
+    .preview-media .no-preview i {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.3;
     }
     
-    .preview-meta {
-        display: flex;
-        gap: 20px;
-        font-size: 12px;
-        color: #666;
+    .preview-media .no-preview span {
+        font-size: 13px;
     }
     
-    .preview-meta i { margin-right: 4px; }
-    
-    .smart-suggestion {
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        border-radius: 8px;
-        padding: 10px 14px;
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .smart-suggestion i { color: #3b82f6; font-size: 14px; }
-    .smart-suggestion span { color: #aaa; font-size: 13px; }
-    .smart-suggestion button {
-        margin-left: auto;
-        background: #3b82f6;
-        color: #fff;
-        border: none;
-        padding: 4px 12px;
+    .preview-media .platform-watermark {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 5px 10px;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(8px);
         border-radius: 20px;
         font-size: 11px;
-        cursor: pointer;
-    }
-    
-    .supported-platforms {
+        font-weight: 600;
+        color: #fff;
         display: flex;
-        gap: 12px;
-        justify-content: center;
-        margin-top: 24px;
-        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
     }
     
-    .platform-tag {
+    .preview-info {
+        padding: 16px 20px;
+    }
+    
+    .preview-info .preview-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 6px;
+        line-height: 1.4;
+    }
+    
+    .preview-info .preview-author {
+        font-size: 12px;
+        color: #3b82f6;
+        margin-bottom: 4px;
+    }
+    
+    .preview-info .preview-url {
+        font-size: 11px;
+        color: #555;
+        word-break: break-all;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #1a1a1a;
+    }
+    
+    /* FORM SECTION */
+    .form-section {
+        background: #111;
+        border: 1px solid #222;
+        border-radius: 20px;
+        padding: 20px;
+    }
+    
+    .form-section .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 16px;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #aaa;
+        margin-bottom: 6px;
+    }
+    
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px 14px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+        border-color: #3b82f6;
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 60px;
+        box-sizing: border-box;
+    }
+    
+    .form-group textarea:focus {
+        border-color: #3b82f6;
+    }
+    
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: #fff;
+        color: #0a0a0a;
+        border: none;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.2s;
+    }
+    
+    .submit-btn:active {
+        transform: scale(0.98);
+    }
+    
+    .submit-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    /* PLATFORM TABS */
+    .platform-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    
+    .platform-tab {
+        flex-shrink: 0;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        background: #1a1a1a;
+        color: #888;
+        border: 1px solid transparent;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 16px;
-        background: #1a1a1a;
-        border-radius: 30px;
-        font-size: 13px;
-        color: #aaa;
     }
     
-    .platform-tag i { font-size: 16px; }
-    .platform-tag.tiktok i { color: #00f2ea; }
-    .platform-tag.instagram i { 
-        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    .platform-tag.youtube i { color: #ff0000; }
-    .platform-tag.facebook i { color: #1877f2; }
-    .platform-tag.twitter i { color: #1DA1F2; }
-    
-    .info-box {
-        margin-top: 30px;
-        padding: 20px;
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 16px;
+    .platform-tab:hover {
+        background: #222;
+        color: #fff;
     }
     
-    .info-box h4 {
-        font-size: 14px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .platform-tab.active {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.3);
+        color: #3b82f6;
     }
     
-    .info-box ul {
-        color: #888;
-        font-size: 13px;
-        line-height: 1.8;
-        padding-left: 20px;
-    }
-    
-    .info-box .highlight { color: #3b82f6; }
-    
-    .loading-spinner {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border: 2px solid rgba(255,255,255,0.2);
-        border-radius: 50%;
-        border-top-color: #3b82f6;
-        animation: spin 0.8s linear infinite;
-        margin-right: 8px;
-    }
-    
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
+    /* MESSAGES */
     .alert {
         padding: 14px 18px;
         border-radius: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         display: flex;
         align-items: center;
         gap: 10px;
+        font-size: 13px;
     }
     
     .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; }
     .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
     .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; }
-    .alert-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; }
+    
+    @media (max-width: 500px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .preview-media {
+            min-height: 160px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -335,174 +393,147 @@
 <div class="import-container">
     
     <div class="import-header">
-        <div class="import-icon">
+        <div class="icon-circle">
             <i class="fas fa-cloud-upload-alt"></i>
         </div>
-        <h1 class="import-title">Quick Import</h1>
-        <p class="import-subtitle">Paste a link — we'll save it to your journey</p>
+        <h1>Import Content</h1>
+        <p>Paste a link from any platform — we'll save it to your journey</p>
     </div>
     
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
-                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
                 {{ message }}
             </div>
         {% endfor %}
     {% endif %}
     
     {% if form.errors %}
-    <ul class="errorlist">
+    <div class="alert alert-error">
+        <i class="fas fa-exclamation-circle"></i>
         {% for field, errors in form.errors.items %}
             {% for error in errors %}
-                <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+                {{ error }}
             {% endfor %}
         {% endfor %}
-    </ul>
-    {% endif %}
-    
-    {# Warning for existing content #}
-    {% if form.existing_activity %}
-    <div class="alert alert-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <strong>Day {{ form.day_number.value }} already has content.</strong> Importing will update/replace the existing content.
     </div>
     {% endif %}
     
-    <form method="post" class="import-card" id="importForm">
+    <!-- PLATFORM TABS -->
+    <div class="platform-tabs">
+        <div class="platform-tab active" data-platform="all">
+            <i class="fas fa-globe"></i> All
+        </div>
+        <div class="platform-tab" data-platform="tiktok">
+            <i class="fab fa-tiktok"></i> TikTok
+        </div>
+        <div class="platform-tab" data-platform="instagram">
+            <i class="fab fa-instagram"></i> Instagram
+        </div>
+        <div class="platform-tab" data-platform="youtube">
+            <i class="fab fa-youtube"></i> YouTube
+        </div>
+        <div class="platform-tab" data-platform="twitter">
+            <i class="fab fa-x-twitter"></i> X/Twitter
+        </div>
+        <div class="platform-tab" data-platform="facebook">
+            <i class="fab fa-facebook"></i> Facebook
+        </div>
+    </div>
+    
+    <form method="post" id="importForm">
         {% csrf_token %}
         
-        <div class="form-group">
-            <label for="id_url">
-                <i class="fas fa-link"></i> Video/Post URL
-            </label>
+        <!-- URL INPUT -->
+        <div class="url-bar">
             <input type="url" name="url" id="id_url" 
-                   placeholder="Paste link from TikTok, Instagram, YouTube, Facebook, or X/Twitter..."
+                   placeholder="Paste your link here — TikTok, Instagram, YouTube, X, Facebook..."
                    value="{{ form.url.value|default:'' }}"
                    required autofocus>
-            <div id="platformIndicator" class="platform-detected" style="display: none;"></div>
+            <button type="button" class="paste-btn" onclick="pasteFromClipboard()">
+                <i class="fas fa-paste"></i> Paste
+            </button>
         </div>
         
-        {# Preview Card #}
+        <div id="platformBadge" style="display:none;"></div>
+        
+        <!-- PREVIEW CARD -->
         <div class="preview-card" id="previewCard">
-            <div class="preview-header">
-                <h4><i class="fas fa-eye"></i> Preview</h4>
-                <span id="contentType"></span>
-            </div>
-            <div class="preview-thumbnail" id="previewThumbnail">
-                <div class="embed-placeholder">
-                    <i class="fas fa-spinner fa-spin"></i> Loading preview...
+            <div class="preview-media" id="previewMedia">
+                <div class="no-preview">
+                    <i class="fas fa-link"></i>
+                    <span>Paste a link to see a preview</span>
                 </div>
             </div>
-            <div class="preview-caption" id="previewCaption">
-                Caption will appear here...
-            </div>
-            <div class="preview-meta">
-                <span><i class="fas fa-user"></i> <span id="previewAuthor">-</span></span>
-                <span><i class="fas fa-calendar"></i> <span id="previewDate">-</span></span>
+            <div class="preview-info">
+                <div class="preview-title" id="previewTitle">-</div>
+                <div class="preview-author" id="previewAuthor"></div>
+                <div class="preview-url" id="previewUrlDisplay"></div>
             </div>
         </div>
         
-        <div class="form-group">
-            <label for="caption">
-                <i class="fas fa-pen"></i> Caption
-            </label>
-            <textarea name="caption" id="caption" 
-                      placeholder="Describe this update...">{{ form.caption.value|default:'' }}</textarea>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label for="id_journey">
-                    <i class="fas fa-flag-checkered"></i> Journey
-                </label>
-                <select name="journey" id="id_journey" required>
-                    <option value="">Select Journey</option>
-                    {% for journey in form.journey.field.queryset %}
-                    <option value="{{ journey.id }}" 
-                            {% if form.journey.value == journey.id|stringformat:"s" %}selected{% endif %}
-                            data-current-day="{{ journey.get_current_day }}"
-                            data-duration="{{ journey.duration }}">
-                        {{ journey.title }} (Day {{ journey.get_current_day }}/{{ journey.duration }})
-                    </option>
-                    {% endfor %}
-                </select>
-                <div id="journeySuggestion" class="smart-suggestion" style="display: none;">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Last used: <strong id="lastUsedJourney"></strong></span>
-                    <button type="button" onclick="useLastJourney()">Use</button>
+        <!-- FORM FIELDS -->
+        <div class="form-section">
+            <div class="section-label">Journey Details</div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fas fa-flag-checkered"></i> Journey</label>
+                    <select name="journey" id="id_journey" required>
+                        <option value="">Select Journey</option>
+                        {% for journey in form.journey.field.queryset %}
+                        <option value="{{ journey.id }}" 
+                                {% if form.journey.value == journey.id|stringformat:"s" %}selected{% endif %}
+                                data-current-day="{{ journey.get_current_day }}"
+                                data-duration="{{ journey.duration }}">
+                            {{ journey.title }} (Day {{ journey.get_current_day }}/{{ journey.duration }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-calendar-day"></i> Day Number</label>
+                    <input type="number" name="day_number" id="id_day_number" 
+                           value="{{ form.day_number.value|default:'' }}"
+                           min="1" placeholder="e.g., 5" required>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="id_day_number">
-                    <i class="fas fa-calendar-day"></i> Day/Milestone
-                </label>
-                <input type="number" name="day_number" id="id_day_number" 
-                       value="{{ form.day_number.value|default:'' }}"
-                       min="1" placeholder="e.g., 5" required>
-                <div id="daySuggestion" class="smart-suggestion" style="display: none;">
-                    <i class="fas fa-magic"></i>
-                    <span>Suggested: Day <strong id="suggestedDay"></strong></span>
-                    <button type="button" onclick="useSuggestedDay()">Use</button>
-                </div>
+                <label><i class="fas fa-pen"></i> Caption</label>
+                <textarea name="caption" id="caption" 
+                          placeholder="Add a description for this update...">{{ form.caption.value|default:'' }}</textarea>
             </div>
+            
+            <input type="hidden" name="detected_platform" id="detectedPlatform">
+            <input type="hidden" name="embed_html" id="embedHtml">
+            <input type="hidden" name="thumbnail_url" id="thumbnailUrl">
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <i class="fas fa-plus-circle"></i> Add to Journey
+            </button>
         </div>
-        
-        <input type="hidden" name="detected_platform" id="detectedPlatform">
-        <input type="hidden" name="embed_html" id="embedHtml">
-        <input type="hidden" name="thumbnail_url" id="thumbnailUrl">
-        
-        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-            <i class="fas fa-cloud-upload-alt"></i> 
-            {% if form.existing_activity %}Update{% else %}Add to{% endif %} Journey
-        </button>
-        
-        <p style="text-align: center; margin-top: 16px; color: #888; font-size: 13px;">
-            <i class="fas fa-info-circle"></i> 
-            Link will be saved — you can add media later
-        </p>
     </form>
-    
-    <div class="supported-platforms">
-        <span class="platform-tag tiktok"><i class="fab fa-tiktok"></i> TikTok</span>
-        <span class="platform-tag instagram"><i class="fab fa-instagram"></i> Instagram</span>
-        <span class="platform-tag youtube"><i class="fab fa-youtube"></i> YouTube</span>
-        <span class="platform-tag facebook"><i class="fab fa-facebook"></i> Facebook</span>
-        <span class="platform-tag twitter"><i class="fab fa-x-twitter"></i> X/Twitter</span>
-    </div>
-    
-    <div class="info-box">
-        <h4><i class="fas fa-info-circle" style="color: #3b82f6;"></i> How It Works</h4>
-        <ul>
-            <li><span class="highlight">Paste any link</span> — we'll detect the platform</li>
-            <li><span class="highlight">Caption auto-fills</span> from the original post</li>
-            <li><span class="highlight">Click Add</span> — link is saved to your journey</li>
-            <li><span class="highlight">Upload media later</span> or keep as reference</li>
-        </ul>
-    </div>
     
 </div>
 
 <script>
     const urlInput = document.getElementById('id_url');
-    const platformIndicator = document.getElementById('platformIndicator');
+    const platformBadge = document.getElementById('platformBadge');
     const detectedPlatform = document.getElementById('detectedPlatform');
     const previewCard = document.getElementById('previewCard');
-    const previewThumbnail = document.getElementById('previewThumbnail');
-    const previewCaption = document.getElementById('previewCaption');
+    const previewMedia = document.getElementById('previewMedia');
+    const previewTitle = document.getElementById('previewTitle');
     const previewAuthor = document.getElementById('previewAuthor');
-    const previewDate = document.getElementById('previewDate');
-    const contentType = document.getElementById('contentType');
+    const previewUrlDisplay = document.getElementById('previewUrlDisplay');
     const captionInput = document.getElementById('caption');
     const journeySelect = document.getElementById('id_journey');
     const dayInput = document.getElementById('id_day_number');
-    const journeySuggestion = document.getElementById('journeySuggestion');
-    const daySuggestion = document.getElementById('daySuggestion');
-    const suggestedDay = document.getElementById('suggestedDay');
-    const lastUsedJourney = document.getElementById('lastUsedJourney');
     const embedHtmlInput = document.getElementById('embedHtml');
     const thumbnailUrlInput = document.getElementById('thumbnailUrl');
+    const submitBtn = document.getElementById('submitBtn');
     
     const platformPatterns = {
         tiktok: /tiktok\.com/,
@@ -520,6 +551,14 @@
         twitter: 'X/Twitter'
     };
     
+    const platformIcons = {
+        tiktok: 'fa-tiktok',
+        instagram: 'fa-instagram',
+        youtube: 'fa-youtube',
+        facebook: 'fa-facebook',
+        twitter: 'fa-x-twitter'
+    };
+    
     function detectPlatform(url) {
         for (const platform in platformPatterns) {
             if (platformPatterns[platform].test(url)) return platform;
@@ -527,61 +566,103 @@
         return null;
     }
     
-    function updatePlatformIndicator(platform) {
+    function updatePlatformBadge(platform) {
         if (!platform) {
-            platformIndicator.style.display = 'none';
+            platformBadge.style.display = 'none';
             return;
         }
-        const icons = {
-            tiktok: '<i class="fab fa-tiktok"></i>',
-            instagram: '<i class="fab fa-instagram"></i>',
-            youtube: '<i class="fab fa-youtube"></i>',
-            facebook: '<i class="fab fa-facebook"></i>',
-            twitter: '<i class="fab fa-x-twitter"></i>'
-        };
-        platformIndicator.className = 'platform-detected ' + platform;
-        platformIndicator.innerHTML = icons[platform] + ' Detected: ' + platformNames[platform] + ' post';
-        platformIndicator.style.display = 'inline-flex';
+        platformBadge.className = 'platform-badge ' + platform;
+        platformBadge.innerHTML = '<i class="fab ' + platformIcons[platform] + '"></i> ' + platformNames[platform] + ' Post';
+        platformBadge.style.display = 'inline-flex';
         detectedPlatform.value = platform;
+        
+        // Update tabs
+        document.querySelectorAll('.platform-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.platform === platform);
+        });
     }
     
     async function fetchPreview(url, platform) {
         previewCard.classList.add('active');
-        previewThumbnail.innerHTML = '<div class="embed-placeholder"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        previewMedia.innerHTML = '<div class="no-preview"><i class="fas fa-spinner fa-spin"></i><span>Loading preview...</span></div>';
+        previewTitle.textContent = 'Loading...';
+        previewAuthor.textContent = '';
+        previewUrlDisplay.textContent = url;
+        submitBtn.disabled = true;
         
         try {
             const response = await fetch('/api/preview/?url=' + encodeURIComponent(url));
             const data = await response.json();
             
             if (data.success) {
-                if (data.thumbnail_url) {
-                    previewThumbnail.innerHTML = '<div style="position:relative; width:100%;"><img src="' + data.thumbnail_url + '" alt="Preview" style="width:100%; border-radius:12px;"><div class="play-overlay"><i class="fab fa-' + platform + '"></i></div></div>';
-                    thumbnailUrlInput.value = data.thumbnail_url;
-                } else if (data.html) {
-                    previewThumbnail.innerHTML = data.html;
+                // Render media
+                if (data.html) {
+                    previewMedia.innerHTML = '<div class="embed-container">' + data.html + '</div>';
                     embedHtmlInput.value = data.html;
+                    
+                    // Load embed scripts if needed
+                    if (platform === 'instagram') {
+                        if (window.instgrm) window.instgrm.Embeds.process();
+                    }
+                    if (platform === 'tiktok') {
+                        const script = document.createElement('script');
+                        script.src = 'https://www.tiktok.com/embed.js';
+                        script.async = true;
+                        document.body.appendChild(script);
+                    }
+                } else if (data.thumbnail_url) {
+                    previewMedia.innerHTML = '<img src="' + data.thumbnail_url + '" alt="Preview">' +
+                        '<div class="platform-watermark"><i class="fab ' + platformIcons[platform] + '"></i> ' + platformNames[platform] + '</div>';
+                    thumbnailUrlInput.value = data.thumbnail_url;
                 } else {
-                    previewThumbnail.innerHTML = '<div class="embed-placeholder"><i class="fab fa-' + platform + '"></i> ' + platformNames[platform] + ' Post</div>';
+                    // Show platform card with context
+                    previewMedia.innerHTML = 
+                        '<div class="no-preview">' +
+                            '<i class="fab ' + platformIcons[platform] + '" style="opacity:0.5;"></i>' +
+                            '<span style="margin-top:8px;">' + platformNames[platform] + ' Post</span>' +
+                            '<span style="font-size:11px;margin-top:4px;color:#666;">Link will be saved with embed</span>' +
+                        '</div>';
                 }
                 
-                var title = data.title || platformNames[platform] + ' Post';
-                previewCaption.textContent = title;
-                if (!captionInput.value) captionInput.value = title;
+                // Update info
+                previewTitle.textContent = data.title || platformNames[platform] + ' Post';
+                previewAuthor.textContent = data.author_name || '';
+                if (previewAuthor.textContent) {
+                    previewAuthor.style.display = 'block';
+                } else {
+                    previewAuthor.style.display = 'none';
+                }
                 
-                previewAuthor.textContent = data.author_name || '@' + platform;
-                previewDate.textContent = 'Recently posted';
-                contentType.textContent = (platform === 'youtube' || platform === 'tiktok') ? 'Video' : 'Post';
+                // Auto-fill caption if empty
+                if (!captionInput.value && data.title) {
+                    captionInput.value = data.title;
+                }
                 
                 if (!data.html) embedHtmlInput.value = '';
                 
+                submitBtn.disabled = false;
+                
             } else {
-                previewThumbnail.innerHTML = '<div class="embed-placeholder"><i class="fab fa-' + platform + '"></i> ' + platformNames[platform] + ' Post</div>';
-                previewCaption.textContent = 'Ready to save — link will be stored';
+                previewMedia.innerHTML = 
+                    '<div class="no-preview">' +
+                        '<i class="fab ' + platformIcons[platform] + '" style="opacity:0.5;"></i>' +
+                        '<span style="margin-top:8px;">Link will be saved</span>' +
+                    '</div>';
+                previewTitle.textContent = platformNames[platform] + ' Post';
+                previewAuthor.textContent = '';
+                previewAuthor.style.display = 'none';
+                submitBtn.disabled = false;
             }
         } catch (error) {
             console.error('Preview error:', error);
-            previewThumbnail.innerHTML = '<div class="embed-placeholder"><i class="fab fa-' + platform + '"></i> ' + platformNames[platform] + ' Post</div>';
-            previewCaption.textContent = 'Ready to save — link will be stored';
+            previewMedia.innerHTML = 
+                '<div class="no-preview">' +
+                    '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>' +
+                    '<span style="margin-top:8px;">Could not load preview</span>' +
+                    '<span style="font-size:11px;margin-top:4px;color:#666;">Link will still be saved</span>' +
+                '</div>';
+            previewTitle.textContent = platformNames[platform] + ' Post';
+            submitBtn.disabled = false;
         }
     }
     
@@ -592,60 +673,64 @@
         var platform = detectPlatform(url);
         
         if (platform) {
-            updatePlatformIndicator(platform);
-            debounceTimer = setTimeout(function() { fetchPreview(url, platform); }, 500);
+            updatePlatformBadge(platform);
+            debounceTimer = setTimeout(function() { fetchPreview(url, platform); }, 600);
         } else {
-            platformIndicator.style.display = 'none';
+            platformBadge.style.display = 'none';
             previewCard.classList.remove('active');
+            submitBtn.disabled = false;
         }
     });
     
+    // Platform tab clicks
+    document.querySelectorAll('.platform-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            if (this.dataset.platform !== 'all') {
+                urlInput.placeholder = 'Paste your ' + platformNames[this.dataset.platform] + ' link here...';
+            } else {
+                urlInput.placeholder = 'Paste your link here — TikTok, Instagram, YouTube, X, Facebook...';
+            }
+            urlInput.focus();
+        });
+    });
+    
+    // Paste button
+    function pasteFromClipboard() {
+        navigator.clipboard.readText().then(text => {
+            urlInput.value = text;
+            urlInput.dispatchEvent(new Event('input'));
+        }).catch(() => {
+            urlInput.focus();
+        });
+    }
+    
+    // Journey change — suggest day
     journeySelect.addEventListener('change', function() {
         var selected = this.options[this.selectedIndex];
         var currentDay = selected.dataset.currentDay;
-        var duration = selected.dataset.duration;
-        if (currentDay) {
-            suggestedDay.textContent = currentDay + ' (of ' + duration + ')';
-            daySuggestion.style.display = 'flex';
+        if (currentDay && !dayInput.value) {
+            dayInput.value = currentDay;
+            dayInput.style.borderColor = '#22c55e';
+            setTimeout(() => { dayInput.style.borderColor = '#333'; }, 1500);
         }
         if (this.value) {
-            localStorage.setItem('lastJourneyId', this.value);
-            localStorage.setItem('lastJourneyName', selected.text);
+            localStorage.setItem('lastImportJourneyId', this.value);
         }
     });
     
-    function loadLastJourney() {
-        var lastId = localStorage.getItem('lastJourneyId');
-        var lastName = localStorage.getItem('lastJourneyName');
-        if (lastId && lastName) {
-            lastUsedJourney.textContent = lastName;
-            journeySuggestion.style.display = 'flex';
-        }
+    // Load last used journey
+    var lastId = localStorage.getItem('lastImportJourneyId');
+    if (lastId && !journeySelect.value) {
+        journeySelect.value = lastId;
+        journeySelect.dispatchEvent(new Event('change'));
     }
     
-    function useLastJourney() {
-        var lastId = localStorage.getItem('lastJourneyId');
-        if (lastId) {
-            journeySelect.value = lastId;
-            journeySelect.dispatchEvent(new Event('change'));
-            journeySuggestion.style.display = 'none';
-        }
+    // Initial load
+    if (urlInput.value) {
+        urlInput.dispatchEvent(new Event('input'));
     }
-    
-    function useSuggestedDay() {
-        var dayText = suggestedDay.textContent.split(' ')[0];
-        dayInput.value = parseInt(dayText) || 1;
-        daySuggestion.style.display = 'none';
-    }
-    
-    dayInput.addEventListener('input', function() {
-        var selected = journeySelect.options[journeySelect.selectedIndex];
-        var duration = parseInt(selected.dataset.duration) || 365;
-        this.style.borderColor = parseInt(this.value) > duration ? '#ef4444' : '#333';
-    });
-    
-    loadLastJourney();
-    if (urlInput.value) urlInput.dispatchEvent(new Event('input'));
 </script>
 
 {% endblock %}
