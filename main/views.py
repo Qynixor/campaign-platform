@@ -2185,3 +2185,23 @@ class CustomPasswordResetDoneView(PasswordResetDoneView):
         context['reset_link'] = self.request.session.get('reset_link', None)
         context['reset_email'] = self.request.session.get('reset_email', None)
         return context
+
+
+# your_app/views.py
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
+
+@require_POST
+def toggle_theme(request):
+    """Single endpoint for all templates to toggle theme"""
+    try:
+        data = json.loads(request.body)
+        theme = data.get('theme', 'light')
+        
+        response = JsonResponse({'success': True, 'theme': theme})
+        response.set_cookie('theme', theme, max_age=365*24*60*60, httponly=True, samesite='Lax')
+        return response
+    except:
+        return JsonResponse({'success': False}, status=400)

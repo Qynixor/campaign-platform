@@ -16,8 +16,8 @@
     .auth-card {
         max-width: 460px;
         width: 100%;
-        background: #111;
-        border: 1px solid #222;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
         border-radius: 24px;
         padding: 40px;
     }
@@ -31,10 +31,11 @@
         font-size: 28px;
         font-weight: 700;
         margin-bottom: 8px;
+        color: var(--text-primary);
     }
     
     .auth-subtitle {
-        color: #888;
+        color: var(--text-secondary);
         font-size: 14px;
     }
     
@@ -47,27 +48,28 @@
         font-size: 14px;
         font-weight: 500;
         margin-bottom: 8px;
-        color: #aaa;
+        color: var(--text-secondary);
     }
     
     .auth-form input {
         width: 100%;
         padding: 14px 16px;
-        background: #0a0a0a;
-        border: 1px solid #333;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
         border-radius: 12px;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 16px;
         outline: none;
         transition: border-color 0.2s;
+        box-sizing: border-box;
     }
     
     .auth-form input:focus {
-        border-color: #3b82f6;
+        border-color: var(--accent);
     }
     
     .auth-form input::placeholder {
-        color: #555;
+        color: var(--text-muted);
     }
     
     .form-row {
@@ -78,15 +80,15 @@
     
     .form-hint {
         font-size: 12px;
-        color: #666;
+        color: var(--text-muted);
         margin-top: 4px;
     }
     
     .auth-btn {
         width: 100%;
         padding: 14px;
-        background: #fff;
-        color: #0a0a0a;
+        background: var(--accent);
+        color: #fff;
         border: none;
         border-radius: 12px;
         font-size: 16px;
@@ -97,18 +99,24 @@
     }
     
     .auth-btn:hover {
-        background: #e5e5e5;
+        background: var(--accent-hover);
+        transform: scale(1.01);
+    }
+    
+    .auth-btn:active {
+        transform: scale(0.98);
     }
     
     .auth-footer {
         text-align: center;
-        color: #888;
+        color: var(--text-secondary);
         font-size: 14px;
     }
     
     .auth-footer a {
-        color: #3b82f6;
+        color: var(--accent);
         font-weight: 500;
+        text-decoration: none;
     }
     
     .auth-footer a:hover {
@@ -146,7 +154,7 @@
         border-radius: 12px;
         padding: 14px 16px;
         margin-bottom: 20px;
-        color: #3b82f6;
+        color: var(--accent);
         font-size: 14px;
         display: flex;
         align-items: center;
@@ -155,6 +163,90 @@
     
     .claim-notice i {
         font-size: 20px;
+    }
+    
+    /* Password strength indicator */
+    .password-strength {
+        margin-top: 8px;
+    }
+    
+    .strength-bar {
+        height: 3px;
+        border-radius: 3px;
+        margin-top: 6px;
+        transition: width 0.3s ease;
+        background: var(--border-color);
+    }
+    
+    .strength-weak {
+        background: #ef4444;
+        width: 25%;
+    }
+    
+    .strength-fair {
+        background: #f59e0b;
+        width: 50%;
+    }
+    
+    .strength-good {
+        background: var(--accent);
+        width: 75%;
+    }
+    
+    .strength-strong {
+        background: #22c55e;
+        width: 100%;
+    }
+    
+    .strength-text {
+        font-size: 11px;
+        margin-top: 4px;
+    }
+    
+    /* Terms link styling */
+    .terms-links {
+        margin-top: 16px;
+        font-size: 12px;
+        text-align: center;
+        color: var(--text-muted);
+    }
+    
+    .terms-links a {
+        color: var(--accent);
+        text-decoration: none;
+    }
+    
+    .terms-links a:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 480px) {
+        .auth-container {
+            padding: 20px 16px;
+        }
+        
+        .auth-card {
+            padding: 24px 20px;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        
+        .auth-form input {
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+        
+        .auth-btn {
+            padding: 12px;
+            font-size: 14px;
+        }
     }
 </style>
 {% endblock %}
@@ -185,7 +277,7 @@
         </ul>
         {% endif %}
         
-        <form method="post" class="auth-form">
+        <form method="post" class="auth-form" id="signupForm">
             {% csrf_token %}
             
             {% if next_url %}
@@ -198,18 +290,19 @@
                        placeholder="Choose a username" 
                        value="{{ form.username.value|default:'' }}"
                        required autofocus>
-                <p class="form-hint">Letters, numbers, and underscores only.</p>
+                <p class="form-hint"><i class="fas fa-info-circle"></i> Letters, numbers, and underscores only. 3-150 characters.</p>
                 {% if form.username.errors %}
                     <p class="field-error">{{ form.username.errors.0 }}</p>
                 {% endif %}
             </div>
             
             <div class="form-group">
-                <label for="id_email">Email</label>
+                <label for="id_email">Email address</label>
                 <input type="email" name="email" id="id_email" 
                        placeholder="your@email.com" 
                        value="{{ form.email.value|default:'' }}"
                        required>
+                <p class="form-hint"><i class="fas fa-envelope"></i> We'll never share your email with anyone else.</p>
                 {% if form.email.errors %}
                     <p class="field-error">{{ form.email.errors.0 }}</p>
                 {% endif %}
@@ -221,24 +314,28 @@
                     <input type="password" name="password1" id="id_password1" 
                            placeholder="Create password" 
                            required>
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar" id="strengthBar"></div>
+                        <div class="strength-text" id="strengthText"></div>
+                    </div>
                     {% if form.password1.errors %}
                         <p class="field-error">{{ form.password1.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
                 <div class="form-group">
-                    <label for="id_password2">Confirm</label>
+                    <label for="id_password2">Confirm password</label>
                     <input type="password" name="password2" id="id_password2" 
                            placeholder="Confirm password" 
                            required>
+                    <p class="form-hint" id="confirmHint"></p>
                     {% if form.password2.errors %}
                         <p class="field-error">{{ form.password2.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
           
-            
-            <button type="submit" class="auth-btn">
+            <button type="submit" class="auth-btn" id="submitBtn">
                 <i class="fas fa-user-plus"></i> 
                 {% if next_url and 'claim' in next_url %}
                     Create Account & Claim Journey
@@ -253,12 +350,121 @@
             <a href="{% url 'login' %}{% if next_url %}?next={{ next_url }}{% endif %}">Log in</a>
         </div>
         
-        <div class="auth-footer" style="margin-top: 16px; font-size: 12px;">
+        <div class="terms-links">
             By signing up, you agree to our 
-            <a href="{% url 'terms' %}">Terms</a> and 
+            <a href="{% url 'terms' %}">Terms of Service</a> and 
             <a href="{% url 'privacy' %}">Privacy Policy</a>.
         </div>
     </div>
 </div>
 
+<script>
+    // Password strength checker
+    const passwordInput = document.getElementById('id_password1');
+    const confirmInput = document.getElementById('id_password2');
+    const submitBtn = document.getElementById('submitBtn');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+    const confirmHint = document.getElementById('confirmHint');
+    
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        
+        // Length check
+        if (password.length >= 8) strength++;
+        // Uppercase check
+        if (/[A-Z]/.test(password)) strength++;
+        // Lowercase check
+        if (/[a-z]/.test(password)) strength++;
+        // Number check
+        if (/[0-9]/.test(password)) strength++;
+        // Special character check
+        if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+        
+        // Update strength bar and text
+        if (password.length === 0) {
+            strengthBar.className = 'strength-bar';
+            strengthText.textContent = '';
+            return 0;
+        }
+        
+        if (strength <= 2) {
+            strengthBar.className = 'strength-bar strength-weak';
+            strengthText.textContent = 'Weak password';
+            strengthText.style.color = '#ef4444';
+        } else if (strength <= 3) {
+            strengthBar.className = 'strength-bar strength-fair';
+            strengthText.textContent = 'Fair password';
+            strengthText.style.color = '#f59e0b';
+        } else if (strength <= 4) {
+            strengthBar.className = 'strength-bar strength-good';
+            strengthText.textContent = 'Good password';
+            strengthText.style.color = 'var(--accent)';
+        } else {
+            strengthBar.className = 'strength-bar strength-strong';
+            strengthText.textContent = 'Strong password!';
+            strengthText.style.color = '#22c55e';
+        }
+        
+        return strength;
+    }
+    
+    function checkPasswordMatch() {
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        
+        if (confirm.length === 0) {
+            confirmHint.textContent = '';
+            return true;
+        }
+        
+        if (password === confirm) {
+            confirmHint.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match';
+            confirmHint.style.color = '#22c55e';
+            return true;
+        } else {
+            confirmHint.innerHTML = '<i class="fas fa-exclamation-circle"></i> Passwords do not match';
+            confirmHint.style.color = '#ef4444';
+            return false;
+        }
+    }
+    
+    function validateForm() {
+        const password = passwordInput.value;
+        const confirm = confirmInput.value;
+        const strength = checkPasswordStrength(password);
+        
+        if (password.length === 0) {
+            submitBtn.disabled = true;
+            return false;
+        }
+        
+        if (strength < 3) {
+            submitBtn.disabled = true;
+            return false;
+        }
+        
+        if (password !== confirm) {
+            submitBtn.disabled = true;
+            return false;
+        }
+        
+        submitBtn.disabled = false;
+        return true;
+    }
+    
+    passwordInput.addEventListener('input', function() {
+        checkPasswordStrength(this.value);
+        checkPasswordMatch();
+        validateForm();
+    });
+    
+    confirmInput.addEventListener('input', function() {
+        checkPasswordMatch();
+        validateForm();
+    });
+    
+    // Initial validation
+    validateForm();
+</script>
 {% endblock %}

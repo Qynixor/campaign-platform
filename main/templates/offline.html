@@ -14,39 +14,110 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0a0a0a;
+            background: var(--bg-primary, #0a0a0a);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
+            color: var(--text-primary, #fff);
             padding: 20px;
+        }
+        
+        /* Theme variables for fallback */
+        :root {
+            --bg-primary: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-color: #222222;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+        
+        /* Dark mode (default) */
+        [data-theme="dark"] {
+            --bg-primary: #0a0a0a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-color: #222222;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+        
+        /* Light mode support */
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --text-primary: #111111;
+            --text-secondary: #555555;
+            --border-color: #e0e0e0;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+        
+        @media (prefers-color-scheme: light) {
+            :root:not([data-theme]) {
+                --bg-primary: #f5f5f5;
+                --text-primary: #111111;
+                --text-secondary: #555555;
+                --border-color: #e0e0e0;
+                --accent: #3b82f6;
+                --accent-hover: #2563eb;
+            }
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
         
         .offline-container {
             text-align: center;
             max-width: 400px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .offline-icon {
             font-size: 80px;
             margin-bottom: 24px;
-            color: #3b82f6;
+            color: var(--accent);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
         }
         
         h1 {
             font-size: 28px;
             margin-bottom: 16px;
+            font-weight: 700;
         }
         
         p {
-            color: #888;
+            color: var(--text-secondary);
             margin-bottom: 32px;
             line-height: 1.6;
         }
         
         .retry-btn {
-            background: #3b82f6;
+            background: var(--accent);
             color: white;
             border: none;
             padding: 12px 32px;
@@ -54,37 +125,86 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
         
         .retry-btn:hover {
-            background: #2563eb;
+            background: var(--accent-hover);
+            transform: scale(1.02);
+        }
+        
+        .retry-btn:active {
+            transform: scale(0.98);
         }
         
         .cached-pages {
             margin-top: 40px;
             padding-top: 30px;
-            border-top: 1px solid #222;
+            border-top: 1px solid var(--border-color);
         }
         
         .cached-pages h3 {
             font-size: 16px;
             margin-bottom: 16px;
-            color: #aaa;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         
         .cached-link {
             display: block;
-            color: #3b82f6;
+            color: var(--accent);
             text-decoration: none;
             margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background 0.2s;
+            padding: 10px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
         }
         
         .cached-link:hover {
             background: rgba(59, 130, 246, 0.1);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+        
+        .cached-link i {
+            margin-right: 8px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+        
+        @media (max-width: 480px) {
+            .offline-icon {
+                font-size: 60px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            p {
+                font-size: 14px;
+            }
+            
+            .retry-btn {
+                padding: 10px 28px;
+                font-size: 14px;
+            }
+            
+            .cached-link {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -94,23 +214,137 @@
         <h1>You're Offline</h1>
         <p>Don't worry! You can still view previously visited pages and continue your journey once you're back online.</p>
         
-        <button class="retry-btn" onclick="window.location.reload()">
-            Try Again
+        <button class="retry-btn" onclick="retryConnection()">
+            🔄 Try Again
         </button>
         
         <div class="cached-pages">
-            <h3>Cached Pages (Available Offline)</h3>
-            <a href="/" class="cached-link">🏠 Home</a>
-            <a href="/discover/" class="cached-link">🔍 Discover</a>
-            <a href="/dashboard/" class="cached-link">📊 Dashboard</a>
+            <h3>📁 Cached Pages (Available Offline)</h3>
+            <a href="/" class="cached-link">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="/discover/" class="cached-link">
+                <i class="fas fa-compass"></i> Discover
+            </a>
+            <a href="/dashboard/" class="cached-link">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+        </div>
+        
+        <div class="status-badge" id="connectionStatus">
+            <i class="fas fa-wifi-slash"></i> No internet connection
         </div>
     </div>
     
     <script>
         // Check if we're back online
+        function retryConnection() {
+            const btn = document.querySelector('.retry-btn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            btn.disabled = true;
+            
+            // Try to fetch a lightweight endpoint
+            fetch('/health/', { 
+                method: 'HEAD',
+                cache: 'no-store',
+                timeout: 3000
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Still offline');
+                }
+            })
+            .catch(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                updateConnectionStatus(false);
+                
+                // Show temporary error
+                const statusDiv = document.getElementById('connectionStatus');
+                statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Still offline — check your connection';
+                statusDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+                statusDiv.style.color = '#ef4444';
+                
+                setTimeout(() => {
+                    statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> No internet connection';
+                    statusDiv.style.background = '';
+                    statusDiv.style.color = '';
+                }, 3000);
+            });
+        }
+        
+        function updateConnectionStatus(isOnline) {
+            const statusDiv = document.getElementById('connectionStatus');
+            if (isOnline) {
+                statusDiv.innerHTML = '<i class="fas fa-wifi"></i> Connection restored! Refreshing...';
+                statusDiv.style.background = 'rgba(34, 197, 94, 0.1)';
+                statusDiv.style.color = '#22c55e';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        }
+        
+        // Listen for online/offline events
         window.addEventListener('online', () => {
-            window.location.reload();
+            updateConnectionStatus(true);
         });
+        
+        window.addEventListener('offline', () => {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> You went offline';
+            statusDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+            statusDiv.style.color = '#f59e0b';
+            
+            setTimeout(() => {
+                if (!navigator.onLine) {
+                    statusDiv.innerHTML = '<i class="fas fa-wifi-slash"></i> No internet connection';
+                    statusDiv.style.background = '';
+                    statusDiv.style.color = '';
+                }
+            }, 3000);
+        });
+        
+        // Try to detect theme from parent or localStorage
+        function detectTheme() {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) {
+                // Fallback to dark mode
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        }
+        
+        detectTheme();
+        
+        // Listen for theme changes from parent
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'theme') {
+                if (e.newValue) {
+                    document.documentElement.setAttribute('data-theme', e.newValue);
+                }
+            }
+        });
+        
+        // Service worker registration for offline caching
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+                console.log('ServiceWorker registered for offline page');
+            }).catch(err => {
+                console.log('ServiceWorker registration failed:', err);
+            });
+        }
     </script>
 </body>
 </html>

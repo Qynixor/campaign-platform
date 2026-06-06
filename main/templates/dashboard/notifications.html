@@ -9,6 +9,7 @@
         max-width: 700px;
         margin: 0 auto;
         padding: 30px 20px;
+        min-height: calc(100vh - 200px);
     }
     
     .notifications-header {
@@ -23,6 +24,7 @@
     .notifications-title {
         font-size: 28px;
         font-weight: 700;
+        color: var(--text-primary);
     }
     
     .notifications-actions {
@@ -37,8 +39,8 @@
     }
     
     .notification-item {
-        background: #111;
-        border: 1px solid #222;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
         border-radius: 16px;
         padding: 20px;
         display: flex;
@@ -49,12 +51,16 @@
     }
     
     .notification-item.unread {
-        background: #1a1a2e;
-        border-color: #3b82f6;
+        background: var(--bg-secondary);
+        border-left: 3px solid var(--accent);
+        border-left-width: 3px;
+        border-left-style: solid;
+        border-left-color: var(--accent);
     }
     
     .notification-item:hover {
-        background: #1a1a1a;
+        transform: translateX(4px);
+        background: var(--bg-secondary);
     }
     
     .notification-icon {
@@ -65,11 +71,17 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        font-size: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .notification-item:hover .notification-icon {
+        transform: scale(1.05);
     }
     
     .notification-icon.follow {
         background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
+        color: var(--accent);
     }
     
     .notification-icon.love {
@@ -87,9 +99,19 @@
         color: #f59e0b;
     }
     
+    .notification-icon.milestone {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+    
     .notification-icon.system {
         background: rgba(139, 92, 246, 0.1);
         color: #8b5cf6;
+    }
+    
+    .notification-icon.reminder {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
     }
     
     .notification-content {
@@ -100,48 +122,71 @@
         font-size: 15px;
         line-height: 1.5;
         margin-bottom: 8px;
+        color: var(--text-primary);
     }
     
     .notification-message a {
-        color: #3b82f6;
+        color: var(--accent);
         font-weight: 500;
+        text-decoration: none;
+    }
+    
+    .notification-message a:hover {
+        text-decoration: underline;
     }
     
     .notification-time {
         font-size: 12px;
-        color: #666;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
     
     .unread-dot {
-        width: 10px;
-        height: 10px;
-        background: #3b82f6;
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
         border-radius: 50%;
         margin-left: 8px;
+        animation: pulseDot 1.5s infinite;
+    }
+    
+    @keyframes pulseDot {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.5;
+            transform: scale(1.2);
+        }
     }
     
     /* Empty State */
     .empty-state {
         text-align: center;
         padding: 80px 20px;
-        background: #111;
-        border: 1px solid #222;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
         border-radius: 20px;
     }
     
     .empty-state i {
         font-size: 64px;
-        color: #333;
+        color: var(--text-muted);
         margin-bottom: 20px;
     }
     
     .empty-state h3 {
         font-size: 20px;
         margin-bottom: 12px;
+        color: var(--text-primary);
     }
     
     .empty-state p {
-        color: #888;
+        color: var(--text-secondary);
     }
     
     /* Pagination */
@@ -150,6 +195,7 @@
         justify-content: center;
         gap: 8px;
         margin-top: 30px;
+        flex-wrap: wrap;
     }
     
     .pagination a,
@@ -157,19 +203,141 @@
         min-width: 40px;
         height: 40px;
         padding: 0 12px;
-        background: #111;
-        border: 1px solid #333;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #aaa;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+    
+    .pagination a:hover {
+        background: var(--bg-secondary);
+        border-color: var(--accent);
+        color: var(--accent);
     }
     
     .pagination .current {
-        background: #3b82f6;
-        border-color: #3b82f6;
+        background: var(--accent);
+        border-color: var(--accent);
         color: #fff;
+    }
+    
+    /* Toast notification */
+    .toast-notification {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent);
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        animation: slideUp 0.3s ease, fadeOut 0.3s ease 2.5s forwards;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+    
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+            visibility: hidden;
+        }
+    }
+    
+    /* Loading state */
+    .loading-state {
+        text-align: center;
+        padding: 60px;
+        background: var(--card-bg);
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .loading-state i {
+        font-size: 48px;
+        color: var(--accent);
+        margin-bottom: 16px;
+    }
+    
+    .loading-state p {
+        color: var(--text-secondary);
+    }
+    
+    @media (max-width: 768px) {
+        .notifications-container {
+            padding: 20px 16px;
+        }
+        
+        .notifications-title {
+            font-size: 24px;
+        }
+        
+        .notification-item {
+            padding: 16px;
+            gap: 12px;
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+        
+        .notification-message {
+            font-size: 14px;
+        }
+        
+        .notifications-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .notifications-actions {
+            width: 100%;
+        }
+        
+        .notifications-actions .btn {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .toast-notification {
+            white-space: normal;
+            text-align: center;
+            max-width: 90%;
+            font-size: 13px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .pagination a,
+        .pagination span {
+            min-width: 36px;
+            height: 36px;
+            font-size: 13px;
+        }
     }
 </style>
 {% endblock %}
@@ -179,11 +347,13 @@
 <div class="notifications-container">
     
     <div class="notifications-header">
-        <h1 class="notifications-title">Notifications</h1>
+        <h1 class="notifications-title">
+            <i class="fas fa-bell"></i> Notifications
+        </h1>
         
         {% if notifications %}
         <div class="notifications-actions">
-            <button class="btn btn-outline" onclick="markAllRead()">
+            <button class="btn btn-outline" onclick="markAllRead()" id="markAllBtn">
                 <i class="fas fa-check-double"></i> Mark All Read
             </button>
         </div>
@@ -191,22 +361,28 @@
     </div>
     
     {% if notifications %}
-    <div class="notification-list">
+    <div class="notification-list" id="notificationList">
         {% for notification in notifications %}
         <div class="notification-item {% if not notification.viewed %}unread{% endif %}" 
+             data-id="{{ notification.id }}"
+             data-link="{{ notification.redirect_link|escapejs }}"
              onclick="markAsRead({{ notification.id }}, '{{ notification.redirect_link|escapejs }}')">
             
             <div class="notification-icon 
                  {% if 'follow' in notification.message %}follow
-                 {% elif 'love' in notification.message or 'donat' in notification.message %}love
+                 {% elif 'love' in notification.message %}love
                  {% elif 'comment' in notification.message %}comment
                  {% elif 'donation' in notification.message or 'support' in notification.message %}donation
+                 {% elif 'milestone' in notification.message or 'achievement' in notification.message %}milestone
+                 {% elif 'reminder' in notification.message %}reminder
                  {% else %}system{% endif %}">
                 <i class="fas 
                     {% if 'follow' in notification.message %}fa-user-plus
                     {% elif 'love' in notification.message %}fa-heart
                     {% elif 'comment' in notification.message %}fa-comment
                     {% elif 'donation' in notification.message or 'support' in notification.message %}fa-hand-holding-heart
+                    {% elif 'milestone' in notification.message or 'achievement' in notification.message %}fa-trophy
+                    {% elif 'reminder' in notification.message %}fa-bell
                     {% else %}fa-bell{% endif %}">
                 </i>
             </div>
@@ -230,67 +406,189 @@
     {% if notifications.has_other_pages %}
     <div class="pagination">
         {% if notifications.has_previous %}
-            <a href="?page={{ notifications.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+            <a href="?page={{ notifications.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
         {% endif %}
         
         {% for num in notifications.paginator.page_range %}
             {% if notifications.number == num %}
                 <span class="current">{{ num }}</span>
             {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
-                <a href="?page={{ num }}">{{ num }}</a>
+                <a href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}">{{ num }}</a>
             {% endif %}
         {% endfor %}
         
         {% if notifications.has_next %}
-            <a href="?page={{ notifications.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+            <a href="?page={{ notifications.next_page_number }}{% if status %}&status={{ status }}{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
         {% endif %}
     </div>
     {% endif %}
     
     {% else %}
     <div class="empty-state">
-        <i class="far fa-bell"></i>
+        <i class="far fa-bell-slash"></i>
         <h3>No notifications yet</h3>
-        <p>When someone interacts with your journeys, you'll see it here.</p>
+        <p>When someone follows your journey, loves your content, or leaves a comment, you'll see it here.</p>
     </div>
     {% endif %}
     
 </div>
 
 <script>
+    // CSRF token helper
+    function getCSRFToken() {
+        const token = document.querySelector('meta[name="csrf-token"]');
+        return token ? token.content : '';
+    }
+    
+    // Show toast notification
+    function showToast(message, isError = false) {
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) existingToast.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `
+            <i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+            ${message}
+        `;
+        if (isError) {
+            toast.style.background = '#ef4444';
+        }
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast) toast.remove();
+        }, 3000);
+    }
+    
+    // Mark single notification as read
     function markAsRead(id, redirectLink) {
+        const notificationItem = document.querySelector(`.notification-item[data-id="${id}"]`);
+        
         fetch(`/api/notifications/${id}/read/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && redirectLink) {
-                window.location.href = redirectLink;
-            } else {
-                location.reload();
-            }
-        });
-    }
-    
-    function markAllRead() {
-        fetch('/api/notifications/read-all/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json'
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                    const unreadDot = notificationItem.querySelector('.unread-dot');
+                    if (unreadDot) unreadDot.remove();
+                }
+                
+                if (redirectLink) {
+                    window.location.href = redirectLink;
+                } else {
+                    // Just update UI without reload
+                    showToast('Notification marked as read');
+                }
+            } else {
+                showToast('Something went wrong', true);
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Failed to mark notification as read', true);
         });
     }
+    
+    // Mark all notifications as read
+    function markAllRead() {
+        const markAllBtn = document.getElementById('markAllBtn');
+        const originalHtml = markAllBtn.innerHTML;
+        
+        markAllBtn.disabled = true;
+        markAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+        
+        fetch('/api/notifications/read-all/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update all unread notifications in UI
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                    const unreadDot = item.querySelector('.unread-dot');
+                    if (unreadDot) unreadDot.remove();
+                });
+                showToast('All notifications marked as read');
+                
+                // Reload after a short delay to update counts in header
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showToast('Failed to mark all as read', true);
+                markAllBtn.disabled = false;
+                markAllBtn.innerHTML = originalHtml;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Something went wrong', true);
+            markAllBtn.disabled = false;
+            markAllBtn.innerHTML = originalHtml;
+        });
+    }
+    
+    // Auto-refresh notifications (optional - every 30 seconds)
+    let autoRefreshInterval = null;
+    
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            // Check for new notifications without full page reload
+            fetch(window.location.href + '?json=1')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.unread_count && data.unread_count > 0) {
+                        // Update favicon or show a badge
+                        document.title = `(${data.unread_count}) Notifications | Rallynex`;
+                    } else {
+                        document.title = `Notifications | Rallynex`;
+                    }
+                })
+                .catch(() => {});
+        }, 30000);
+    }
+    
+    // Start auto-refresh if there are notifications
+    {% if notifications %}
+    startAutoRefresh();
+    {% endif %}
+    
+    // Keyboard navigation for notifications
+    document.addEventListener('keydown', function(e) {
+        const items = document.querySelectorAll('.notification-item');
+        if (items.length === 0) return;
+        
+        // 'm' key to mark all as read
+        if (e.key === 'm' || e.key === 'M') {
+            e.preventDefault();
+            markAllRead();
+        }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+    });
 </script>
 
 {% endblock %}
