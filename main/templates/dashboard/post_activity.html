@@ -11,6 +11,11 @@
 
 {% block extra_css %}
 <style>
+    /* Add padding to the main content wrapper */
+    .main-content-wrapper {
+        padding: 40px 0;
+    }
+    
     .post-container {
         max-width: 600px;
         margin: 0 auto;
@@ -456,6 +461,10 @@
     }
     
     @media (max-width: 768px) {
+        .main-content-wrapper {
+            padding: 20px 0;
+        }
+        
         .post-container {
             padding: 24px 16px;
         }
@@ -489,203 +498,206 @@
 
 {% block content %}
 
-<div class="post-container">
-    
-    {# Header #}
-    <div class="post-header">
-        <a href="{% url 'journey_content' slug=journey.slug %}" class="back-btn">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <div class="post-header-info">
-            <h1>{{ journey.title }}</h1>
-            <p>Content Manager</p>
-        </div>
-    </div>
-    
-    {# Dynamic Badge #}
-    <span class="day-badge-large {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
-        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i> 
-        {% if journey.journey_type == 'milestone' %}
-            Milestone {{ day_number }} of {{ journey.duration }}
-        {% else %}
-            Day {{ day_number }} of {{ journey.duration }}
-        {% endif %}
-    </span>
-    
-    {# Existing Content Warning #}
-    {% if existing_activity %}
-    <div class="existing-warning">
-        <i class="fas fa-exclamation-triangle"></i>
-        <p>
-            You are editing existing content for 
-            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
-            {{ day_number }}. Your changes will overwrite the current post.
-        </p>
-    </div>
-    {% endif %}
-    
-    {# Error Message #}
-    <div class="error-message" id="errorMessage">
-        <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
-    </div>
-    
-    {# Form Errors #}
-    {% if form.errors %}
-    <ul class="errorlist">
-        {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-                <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
-    {% endif %}
-    
-    {# Post Form - DIRECT TO CLOUDINARY #}
-    <form method="post" class="post-card" id="postForm">
-        {% csrf_token %}
+<div class="main-content-wrapper">
+    <div class="post-container">
         
-        {# CRITICAL: Day number field with explicit value #}
-        <input type="hidden" name="day_number_field" value="{{ day_number }}">
-        
-        {# Hidden fields for Cloudinary upload #}
-        <input type="hidden" name="file_url" id="fileUrl">
-        <input type="hidden" name="is_video" id="isVideo">
-        
-        <div class="form-group">
-            <label for="id_content">
-                <i class="fas fa-pen-alt"></i>
-                {% if journey.journey_type == 'milestone' %}
-                    What did you achieve in this milestone?
-                {% else %}
-                    What happened today?
-                {% endif %}
-            </label>
-            <textarea name="content" id="id_content" 
-                      placeholder="{% if journey.journey_type == 'milestone' %}Describe what you accomplished in Milestone {{ day_number }}...{% else %}Share your progress, thoughts, or milestones for Day {{ day_number }}...{% endif %}"
-                      required>{{ form.content.value|default:'' }}</textarea>
-            <div class="form-hint">
-                <span><i class="fas fa-info-circle"></i> Be authentic - your followers want the real journey</span>
-                <span id="charCount">0/500</span>
+        {# Header #}
+        <div class="post-header">
+            <a href="{% url 'journey_content' slug=journey.slug %}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="post-header-info">
+                <h1>{{ journey.title }}</h1>
+                <p>Content Manager</p>
             </div>
         </div>
         
-        {# Actual Date Field for Milestone Journeys #}
-        {% if journey.journey_type == 'milestone' %}
-        <div class="form-group">
-            <label for="id_actual_date">
-                <i class="fas fa-calendar-check"></i> 
-                When did this milestone actually happen?
-            </label>
-            <input type="date" 
-                   name="actual_date" 
-                   id="id_actual_date" 
-                   class="date-field-highlight"
-                   value="{{ form.actual_date.value|date:'Y-m-d'|default:'' }}">
-            <div class="form-hint">
-                <span><i class="fas fa-lightbulb"></i> Adding the real date builds trust with your audience</span>
-            </div>
-            {% if existing_activity and existing_activity.actual_date %}
-            <div class="completed-date-info">
-                <i class="fas fa-check-circle"></i>
-                <span>Currently set to: <strong>{{ existing_activity.actual_date|date:"F j, Y" }}</strong></span>
-            </div>
+        {# Dynamic Badge #}
+        <span class="day-badge-large {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
+            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i> 
+            {% if journey.journey_type == 'milestone' %}
+                Milestone {{ day_number }} of {{ journey.duration }}
+            {% else %}
+                Day {{ day_number }} of {{ journey.duration }}
             {% endif %}
-        </div>
-        {% endif %}
+        </span>
         
-        {# Media Upload - DIRECT TO CLOUDINARY #}
-        <div class="form-group">
-            <label><i class="fas fa-image"></i> Media (Required)</label>
-            
-            {% if existing_activity and existing_activity.file %}
-            <div class="media-preview active" id="existingPreview">
-                {% if existing_activity.is_video %}
-                    <video src="{{ existing_activity.file.url }}" controls preload="metadata"></video>
-                {% else %}
-                    <img src="{{ existing_activity.file.url }}" alt="Current media">
-                {% endif %}
-                <button type="button" class="remove-media" onclick="clearExistingMedia()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <input type="hidden" name="clear_existing" id="clearExisting" value="false">
-            {% endif %}
-            
-            <div class="file-upload-area" id="uploadArea" 
-                 style="{% if existing_activity and existing_activity.file %}display: none;{% endif %}">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Click to upload a photo or video</p>
-                <p class="small">Uploads directly • Max 100MB • JPG, PNG, WebP, MP4, MOV</p>
-            </div>
-            
-            <div class="upload-progress" id="uploadProgress">
-                <div class="progress-track">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">Uploading... 0%</div>
-            </div>
-            
-            <div class="media-preview" id="newPreview">
-                <img id="previewImage" src="" alt="Preview" style="display: none;">
-                <video id="previewVideo" controls style="display: none;" preload="metadata"></video>
-                <button type="button" class="remove-media" onclick="clearNewMedia()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-        
-        {# Source Info (if imported) #}
-        {% if existing_activity and existing_activity.source_url %}
-        <div class="source-info">
-            <i class="fas fa-link"></i>
+        {# Existing Content Warning #}
+        {% if existing_activity %}
+        <div class="existing-warning">
+            <i class="fas fa-exclamation-triangle"></i>
             <p>
-                Source: 
-                <a href="{{ existing_activity.source_url }}" target="_blank" rel="noopener noreferrer">View Original <i class="fas fa-external-link-alt"></i></a>
+                You are editing existing content for 
+                {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+                {{ day_number }}. Your changes will overwrite the current post.
             </p>
         </div>
         {% endif %}
         
-        <div class="form-actions">
-            <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-secondary">
-                <i class="fas fa-times"></i> Cancel
-            </a>
-            <button type="submit" class="btn-primary" id="submitBtn" {% if not existing_activity and not form.file_url.value %}disabled{% endif %}>
-                <i class="fas fa-{% if existing_activity %}save{% else %}paper-plane{% endif %}"></i>
-                {% if existing_activity %}Update{% else %}Post{% endif %} 
-                {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
-                {{ day_number }}
-            </button>
+        {# Error Message #}
+        <div class="error-message" id="errorMessage">
+            <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
         </div>
-    </form>
-    
-    {# Tips Card #}
-    <div class="tips-card">
-        <h4>
-            <i class="fas fa-lightbulb"></i>
-            Tips for a great update
-        </h4>
-        <ul>
-            {% if journey.journey_type == 'milestone' %}
-                <li>🎯 Be specific about what you accomplished in this milestone</li>
-                <li>📅 Include the actual date to build a trustworthy timeline</li>
-                <li>📸 Add photos or videos as proof of your achievement</li>
-                <li>💪 Share challenges you overcame to reach this milestone</li>
-            {% else %}
-                <li>💯 Share both wins and struggles - authenticity builds connection</li>
-                <li>📷 Include a photo or short video to increase engagement</li>
-                <li>❓ Ask a question to encourage comments</li>
-                <li>🏷️ Use the journey hashtag to help others discover your content</li>
-            {% endif %}
+        
+        {# Form Errors #}
+        {% if form.errors %}
+        <ul class="errorlist">
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
         </ul>
+        {% endif %}
+        
+        {# Post Form - DIRECT TO CLOUDINARY #}
+        <form method="post" class="post-card" id="postForm">
+            {% csrf_token %}
+            
+            {# CRITICAL: Day number field with explicit value #}
+            <input type="hidden" name="day_number_field" value="{{ day_number }}">
+            
+            {# Hidden fields for Cloudinary upload #}
+            <input type="hidden" name="file_url" id="fileUrl">
+            <input type="hidden" name="is_video" id="isVideo">
+            
+            <div class="form-group">
+                <label for="id_content">
+                    <i class="fas fa-pen-alt"></i>
+                    {% if journey.journey_type == 'milestone' %}
+                        What did you achieve in this milestone?
+                    {% else %}
+                        What happened today?
+                    {% endif %}
+                </label>
+                <textarea name="content" id="id_content" 
+                          placeholder="{% if journey.journey_type == 'milestone' %}Describe what you accomplished in Milestone {{ day_number }}...{% else %}Share your progress, thoughts, or milestones for Day {{ day_number }}...{% endif %}"
+                          required>{{ form.content.value|default:'' }}</textarea>
+                <div class="form-hint">
+                    <span><i class="fas fa-info-circle"></i> Be authentic - your followers want the real journey</span>
+                    <span id="charCount">0/500</span>
+                </div>
+            </div>
+            
+            {# Actual Date Field for Milestone Journeys #}
+            {% if journey.journey_type == 'milestone' %}
+            <div class="form-group">
+                <label for="id_actual_date">
+                    <i class="fas fa-calendar-check"></i> 
+                    When did this milestone actually happen?
+                </label>
+                <input type="date" 
+                       name="actual_date" 
+                       id="id_actual_date" 
+                       class="date-field-highlight"
+                       value="{{ form.actual_date.value|date:'Y-m-d'|default:'' }}">
+                <div class="form-hint">
+                    <span><i class="fas fa-lightbulb"></i> Adding the real date builds trust with your audience</span>
+                </div>
+                {% if existing_activity and existing_activity.actual_date %}
+                <div class="completed-date-info">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Currently set to: <strong>{{ existing_activity.actual_date|date:"F j, Y" }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            {# Media Upload - DIRECT TO CLOUDINARY #}
+            <div class="form-group">
+                <label><i class="fas fa-image"></i> Media (Required)</label>
+                
+                {% if existing_activity and existing_activity.file %}
+                <div class="media-preview active" id="existingPreview">
+                    {% if existing_activity.is_video %}
+                        <video src="{{ existing_activity.file.url }}" controls preload="metadata"></video>
+                    {% else %}
+                        <img src="{{ existing_activity.file.url }}" alt="Current media">
+                    {% endif %}
+                    <button type="button" class="remove-media" onclick="clearExistingMedia()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <input type="hidden" name="clear_existing" id="clearExisting" value="false">
+                {% endif %}
+                
+                <div class="file-upload-area" id="uploadArea" 
+                     style="{% if existing_activity and existing_activity.file %}display: none;{% endif %}">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click to upload a photo or video</p>
+                    <p class="small">Uploads directly • Max 100MB • JPG, PNG, WebP, MP4, MOV</p>
+                </div>
+                
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Uploading... 0%</div>
+                </div>
+                
+                <div class="media-preview" id="newPreview">
+                    <img id="previewImage" src="" alt="Preview" style="display: none;">
+                    <video id="previewVideo" controls style="display: none;" preload="metadata"></video>
+                    <button type="button" class="remove-media" onclick="clearNewMedia()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            {# Source Info (if imported) #}
+            {% if existing_activity and existing_activity.source_url %}
+            <div class="source-info">
+                <i class="fas fa-link"></i>
+                <p>
+                    Source: 
+                    <a href="{{ existing_activity.source_url }}" target="_blank" rel="noopener noreferrer">View Original <i class="fas fa-external-link-alt"></i></a>
+                </p>
+            </div>
+            {% endif %}
+            
+            <div class="form-actions">
+                <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn-primary" id="submitBtn" {% if not existing_activity and not form.file_url.value %}disabled{% endif %}>
+                    <i class="fas fa-{% if existing_activity %}save{% else %}paper-plane{% endif %}"></i>
+                    {% if existing_activity %}Update{% else %}Post{% endif %} 
+                    {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+                    {{ day_number }}
+                </button>
+            </div>
+        </form>
+        
+        {# Tips Card #}
+        <div class="tips-card">
+            <h4>
+                <i class="fas fa-lightbulb"></i>
+                Tips for a great update
+            </h4>
+            <ul>
+                {% if journey.journey_type == 'milestone' %}
+                    <li>🎯 Be specific about what you accomplished in this milestone</li>
+                    <li>📅 Include the actual date to build a trustworthy timeline</li>
+                    <li>📸 Add photos or videos as proof of your achievement</li>
+                    <li>💪 Share challenges you overcame to reach this milestone</li>
+                {% else %}
+                    <li>💯 Share both wins and struggles - authenticity builds connection</li>
+                    <li>📷 Include a photo or short video to increase engagement</li>
+                    <li>❓ Ask a question to encourage comments</li>
+                    <li>🏷️ Use the journey hashtag to help others discover your content</li>
+                {% endif %}
+            </ul>
+        </div>
+        
     </div>
-    
 </div>
 
 {# Cloudinary Upload Widget #}
 <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 <script>
+    // FIXED: Properly convert Django boolean to JavaScript boolean
+    const isMilestone = {% if journey.journey_type == 'milestone' %}true{% else %}false{% endif %};
     const cloudName = '{{ CLOUDINARY_CLOUD_NAME|default:"demo" }}';
-    const isMilestone = {{ journey.journey_type == 'milestone'|lower }};
     
     // Character counter
     const textarea = document.getElementById('id_content');
@@ -703,8 +715,10 @@
         }
     }
     
-    textarea.addEventListener('input', updateCharCount);
-    updateCharCount();
+    if (textarea) {
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount();
+    }
     
     // Cloudinary Upload Widget
     let widget = null;
@@ -764,28 +778,40 @@
                 }
                 
                 previewArea.classList.add('active');
-                document.getElementById('uploadArea').style.display = 'none';
+                const uploadArea = document.getElementById('uploadArea');
+                if (uploadArea) uploadArea.style.display = 'none';
                 
                 // Enable submit button
-                document.getElementById('submitBtn').disabled = false;
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) submitBtn.disabled = false;
                 
                 // Hide error if any
-                document.getElementById('errorMessage').classList.remove('active');
+                const errorMsg = document.getElementById('errorMessage');
+                if (errorMsg) errorMsg.classList.remove('active');
             }
             
             if (result && result.event === "progress") {
                 const percent = Math.round(result.info.progress.percent);
-                document.getElementById('progressFill').style.width = percent + '%';
-                document.getElementById('progressText').textContent = `Uploading... ${percent}%`;
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                if (progressFill) progressFill.style.width = percent + '%';
+                if (progressText) progressText.textContent = `Uploading... ${percent}%`;
             }
         });
         
         // Open widget when upload area is clicked
-        document.getElementById('uploadArea').addEventListener('click', () => {
-            document.getElementById('errorMessage').classList.remove('active');
-            document.getElementById('uploadProgress').classList.add('active');
-            if (widget) widget.open();
-        });
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => {
+                const errorMsg = document.getElementById('errorMessage');
+                if (errorMsg) errorMsg.classList.remove('active');
+                
+                const uploadProgress = document.getElementById('uploadProgress');
+                if (uploadProgress) uploadProgress.classList.add('active');
+                
+                if (widget) widget.open();
+            });
+        }
     } else {
         // Fallback for development
         console.warn('Cloudinary not configured. Using fallback upload.');
@@ -799,11 +825,20 @@
     function clearNewMedia() {
         document.getElementById('fileUrl').value = '';
         document.getElementById('isVideo').value = '';
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('newPreview').classList.remove('active');
-        document.getElementById('previewImage').src = '';
-        document.getElementById('previewVideo').src = '';
-        document.getElementById('submitBtn').disabled = true;
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) uploadArea.style.display = 'block';
+        
+        const newPreview = document.getElementById('newPreview');
+        if (newPreview) newPreview.classList.remove('active');
+        
+        const previewImage = document.getElementById('previewImage');
+        if (previewImage) previewImage.src = '';
+        
+        const previewVideo = document.getElementById('previewVideo');
+        if (previewVideo) previewVideo.src = '';
+        
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
     }
     
     function clearExistingMedia() {
@@ -812,28 +847,34 @@
             existingPreview.style.display = 'none';
         }
         document.getElementById('clearExisting').value = 'true';
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('submitBtn').disabled = true;
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) uploadArea.style.display = 'block';
+        
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
     }
     
     function showError(msg) {
         const errorMsg = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
-        errorText.textContent = msg;
-        errorMsg.classList.add('active');
-        document.getElementById('uploadProgress').classList.remove('active');
+        if (errorText) errorText.textContent = msg;
+        if (errorMsg) errorMsg.classList.add('active');
+        
+        const uploadProgress = document.getElementById('uploadProgress');
+        if (uploadProgress) uploadProgress.classList.remove('active');
         
         // Auto-hide after 5 seconds
         setTimeout(() => {
-            errorMsg.classList.remove('active');
+            if (errorMsg) errorMsg.classList.remove('active');
         }, 5000);
     }
     
     // For existing content, file is already uploaded
     {% if existing_activity and existing_activity.file %}
-    document.getElementById('fileUrl').value = '{{ existing_activity.file.url }}';
+    document.getElementById('fileUrl').value = '{{ existing_activity.file.url|escapejs }}';
     document.getElementById('isVideo').value = '{{ existing_activity.is_video|yesno:"true,false" }}';
-    document.getElementById('submitBtn').disabled = false;
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.disabled = false;
     {% endif %}
     
     // Form validation before submit
@@ -842,11 +883,12 @@
         postForm.addEventListener('submit', function(e) {
             const fileUrl = document.getElementById('fileUrl').value;
             const clearExisting = document.getElementById('clearExisting');
+            const existingPreview = document.getElementById('existingPreview');
             
             // Check if there's media (new upload or existing not cleared)
+            const hasExistingMedia = existingPreview && existingPreview.style.display !== 'none';
             const hasMedia = fileUrl || 
-                (clearExisting && clearExisting.value !== 'true' && document.getElementById('existingPreview') && 
-                 document.getElementById('existingPreview').style.display !== 'none');
+                (clearExisting && clearExisting.value !== 'true' && hasExistingMedia);
             
             if (!hasMedia) {
                 e.preventDefault();

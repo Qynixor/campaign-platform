@@ -5,6 +5,11 @@
 
 {% block extra_css %}
 <style>
+    /* Add padding to the main content wrapper */
+    .main-content-wrapper {
+        padding: 40px 0;
+    }
+    
     .journeys-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -443,6 +448,10 @@
     }
     
     @media (max-width: 768px) {
+        .main-content-wrapper {
+            padding: 20px 0;
+        }
+        
         .journeys-container {
             padding: 20px 16px;
         }
@@ -518,222 +527,223 @@
 {% endblock %}
 
 {% block content %}
-
-<div class="journeys-container">
-    
-    {# Header #}
-    <div class="journeys-header">
-        <div>
-            <h1 class="journeys-title">🚀 My Journeys</h1>
-            <p class="journeys-subtitle">Manage and track all your journeys in one place</p>
-        </div>
-        <a href="{% url 'create_journey' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Journey
-        </a>
-    </div>
-    
-    {# Stats Summary #}
-    {% if journeys %}
-    <div class="stats-summary">
-        <div class="summary-card">
-            <div class="summary-value">{{ journeys|length }}</div>
-            <div class="summary-label">Total Journeys</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ active_count|default:0 }}</div>
-            <div class="summary-label">Active</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ total_views|default:0 }}</div>
-            <div class="summary-label">Total Views</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ total_followers|default:0 }}</div>
-            <div class="summary-label">Total Followers</div>
-        </div>
-    </div>
-    {% endif %}
-    
-    {# Filter Tabs #}
-    <div class="filter-tabs">
-        <button class="filter-tab active" onclick="filterJourneys('all')">📋 All Journeys</button>
-        <button class="filter-tab" onclick="filterJourneys('active')">▶️ Active</button>
-        <button class="filter-tab" onclick="filterJourneys('completed')">✅ Completed</button>
-        <button class="filter-tab" onclick="filterJourneys('draft')">✏️ Draft</button>
-    </div>
-    
-    {# Journey List #}
-    {% if journeys %}
-    <div class="journey-list">
-        {% for journey in journeys %}
-        <div class="journey-item {% if journey.journey_type == 'milestone' %}milestone-item{% endif %}" 
-             data-status="{% if not journey.is_active %}draft{% elif journey.get_current_day >= journey.duration %}completed{% else %}active{% endif %}" 
-             onclick="window.location.href='{% url 'journey_detail' slug=journey.slug %}'">
-            
-            {# Cover #}
-            <div class="journey-cover">
-                {% if journey.cover_image %}
-                    <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
-                {% else %}
-                    <i class="fas fa-flag-checkered"></i>
-                {% endif %}
-                <span class="journey-type-indicator {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
-                    <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
-                </span>
+<div class="main-content-wrapper">
+    <div class="journeys-container">
+        
+        {# Header #}
+        <div class="journeys-header">
+            <div>
+                <h1 class="journeys-title">🚀 My Journeys</h1>
+                <p class="journeys-subtitle">Manage and track all your journeys in one place</p>
             </div>
-            
-            {# Info #}
-            <div class="journey-info">
-                <div class="journey-name">
-                    {{ journey.title }}
-                    
-                    {# Journey Type Badge #}
-                    <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}type-milestone{% else %}type-daily{% endif %}">
-                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
-                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
-                    </span>
-                    
-                    {# Status Badge #}
-                    {% if not journey.is_active %}
-                        <span class="journey-status status-draft"><i class="fas fa-pen"></i> Draft</span>
-                    {% elif journey.get_current_day >= journey.duration %}
-                        <span class="journey-status status-completed"><i class="fas fa-check-circle"></i> Completed</span>
+            <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Journey
+            </a>
+        </div>
+        
+        {# Stats Summary #}
+        {% if journeys %}
+        <div class="stats-summary">
+            <div class="summary-card">
+                <div class="summary-value">{{ journeys|length }}</div>
+                <div class="summary-label">Total Journeys</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ active_count|default:0 }}</div>
+                <div class="summary-label">Active</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ total_views|default:0 }}</div>
+                <div class="summary-label">Total Views</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">{{ total_followers|default:0 }}</div>
+                <div class="summary-label">Total Followers</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {# Filter Tabs #}
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterJourneys('all')">📋 All Journeys</button>
+            <button class="filter-tab" onclick="filterJourneys('active')">▶️ Active</button>
+            <button class="filter-tab" onclick="filterJourneys('completed')">✅ Completed</button>
+            <button class="filter-tab" onclick="filterJourneys('draft')">✏️ Draft</button>
+        </div>
+        
+        {# Journey List #}
+        {% if journeys %}
+        <div class="journey-list">
+            {% for journey in journeys %}
+            <div class="journey-item {% if journey.journey_type == 'milestone' %}milestone-item{% endif %}" 
+                 data-status="{% if not journey.is_active %}draft{% elif journey.get_current_day >= journey.duration %}completed{% else %}active{% endif %}" 
+                 onclick="window.location.href='{% url 'journey_detail' slug=journey.slug %}'">
+                
+                {# Cover #}
+                <div class="journey-cover">
+                    {% if journey.cover_image %}
+                        <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                     {% else %}
-                        <span class="journey-status status-active"><i class="fas fa-play-circle"></i> Active</span>
+                        <i class="fas fa-flag-checkered"></i>
                     {% endif %}
-                    
-                    {% if not journey.is_public %}
-                        <span class="journey-status status-draft"><i class="fas fa-lock"></i> Private</span>
-                    {% endif %}
-                </div>
-                
-                <div class="journey-meta">
-                    <span><i class="fas fa-tag"></i> {{ journey.get_category_display }}</span>
-                    {% if journey.start_date %}
-                    <span><i class="fas fa-calendar-alt"></i> Started {{ journey.start_date|date:"M d, Y" }}</span>
-                    {% endif %}
-                    <span>
-                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}clock{% endif %}"></i> 
-                        {{ journey.duration }} {% if journey.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                    <span class="journey-type-indicator {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
+                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
                     </span>
                 </div>
                 
-                <div class="journey-progress">
-                    <div class="progress-header">
-                        <span>
-                            {% if journey.journey_type == 'milestone' %}
-                                {{ journey.get_current_day }}/{{ journey.duration }} Milestones
-                            {% else %}
-                                Day {{ journey.get_current_day }} of {{ journey.duration }}
-                            {% endif %}
+                {# Info #}
+                <div class="journey-info">
+                    <div class="journey-name">
+                        {{ journey.title }}
+                        
+                        {# Journey Type Badge #}
+                        <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}type-milestone{% else %}type-daily{% endif %}">
+                            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
+                            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
                         </span>
-                        <span>{{ journey.get_progress_percentage }}% Complete</span>
+                        
+                        {# Status Badge #}
+                        {% if not journey.is_active %}
+                            <span class="journey-status status-draft"><i class="fas fa-pen"></i> Draft</span>
+                        {% elif journey.get_current_day >= journey.duration %}
+                            <span class="journey-status status-completed"><i class="fas fa-check-circle"></i> Completed</span>
+                        {% else %}
+                            <span class="journey-status status-active"><i class="fas fa-play-circle"></i> Active</span>
+                        {% endif %}
+                        
+                        {% if not journey.is_public %}
+                            <span class="journey-status status-draft"><i class="fas fa-lock"></i> Private</span>
+                        {% endif %}
                     </div>
-                    <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
-                        <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                    
+                    <div class="journey-meta">
+                        <span><i class="fas fa-tag"></i> {{ journey.get_category_display }}</span>
+                        {% if journey.start_date %}
+                        <span><i class="fas fa-calendar-alt"></i> Started {{ journey.start_date|date:"M d, Y" }}</span>
+                        {% endif %}
+                        <span>
+                            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}clock{% endif %}"></i> 
+                            {{ journey.duration }} {% if journey.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="journey-progress">
+                        <div class="progress-header">
+                            <span>
+                                {% if journey.journey_type == 'milestone' %}
+                                    {{ journey.get_current_day }}/{{ journey.duration }} Milestones
+                                {% else %}
+                                    Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                {% endif %}
+                            </span>
+                            <span>{{ journey.get_progress_percentage }}% Complete</span>
+                        </div>
+                        <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
+                            <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="journey-stats">
+                        <span class="journey-stat">
+                            <i class="fas fa-users"></i> {{ journey.get_follower_count }} followers
+                        </span>
+                        <span class="journey-stat">
+                            <i class="fas fa-heart"></i> {{ journey.get_love_count }} loves
+                        </span>
+                        <span class="journey-stat">
+                            <i class="fas fa-eye"></i> {{ journey.view_count }} views
+                        </span>
+                        <span class="journey-stat">
+                            <i class="fas fa-image"></i> {{ journey.activities.count }} posts
+                        </span>
                     </div>
                 </div>
                 
-                <div class="journey-stats">
-                    <span class="journey-stat">
-                        <i class="fas fa-users"></i> {{ journey.get_follower_count }} followers
-                    </span>
-                    <span class="journey-stat">
-                        <i class="fas fa-heart"></i> {{ journey.get_love_count }} loves
-                    </span>
-                    <span class="journey-stat">
-                        <i class="fas fa-eye"></i> {{ journey.view_count }} views
-                    </span>
-                    <span class="journey-stat">
-                        <i class="fas fa-image"></i> {{ journey.activities.count }} posts
-                    </span>
+                {# Actions #}
+                <div class="journey-actions" onclick="event.stopPropagation()">
+                    <a href="{% url 'journey_content' slug=journey.slug %}" class="action-btn" title="Manage Content">
+                        <i class="fas fa-images"></i>
+                    </a>
+                    <a href="{% url 'post_activity' slug=journey.slug %}" class="action-btn" title="Post Update">
+                        <i class="fas fa-plus-circle"></i>
+                    </a>
+                    <a href="{% url 'edit_journey' slug=journey.slug %}" class="action-btn" title="Edit Journey">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'journey_settings' slug=journey.slug %}" class="action-btn" title="Settings">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    <button class="action-btn danger" onclick="confirmDelete('{{ journey.slug }}', '{{ journey.title|escapejs }}')" title="Delete Journey">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 </div>
             </div>
-            
-            {# Actions #}
-            <div class="journey-actions" onclick="event.stopPropagation()">
-                <a href="{% url 'journey_content' slug=journey.slug %}" class="action-btn" title="Manage Content">
-                    <i class="fas fa-images"></i>
-                </a>
-                <a href="{% url 'post_activity' slug=journey.slug %}" class="action-btn" title="Post Update">
-                    <i class="fas fa-plus-circle"></i>
-                </a>
-                <a href="{% url 'edit_journey' slug=journey.slug %}" class="action-btn" title="Edit Journey">
-                    <i class="fas fa-edit"></i>
-                </a>
-                <a href="{% url 'journey_settings' slug=journey.slug %}" class="action-btn" title="Settings">
-                    <i class="fas fa-cog"></i>
-                </a>
-                <button class="action-btn danger" onclick="confirmDelete('{{ journey.slug }}', '{{ journey.title|escapejs }}')" title="Delete Journey">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    
-    {# Pagination #}
-    {% if journeys.has_other_pages %}
-    <div class="pagination" style="margin-top: 30px;">
-        {% if journeys.has_previous %}
-            <a href="?page={{ journeys.previous_page_number }}{% if status %}&status={{ status }}{% endif %}" class="pagination-btn">
-                <i class="fas fa-chevron-left"></i> Previous
-            </a>
+        
+        {# Pagination #}
+        {% if journeys.has_other_pages %}
+        <div class="pagination" style="margin-top: 30px;">
+            {% if journeys.has_previous %}
+                <a href="?page={{ journeys.previous_page_number }}{% if status %}&status={{ status }}{% endif %}" class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            {% endif %}
+            
+            <span class="pagination-current">
+                Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}
+            </span>
+            
+            {% if journeys.has_next %}
+                <a href="?page={{ journeys.next_page_number }}{% if status %}&status={{ status }}{% endif %}" class="pagination-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        
+        <style>
+            .pagination {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 16px;
+                margin-top: 30px;
+            }
+            
+            .pagination-btn {
+                padding: 10px 20px;
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                color: var(--text-primary);
+                text-decoration: none;
+                transition: all 0.2s;
+            }
+            
+            .pagination-btn:hover {
+                border-color: var(--accent);
+                background: var(--bg-secondary);
+            }
+            
+            .pagination-current {
+                padding: 10px 20px;
+                color: var(--text-secondary);
+            }
+        </style>
         {% endif %}
         
-        <span class="pagination-current">
-            Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}
-        </span>
-        
-        {% if journeys.has_next %}
-            <a href="?page={{ journeys.next_page_number }}{% if status %}&status={{ status }}{% endif %}" class="pagination-btn">
-                Next <i class="fas fa-chevron-right"></i>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-flag-checkered"></i>
+            <h3>No journeys yet</h3>
+            <p>Create your first journey to start organizing your content and building your following.</p>
+            <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Your First Journey
             </a>
+        </div>
         {% endif %}
+        
     </div>
-    
-    <style>
-        .pagination {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            margin-top: 30px;
-        }
-        
-        .pagination-btn {
-            padding: 10px 20px;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            color: var(--text-primary);
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-        
-        .pagination-btn:hover {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
-        }
-        
-        .pagination-current {
-            padding: 10px 20px;
-            color: var(--text-secondary);
-        }
-    </style>
-    {% endif %}
-    
-    {% else %}
-    <div class="empty-state">
-        <i class="fas fa-flag-checkered"></i>
-        <h3>No journeys yet</h3>
-        <p>Create your first journey to start organizing your content and building your following.</p>
-        <a href="{% url 'create_journey' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create Your First Journey
-        </a>
-    </div>
-    {% endif %}
-    
 </div>
 
 {# Delete Confirmation Modal #}

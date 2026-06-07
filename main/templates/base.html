@@ -191,6 +191,7 @@
         cursor: pointer;
         transition: all 0.2s ease;
         font-size: 18px;
+        flex-shrink: 0;
     }
     
     .theme-toggle:hover {
@@ -258,7 +259,7 @@
         cursor: pointer;
     }
     
-    /* Buttons */
+    /* Buttons - Mobile optimized */
     .btn {
         display: inline-flex;
         align-items: center;
@@ -268,18 +269,28 @@
         border-radius: 30px;
         font-weight: 600;
         font-size: 14px;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         border: none;
         cursor: pointer;
+        white-space: nowrap;
+        background: transparent;
+        line-height: 1;
     }
     
     .btn-primary {
         background: var(--accent);
         color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     
     .btn-primary:hover {
         background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
     }
     
     .btn-outline {
@@ -290,6 +301,7 @@
     
     .btn-outline:hover {
         background: var(--bg-secondary);
+        border-color: var(--accent);
     }
     
     /* Navigation */
@@ -307,12 +319,14 @@
         align-items: center;
         justify-content: space-between;
         height: 70px;
+        gap: 16px;
     }
     
     .logo {
         font-size: 24px;
         font-weight: 700;
         color: var(--text-primary);
+        flex-shrink: 0;
     }
     
     .logo span {
@@ -339,7 +353,68 @@
     .nav-actions {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    
+    /* Critical fix: Sign In & Sign Up buttons on mobile */
+    @media (max-width: 640px) {
+        .navbar .container {
+            gap: 12px;
+            padding: 0 16px;
+        }
+        
+        .logo {
+            font-size: 20px;
+        }
+        
+        .nav-actions {
+            gap: 8px;
+        }
+        
+        /* Make buttons compact but touch-friendly on small screens */
+        .btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        
+        /* Ensure buttons don't wrap and remain clickable */
+        .btn-outline, .btn-primary {
+            min-height: 38px;
+        }
+        
+        /* Hide text labels on extremely narrow screens? No - keep them but adjust */
+        @media (max-width: 480px) {
+            .btn {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+        }
+        
+        /* Prevent breaking: ensure flex container handles overflow gracefully */
+        .nav-actions {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Hide scrollbar for cleaner look */
+            max-width: 60%;
+        }
+        
+        .nav-actions::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Add subtle active feedback */
+        .btn:active {
+            transform: scale(0.97);
+            transition: transform 0.1s;
+        }
     }
     
     /* PWA Install Prompt */
@@ -579,6 +654,36 @@
             grid-template-columns: 1fr;
             gap: 30px;
         }
+        
+        /* additional safe zone for buttons on mobile */
+        .nav-actions {
+            gap: 6px;
+        }
+    }
+    
+    /* Ensure the auth buttons always have enough contrast and touch target */
+    .btn-outline, .btn-primary {
+        cursor: pointer;
+        user-select: none;
+        touch-action: manipulation;
+    }
+    
+    /* For extremely small devices (<= 360px) */
+    @media (max-width: 360px) {
+        .btn {
+            padding: 7px 12px;
+            font-size: 11px;
+        }
+        
+        .theme-toggle {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+        
+        .logo {
+            font-size: 16px;
+        }
     }
     
     {% block extra_css %}{% endblock %}
@@ -625,8 +730,14 @@
                         Dashboard
                     </a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-outline">Log in</a>
-                    <a href="{% url 'signup' %}" class="btn btn-primary">Sign up</a>
+                    <a href="{% url 'login' %}" class="btn btn-outline">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Log in</span>
+                    </a>
+                    <a href="{% url 'signup' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Sign up</span>
+                    </a>
                 {% endif %}
             </div>
         </div>
