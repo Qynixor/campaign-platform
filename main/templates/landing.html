@@ -43,8 +43,6 @@
 </script>
 {% endblock %}
 
-
-
 {% block extra_css %}
 <style>
     .hero {
@@ -96,8 +94,55 @@
     .hero-cta {
         display: flex;
         gap: 16px;
-        margin-bottom: 48px;
+        margin-bottom: 32px;
         flex-wrap: wrap;
+    }
+    
+    .btn-text {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--border-color);
+        padding: 12px 24px;
+        border-radius: 40px;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-text:hover {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: var(--accent);
+    }
+    
+    .blog-teaser {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .blog-teaser p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+    
+    .blog-teaser-links {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .blog-teaser-links a {
+        font-size: 14px;
+        color: var(--accent);
+        text-decoration: none;
+    }
+    
+    .blog-teaser-links a:hover {
+        text-decoration: underline;
     }
     
     .hero-stats {
@@ -328,6 +373,14 @@
         color: var(--text-muted);
     }
     
+    .category-badge {
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 500;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+    
     /* Categories */
     .categories-section {
         padding: 80px 0;
@@ -367,6 +420,12 @@
         font-size: 14px;
         font-weight: 500;
         color: var(--text-primary);
+    }
+    
+    /* Blog Section */
+    .blog-section {
+        padding: 80px 0;
+        background: var(--bg-secondary);
     }
     
     /* CTA Section */
@@ -470,6 +529,11 @@
         .step-card {
             padding: 30px 20px;
         }
+        
+        .blog-teaser-links {
+            flex-direction: column;
+            gap: 8px;
+        }
     }
     
     @media (max-width: 480px) {
@@ -480,6 +544,12 @@
         .hero-cta .btn {
             width: 100%;
             text-align: center;
+        }
+        
+        .btn-text {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
         }
         
         .categories-grid {
@@ -533,7 +603,27 @@
                     <a href="{% url 'discover' %}" class="btn btn-outline">
                         Explore Journeys
                     </a>
+                    <a href="{% url 'blog_index' %}" class="btn-text">
+                        <i class="fas fa-newspaper"></i>
+                        Read Our Blog
+                    </a>
                 </div>
+                
+                <div class="blog-teaser">
+                    <p><i class="fas fa-feather-alt"></i> Latest from our blog:</p>
+                    <div class="blog-teaser-links">
+                        <a href="{% url 'blog_challenge_lost' %}">
+                            📉 Why challenges lose momentum after Day 7 →
+                        </a>
+                        <a href="{% url 'blog_journey_page' %}">
+                            🎓 Why coaches need journey pages →
+                        </a>
+                        <a href="{% url 'blog_buried_asset' %}">
+                            💎 Your most valuable asset is buried →
+                        </a>
+                    </div>
+                </div>
+                
                 <div class="hero-stats">
                     <div class="stat-item">
                         <span class="stat-value">500+</span>
@@ -600,102 +690,147 @@
     </div>
 </section>
 
-{# Featured Journeys #}
+{# Featured Journeys Section #}
 <section class="featured-section">
     <div class="container">
         <div class="section-header-with-link">
-            <h2 class="section-title">Featured Journeys</h2>
+            <div>
+                <h2 class="section-title" style="margin-bottom: 8px;">🌟 Featured Journeys</h2>
+                <p class="section-subtitle">Discover inspiring transformations from our community</p>
+            </div>
             <a href="{% url 'discover' %}" class="view-all-link">
-                View All <i class="fas fa-arrow-right"></i>
+                View All Journeys <i class="fas fa-arrow-right"></i>
             </a>
         </div>
         
         <div class="journey-grid">
-            {% if featured_journeys %}
-                {% for journey in featured_journeys %}
-                <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-card">
-                    <div class="journey-cover">
-                        {% if journey.cover_image %}
-                            <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
-                        {% else %}
-                            <i class="fas fa-flag-checkered"></i>
-                        {% endif %}
+            <!-- Journey 1 -->
+            <div class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-dumbbell"></i>
+                </div>
+                <div class="journey-info">
+                    <h3 class="journey-title">30 Days of Fitness</h3>
+                    <div class="journey-creator">by Coach Sarah</div>
+                    <div class="journey-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 60%"></div>
+                        </div>
+                        <div class="progress-text">Day 18 of 30</div>
                     </div>
-                    <div class="journey-info">
-                        <h4 class="journey-title">{{ journey.title }}</h4>
-                        <p class="journey-creator">@{{ journey.creator.user.username }}</p>
-                        <div class="journey-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
-                            </div>
-                            <span class="progress-text">Day {{ journey.get_current_day }}/{{ journey.duration }}</span>
-                        </div>
-                        <div class="journey-stats">
-                            <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
-                            <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            {% else %}
-                <div class="journey-card">
-                    <div class="journey-cover">
-                        <i class="fas fa-flag"></i>
-                    </div>
-                    <div class="journey-info">
-                        <h4 class="journey-title">30 Days of Yoga</h4>
-                        <p class="journey-creator">@yogawithsarah</p>
-                        <div class="journey-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 60%;"></div>
-                            </div>
-                            <span class="progress-text">Day 18/30</span>
-                        </div>
-                        <div class="journey-stats">
-                            <span><i class="fas fa-users"></i> 245</span>
-                            <span><i class="fas fa-heart"></i> 1.2K</span>
-                        </div>
+                    <div class="journey-stats">
+                        <span><i class="fas fa-heart"></i> 234</span>
+                        <span><i class="fas fa-comment"></i> 45</span>
                     </div>
                 </div>
-                <div class="journey-card">
-                    <div class="journey-cover">
-                        <i class="fas fa-code"></i>
+            </div>
+            
+            <!-- Journey 2 -->
+            <div class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="journey-info">
+                    <h3 class="journey-title">Building in Public</h3>
+                    <div class="journey-creator">by Alex Chen</div>
+                    <div class="journey-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 40%"></div>
+                        </div>
+                        <div class="progress-text">Day 12 of 30</div>
                     </div>
-                    <div class="journey-info">
-                        <h4 class="journey-title">Learn Python in 30 Days</h4>
-                        <p class="journey-creator">@codewithmike</p>
-                        <div class="journey-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 40%;"></div>
-                            </div>
-                            <span class="progress-text">Day 12/30</span>
-                        </div>
-                        <div class="journey-stats">
-                            <span><i class="fas fa-users"></i> 532</span>
-                            <span><i class="fas fa-heart"></i> 856</span>
-                        </div>
+                    <div class="journey-stats">
+                        <span><i class="fas fa-heart"></i> 189</span>
+                        <span><i class="fas fa-comment"></i> 32</span>
                     </div>
                 </div>
-                <div class="journey-card">
-                    <div class="journey-cover">
-                        <i class="fas fa-dumbbell"></i>
+            </div>
+            
+            <!-- Journey 3 -->
+            <div class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <div class="journey-info">
+                    <h3 class="journey-title">100 Days of Art</h3>
+                    <div class="journey-creator">by Maya Rodriguez</div>
+                    <div class="journey-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 85%"></div>
+                        </div>
+                        <div class="progress-text">Day 85 of 100</div>
                     </div>
-                    <div class="journey-info">
-                        <h4 class="journey-title">75 Hard Challenge</h4>
-                        <p class="journey-creator">@fitwithalex</p>
-                        <div class="journey-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 30%;"></div>
-                            </div>
-                            <span class="progress-text">Day 22/75</span>
-                        </div>
-                        <div class="journey-stats">
-                            <span><i class="fas fa-users"></i> 1.1K</span>
-                            <span><i class="fas fa-heart"></i> 3.4K</span>
-                        </div>
+                    <div class="journey-stats">
+                        <span><i class="fas fa-heart"></i> 567</span>
+                        <span><i class="fas fa-comment"></i> 89</span>
                     </div>
                 </div>
-            {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+{# Latest Blog Posts Section #}
+<section class="blog-section">
+    <div class="container">
+        <div class="section-header-with-link">
+            <div>
+                <h2 class="section-title" style="margin-bottom: 8px;">📖 Latest from the Blog</h2>
+                <p class="section-subtitle">Insights for creators, coaches, and journey-builders</p>
+            </div>
+            <a href="{% url 'blog_index' %}" class="view-all-link">
+                View All Articles <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="journey-grid">
+            <!-- Blog Post 1 -->
+            <a href="{% url 'blog_challenge_lost' %}" class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="journey-info">
+                    <span class="category-badge">📉 Challenge Retention</span>
+                    <h3 class="journey-title" style="margin-top: 4px;">Why Your 30-Day Challenge Gets Lost After Day 7</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Even when people are interested, they disappear. Here's why and how to fix it.</p>
+                    <div class="journey-stats" style="margin-top: 12px;">
+                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                        <span><i class="far fa-clock"></i> 8 min read</span>
+                    </div>
+                </div>
+            </a>
+            
+            <!-- Blog Post 2 -->
+            <a href="{% url 'blog_journey_page' %}" class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-chalkboard-user"></i>
+                </div>
+                <div class="journey-info">
+                    <span class="category-badge">🎓 Coach Marketing</span>
+                    <h3 class="journey-title" style="margin-top: 4px;">Why Every Coach Needs a Journey Page</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Not more social media posts. Structure converts better than content.</p>
+                    <div class="journey-stats" style="margin-top: 12px;">
+                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                        <span><i class="far fa-clock"></i> 8 min read</span>
+                    </div>
+                </div>
+            </a>
+            
+            <!-- Blog Post 3 -->
+            <a href="{% url 'blog_buried_asset' %}" class="journey-card">
+                <div class="journey-cover">
+                    <i class="fas fa-treasure"></i>
+                </div>
+                <div class="journey-info">
+                    <span class="category-badge">💎 Content Assets</span>
+                    <h3 class="journey-title" style="margin-top: 4px;">Your Most Valuable Asset Is Buried In Your Feed</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Most creators are sitting on assets they don't even recognize.</p>
+                    <div class="journey-stats" style="margin-top: 12px;">
+                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                        <span><i class="far fa-clock"></i> 4 min read</span>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
 </section>
