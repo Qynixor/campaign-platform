@@ -13,13 +13,13 @@ from django.contrib.sitemaps.views import sitemap
 import os
 
 # Import your sitemaps
-from main.sitemaps import StaticViewSitemap, JourneySitemap, BlogSitemap, CreatorProfileSitemap
+from main.sitemaps import StaticViewSitemap, JourneySitemap,  CreatorProfileSitemap
 
 # Sitemap configuration
 sitemaps = {
     'static': StaticViewSitemap,
     'journeys': JourneySitemap,
-    'blog': BlogSitemap,
+    
     'creators': CreatorProfileSitemap,
 }
 

@@ -297,15 +297,11 @@ def landing_view(request):
         is_active=True
     ).order_by('-view_count')[:6]
     
-    # Get recent blog posts
-    recent_blogs = Blog.objects.filter(
-        status='published'
-    ).order_by('-published_at')[:3]
-    
+  
     context = {
         'featured_journeys': featured_journeys,
         'trending_journeys': trending_journeys,
-        'recent_blogs': recent_blogs,
+        
     }
     
     return render(request, 'landing.html', context)
@@ -1630,55 +1626,40 @@ def edit_product_view(request, product_id):
     
     return render(request, 'dashboard/product_form.html', context)
 
+from django.shortcuts import render
 
-# ============================================================================
-# BLOG VIEWS
-# ============================================================================
+def blog_index(request):
+    return render(request, 'blog/index.html')
 
-def blog_list_view(request):
-    """List all blog posts"""
-    blogs = Blog.objects.filter(status='published').order_by('-published_at')
-    
-    # Pagination
-    paginator = Paginator(blogs, 9)
-    page = request.GET.get('page')
-    
-    try:
-        blogs_page = paginator.page(page)
-    except PageNotAnInteger:
-        blogs_page = paginator.page(1)
-    except EmptyPage:
-        blogs_page = paginator.page(paginator.num_pages)
-    
-    context = {
-        'blogs': blogs_page,
-        'categories': Blog.CATEGORY_CHOICES,
-    }
-    
-    return render(request, 'blog/list.html', context)
+def blog_instagram(request):
+    return render(request, 'blog/why-instagram.html')
 
+def blog_posts_not_journeys(request):
+    return render(request, 'blog/posts-not-journeys.html')
 
-def blog_detail_view(request, slug):
-    """View a single blog post"""
-    blog = get_object_or_404(Blog, slug=slug, status='published')
-    
-    # Increment view count
-    blog.view_count += 1
-    blog.save(update_fields=['view_count'])
-    
-    # Get related posts
-    related_posts = Blog.objects.filter(
-        status='published',
-        category=blog.category
-    ).exclude(id=blog.id).order_by('-published_at')[:3]
-    
-    context = {
-        'blog': blog,
-        'related_posts': related_posts,
-    }
-    
-    return render(request, 'blog/detail.html', context)
+def blog_challenge_product(request):
+    return render(request, 'blog/challenge-to-product.html')
 
+def blog_journey_content(request):
+    return render(request, 'blog/journey-50-pieces.html')
+
+def blog_scattered_posts(request):
+    return render(request, 'blog/scattered-to-structured.html')
+
+def blog_buried_asset(request):
+    return render(request, 'blog/buried-asset.html')
+
+def blog_blind_spot(request):
+    return render(request, 'blog/blind-spot.html')
+
+def blog_challenge_fails(request):
+    return render(request, 'blog/30-day-challenge-fails.html')
+
+def blog_journey_page(request):
+    return render(request, 'blog/journey-page-for-coaches.html')
+
+def blog_challenge_lost(request):
+    return render(request, 'blog/challenge-lost-after-day-7.html')
 
 # ============================================================================
 # FAQ VIEWS

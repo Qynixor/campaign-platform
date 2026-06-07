@@ -13,7 +13,6 @@ urlpatterns = [
     # Welcome/Onboarding
     path('welcome/', views.welcome_view, name='welcome'),
 
-    
     # Onboarding
     path('onboarding/', views.onboarding_wizard_view, name='onboarding'),
     path('api/journey/quick-create/', views.api_quick_create_journey, name='api_quick_create_journey'),    
@@ -47,12 +46,7 @@ path('password-reset/complete/',
     path('j/<slug:slug>/', views.journey_detail_view, name='journey_detail'),
     path('@<str:username>/', views.creator_profile_view, name='creator_profile'),
     
-    # ============================================================================
-    # BLOG
-    # ============================================================================
-    path('blog/', views.blog_list_view, name='blog_list'),
-    path('blog/<slug:slug>/', views.blog_detail_view, name='blog_detail'),
-    
+
     # ============================================================================
     # STATIC PAGES
     # ============================================================================
@@ -158,6 +152,20 @@ path('templates/<int:template_id>/apply/', views.apply_template_to_journey, name
 path('templates/<int:template_id>/complete/', views.complete_template_purchase_view, name='complete_template_purchase'),
 
 path('templates/<int:template_id>/admin-create/', views.admin_create_journey_from_template, name='admin_create_journey'),
+    # ============================================================================
+    # BLOG
+    # ============================================================================
+    path('blog/', views.blog_index, name='blog_index'),
+    path('blog/why-instagram/', views.blog_instagram, name='blog_instagram'),
+    path('blog/posts-not-journeys/', views.blog_posts_not_journeys, name='blog_posts_not_journeys'),
+    path('blog/challenge-to-product/', views.blog_challenge_product, name='blog_challenge_product'),
+    path('blog/journey-50-pieces/', views.blog_journey_content, name='blog_journey_content'),
+    path('blog/scattered-to-structured/', views.blog_scattered_posts, name='blog_scattered_posts'),
+    path('blog/buried-asset/', views.blog_buried_asset, name='blog_buried_asset'),  # NEW
+    path('blog/blind-spot/', views.blog_blind_spot, name='blog_blind_spot'),  # NEW
+    path('blog/30-day-challenge-fails/', views.blog_challenge_fails, name='blog_challenge_fails'),
+    path('blog/journey-page-for-coaches/', views.blog_journey_page, name='blog_journey_page'), 
+    path('blog/challenge-lost-after-day-7/', views.blog_challenge_lost, name='blog_challenge_lost'),
 ]
 
 # ============================================================================

@@ -839,6 +839,27 @@ class Blog(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
     
+    # Add these new fields
+    category = models.CharField(max_length=50, choices=[
+        ('social-problems', 'Social Media Problems'),
+        ('creator-monetization', 'Creator Monetization'),
+        ('challenge-design', 'Challenge Design'),
+        ('creator-growth', 'Creator Growth'),
+        ('rallynex-specific', 'Rallynex Specific'),
+        ('high-intent', 'High-Intent Keywords'),
+    ], default='social-problems')
+    
+    read_time = models.PositiveIntegerField(default=5, help_text="Minutes to read")
+    seo_title = models.CharField(max_length=70, blank=True)
+    seo_description = models.CharField(max_length=160, blank=True)
+    canonical_url = models.URLField(blank=True)
+    
+    # For internal linking
+    related_posts = models.ManyToManyField('self', blank=True, symmetrical=False)
+    
+    # Content upgrade (lead magnet)
+    content_upgrade_title = models.CharField(max_length=100, blank=True)
+    content_upgrade_url = models.URLField(blank=True)
     class Meta:
         ordering = ['-created_at']
         indexes = [
