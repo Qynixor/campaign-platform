@@ -377,6 +377,7 @@ def discover_view(request):
     return render(request, 'discover.html', context)
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+
 def journey_detail_view(request, slug):
     """View a single journey"""
     journey_qs = Journey.objects.select_related('creator__user').prefetch_related(
@@ -436,20 +437,19 @@ def journey_detail_view(request, slug):
     # Prepare activities JSON for JavaScript
     activities_json = {}
     for day, activity in activities_by_day.items():
-        activities_json[day] = {
+        activities_json[str(day)] = {
             'id': activity.id,
-            'content': activity.content,
+            'content': activity.content or '',
             'fileUrl': activity.file.url if activity.file else None,
             'isVideo': activity.is_video,
-            'thumbnailUrl': activity.thumbnail.url if activity.thumbnail else None,
-            'source_url': activity.source_url or '',
-            'source_platform': getattr(activity, 'source_platform', ''),
+            'thumbnailUrl': activity.thumbnail.url if hasattr(activity.thumbnail, 'url') and activity.thumbnail else None,
+            'sourceUrl': activity.source_url or '',
+            'sourcePlatform': activity.source_platform or '',
             'embedHtml': activity.embed_html or '',
             'loveCount': activity.get_love_count(),
             'commentCount': activity.get_comment_count(),
         }
     
-    # Use DjangoJSONEncoder to handle special characters
     activities_json_str = json.dumps(activities_json, cls=DjangoJSONEncoder)
     
     context = {
@@ -466,6 +466,8 @@ def journey_detail_view(request, slug):
     }
     
     return render(request, 'journey/detail.html', context)
+
+
 
 def creator_profile_view(request, username):
     """View a creator's profile and their journeys"""
@@ -1109,47 +1111,60 @@ def api_preview_url(request):
     oembed_data = fetch_oembed_data(url, platform)
     
     if oembed_data and (oembed_data.get('thumbnail_url') or oembed_data.get('html')):
+        # For all platforms, sanitize the embed HTML to prevent script loading issues
+        embed_html = oembed_data.get('html', '')
+        
+        # Remove problematic scripts from the embed temporarily (they'll load async)
+        import re
+        # Remove inline scripts that might cause errors
+        embed_html = re.sub(r'<script[^>]*>.*?</script>', '', embed_html, flags=re.DOTALL)
+        
+        # For Instagram, add a placeholder div that will be replaced by Instagram's embed script
+        if platform == 'instagram':
+            embed_html = f'<div class="instagram-placeholder" data-instgrm-permalink="{url}"><div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-instagram" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Instagram Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Instagram →</a></div></div>'
+        
+        # For TikTok, use a simpler embed that loads reliably
+        elif platform == 'tiktok':
+            embed_html = f'<div class="tiktok-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-tiktok" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>TikTok Video</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">Watch on TikTok →</a></div>'
+        
+        # For Twitter, use a simpler embed
+        elif platform == 'twitter':
+            embed_html = f'<div class="twitter-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-twitter" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Tweet</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on X →</a></div>'
+        
+        # For Facebook, use simpler embed
+        elif platform == 'facebook':
+            embed_html = f'<div class="facebook-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-facebook" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Facebook Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Facebook →</a></div>'
+        
         return JsonResponse({
             'success': True,
             'platform': platform,
-            'title': oembed_data.get('title', ''),
+            'title': oembed_data.get('title', f'{platform.title()} Post'),
             'thumbnail_url': oembed_data.get('thumbnail_url', ''),
             'author_name': oembed_data.get('author_name', ''),
-            'html': oembed_data.get('html', ''),
+            'html': embed_html,
         })
     
-    # Fallback: generate embed HTML for known platforms
-    embed_html = generate_embed_html(url, platform)
+    # Fallback: use safe placeholders for all platforms
+    safe_placeholders = {
+        'tiktok': ('fa-tiktok', 'TikTok Video', 'Watch on TikTok'),
+        'instagram': ('fa-instagram', 'Instagram Post', 'View on Instagram'),
+        'youtube': ('fa-youtube', 'YouTube Video', 'Watch on YouTube'),
+        'facebook': ('fa-facebook', 'Facebook Post', 'View on Facebook'),
+        'twitter': ('fa-twitter', 'Tweet', 'View on X'),
+    }
     
-    # For Twitter/X, try to extract a meaningful preview
-    if platform == 'twitter':
-        parts = url.rstrip('/').split('/')
-        username = parts[3] if len(parts) > 3 else ''
-        tweet_id = parts[5] if len(parts) > 5 else ''
-        
-        # Twitter doesn't provide thumbnails via oEmbed without auth
-        # Use a placeholder card that shows the tweet context
-        return JsonResponse({
-            'success': True,
-            'platform': platform,
-            'title': f'Tweet by @{username}',
-            'thumbnail_url': '',
-            'author_name': f'@{username}',
-            'html': embed_html if embed_html else '',
-            'embed_available': bool(embed_html),
-        })
+    icon, label, action = safe_placeholders.get(platform, ('fa-link', 'Content', 'View Original'))
     
-    # For other platforms, return what we have
+    embed_html = f'<div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab {icon}" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>{label}</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">{action} →</a></div>'
+    
     return JsonResponse({
         'success': True,
         'platform': platform,
         'title': f'{platform.title()} Post',
         'thumbnail_url': '',
         'author_name': '',
-        'html': embed_html if embed_html else '',
-        'embed_available': bool(embed_html),
+        'html': embed_html,
     })
-
 
 
 
@@ -2186,3 +2201,266 @@ def toggle_theme(request):
         return response
     except:
         return JsonResponse({'success': False}, status=400)
+
+
+import requests
+from django.conf import settings
+
+# ============================================================================
+# YOUTUBE PLAYLIST BULK IMPORT
+# ============================================================================
+
+def get_youtube_embed_html(video_id):
+    """Generate proper YouTube embed HTML with responsive wrapper"""
+    return f'<div class="youtube-embed-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1&playsinline=1&autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>'
+
+
+def extract_playlist_id(url):
+    """Extract playlist ID from YouTube URL"""
+    import re
+    patterns = [
+        r'[?&]list=([a-zA-Z0-9_-]+)',
+        r'youtube\.com/playlist/([a-zA-Z0-9_-]+)',
+        r'youtu\.be/.*[?&]list=([a-zA-Z0-9_-]+)',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
+def fetch_youtube_playlist_items(playlist_id, api_key):
+    """Fetch all videos from a YouTube playlist (max 50)"""
+    import requests
+    videos = []
+    next_page_token = None
+    
+    while True:
+        url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={api_key}"
+        if next_page_token:
+            url += f"&pageToken={next_page_token}"
+        
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            print(f"YouTube API error: {e}")
+            break
+        
+        for item in data.get('items', []):
+            snippet = item['snippet']
+            video_id = snippet['resourceId']['videoId']
+            
+            # Get better thumbnail quality
+            thumbnail = snippet['thumbnails'].get('maxres', {}).get('url') or \
+                       snippet['thumbnails'].get('standard', {}).get('url') or \
+                       snippet['thumbnails'].get('high', {}).get('url') or \
+                       snippet['thumbnails'].get('medium', {}).get('url')
+            
+            videos.append({
+                'title': snippet['title'],
+                'video_id': video_id,
+                'thumbnail': thumbnail,
+                'description': snippet.get('description', '')[:300],
+                'position': item.get('position', len(videos)),
+                'url': f"https://www.youtube.com/watch?v={video_id}",
+                'embed_html': get_youtube_embed_html(video_id),
+            })
+        
+        next_page_token = data.get('nextPageToken')
+        if not next_page_token:
+            break
+    
+    return sorted(videos, key=lambda x: x['position'])
+
+
+def fetch_youtube_playlist_metadata(playlist_id, api_key):
+    """Fetch playlist title and description"""
+    import requests
+    url = f"https://www.googleapis.com/youtube/v3/playlists?part=snippet&id={playlist_id}&key={api_key}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if data.get('items'):
+            snippet = data['items'][0]['snippet']
+            return {
+                'title': snippet['title'],
+                'description': snippet.get('description', ''),
+                'channel': snippet['channelTitle'],
+            }
+    except Exception as e:
+        print(f"Error fetching playlist metadata: {e}")
+    return None
+
+@login_required
+def youtube_playlist_import_view(request):
+    """Bulk import an entire YouTube playlist as a journey"""
+    from django.contrib import messages
+    from django.shortcuts import redirect, get_object_or_404
+    from django.conf import settings
+    from django.utils import timezone
+    from .models import Journey, Activity, User, Profile
+    
+    if request.method == 'POST':
+        playlist_url = request.POST.get('playlist_url', '').strip()
+        journey_id = request.POST.get('journey_id')
+        template_style = request.POST.get('template_style', 'default')
+        journey_type = request.POST.get('journey_type', 'daily')  # NEW: Get journey type
+        current_day_input = request.POST.get('current_day', '1')
+        
+        # Validate current day
+        try:
+            current_day = int(current_day_input)
+            if current_day < 1:
+                current_day = 1
+        except (ValueError, TypeError):
+            current_day = 1
+        
+        if not playlist_url:
+            messages.error(request, 'Please enter a YouTube playlist URL.')
+            return redirect('youtube_playlist_import')
+        
+        playlist_id = extract_playlist_id(playlist_url)
+        if not playlist_id:
+            messages.error(request, 'Invalid YouTube playlist URL.')
+            return redirect('youtube_playlist_import')
+        
+        # Check API key
+        api_key = getattr(settings, 'YOUTUBE_API_KEY', None)
+        if not api_key:
+            messages.error(request, 'YouTube API key not configured.')
+            return redirect('youtube_playlist_import')
+        
+        # Fetch videos
+        videos = fetch_youtube_playlist_items(playlist_id, api_key)
+        if not videos:
+            messages.error(request, 'Could not fetch playlist. Make sure it is public.')
+            return redirect('youtube_playlist_import')
+        
+        # Determine category based on template style
+        category_map = {
+            'fitness': 'fitness',
+            'portfolio': 'creative',
+            'startup': 'business',
+            'default': 'other',
+        }
+        
+        # Get or create journey
+        if journey_id:
+            journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
+            # Update duration to match video count
+            journey.duration = len(videos)
+            # Update template style if changed
+            journey.template_style = template_style
+            # Update journey type if changed (NEW)
+            journey.journey_type = journey_type
+            # Update current day override if provided (only for daily journeys)
+            if journey_type == 'daily':
+                journey.current_day_override = current_day
+            else:
+                journey.current_day_override = None  # Milestone journeys don't use current_day_override
+            journey.save(update_fields=['duration', 'template_style', 'journey_type', 'current_day_override'])
+            created_count = 0
+            updated_count = 0
+            
+            for idx, video in enumerate(videos, start=1):
+                activity, created = Activity.objects.update_or_create(
+                    journey=journey,
+                    day_number_field=idx,
+                    defaults={
+                        'content': video['title'],
+                        'embed_html': video['embed_html'],
+                        'source_url': video['url'],
+                        'source_platform': 'youtube',
+                        'thumbnail': video['thumbnail'],
+                        'is_video': True,
+                        'published_at': timezone.now(),
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+            
+            messages.success(
+                request, 
+                f'✅ Imported {len(videos)} videos to "{journey.title}"! '
+                f'({created_count} new, {updated_count} updated) Journey type: {journey_type}.'
+            )
+            return redirect('journey_content', slug=journey.slug)
+        
+        else:
+            # Create a new journey (unclaimed, via rallynex user)
+            rallynex_user = User.objects.filter(username='rallynex').first()
+            if not rallynex_user:
+                rallynex_user = User.objects.create_user(
+                    username='rallynex',
+                    email='system@rallynex.com',
+                    password=None,
+                    is_active=False
+                )
+                Profile.objects.get_or_create(user=rallynex_user)
+            
+            metadata = fetch_youtube_playlist_metadata(playlist_id, api_key)
+            journey_title = metadata['title'] if metadata else f"YouTube Playlist: {playlist_id[:10]}"
+            
+            profile = rallynex_user.profile
+            
+            # Calculate adjusted start date based on current day (only for daily journeys)
+            from datetime import timedelta
+            adjusted_start_date = timezone.now() - timedelta(days=current_day - 1) if journey_type == 'daily' else timezone.now()
+            
+            journey = Journey.objects.create(
+                creator=profile,
+                title=journey_title[:100],
+                description=metadata.get('description', '')[:500] if metadata else '',
+                category=category_map.get(template_style, 'other'),
+                journey_type=journey_type,  # NEW: Use the selected journey type
+                duration=len(videos),
+                template_style=template_style,
+                current_day_override=current_day if journey_type == 'daily' else None,
+                start_date=adjusted_start_date,
+                is_public=False,
+                is_active=True,
+                published_at=timezone.now(),
+            )
+            
+            # Create activities
+            for idx, video in enumerate(videos, start=1):
+                Activity.objects.create(
+                    journey=journey,
+                    day_number_field=idx,
+                    content=video['title'][:500],
+                    embed_html=video['embed_html'],
+                    source_url=video['url'],
+                    source_platform='youtube',
+                    thumbnail=video['thumbnail'],
+                    is_video=True,
+                    published_at=timezone.now() - timedelta(days=current_day - idx) if journey_type == 'daily' and idx < current_day else timezone.now(),
+                )
+            
+            # Redirect to preview page so user can claim it
+            journey_type_display = "Milestone Journey" if journey_type == 'milestone' else "Daily Challenge"
+            messages.success(
+                request,
+                f'🎬 Created {journey_type_display} "{journey.title}" with {len(videos)} days! '
+                f'Click "Claim" below to take ownership.'
+            )
+            return redirect('preview_journey', slug=journey.slug)
+    
+    # GET request - show form
+    user_journeys = Journey.objects.filter(creator__user=request.user, is_active=True).order_by('-created_at')
+    
+    context = {
+        'journeys': user_journeys,
+        'template_styles': [
+            {'value': 'default', 'name': 'Classic', 'icon': '📱', 'desc': 'Simple day-by-day strip'},
+            {'value': 'fitness', 'name': 'Fitness', 'icon': '🏋️', 'desc': 'Progress gallery, workout counter'},
+            {'value': 'portfolio', 'name': 'Portfolio', 'icon': '💼', 'desc': 'Professional milestone cards'},
+            {'value': 'startup', 'name': 'Startup', 'icon': '🚀', 'desc': 'Build-in-public roadmap'},
+        ],
+    }
+    return render(request, 'tools/youtube_playlist_import.html', context)

@@ -159,9 +159,56 @@
         background: var(--bg-primary);
     }
     
-    .preview-media .embed-container blockquote {
-        margin: 0;
+    /* Safe placeholder styles */
+    .safe-placeholder {
         width: 100%;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+    }
+    
+    .safe-placeholder i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+    
+    .safe-placeholder h4 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .safe-placeholder p {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    
+    .safe-placeholder .view-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 20px;
+        background: var(--accent);
+        color: white;
+        border-radius: 30px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    
+    .safe-placeholder .view-link:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
     }
     
     .preview-media .no-preview {
@@ -412,6 +459,32 @@
     .day-suggested {
         border-color: #22c55e !important;
         box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
+        transition: all 0.3s;
+    }
+    
+    /* YouTube embed wrapper */
+    .youtube-embed-wrapper {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        background: #000;
+        width: 100%;
+    }
+    
+    .youtube-embed-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        70% { opacity: 1; }
+        100% { opacity: 0; visibility: hidden; }
     }
     
     @media (max-width: 500px) {
@@ -631,7 +704,6 @@
         platformBadge.style.display = 'inline-flex';
         detectedPlatform.value = platform;
         
-        // Update tabs visual (don't auto-switch, just highlight)
         document.querySelectorAll('.platform-tab').forEach(tab => {
             if (tab.dataset.platform === platform) {
                 tab.classList.add('active');
@@ -639,6 +711,33 @@
                 tab.classList.remove('active');
             }
         });
+    }
+    
+    function showSafePlaceholder(url, platform) {
+        const platformName = platformNames[platform] || 'Content';
+        const iconClass = platformIcons[platform] || 'fa-link';
+        
+        previewMedia.innerHTML = `
+            <div class="safe-placeholder">
+                <i class="fab ${iconClass}"></i>
+                <h4>${platformName} Post</h4>
+                <p>Click below to view the original content</p>
+                <a href="${escapeHtml(url)}" target="_blank" class="view-link" onclick="event.stopPropagation()">
+                    <i class="fas fa-external-link-alt"></i> View on ${platformName}
+                </a>
+            </div>
+        `;
+        
+        previewTitle.textContent = `${platformName} Post`;
+        previewAuthor.style.display = 'none';
+        embedHtmlInput.value = '';
+        submitBtn.disabled = false;
+    }
+    
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
     }
     
     async function fetchPreview(url, platform) {
@@ -654,37 +753,26 @@
             const data = await response.json();
             
             if (data.success) {
-                // Render media
-                if (data.html) {
-                    previewMedia.innerHTML = '<div class="embed-container">' + data.html + '</div>';
+                // For YouTube - safe to embed
+                if (platform === 'youtube' && data.html) {
+                    previewMedia.innerHTML = data.html;
                     embedHtmlInput.value = data.html;
-                    
-                    // Load embed scripts if needed
-                    if (platform === 'instagram' && window.instgrm) {
-                        window.instgrm.Embeds.process();
-                    }
-                    if (platform === 'tiktok') {
-                        const script = document.createElement('script');
-                        script.src = 'https://www.tiktok.com/embed.js';
-                        script.async = true;
-                        document.body.appendChild(script);
-                    }
-                } else if (data.thumbnail_url) {
-                    previewMedia.innerHTML = '<img src="' + data.thumbnail_url + '" alt="Preview" loading="lazy">' +
-                        '<div class="platform-watermark"><i class="fab ' + platformIcons[platform] + '"></i> ' + platformNames[platform] + '</div>';
-                    thumbnailUrlInput.value = data.thumbnail_url;
-                } else {
-                    // Show platform card with context
-                    previewMedia.innerHTML = 
-                        '<div class="no-preview">' +
-                            '<i class="fab ' + platformIcons[platform] + '" style="opacity:0.5;"></i>' +
-                            '<span style="margin-top:8px;">' + platformNames[platform] + ' Post</span>' +
-                            '<span style="font-size:11px;margin-top:4px;color:var(--text-muted);">Link will be saved with embed</span>' +
-                        '</div>';
+                }
+                // For all other platforms - use safe placeholder
+                else {
+                    showSafePlaceholder(url, platform);
+                    embedHtmlInput.value = '';
                 }
                 
                 // Update info
-                previewTitle.textContent = data.title || platformNames[platform] + ' Post';
+                if (data.title && platform !== 'youtube') {
+                    previewTitle.textContent = data.title;
+                } else if (platform === 'youtube' && data.title) {
+                    previewTitle.textContent = data.title;
+                } else {
+                    previewTitle.textContent = platformNames[platform] + ' Post';
+                }
+                
                 if (data.author_name) {
                     previewAuthor.textContent = 'by ' + data.author_name;
                     previewAuthor.style.display = 'block';
@@ -697,30 +785,14 @@
                     captionInput.value = data.title;
                 }
                 
-                if (!data.html) embedHtmlInput.value = '';
-                
                 submitBtn.disabled = false;
                 
             } else {
-                previewMedia.innerHTML = 
-                    '<div class="no-preview">' +
-                        '<i class="fab ' + platformIcons[platform] + '" style="opacity:0.5;"></i>' +
-                        '<span style="margin-top:8px;">Link will be saved</span>' +
-                    '</div>';
-                previewTitle.textContent = platformNames[platform] + ' Post';
-                previewAuthor.style.display = 'none';
-                submitBtn.disabled = false;
+                showSafePlaceholder(url, platform);
             }
         } catch (error) {
             console.error('Preview error:', error);
-            previewMedia.innerHTML = 
-                '<div class="no-preview">' +
-                    '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>' +
-                    '<span style="margin-top:8px;">Could not load preview</span>' +
-                    '<span style="font-size:11px;margin-top:4px;color:var(--text-muted);">Link will still be saved</span>' +
-                '</div>';
-            previewTitle.textContent = platformNames[platform] + ' Post';
-            submitBtn.disabled = false;
+            showSafePlaceholder(url, platform);
         }
     }
     
@@ -732,7 +804,10 @@
         
         if (platform) {
             updatePlatformBadge(platform);
-            debounceTimer = setTimeout(function() { fetchPreview(url, platform); }, 600);
+            previewUrlDisplay.textContent = url;
+            debounceTimer = setTimeout(function() { 
+                fetchPreview(url, platform); 
+            }, 600);
         } else {
             platformBadge.style.display = 'none';
             previewCard.classList.remove('active');
@@ -740,7 +815,7 @@
         }
     });
     
-    // Platform tab clicks - just update placeholder
+    // Platform tab clicks
     document.querySelectorAll('.platform-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
@@ -777,7 +852,7 @@
                 dayInput.classList.remove('day-suggested');
             }, 2000);
             
-            // Optional: Show a small tooltip
+            // Show tooltip
             const tooltip = document.createElement('div');
             tooltip.textContent = `💡 Suggested day ${currentDay} for "${journeyTitle}"`;
             tooltip.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 16px;border-radius:30px;font-size:12px;z-index:1000;animation:fadeOut 2s forwards;';
@@ -808,17 +883,6 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing...';
     });
-    
-    // Add fadeOut keyframes
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
-        }
-    `;
-    document.head.appendChild(style);
 </script>
 
 {% endblock %}

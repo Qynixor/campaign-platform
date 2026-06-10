@@ -166,6 +166,7 @@ path('templates/<int:template_id>/admin-create/', views.admin_create_journey_fro
     path('blog/30-day-challenge-fails/', views.blog_challenge_fails, name='blog_challenge_fails'),
     path('blog/journey-page-for-coaches/', views.blog_journey_page, name='blog_journey_page'), 
     path('blog/challenge-lost-after-day-7/', views.blog_challenge_lost, name='blog_challenge_lost'),
+    path('tools/youtube-playlist-import/', views.youtube_playlist_import_view, name='youtube_playlist_import'),
 ]
 
 # ============================================================================
