@@ -455,6 +455,32 @@
         margin-bottom: 32px;
     }
     
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: var(--text-muted);
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h3 {
+        font-size: 24px;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+    
     /* Responsive */
     @media (max-width: 1024px) {
         .journey-grid {
@@ -625,18 +651,7 @@
                 </div>
                 
                 <div class="hero-stats">
-                    <div class="stat-item">
-                        <span class="stat-value">500+</span>
-                        <span class="stat-label">Active Journeys</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">$50K+</span>
-                        <span class="stat-label">Raised for Causes</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">5K+</span>
-                        <span class="stat-label">Creators</span>
-                    </div>
+                  
                 </div>
             </div>
             <div class="hero-visual">
@@ -690,7 +705,7 @@
     </div>
 </section>
 
-{# Featured Journeys Section #}
+{# Featured Journeys Section - DYNAMIC FROM DATABASE #}
 <section class="featured-section">
     <div class="container">
         <div class="section-header-with-link">
@@ -703,70 +718,143 @@
             </a>
         </div>
         
-        <div class="journey-grid">
-            <!-- Journey 1 -->
-            <div class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-dumbbell"></i>
-                </div>
-                <div class="journey-info">
-                    <h3 class="journey-title">30 Days of Fitness</h3>
-                    <div class="journey-creator">by Coach Sarah</div>
-                    <div class="journey-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 60%"></div>
+        {% if featured_journeys %}
+            <div class="journey-grid">
+                {% for journey in featured_journeys %}
+                    <a href="{% url 'journey_detail' journey.slug %}" class="journey-card">
+                        <div class="journey-cover">
+                            {% if journey.cover_image %}
+                                <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-route"></i>
+                            {% endif %}
                         </div>
-                        <div class="progress-text">Day 18 of 30</div>
-                    </div>
-                    <div class="journey-stats">
-                        <span><i class="fas fa-heart"></i> 234</span>
-                        <span><i class="fas fa-comment"></i> 45</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Journey 2 -->
-            <div class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-code"></i>
-                </div>
-                <div class="journey-info">
-                    <h3 class="journey-title">Building in Public</h3>
-                    <div class="journey-creator">by Alex Chen</div>
-                    <div class="journey-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 40%"></div>
+                        <div class="journey-info">
+                            <span class="category-badge">
+                                {% if journey.category == 'fitness' %}
+                                    💪 Fitness
+                                {% elif journey.category == 'learning' %}
+                                    📚 Learning
+                                {% elif journey.category == 'creative' %}
+                                    🎨 Creative
+                                {% elif journey.category == 'business' %}
+                                    📈 Business
+                                {% elif journey.category == 'personal' %}
+                                    🌱 Personal
+                                {% elif journey.category == 'cause' %}
+                                    🤝 Cause
+                                {% else %}
+                                    🚀 Journey
+                                {% endif %}
+                            </span>
+                            <h3 class="journey-title" style="margin-top: 4px;">{{ journey.title }}</h3>
+                            <div class="journey-creator">
+                                by {{ journey.creator.user.get_full_name|default:journey.creator.user.username }}
+                            </div>
+                            <div class="journey-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%"></div>
+                                </div>
+                                <div class="progress-text">
+                                    {% if journey.journey_type == 'daily' %}
+                                        Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                    {% else %}
+                                        {{ journey.activities.count }} of {{ journey.duration }} milestones
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="journey-stats">
+                                <span><i class="fas fa-heart"></i> {{ journey.followers.count }}</span>
+                                <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+                            </div>
                         </div>
-                        <div class="progress-text">Day 12 of 30</div>
-                    </div>
-                    <div class="journey-stats">
-                        <span><i class="fas fa-heart"></i> 189</span>
-                        <span><i class="fas fa-comment"></i> 32</span>
-                    </div>
-                </div>
+                    </a>
+                {% endfor %}
             </div>
-            
-            <!-- Journey 3 -->
-            <div class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-palette"></i>
-                </div>
-                <div class="journey-info">
-                    <h3 class="journey-title">100 Days of Art</h3>
-                    <div class="journey-creator">by Maya Rodriguez</div>
-                    <div class="journey-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 85%"></div>
-                        </div>
-                        <div class="progress-text">Day 85 of 100</div>
-                    </div>
-                    <div class="journey-stats">
-                        <span><i class="fas fa-heart"></i> 567</span>
-                        <span><i class="fas fa-comment"></i> 89</span>
-                    </div>
-                </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-compass"></i>
+                <h3>No featured journeys yet</h3>
+                <p>Be the first to create a featured journey!</p>
+                <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Your First Journey</a>
             </div>
+        {% endif %}
+    </div>
+</section>
+
+{# Trending Journeys Section - DYNAMIC FROM DATABASE #}
+<section class="featured-section" style="background: var(--bg-primary);">
+    <div class="container">
+        <div class="section-header-with-link">
+            <div>
+                <h2 class="section-title" style="margin-bottom: 8px;">🔥 Trending Now</h2>
+                <p class="section-subtitle">Most popular journeys this week</p>
+            </div>
+            <a href="{% url 'discover' %}" class="view-all-link">
+                View All Journeys <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
+        
+        {% if trending_journeys %}
+            <div class="journey-grid">
+                {% for journey in trending_journeys %}
+                    <a href="{% url 'journey_detail' journey.slug %}" class="journey-card">
+                        <div class="journey-cover">
+                            {% if journey.cover_image %}
+                                <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-fire"></i>
+                            {% endif %}
+                        </div>
+                        <div class="journey-info">
+                            <span class="category-badge">
+                                {% if journey.category == 'fitness' %}
+                                    💪 Fitness
+                                {% elif journey.category == 'learning' %}
+                                    📚 Learning
+                                {% elif journey.category == 'creative' %}
+                                    🎨 Creative
+                                {% elif journey.category == 'business' %}
+                                    📈 Business
+                                {% elif journey.category == 'personal' %}
+                                    🌱 Personal
+                                {% elif journey.category == 'cause' %}
+                                    🤝 Cause
+                                {% else %}
+                                    🚀 Journey
+                                {% endif %}
+                            </span>
+                            <h3 class="journey-title" style="margin-top: 4px;">{{ journey.title }}</h3>
+                            <div class="journey-creator">
+                                by {{ journey.creator.user.get_full_name|default:journey.creator.user.username }}
+                            </div>
+                            <div class="journey-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%"></div>
+                                </div>
+                                <div class="progress-text">
+                                    {% if journey.journey_type == 'daily' %}
+                                        Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                    {% else %}
+                                        {{ journey.activities.count }} of {{ journey.duration }} milestones
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="journey-stats">
+                                <span><i class="fas fa-heart"></i> {{ journey.followers.count }}</span>
+                                <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+                            </div>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-chart-line"></i>
+                <h3>No trending journeys yet</h3>
+                <p>Check back soon for popular journeys!</p>
+            </div>
+        {% endif %}
     </div>
 </section>
 

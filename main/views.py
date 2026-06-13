@@ -281,27 +281,24 @@ def logout_view(request):
 # ============================================================================
 # PUBLIC VIEWS
 # ============================================================================
-
 def landing_view(request):
-    """Landing page"""
+    """Landing page with dynamic journeys from database"""
     # Get featured journeys
     featured_journeys = Journey.objects.filter(
         is_public=True,
         is_active=True,
         is_featured=True
-    ).select_related('creator__user').prefetch_related('activities')[:6]
+    ).select_related('creator__user').prefetch_related('activities', 'followers')[:6]
     
-    # Get trending journeys (most views in last 7 days)
+    # Get trending journeys (most viewed)
     trending_journeys = Journey.objects.filter(
         is_public=True,
         is_active=True
     ).order_by('-view_count')[:6]
     
-  
     context = {
         'featured_journeys': featured_journeys,
         'trending_journeys': trending_journeys,
-        
     }
     
     return render(request, 'landing.html', context)
