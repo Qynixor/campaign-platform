@@ -303,5 +303,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
-# settings.py
-YOUTUBE_API_KEY = "AIzaSyDqUSnmMwiMIheQMgnA4yzfC_nSA0D6SV0"
+# =====================================================
+# YOUTUBE API
+# =====================================================
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
