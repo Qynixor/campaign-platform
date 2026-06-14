@@ -96,6 +96,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'main.context_processors.cloudinary_config',  # Add this for Cloudinary config in templates
                 'main.context_processors.theme_context',
+                'main.context_processors.notification_count',
             ],
         },
     },

@@ -19,3 +19,11 @@ def theme_context(request):
         'current_theme': theme,
         'is_dark_mode': theme == 'dark',
     }
+
+
+def notification_count(request):
+    if request.user.is_authenticated:
+        from .models import Notification
+        count = Notification.objects.filter(user=request.user, viewed=False).count()
+        return {'unread_count': count}
+    return {'unread_count': 0}
