@@ -8,7 +8,7 @@ from .models import (
     Profile, SocialConnection, ImportedContent,
     Journey, Activity, JourneyFollow, Tag,
     ActivityComment, Donation, PostJourneyProduct,
-    Report, Blog
+    Report, 
 )
 import re
 from datetime import timedelta
@@ -1193,84 +1193,6 @@ class PostJourneyProductForm(forms.ModelForm):
         
         return cleaned_data
 
-
-# ============================================================================
-# BLOG FORMS
-# ============================================================================
-
-class BlogForm(forms.ModelForm):
-    """Create/edit blog post"""
-    
-    title = forms.CharField(
-        max_length=255,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Blog post title'
-        })
-    )
-    
-    excerpt = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Short summary (shown in listings)',
-            'rows': 3
-        })
-    )
-    
-    content = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Write your blog post...',
-            'rows': 15
-        })
-    )
-    
-    featured_image = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'blog',
-            'transformation': [
-                {'width': 1200, 'height': 630, 'crop': 'fill'},
-                {'quality': 'auto:best', 'fetch_format': 'auto'}
-            ],
-            'format': 'webp'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'image/*'
-        })
-    )
-    
-    category = forms.ChoiceField(
-        choices=Blog.CATEGORY_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    status = forms.ChoiceField(
-        choices=Blog.STATUS_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    class Meta:
-        model = Blog
-        fields = ['title', 'excerpt', 'content', 'featured_image', 'category', 'status']
-    
-    def save(self, commit=True):
-        blog = super().save(commit=False)
-        
-        if blog.status == 'published' and not blog.published_at:
-            blog.published_at = timezone.now()
-        
-        if commit:
-            blog.save()
-        
-        return blog
 
 
 # ============================================================================

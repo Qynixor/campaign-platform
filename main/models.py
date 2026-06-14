@@ -802,86 +802,6 @@ class Report(models.Model):
         return f"Report by {self.reported_by.username}"
 
 
-# ============================================================================
-# BLOG / MARKETING MODELS
-# ============================================================================
-
-class Blog(models.Model):
-    """Blog posts for marketing/SEO"""
-    
-    CATEGORY_CHOICES = [
-        ('updates', 'Product Updates'),
-        ('tips', 'Creator Tips'),
-        ('spotlight', 'Journey Spotlight'),
-        ('other', 'Other'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('published', 'Published'),
-        ('archived', 'Archived'),
-    ]
-    
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, max_length=255, blank=True)
-    excerpt = models.TextField(max_length=500, blank=True)
-    content = models.TextField()
-    
-    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    featured_image = CloudinaryField('image', folder='blog', null=True, blank=True)
-    
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-    
-    view_count = models.PositiveIntegerField(default=0)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    published_at = models.DateTimeField(null=True, blank=True)
-    
-    # Add these new fields
-    category = models.CharField(max_length=50, choices=[
-        ('social-problems', 'Social Media Problems'),
-        ('creator-monetization', 'Creator Monetization'),
-        ('challenge-design', 'Challenge Design'),
-        ('creator-growth', 'Creator Growth'),
-        ('rallynex-specific', 'Rallynex Specific'),
-        ('high-intent', 'High-Intent Keywords'),
-    ], default='social-problems')
-    
-    read_time = models.PositiveIntegerField(default=5, help_text="Minutes to read")
-    seo_title = models.CharField(max_length=70, blank=True)
-    seo_description = models.CharField(max_length=160, blank=True)
-    canonical_url = models.URLField(blank=True)
-    
-    # For internal linking
-    related_posts = models.ManyToManyField('self', blank=True, symmetrical=False)
-    
-    # Content upgrade (lead magnet)
-    content_upgrade_title = models.CharField(max_length=100, blank=True)
-    content_upgrade_url = models.URLField(blank=True)
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['slug', 'status']),
-            models.Index(fields=['status', '-published_at']),
-        ]
-        verbose_name = 'Blog Post'
-        verbose_name_plural = 'Blog Posts'
-    
-    def __str__(self):
-        return self.title
-    
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        if self.status == 'published' and not self.published_at:
-            self.published_at = timezone.now()
-        super().save(*args, **kwargs)
-    
-    def get_absolute_url(self):
-        return reverse('blog_detail', args=[self.slug])
-
 
 class FAQ(models.Model):
     """Frequently Asked Questions"""
@@ -980,3 +900,33 @@ class JourneyTemplate(models.Model):
     
     def __str__(self):
         return f"{self.title} — ${self.price}"
+
+
+
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class ContactMessage(models.Model):
+    SUBJECT_CHOICES = [
+        ('general', 'General Question'),
+        ('support', 'Technical Support'),
+        ('fundraising', 'Fundraising Question'),
+        ('journey', 'Journey Help'),
+        ('import', 'Content Import Issue'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    subject = models.CharField(max_length=50, choices=SUBJECT_CHOICES)
+    message = models.TextField()
+    ai_response = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']

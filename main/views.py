@@ -21,7 +21,7 @@ from .models import (
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
     Donation, Notification, PostJourneyProduct,
-    Report, Blog, FAQ, JourneyTemplate  
+    Report,  FAQ, JourneyTemplate  
 )
 from .forms import (
     SignUpForm, LoginForm, ProfileForm,
@@ -1763,16 +1763,77 @@ def terms_view(request):
     return render(request, 'terms.html')
 
 
+import logging
+from django.shortcuts import render
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from .models import ContactMessage
+from .utils.contact_bot import contact_bot
+
+logger = logging.getLogger(__name__)
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
 def contact_view(request):
-    """Contact page"""
     if request.method == 'POST':
-        # Handle contact form
-        messages.success(request, 'Thank you for your message. We will get back to you soon.')
-        return redirect('contact')
+        name = request.POST.get('name', '').strip()
+        email = request.POST.get('email', '').strip()
+        subject = request.POST.get('subject', 'general')
+        message = request.POST.get('message', '').strip()
+        
+        # Simple validation
+        errors = {}
+        if not name:
+            errors['name'] = 'Name is required'
+        if not email:
+            errors['email'] = 'Email is required'
+        elif '@' not in email or '.' not in email:
+            errors['email'] = 'Enter a valid email'
+        if not message:
+            errors['message'] = 'Message is required'
+        
+        if errors:
+            return render(request, 'contact.html', {
+                'errors': errors,
+                'form_data': request.POST,
+                'submitted': False
+            })
+        
+        # Generate AI response
+        try:
+            ai_response = contact_bot.generate_response(name, message)
+        except Exception as e:
+            logger.error(f"AI error: {e}")
+            ai_response = f"Thanks {name}! For personal help, email rallynex1@gmail.com"
+        
+        # Save to database
+        try:
+            contact = ContactMessage(
+                user=request.user if request.user.is_authenticated else None,
+                name=name,
+                email=email,
+                subject=subject,
+                message=message,
+                ai_response=ai_response,
+                ip_address=get_client_ip(request)
+            )
+            contact.save()
+        except Exception as e:
+            logger.error(f"DB error: {e}")
+        
+        return render(request, 'contact.html', {
+            'submitted': True,
+            'ai_response': ai_response,
+            'name': name
+        })
     
-    return render(request, 'contact.html')
-
-
+    return render(request, 'contact.html', {'submitted': False})
 
 # ============================================================================
 # ERROR HANDLERS

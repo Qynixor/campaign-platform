@@ -8,7 +8,7 @@ from .models import (
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
     Donation, Notification, PostJourneyProduct,
-    Report, Blog, FAQ, JourneyTemplate
+    Report, FAQ, JourneyTemplate
 )
 
 
@@ -610,50 +610,6 @@ class ReportAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# BLOG ADMIN
-# ============================================================================
-
-@admin.register(Blog)
-class BlogAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'status', 'view_count', 'published_at', 'created_at']
-    list_filter = ['category', 'status', 'created_at', 'published_at']
-    search_fields = ['title', 'content', 'excerpt']
-    prepopulated_fields = {'slug': ('title',)}
-    readonly_fields = ['view_count', 'created_at', 'updated_at']
-    autocomplete_fields = ['author']
-    
-    fieldsets = (
-        ('Content', {
-            'fields': ('title', 'slug', 'excerpt', 'content')
-        }),
-        ('Media', {
-            'fields': ('featured_image',)
-        }),
-        ('Meta', {
-            'fields': ('author', 'category', 'status')
-        }),
-        ('Stats', {
-            'fields': ('view_count',)
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at', 'published_at')
-        }),
-    )
-    
-    actions = ['publish_selected', 'archive_selected']
-    
-    def publish_selected(self, request, queryset):
-        updated = queryset.update(status='published', published_at=timezone.now())
-        self.message_user(request, f'{updated} blog posts published.')
-    publish_selected.short_description = 'Publish selected'
-    
-    def archive_selected(self, request, queryset):
-        updated = queryset.update(status='archived')
-        self.message_user(request, f'{updated} blog posts archived.')
-    archive_selected.short_description = 'Archive selected'
-
-
-# ============================================================================
 # FAQ ADMIN
 # ============================================================================
 
@@ -694,3 +650,4 @@ class JourneyTagAdmin(admin.ModelAdmin):
 admin.site.site_header = 'Rallynex Administration'
 admin.site.site_title = 'Rallynex Admin'
 admin.site.index_title = 'Journey Organizer Dashboard'
+
