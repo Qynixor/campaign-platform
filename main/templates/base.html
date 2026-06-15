@@ -1,5 +1,6 @@
-{% load static %}
+
 <!DOCTYPE html>
+{% load static %}
 <html lang="en" data-theme="{% if request.COOKIES.theme %}{{ request.COOKIES.theme }}{% else %}light{% endif %}">
 <head>
 <meta charset="UTF-8">
@@ -197,7 +198,7 @@
         transform: scale(1.05);
     }
     
-    /* Notification Badge Styles */
+    /* Notification Badge Styles - FLEXIBLE RED DOT */
     .notification-icon-wrapper {
         position: relative;
         display: inline-block;
@@ -209,15 +210,32 @@
         right: -12px;
         background: #ef4444;
         color: white;
-        border-radius: 50%;
-        width: 18px;
+        border-radius: 40px;
+        min-width: 18px;
         height: 18px;
         font-size: 10px;
+        font-weight: bold;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        padding: 0 4px;
         border: 2px solid var(--bg-primary);
+        line-height: 1;
+        white-space: nowrap;
+        transition: all 0.1s ease;
+    }
+    
+    /* For larger numbers (10-99) */
+    .bell-badge.badge-medium {
+        min-width: 22px;
+        font-size: 10px;
+    }
+    
+    /* For 99+ */
+    .bell-badge.badge-large {
+        min-width: 28px;
+        font-size: 9px;
+        padding: 0 3px;
     }
     
     /* Messages */
@@ -430,8 +448,8 @@
         right: -12px;
         background: #ef4444;
         color: white;
-        border-radius: 50%;
-        width: 18px;
+        border-radius: 40px;
+        min-width: 18px;
         height: 18px;
         font-size: 10px;
         display: flex;
@@ -439,6 +457,7 @@
         justify-content: center;
         font-weight: bold;
         border: 2px solid var(--bg-primary);
+        padding: 0 4px;
     }
     
     /* Hide desktop notification button on mobile */
@@ -710,14 +729,16 @@
                 </button>
                 
                 {% if user.is_authenticated %}
-                    <!-- Desktop: Alert Button with Text + Bell + Red Dot (Hidden on Mobile) -->
+                    <!-- Desktop: Alert Button with Text + Bell + Flexible Red Dot -->
                     <div class="notification-icon-wrapper desktop-notification-btn">
                         <a href="{% url 'notifications' %}" class="btn btn-outline">
                             <i class="fas fa-bell"></i>
                             <span>Alerts</span>
                         </a>
                         {% if unread_count > 0 %}
-                        <span class="bell-badge">{{ unread_count|default:'' }}</span>
+                        <span class="bell-badge" id="desktopBadge">{{ unread_count|default:'' }}</span>
+                        {% else %}
+                        <span class="bell-badge" id="desktopBadge" style="display: none;"></span>
                         {% endif %}
                     </div>
                     
@@ -819,7 +840,7 @@
         </div>
     </footer>
     
-    {# Mobile Bottom Navigation - Bell Icon Only with Red Dot #}
+    {# Mobile Bottom Navigation - Bell Icon Only with Flexible Red Dot #}
     {% if user.is_authenticated %}
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-items">
@@ -835,12 +856,14 @@
             <a href="{% url 'dashboard' %}" class="mobile-nav-item">
                 <i class="fas fa-user"></i>
             </a>
-            <!-- Mobile: Bell Icon Only with Red Dot -->
+            <!-- Mobile: Bell Icon Only with Flexible Red Dot -->
             <a href="{% url 'notifications' %}" class="mobile-nav-item">
                 <div class="notification-icon-wrapper">
                     <i class="fas fa-bell"></i>
                     {% if unread_count > 0 %}
-                    <span class="bell-badge">{{ unread_count|default:'' }}</span>
+                    <span class="bell-badge" id="mobileBadge">{{ unread_count|default:'' }}</span>
+                    {% else %}
+                    <span class="bell-badge" id="mobileBadge" style="display: none;"></span>
                     {% endif %}
                 </div>
             </a>
@@ -848,8 +871,138 @@
     </nav>
     {% endif %}
     
-    {# Theme Management Script #}
+    {# Theme Management & Flexible Notification Badge Script #}
     <script>
+        // ========== FLEXIBLE NOTIFICATION BADGE SYSTEM ==========
+        // This handles dynamic count updates, 99+ formatting, and auto-refresh
+        
+        function formatBadgeCount(count) {
+            // Returns formatted string and CSS class for the badge
+            if (count <= 0) return { text: '', hide: true };
+            if (count > 99) return { text: '99+', hide: false, sizeClass: 'badge-large' };
+            if (count >= 10) return { text: count.toString(), hide: false, sizeClass: 'badge-medium' };
+            return { text: count.toString(), hide: false, sizeClass: '' };
+        }
+        
+        function updateNotificationBadge(count) {
+            // Update desktop badge
+            const desktopBadge = document.getElementById('desktopBadge');
+            if (desktopBadge) {
+                const formatted = formatBadgeCount(count);
+                if (formatted.hide || count === 0) {
+                    desktopBadge.style.display = 'none';
+                } else {
+                    desktopBadge.style.display = 'flex';
+                    desktopBadge.textContent = formatted.text;
+                    // Update size class for flexibility
+                    desktopBadge.classList.remove('badge-medium', 'badge-large');
+                    if (formatted.sizeClass) {
+                        desktopBadge.classList.add(formatted.sizeClass);
+                    }
+                }
+            }
+            
+            // Update mobile badge
+            const mobileBadge = document.getElementById('mobileBadge');
+            if (mobileBadge) {
+                const formatted = formatBadgeCount(count);
+                if (formatted.hide || count === 0) {
+                    mobileBadge.style.display = 'none';
+                } else {
+                    mobileBadge.style.display = 'flex';
+                    mobileBadge.textContent = formatted.text;
+                    mobileBadge.classList.remove('badge-medium', 'badge-large');
+                    if (formatted.sizeClass) {
+                        mobileBadge.classList.add(formatted.sizeClass);
+                    }
+                }
+            }
+            
+            // Update document title with unread count
+            if (count > 0) {
+                document.title = `(${count > 99 ? '99+' : count}) Rallynex`;
+            } else {
+                document.title = 'Rallynex - Turn Content Into Structured Journeys';
+            }
+        }
+        
+        // Function to fetch fresh unread count from server (AJAX)
+        async function fetchUnreadCount() {
+            try {
+                const csrfToken = document.querySelector('[name=csrf-token]')?.content || '';
+                const response = await fetch('/api/notifications/unread-count/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const unreadCount = data.unread_count || 0;
+                    updateNotificationBadge(unreadCount);
+                    return unreadCount;
+                }
+            } catch (error) {
+                console.log('Could not fetch unread count, will retry later');
+            }
+            return null;
+        }
+        
+        // Function to listen for notification read events (when user marks as read)
+        function setupNotificationEvents() {
+            // Listen for custom event that can be triggered from notification page
+            document.addEventListener('notificationsRead', function(e) {
+                if (e.detail && typeof e.detail.unreadCount !== 'undefined') {
+                    updateNotificationBadge(e.detail.unreadCount);
+                } else {
+                    fetchUnreadCount();
+                }
+            });
+            
+            // Listen for new notification events (WebSocket or polling)
+            document.addEventListener('newNotification', function(e) {
+                if (e.detail && typeof e.detail.unreadCount !== 'undefined') {
+                    updateNotificationBadge(e.detail.unreadCount);
+                } else {
+                    fetchUnreadCount();
+                }
+            });
+        }
+        
+        // Initialize badge with current unread_count from template
+        const initialUnreadCount = {{ unread_count|default:0 }};
+        updateNotificationBadge(initialUnreadCount);
+        
+        // Set up automatic polling every 30 seconds to keep badge in sync
+        let pollingInterval = setInterval(function() {
+            fetchUnreadCount();
+        }, 30000);
+        
+        // Also refresh when page becomes visible again (user returns to tab)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                fetchUnreadCount();
+            }
+        });
+        
+        // Set up event listeners for notification updates
+        setupNotificationEvents();
+        
+        // Clean up interval on page unload (optional but good practice)
+        window.addEventListener('beforeunload', function() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        });
+        
+        // Expose function globally for other scripts to call
+        window.refreshNotificationBadge = fetchUnreadCount;
+        window.updateNotificationBadgeDirect = updateNotificationBadge;
+        
+        // ========== EXISTING THEME MANAGEMENT (PRESERVED) ==========
         function setTheme(theme) {
             const root = document.documentElement;
             const themeToggleIcon = document.querySelector('#themeToggle i');
@@ -906,10 +1059,8 @@
                 setTheme(e.matches ? 'dark' : 'light');
             }
         });
-    </script>
-    
-    {# PWA Scripts #}
-    <script>
+        
+        // ========== PWA & OTHER EXISTING SCRIPTS ==========
         if ('serviceWorker' in navigator) {
             let refreshing = false;
             
