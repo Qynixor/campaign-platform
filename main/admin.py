@@ -651,3 +651,10 @@ admin.site.site_header = 'Rallynex Administration'
 admin.site.site_title = 'Rallynex Admin'
 admin.site.index_title = 'Journey Organizer Dashboard'
 
+from .models import Subscriber
+
+@admin.register(Subscriber)
+class SubscriberAdmin(admin.ModelAdmin):
+    list_display = ('email', 'subscribed_at', 'ip_address')
+    search_fields = ('email',)
+    ordering = ('-subscribed_at',)

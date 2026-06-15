@@ -2522,3 +2522,84 @@ def youtube_playlist_import_view(request):
         ],
     }
     return render(request, 'tools/youtube_playlist_import.html', context)
+
+
+
+
+from .models import Subscriber
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_protect
+
+@csrf_protect
+def conversion_start_view(request):
+    """Conversion page for email capture and free product delivery"""
+    
+    # Check if already subscribed via session
+    if request.session.get('subscribed', False):
+        show_form = False
+        show_downloads = True
+    else:
+        show_form = True
+        show_downloads = False
+    
+    # Handle form submission
+    if request.method == 'POST' and show_form:
+        email = request.POST.get('email', '').strip().lower()
+        
+        errors = {}
+        
+        # Validate email
+        if not email:
+            errors['email'] = 'Email is required'
+        else:
+            try:
+                validate_email(email)
+            except ValidationError:
+                errors['email'] = 'Enter a valid email address'
+        
+        if errors:
+            return render(request, 'conversion/start.html', {
+                'errors': errors,
+                'show_form': True,
+                'show_downloads': False,
+                'email_value': email,
+            })
+        
+        # Save to database
+        subscriber, created = Subscriber.objects.get_or_create(
+            email=email,
+            defaults={
+                'ip_address': get_client_ip(request),
+                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:200],
+            }
+        )
+        
+        # Store in session
+        request.session['subscribed'] = True
+        request.session['subscriber_email'] = email
+        
+        # Show success and downloads
+        return render(request, 'conversion/start.html', {
+            'show_form': False,
+            'show_downloads': True,
+            'just_subscribed': True,
+            'subscriber_email': email,
+        })
+    
+    # GET request or already subscribed
+    return render(request, 'conversion/start.html', {
+        'show_form': show_form,
+        'show_downloads': show_downloads,
+        'just_subscribed': False,
+    })
+
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip

@@ -17,7 +17,7 @@
     }
     
     .blog-header h1 {
-        font-size: 36px;
+        font-size: clamp(28px, 5vw, 36px);
         font-weight: 700;
         margin-bottom: 12px;
         color: var(--text-primary);
@@ -25,13 +25,17 @@
     
     .blog-header p {
         color: var(--text-secondary);
-        font-size: 16px;
+        font-size: clamp(14px, 4vw, 16px);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 16px;
     }
     
     .blog-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
     }
     
     .blog-card {
@@ -41,13 +45,15 @@
         overflow: hidden;
         transition: all 0.3s ease;
         text-decoration: none;
-        display: block;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
     
     .blog-card:hover {
         transform: translateY(-4px);
         border-color: var(--accent);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
     
     .blog-image {
@@ -57,6 +63,7 @@
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        flex-shrink: 0;
     }
     
     .blog-image i {
@@ -65,7 +72,10 @@
     }
     
     .blog-content {
-        padding: 24px;
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
     }
     
     .blog-category {
@@ -74,18 +84,24 @@
         background: rgba(59, 130, 246, 0.1);
         color: var(--accent);
         border-radius: 30px;
-        font-size: 12px;
-        font-weight: 500;
+        font-size: 11px;
+        font-weight: 600;
         margin-bottom: 12px;
+        align-self: flex-start;
+        letter-spacing: 0.3px;
     }
     
     .blog-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         margin-bottom: 12px;
         line-height: 1.4;
         color: var(--text-primary);
         transition: color 0.2s;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
     
     .blog-card:hover .blog-title {
@@ -95,8 +111,13 @@
     .blog-excerpt {
         color: var(--text-secondary);
         font-size: 14px;
-        line-height: 1.6;
+        line-height: 1.5;
         margin-bottom: 16px;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex: 1;
     }
     
     .blog-meta {
@@ -106,59 +127,167 @@
         color: var(--text-muted);
         font-size: 12px;
         padding-top: 16px;
+        margin-top: auto;
         border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+    
+    .blog-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
     
     .blog-meta i {
-        margin-right: 4px;
+        font-size: 12px;
     }
     
-    @media (max-width: 1024px) {
-        .blog-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-        }
+    /* Loading skeleton animation for images */
+    @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
     }
     
+    /* Mobile optimizations */
     @media (max-width: 768px) {
         .blog-container {
-            padding: 24px 16px;
+            padding: 20px 16px;
+        }
+        
+        .blog-header {
+            margin-bottom: 32px;
         }
         
         .blog-header h1 {
-            font-size: 28px;
+            font-size: 26px;
         }
         
         .blog-header p {
             font-size: 14px;
+            padding: 0 12px;
         }
         
         .blog-grid {
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 16px;
         }
         
         .blog-content {
-            padding: 20px;
+            padding: 16px;
         }
         
         .blog-title {
-            font-size: 18px;
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+        
+        .blog-excerpt {
+            font-size: 13px;
+            margin-bottom: 12px;
+            -webkit-line-clamp: 4;
+        }
+        
+        .blog-meta {
+            gap: 12px;
+            font-size: 11px;
+            padding-top: 12px;
+        }
+        
+        .blog-category {
+            font-size: 10px;
+            padding: 3px 10px;
+            margin-bottom: 10px;
+        }
+        
+        .blog-image i {
+            font-size: 36px;
         }
     }
-
-    /* Add to existing CSS in blog/index.html */
-@media (max-width: 1024px) {
-    .blog-grid {
-        grid-template-columns: repeat(2, 1fr);
+    
+    /* Small phones (below 400px) */
+    @media (max-width: 480px) {
+        .blog-container {
+            padding: 16px 12px;
+        }
+        
+        .blog-header h1 {
+            font-size: 24px;
+        }
+        
+        .blog-header p {
+            font-size: 13px;
+        }
+        
+        .blog-content {
+            padding: 14px;
+        }
+        
+        .blog-title {
+            font-size: 16px;
+        }
+        
+        .blog-excerpt {
+            font-size: 12px;
+            -webkit-line-clamp: 3;
+        }
+        
+        .blog-meta {
+            gap: 8px;
+            font-size: 10px;
+            padding-top: 10px;
+        }
+        
+        .blog-card {
+            border-radius: 12px;
+        }
     }
-}
-
-@media (min-width: 1280px) {
-    .blog-grid {
-        grid-template-columns: repeat(3, 1fr);
+    
+    /* Tablet optimization */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .blog-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .blog-container {
+            padding: 32px 24px;
+        }
+        
+        .blog-title {
+            font-size: 17px;
+        }
     }
-}
+    
+    /* Desktop large screens */
+    @media (min-width: 1280px) {
+        .blog-grid {
+            gap: 28px;
+        }
+        
+        .blog-title {
+            font-size: 19px;
+        }
+    }
+    
+    /* Touch-friendly hover for mobile */
+    @media (hover: none) and (pointer: coarse) {
+        .blog-card:active {
+            transform: scale(0.98);
+            background: var(--bg-secondary);
+        }
+    }
+    
+    /* Dark mode compatibility */
+    @media (prefers-color-scheme: dark) {
+        .blog-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+    }
+    
+    /* Ensure icons are visible */
+    .fas, .far, .fab {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", sans-serif;
+    }
 </style>
 {% endblock %}
 
@@ -253,85 +382,86 @@
             </div>
         </a>
         
-
-        <!-- Article 6 (NEW) -->
-<a href="{% url 'blog_buried_asset' %}" class="blog-card">
-    <div class="blog-image">
-        <i class="fas fa-treasure"></i>
-    </div>
-    <div class="blog-content">
-        <span class="blog-category">Content Assets</span>
-        <h3 class="blog-title">The Most Valuable Asset In Your Content Is Buried In Your Feed</h3>
-        <p class="blog-excerpt">Most creators are sitting on valuable assets they don't even recognize. Not content. Assets. There's a difference. Here's why your completed journey matters more than individual posts.</p>
-        <div class="blog-meta">
-            <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-            <span><i class="far fa-clock"></i> 4 min read</span>
-        </div>
-    </div>
-</a>
-
-<!-- Article 7 (NEW) -->
-<a href="{% url 'blog_blind_spot' %}" class="blog-card">
-    <div class="blog-image">
-        <i class="fas fa-blind"></i>
-    </div>
-    <div class="blog-content">
-        <span class="blog-category">Content Strategy</span>
-        <h3 class="blog-title">Social Media Has a Blind Spot Most Creators Never Notice</h3>
-        <p class="blog-excerpt">Most creators think they have a content problem. They don't. They have a structure problem. Here's why feeds kill stories and how to fix it.</p>
-        <div class="blog-meta">
-            <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-            <span><i class="far fa-clock"></i> 5 min read</span>
-        </div>
-    </div>
-</a>
-<!-- Article 8 (NEW) -->
-<a href="{% url 'blog_challenge_fails' %}" class="blog-card">
-    <div class="blog-image">
-        <i class="fas fa-chart-line"></i>
-    </div>
-    <div class="blog-content">
-        <span class="blog-category">Challenge Strategy</span>
-        <h3 class="blog-title">Why Your 30-Day Challenge Isn't Getting Users (Even If People Like Your Content)</h3>
-        <p class="blog-excerpt">Likes don't equal participants. Here's why your challenge isn't converting and the 3-part framework (Entry + Structure + Completion) that fixes it.</p>
-        <div class="blog-meta">
-            <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-            <span><i class="far fa-clock"></i> 8 min read</span>
-        </div>
-    </div>
-</a>
-
-<!-- Article 9 (NEW) -->
-<a href="{% url 'blog_journey_page' %}" class="blog-card">
-    <div class="blog-image">
-        <i class="fas fa-chalkboard-user"></i>
-    </div>
-    <div class="blog-content">
-        <span class="blog-category">Coach Marketing</span>
-        <h3 class="blog-title">Why Every Coach Needs a Journey Page (Not More Social Media Posts)</h3>
-        <p class="blog-excerpt">Stop posting daily on social media. Coaches need a journey page that shows the complete transformation. Here's why structure converts better than content.</p>
-        <div class="blog-meta">
-            <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-            <span><i class="far fa-clock"></i> 8 min read</span>
-        </div>
-    </div>
-</a>
-
-<!-- Article 10 (NEW) -->
-<a href="{% url 'blog_challenge_lost' %}" class="blog-card">
-    <div class="blog-image">
-        <i class="fas fa-chart-line"></i>
-    </div>
-    <div class="blog-content">
-        <span class="blog-category">Challenge Retention</span>
-        <h3 class="blog-title">Why Your 30-Day Challenge Gets Lost After Day 7 (Even When People Are Interested)</h3>
-        <p class="blog-excerpt">Your challenge loses momentum after Day 7 — not because people aren't interested, but because they lose context. Here's how to fix challenge retention.</p>
-        <div class="blog-meta">
-            <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-            <span><i class="far fa-clock"></i> 8 min read</span>
-        </div>
-    </div>
-</a>
+        <!-- Article 6 -->
+        <a href="{% url 'blog_buried_asset' %}" class="blog-card">
+            <div class="blog-image">
+                <i class="fas fa-treasure"></i>
+            </div>
+            <div class="blog-content">
+                <span class="blog-category">Content Assets</span>
+                <h3 class="blog-title">The Most Valuable Asset In Your Content Is Buried In Your Feed</h3>
+                <p class="blog-excerpt">Most creators are sitting on valuable assets they don't even recognize. Not content. Assets. There's a difference. Here's why your completed journey matters more than individual posts.</p>
+                <div class="blog-meta">
+                    <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                    <span><i class="far fa-clock"></i> 4 min read</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Article 7 -->
+        <a href="{% url 'blog_blind_spot' %}" class="blog-card">
+            <div class="blog-image">
+                <i class="fas fa-blind"></i>
+            </div>
+            <div class="blog-content">
+                <span class="blog-category">Content Strategy</span>
+                <h3 class="blog-title">Social Media Has a Blind Spot Most Creators Never Notice</h3>
+                <p class="blog-excerpt">Most creators think they have a content problem. They don't. They have a structure problem. Here's why feeds kill stories and how to fix it.</p>
+                <div class="blog-meta">
+                    <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                    <span><i class="far fa-clock"></i> 5 min read</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Article 8 -->
+        <a href="{% url 'blog_challenge_fails' %}" class="blog-card">
+            <div class="blog-image">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="blog-content">
+                <span class="blog-category">Challenge Strategy</span>
+                <h3 class="blog-title">Why Your 30-Day Challenge Isn't Getting Users (Even If People Like Your Content)</h3>
+                <p class="blog-excerpt">Likes don't equal participants. Here's why your challenge isn't converting and the 3-part framework (Entry + Structure + Completion) that fixes it.</p>
+                <div class="blog-meta">
+                    <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                    <span><i class="far fa-clock"></i> 8 min read</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Article 9 -->
+        <a href="{% url 'blog_journey_page' %}" class="blog-card">
+            <div class="blog-image">
+                <i class="fas fa-chalkboard-user"></i>
+            </div>
+            <div class="blog-content">
+                <span class="blog-category">Coach Marketing</span>
+                <h3 class="blog-title">Why Every Coach Needs a Journey Page (Not More Social Media Posts)</h3>
+                <p class="blog-excerpt">Stop posting daily on social media. Coaches need a journey page that shows the complete transformation. Here's why structure converts better than content.</p>
+                <div class="blog-meta">
+                    <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                    <span><i class="far fa-clock"></i> 8 min read</span>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Article 10 -->
+        <a href="{% url 'blog_challenge_lost' %}" class="blog-card">
+            <div class="blog-image">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="blog-content">
+                <span class="blog-category">Challenge Retention</span>
+                <h3 class="blog-title">Why Your 30-Day Challenge Gets Lost After Day 7 (Even When People Are Interested)</h3>
+                <p class="blog-excerpt">Your challenge loses momentum after Day 7 — not because people aren't interested, but because they lose context. Here's how to fix challenge retention.</p>
+                <div class="blog-meta">
+                    <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
+                    <span><i class="far fa-clock"></i> 8 min read</span>
+                </div>
+            </div>
+        </a>
+        
     </div>
     
 </div>
