@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 {% load static %}
 <html lang="en" data-theme="{% if request.COOKIES.theme %}{{ request.COOKIES.theme }}{% else %}light{% endif %}">
@@ -175,6 +174,48 @@
         padding: 0 20px;
     }
     
+    /* Logo Styles - Image + Text Combined */
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #000000;
+        flex-shrink: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .logo:hover {
+        opacity: 0.85;
+    }
+    
+    .logo-img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        display: block;
+    }
+    
+    .logo-text {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        letter-spacing: -0.3px;
+    }
+    
+    [data-theme="dark"] .logo-text {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+    }
+    
+    [data-theme="dark"] .logo {
+        color: #ffffff;
+    }
+    
     /* Theme Toggle Button */
     .theme-toggle {
         background: var(--bg-secondary);
@@ -198,7 +239,7 @@
         transform: scale(1.05);
     }
     
-    /* Notification Badge Styles - FLEXIBLE RED DOT */
+    /* Notification Badge Styles */
     .notification-icon-wrapper {
         position: relative;
         display: inline-block;
@@ -222,16 +263,13 @@
         border: 2px solid var(--bg-primary);
         line-height: 1;
         white-space: nowrap;
-        transition: all 0.1s ease;
     }
     
-    /* For larger numbers (10-99) */
     .bell-badge.badge-medium {
         min-width: 22px;
         font-size: 10px;
     }
     
-    /* For 99+ */
     .bell-badge.badge-large {
         min-width: 28px;
         font-size: 9px;
@@ -328,10 +366,6 @@
         box-shadow: 0 4px 12px rgba(59,130,246,0.3);
     }
     
-    .btn-primary:active {
-        transform: translateY(0);
-    }
-    
     .btn-outline {
         background: transparent;
         color: var(--text-primary);
@@ -359,17 +393,6 @@
         justify-content: space-between;
         height: 70px;
         gap: 16px;
-    }
-    
-    .logo {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-primary);
-        flex-shrink: 0;
-    }
-    
-    .logo span {
-        color: var(--accent);
     }
     
     .nav-links {
@@ -436,7 +459,6 @@
         color: var(--text-primary);
     }
     
-    /* Mobile notification badge */
     .mobile-nav-item .notification-icon-wrapper {
         display: inline-block;
         position: relative;
@@ -460,7 +482,6 @@
         padding: 0 4px;
     }
     
-    /* Hide desktop notification button on mobile */
     .desktop-notification-btn {
         display: inline-block;
     }
@@ -668,9 +689,17 @@
             gap: 6px;
         }
         
-        /* Hide desktop notification button on mobile */
         .desktop-notification-btn {
             display: none !important;
+        }
+        
+        .logo-img {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .logo-text {
+            font-size: 20px;
         }
     }
     
@@ -686,8 +715,13 @@
             font-size: 16px;
         }
         
-        .logo {
-            font-size: 16px;
+        .logo-img {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .logo-text {
+            font-size: 18px;
         }
     }
     
@@ -714,7 +748,8 @@
     <nav class="navbar">
         <div class="container">
             <a href="{% url 'landing' %}" class="logo">
-                Rally<span>nex</span>
+                <img src="{% static 'icons/mark.png' %}" alt="Rallynex Logo" class="logo-img" width="32" height="32">
+                <span class="logo-text">Rallynex</span>
             </a>
             <div class="nav-links">
                 <a href="{% url 'discover' %}">Discover</a>
@@ -729,7 +764,6 @@
                 </button>
                 
                 {% if user.is_authenticated %}
-                    <!-- Desktop: Alert Button with Text + Bell + Flexible Red Dot -->
                     <div class="notification-icon-wrapper desktop-notification-btn">
                         <a href="{% url 'notifications' %}" class="btn btn-outline">
                             <i class="fas fa-bell"></i>
@@ -803,7 +837,7 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3>Rally<span style="color: var(--accent);">nex</span></h3>
+                    <h3>Rallynex</h3>
                     <p>Turn your content into a structured journey. Follow progress, build community, raise funds.</p>
                 </div>
                 
@@ -840,7 +874,7 @@
         </div>
     </footer>
     
-    {# Mobile Bottom Navigation - Bell Icon Only with Flexible Red Dot #}
+    {# Mobile Bottom Navigation #}
     {% if user.is_authenticated %}
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-items">
@@ -856,7 +890,6 @@
             <a href="{% url 'dashboard' %}" class="mobile-nav-item">
                 <i class="fas fa-user"></i>
             </a>
-            <!-- Mobile: Bell Icon Only with Flexible Red Dot -->
             <a href="{% url 'notifications' %}" class="mobile-nav-item">
                 <div class="notification-icon-wrapper">
                     <i class="fas fa-bell"></i>
@@ -873,11 +906,8 @@
     
     {# Theme Management & Flexible Notification Badge Script #}
     <script>
-        // ========== FLEXIBLE NOTIFICATION BADGE SYSTEM ==========
-        // This handles dynamic count updates, 99+ formatting, and auto-refresh
-        
+        // Notification Badge System
         function formatBadgeCount(count) {
-            // Returns formatted string and CSS class for the badge
             if (count <= 0) return { text: '', hide: true };
             if (count > 99) return { text: '99+', hide: false, sizeClass: 'badge-large' };
             if (count >= 10) return { text: count.toString(), hide: false, sizeClass: 'badge-medium' };
@@ -885,7 +915,6 @@
         }
         
         function updateNotificationBadge(count) {
-            // Update desktop badge
             const desktopBadge = document.getElementById('desktopBadge');
             if (desktopBadge) {
                 const formatted = formatBadgeCount(count);
@@ -894,15 +923,11 @@
                 } else {
                     desktopBadge.style.display = 'flex';
                     desktopBadge.textContent = formatted.text;
-                    // Update size class for flexibility
                     desktopBadge.classList.remove('badge-medium', 'badge-large');
-                    if (formatted.sizeClass) {
-                        desktopBadge.classList.add(formatted.sizeClass);
-                    }
+                    if (formatted.sizeClass) desktopBadge.classList.add(formatted.sizeClass);
                 }
             }
             
-            // Update mobile badge
             const mobileBadge = document.getElementById('mobileBadge');
             if (mobileBadge) {
                 const formatted = formatBadgeCount(count);
@@ -912,13 +937,10 @@
                     mobileBadge.style.display = 'flex';
                     mobileBadge.textContent = formatted.text;
                     mobileBadge.classList.remove('badge-medium', 'badge-large');
-                    if (formatted.sizeClass) {
-                        mobileBadge.classList.add(formatted.sizeClass);
-                    }
+                    if (formatted.sizeClass) mobileBadge.classList.add(formatted.sizeClass);
                 }
             }
             
-            // Update document title with unread count
             if (count > 0) {
                 document.title = `(${count > 99 ? '99+' : count}) Rallynex`;
             } else {
@@ -926,83 +948,27 @@
             }
         }
         
-        // Function to fetch fresh unread count from server (AJAX)
         async function fetchUnreadCount() {
             try {
                 const csrfToken = document.querySelector('[name=csrf-token]')?.content || '';
                 const response = await fetch('/api/notifications/unread-count/', {
                     method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': csrfToken,
-                    },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
                     credentials: 'same-origin'
                 });
-                
                 if (response.ok) {
                     const data = await response.json();
-                    const unreadCount = data.unread_count || 0;
-                    updateNotificationBadge(unreadCount);
-                    return unreadCount;
+                    updateNotificationBadge(data.unread_count || 0);
                 }
-            } catch (error) {
-                console.log('Could not fetch unread count, will retry later');
-            }
-            return null;
+            } catch (error) {}
         }
         
-        // Function to listen for notification read events (when user marks as read)
-        function setupNotificationEvents() {
-            // Listen for custom event that can be triggered from notification page
-            document.addEventListener('notificationsRead', function(e) {
-                if (e.detail && typeof e.detail.unreadCount !== 'undefined') {
-                    updateNotificationBadge(e.detail.unreadCount);
-                } else {
-                    fetchUnreadCount();
-                }
-            });
-            
-            // Listen for new notification events (WebSocket or polling)
-            document.addEventListener('newNotification', function(e) {
-                if (e.detail && typeof e.detail.unreadCount !== 'undefined') {
-                    updateNotificationBadge(e.detail.unreadCount);
-                } else {
-                    fetchUnreadCount();
-                }
-            });
-        }
-        
-        // Initialize badge with current unread_count from template
         const initialUnreadCount = {{ unread_count|default:0 }};
         updateNotificationBadge(initialUnreadCount);
+        setInterval(fetchUnreadCount, 30000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchUnreadCount(); });
         
-        // Set up automatic polling every 30 seconds to keep badge in sync
-        let pollingInterval = setInterval(function() {
-            fetchUnreadCount();
-        }, 30000);
-        
-        // Also refresh when page becomes visible again (user returns to tab)
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                fetchUnreadCount();
-            }
-        });
-        
-        // Set up event listeners for notification updates
-        setupNotificationEvents();
-        
-        // Clean up interval on page unload (optional but good practice)
-        window.addEventListener('beforeunload', function() {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-            }
-        });
-        
-        // Expose function globally for other scripts to call
-        window.refreshNotificationBadge = fetchUnreadCount;
-        window.updateNotificationBadgeDirect = updateNotificationBadge;
-        
-        // ========== EXISTING THEME MANAGEMENT (PRESERVED) ==========
+        // Theme Management
         function setTheme(theme) {
             const root = document.documentElement;
             const themeToggleIcon = document.querySelector('#themeToggle i');
@@ -1026,134 +992,64 @@
         
         function getPreferredTheme() {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light' || savedTheme === 'dark') {
-                return savedTheme;
-            }
-            
+            if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
             const cookieMatch = document.cookie.match(/theme=([^;]+)/);
-            if (cookieMatch && (cookieMatch[1] === 'light' || cookieMatch[1] === 'dark')) {
-                return cookieMatch[1];
-            }
-            
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                return 'dark';
-            }
-            
+            if (cookieMatch && (cookieMatch[1] === 'light' || cookieMatch[1] === 'dark')) return cookieMatch[1];
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
             return 'light';
         }
         
-        const theme = getPreferredTheme();
-        setTheme(theme);
+        setTheme(getPreferredTheme());
         
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-            });
-        }
-        
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (!localStorage.getItem('theme')) {
-                setTheme(e.matches ? 'dark' : 'light');
-            }
+        document.getElementById('themeToggle')?.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         });
         
-        // ========== PWA & OTHER EXISTING SCRIPTS ==========
+        // PWA & Service Worker
         if ('serviceWorker' in navigator) {
             let refreshing = false;
-            
-            navigator.serviceWorker.register('/sw.js', {
-                scope: '/'
-            }).then(function(registration) {
-                console.log('✅ ServiceWorker registered');
-                
-                registration.update();
-                
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            const notification = document.getElementById('updateNotification');
-                            if (notification) {
-                                notification.classList.add('show');
-                            }
-                        }
-                    });
-                });
-            }).catch(function(error) {
-                console.error('ServiceWorker registration failed:', error);
-            });
-            
+            navigator.serviceWorker.register('/sw.js').catch(error => console.error('SW failed:', error));
             navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    window.location.reload();
-                }
+                if (!refreshing) { refreshing = true; window.location.reload(); }
             });
         }
         
         document.getElementById('updateBtn')?.addEventListener('click', () => {
             navigator.serviceWorker.ready.then(registration => {
-                if (registration.waiting) {
-                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                }
+                if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
             });
             document.getElementById('updateNotification')?.classList.remove('show');
         });
         
+        // PWA Install
         let deferredPrompt;
         const installPrompt = document.getElementById('pwaInstallPrompt');
         const installBtn = document.getElementById('pwaInstallBtn');
         const installClose = document.getElementById('pwaInstallClose');
         
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                            window.matchMedia('(display-mode: fullscreen)').matches ||
-                            window.matchMedia('(display-mode: minimal-ui)').matches ||
-                            window.navigator.standalone === true;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         
         if (!isStandalone) {
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                if (installPrompt) {
-                    installPrompt.classList.add('show');
-                }
-            });
-            
-            window.addEventListener('appinstalled', () => {
-                if (installPrompt) {
-                    installPrompt.classList.remove('show');
-                }
-                deferredPrompt = null;
+                installPrompt?.classList.add('show');
             });
         }
         
         installBtn?.addEventListener('click', async () => {
-            if (!deferredPrompt) {
-                installPrompt?.classList.remove('show');
-                return;
-            }
-            
+            if (!deferredPrompt) { installPrompt?.classList.remove('show'); return; }
             deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
+            await deferredPrompt.userChoice;
             deferredPrompt = null;
             installPrompt?.classList.remove('show');
         });
         
-        installClose?.addEventListener('click', () => {
-            installPrompt?.classList.remove('show');
-        });
+        installClose?.addEventListener('click', () => installPrompt?.classList.remove('show'));
         
         function updateOnlineStatus() {
-            const indicator = document.getElementById('offlineIndicator');
-            if (!navigator.onLine) {
-                indicator?.classList.add('show');
-            } else {
-                indicator?.classList.remove('show');
-            }
+            document.getElementById('offlineIndicator')?.classList.toggle('show', !navigator.onLine);
         }
         
         window.addEventListener('online', updateOnlineStatus);
@@ -1161,20 +1057,12 @@
         updateOnlineStatus();
         
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(function(alert) {
-                    alert.style.transition = 'opacity 0.3s';
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(alert => {
                     alert.style.opacity = '0';
                     setTimeout(() => alert.remove(), 300);
                 });
             }, 5000);
-            
-            const currentPath = window.location.pathname;
-            document.querySelectorAll('.nav-links a, .mobile-nav-item').forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
         });
     </script>
     
