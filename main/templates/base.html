@@ -486,6 +486,125 @@
         display: inline-block;
     }
     
+    /* ========== FLOATING ACTION BUTTON - CREATE JOURNEY ========== */
+    .fab-create-journey {
+        position: fixed;
+        bottom: 100px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 50;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    
+    .fab-create-journey:hover {
+        transform: scale(1.1) translateY(-2px);
+        box-shadow: 0 8px 28px rgba(59, 130, 246, 0.5);
+        background: var(--accent-hover);
+        color: white;
+    }
+    
+    .fab-create-journey:active {
+        transform: scale(0.95);
+    }
+    
+    .fab-create-journey .pulse-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+        animation: pulse-ring 2s ease-out infinite;
+        pointer-events: none;
+    }
+    
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+        100% {
+            transform: scale(1.5);
+            opacity: 0;
+        }
+    }
+    
+    /* Tooltip for FAB */
+    .fab-tooltip {
+        position: fixed;
+        bottom: 168px;
+        right: 24px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--border-color);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 49;
+        white-space: nowrap;
+    }
+    
+    .fab-tooltip.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .fab-tooltip i {
+        color: var(--accent);
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .fab-create-journey {
+            bottom: 100px;
+            right: 16px;
+            width: 52px;
+            height: 52px;
+            font-size: 24px;
+        }
+        
+        .fab-tooltip {
+            bottom: 164px;
+            right: 16px;
+            font-size: 12px;
+            padding: 6px 14px;
+        }
+    }
+    
+    @media (max-width: 360px) {
+        .fab-create-journey {
+            bottom: 90px;
+            right: 12px;
+            width: 48px;
+            height: 48px;
+            font-size: 22px;
+        }
+        
+        .fab-tooltip {
+            bottom: 150px;
+            right: 12px;
+            font-size: 11px;
+            padding: 5px 12px;
+        }
+    }
+    
     /* Footer */
     .footer {
         background: var(--footer-bg);
@@ -903,6 +1022,21 @@
         </div>
     </nav>
     {% endif %}
+
+    {# ========== FLOATING ACTION BUTTON - CREATE JOURNEY ========== #}
+    {% if user.is_authenticated %}
+    <a href="{% url 'create_journey' %}" 
+       class="fab-create-journey" 
+       id="fabCreateJourney"
+       aria-label="Create new journey">
+        <span class="pulse-ring"></span>
+        <i class="fas fa-plus"></i>
+    </a>
+    <div class="fab-tooltip" id="fabTooltip">
+        <i class="fas fa-rocket" style="margin-right: 6px;"></i>
+        Create Journey
+    </div>
+    {% endif %}
     
     {# Theme Management & Flexible Notification Badge Script #}
     <script>
@@ -1063,6 +1197,42 @@
                     setTimeout(() => alert.remove(), 300);
                 });
             }, 5000);
+            
+            // ========== FAB Tooltip Show/Hide ==========
+            const fab = document.getElementById('fabCreateJourney');
+            const tooltip = document.getElementById('fabTooltip');
+            
+            if (fab && tooltip) {
+                let tooltipTimeout;
+                
+                fab.addEventListener('mouseenter', () => {
+                    clearTimeout(tooltipTimeout);
+                    tooltip.classList.add('show');
+                });
+                
+                fab.addEventListener('mouseleave', () => {
+                    tooltipTimeout = setTimeout(() => {
+                        tooltip.classList.remove('show');
+                    }, 300);
+                });
+                
+                fab.addEventListener('touchstart', () => {
+                    tooltip.classList.toggle('show');
+                    setTimeout(() => {
+                        tooltip.classList.remove('show');
+                    }, 2000);
+                });
+                
+                // Hide tooltip when scrolling
+                let scrollTimeout;
+                window.addEventListener('scroll', () => {
+                    clearTimeout(scrollTimeout);
+                    tooltip.classList.remove('show');
+                    scrollTimeout = setTimeout(() => {
+                        // Re-show if mouse is over fab after scrolling stops
+                    }, 500);
+                });
+            }
         });
     </script>
     
