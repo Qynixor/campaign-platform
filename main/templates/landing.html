@@ -1,53 +1,36 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{# ===== SEO BLOCKS - ADD THESE ===== #}
 {% block title %}Rallynex - Turn Your Content Into a Structured Journey{% endblock %}
 
 {% block meta_title %}Rallynex - Create, Share & Monetize Structured Journeys | Daily Challenges & Milestones{% endblock %}
 
-{% block meta_description %}Turn your content into engaging daily journeys. Import from any platform, build a following, raise funds, and track progress. Join 5000+ creators on Rallynex.{% endblock %}
-
-{% block meta_keywords %}journey platform, daily challenges, content organizer, creator tools, fundraising, milestone tracker, content journey, rallynex{% endblock %}
-
-{% block og_title %}Rallynex - Transform Your Content Into Structured Journeys{% endblock %}
-
-{% block og_description %}Import your content, organize it into daily challenges, build a community, and raise funds for your cause. Start your first journey free.{% endblock %}
-
-{% block twitter_title %}Rallynex - Turn Content Into Journeys{% endblock %}
-
-{% block twitter_description %}Create beautiful, trackable journeys from your content. Perfect for creators, coaches, and communities.{% endblock %}
-
-{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
-
-{# Add specific schema for homepage #}
-{% block extra_schema %}
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Rallynex",
-    "url": "{{ request.scheme }}://{{ request.get_host }}",
-    "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'icons/icon-512x512.png' %}",
-    "description": "Turn your content into structured journeys. Build community, raise funds, and document your progress.",
-    "sameAs": [
-        "https://twitter.com/rallynex",
-        "https://facebook.com/rallynex"
-    ],
-    "potentialAction": {
-        "@type": "SearchAction",
-        "target": "{{ request.scheme }}://{{ request.get_host }}/discover/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-    }
-}
-</script>
-{% endblock %}
+{% block meta_description %}Turn your content into engaging daily journeys. Build a following, raise funds, and track progress. Join creators on Rallynex.{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       LANDING PAGE STYLES
+       ============================================ */
+    
+    /* ----- Hero Section ----- */
     .hero {
-        padding: 80px 0;
-        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--card-bg) 100%);
+        padding: 80px 0 60px;
+        background: var(--bg-primary);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -40%;
+        right: -10%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.06) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
     }
     
     .hero-grid {
@@ -55,30 +38,39 @@
         grid-template-columns: 1fr 1fr;
         gap: 60px;
         align-items: center;
+        position: relative;
+        z-index: 1;
     }
     
     .hero-badge {
-        display: inline-block;
-        background: rgba(59, 130, 246, 0.1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(59, 130, 246, 0.08);
         color: var(--accent);
-        padding: 6px 16px;
+        padding: 6px 16px 6px 12px;
         border-radius: 30px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         margin-bottom: 24px;
-        border: 1px solid rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+    
+    .hero-badge i {
+        font-size: 14px;
     }
     
     .hero-title {
         font-size: 48px;
         font-weight: 800;
-        line-height: 1.2;
-        margin-bottom: 24px;
+        line-height: 1.15;
+        margin-bottom: 20px;
         color: var(--text-primary);
+        letter-spacing: -0.02em;
     }
     
     .gradient-text {
-        background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        background: linear-gradient(135deg, var(--accent), #8b5cf6, #ec4899);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -88,125 +80,413 @@
         font-size: 18px;
         color: var(--text-secondary);
         margin-bottom: 32px;
-        line-height: 1.6;
+        line-height: 1.7;
+        max-width: 520px;
     }
     
     .hero-cta {
         display: flex;
-        gap: 16px;
+        gap: 12px;
         margin-bottom: 32px;
         flex-wrap: wrap;
     }
     
-    .btn-text {
-        background: transparent;
-        color: var(--accent);
+    .hero-cta .btn {
+        padding: 14px 28px;
+        font-size: 15px;
+    }
+    
+    .hero-cta .btn-primary i {
+        margin-left: 8px;
+        transition: transform 0.2s;
+    }
+    
+    .hero-cta .btn-primary:hover i {
+        transform: translateX(4px);
+    }
+    
+    /* ----- User Greeting Card ----- */
+    .user-greeting-card {
+        background: var(--card-bg);
         border: 1px solid var(--border-color);
-        padding: 12px 24px;
-        border-radius: 40px;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: border-color 0.2s;
+    }
+    
+    .user-greeting-card:hover {
+        border-color: var(--accent);
+    }
+    
+    .user-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 20px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+    
+    .user-greeting-text {
+        flex: 1;
+    }
+    
+    .user-greeting-text h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+    
+    .user-greeting-text p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    .user-greeting-text p strong {
+        color: var(--text-primary);
+    }
+    
+    .user-greeting-action {
+        flex-shrink: 0;
+    }
+    
+    .user-greeting-action .btn {
+        padding: 8px 20px;
+        font-size: 13px;
+    }
+    
+    /* ----- Quick Stats (Real Data) ----- */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .quick-stat {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        transition: border-color 0.2s;
+    }
+    
+    .quick-stat:hover {
+        border-color: var(--accent);
+    }
+    
+    .quick-stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    
+    .quick-stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
         font-weight: 500;
-        transition: all 0.2s;
-        text-decoration: none;
-        display: inline-flex;
+    }
+    
+    /* ----- Recent Journeys Preview ----- */
+    .recent-journeys-section {
+        margin-top: 8px;
+    }
+    
+    .recent-journeys-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    
+    .recent-journeys-header h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
         align-items: center;
         gap: 8px;
     }
     
-    .btn-text:hover {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: var(--accent);
+    .recent-journeys-header h4 i {
+        color: var(--accent);
     }
     
+    .recent-journeys-header a {
+        font-size: 13px;
+        color: var(--accent);
+        font-weight: 500;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+    
+    .recent-journeys-header a:hover {
+        opacity: 0.7;
+    }
+    
+    .mini-journey-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .mini-journey-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    
+    .mini-journey-item:hover {
+        border-color: var(--accent);
+        transform: translateX(4px);
+        background: var(--bg-secondary);
+    }
+    
+    .mini-journey-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .mini-journey-icon i {
+        color: var(--accent);
+        font-size: 18px;
+    }
+    
+    .mini-journey-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .mini-journey-info .title {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .mini-journey-info .meta {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .mini-journey-progress {
+        text-align: right;
+        flex-shrink: 0;
+        min-width: 50px;
+    }
+    
+    .mini-journey-progress .percentage {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .mini-journey-progress .bar-track {
+        width: 60px;
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 3px;
+    }
+    
+    .mini-journey-progress .bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+    
+    /* ----- Empty State ----- */
+    .empty-journeys-state {
+        text-align: center;
+        padding: 32px 20px;
+        background: var(--card-bg);
+        border: 1px dashed var(--border-color);
+        border-radius: 12px;
+    }
+    
+    .empty-journeys-state i {
+        font-size: 40px;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+    
+    .empty-journeys-state h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-journeys-state p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    .empty-journeys-state .btn {
+        font-size: 13px;
+        padding: 10px 24px;
+    }
+    
+    /* ----- Blog Teaser (Unauthenticated) ----- */
     .blog-teaser {
-        margin-top: 32px;
-        padding-top: 24px;
+        margin-top: 24px;
+        padding-top: 20px;
         border-top: 1px solid var(--border-color);
     }
     
-    .blog-teaser p {
-        font-size: 14px;
+    .blog-teaser-label {
+        font-size: 13px;
         color: var(--text-secondary);
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .blog-teaser-label i {
+        color: var(--accent);
     }
     
     .blog-teaser-links {
         display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 6px;
     }
     
     .blog-teaser-links a {
         font-size: 14px;
-        color: var(--accent);
+        color: var(--text-primary);
         text-decoration: none;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .blog-teaser-links a:hover {
-        text-decoration: underline;
+        color: var(--accent);
     }
     
-    .hero-stats {
-        display: flex;
-        gap: 40px;
-        flex-wrap: wrap;
+    .blog-teaser-links a .emoji {
+        font-size: 16px;
     }
     
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .stat-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-    
-    .stat-label {
-        font-size: 14px;
-        color: var(--text-secondary);
-    }
-    
+    /* ----- Hero Visual (Right Column) ----- */
     .hero-visual {
-        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--card-bg) 100%);
+        background: linear-gradient(145deg, var(--bg-secondary) 0%, var(--card-bg) 100%);
         border-radius: 24px;
-        padding: 40px;
+        padding: 48px 32px;
         text-align: center;
         border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
     }
     
-    .hero-visual i {
-        font-size: 120px;
+    .hero-visual::after {
+        content: '';
+        position: absolute;
+        bottom: -40%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    
+    .hero-visual .visual-icon {
+        font-size: 100px;
         color: var(--accent);
-        margin-bottom: 20px;
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        z-index: 1;
     }
     
     .hero-visual h4 {
         font-size: 20px;
-        margin-bottom: 8px;
+        font-weight: 600;
         color: var(--text-primary);
+        margin-bottom: 6px;
+        position: relative;
+        z-index: 1;
     }
     
     .hero-visual p {
         color: var(--text-secondary);
+        font-size: 15px;
+        position: relative;
+        z-index: 1;
     }
     
-    /* How It Works */
+    .hero-visual .visual-footer {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .hero-visual .visual-footer small {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    
+    .hero-visual .visual-footer i {
+        color: var(--accent);
+        margin-right: 4px;
+    }
+    
+    /* ----- How It Works ----- */
     .how-it-works {
         padding: 80px 0;
-        background: var(--bg-primary);
+        background: var(--bg-secondary);
     }
     
     .section-header {
         text-align: center;
-        margin-bottom: 60px;
+        margin-bottom: 48px;
     }
     
     .section-title {
         font-size: 36px;
         font-weight: 700;
-        margin-bottom: 16px;
         color: var(--text-primary);
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
     }
     
     .section-subtitle {
@@ -217,74 +497,106 @@
     .steps-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
+        gap: 24px;
     }
     
     .step-card {
-        background: var(--card-bg);
+        background: var(--bg-primary);
         border: 1px solid var(--border-color);
         border-radius: 20px;
-        padding: 40px 30px;
+        padding: 36px 28px 32px;
         text-align: center;
-        transition: transform 0.3s, border-color 0.3s;
+        transition: all 0.3s ease;
     }
     
     .step-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
     }
     
     .step-icon {
-        width: 80px;
-        height: 80px;
-        background: rgba(59, 130, 246, 0.1);
+        width: 72px;
+        height: 72px;
+        background: rgba(59, 130, 246, 0.08);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 24px;
+        margin: 0 auto 20px;
+        transition: background 0.3s;
+    }
+    
+    .step-card:hover .step-icon {
+        background: rgba(59, 130, 246, 0.15);
     }
     
     .step-icon i {
-        font-size: 36px;
+        font-size: 30px;
         color: var(--accent);
     }
     
-    .step-title {
-        font-size: 20px;
+    .step-card .step-number {
+        font-size: 12px;
         font-weight: 600;
-        margin-bottom: 12px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .step-title {
+        font-size: 19px;
+        font-weight: 600;
         color: var(--text-primary);
+        margin-bottom: 10px;
     }
     
     .step-description {
+        font-size: 15px;
         color: var(--text-secondary);
         line-height: 1.6;
     }
     
-    /* Featured Section */
+    /* ----- Featured Journeys ----- */
     .featured-section {
         padding: 80px 0;
-        background: var(--bg-secondary);
+        background: var(--bg-primary);
     }
     
     .section-header-with-link {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 40px;
+        margin-bottom: 32px;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
+    }
+    
+    .section-header-with-link .section-title {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+    
+    .section-header-with-link .section-subtitle {
+        font-size: 16px;
     }
     
     .view-all-link {
         color: var(--accent);
         font-weight: 500;
         text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        transition: gap 0.2s;
+        white-space: nowrap;
     }
     
     .view-all-link:hover {
-        text-decoration: underline;
+        gap: 10px;
     }
     
     .journey-grid {
@@ -298,93 +610,102 @@
         border: 1px solid var(--border-color);
         border-radius: 16px;
         overflow: hidden;
-        transition: transform 0.3s, border-color 0.3s;
+        transition: all 0.3s ease;
         text-decoration: none;
         display: block;
     }
     
     .journey-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: var(--accent);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
     }
     
     .journey-cover {
-        aspect-ratio: 1;
+        aspect-ratio: 16/9;
         background: var(--bg-secondary);
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+        overflow: hidden;
     }
     
     .journey-cover i {
-        font-size: 48px;
+        font-size: 40px;
         color: var(--text-muted);
+        opacity: 0.4;
+    }
+    
+    .journey-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .journey-info {
-        padding: 20px;
+        padding: 18px 20px 20px;
     }
     
-    .journey-title {
+    .journey-category {
+        font-size: 11px;
         font-weight: 600;
-        margin-bottom: 8px;
-        color: var(--text-primary);
-    }
-    
-    .journey-creator {
-        color: var(--text-secondary);
-        font-size: 14px;
-        margin-bottom: 12px;
-    }
-    
-    .journey-progress {
-        margin-bottom: 12px;
-    }
-    
-    .progress-bar {
-        height: 4px;
-        background: var(--bg-tertiary);
-        border-radius: 2px;
-        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        display: inline-block;
         margin-bottom: 6px;
     }
     
-    .progress-fill {
-        height: 100%;
-        background: var(--accent);
-        border-radius: 2px;
-        transition: width 0.3s ease;
+    .journey-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        line-height: 1.3;
     }
     
-    .progress-text {
-        font-size: 12px;
+    .journey-creator {
+        font-size: 13px;
         color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+    
+    .journey-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
     }
     
     .journey-stats {
         display: flex;
         gap: 16px;
-        color: var(--text-secondary);
         font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .journey-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     
     .journey-stats i {
-        margin-right: 4px;
+        font-size: 13px;
         color: var(--text-muted);
     }
     
-    .category-badge {
+    .journey-progress-text {
         font-size: 12px;
-        color: var(--accent);
-        font-weight: 500;
-        display: inline-block;
-        margin-bottom: 8px;
+        color: var(--text-secondary);
     }
     
-    /* Categories */
+    /* ----- Categories ----- */
     .categories-section {
         padding: 80px 0;
-        background: var(--bg-primary);
+        background: var(--bg-secondary);
     }
     
     .categories-grid {
@@ -394,94 +715,70 @@
     }
     
     .category-card {
-        background: var(--card-bg);
+        background: var(--bg-primary);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 24px;
+        border-radius: 14px;
+        padding: 24px 16px;
         text-align: center;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         text-decoration: none;
     }
     
     .category-card:hover {
-        background: var(--bg-secondary);
         border-color: var(--accent);
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     }
     
     .category-card i {
-        font-size: 32px;
+        font-size: 28px;
         color: var(--accent);
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        display: block;
     }
     
     .category-card span {
-        display: block;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--text-primary);
     }
     
-    /* Blog Section */
-    .blog-section {
-        padding: 80px 0;
-        background: var(--bg-secondary);
-    }
-    
-    /* CTA Section */
+    /* ----- CTA Section ----- */
     .cta-section {
         padding: 80px 0;
         background: var(--bg-primary);
     }
     
     .cta-card {
-        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--card-bg) 100%);
+        background: linear-gradient(145deg, var(--bg-secondary) 0%, var(--card-bg) 100%);
         border-radius: 32px;
-        padding: 60px;
+        padding: 56px 48px;
         text-align: center;
         border: 1px solid var(--border-color);
     }
     
     .cta-title {
-        font-size: 36px;
+        font-size: 34px;
         font-weight: 700;
-        margin-bottom: 16px;
         color: var(--text-primary);
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
     }
     
     .cta-description {
-        font-size: 18px;
+        font-size: 17px;
         color: var(--text-secondary);
-        margin-bottom: 32px;
+        margin-bottom: 28px;
     }
     
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: var(--card-bg);
-        border-radius: 16px;
-        border: 1px solid var(--border-color);
+    .cta-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
     }
     
-    .empty-state i {
-        font-size: 64px;
-        color: var(--text-muted);
-        margin-bottom: 20px;
-    }
-    
-    .empty-state h3 {
-        font-size: 24px;
-        margin-bottom: 12px;
-        color: var(--text-primary);
-    }
-    
-    .empty-state p {
-        color: var(--text-secondary);
-        margin-bottom: 24px;
-    }
-    
-    /* Responsive */
+    /* ----- Responsive ----- */
     @media (max-width: 1024px) {
         .journey-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -494,25 +791,65 @@
     
     @media (max-width: 768px) {
         .hero {
-            padding: 60px 0;
+            padding: 40px 0 32px;
         }
         
         .hero-grid {
             grid-template-columns: 1fr;
-            gap: 40px;
+            gap: 32px;
         }
         
         .hero-title {
-            font-size: 36px;
+            font-size: 32px;
         }
         
         .hero-description {
             font-size: 16px;
         }
         
+        .hero-cta .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .hero-visual {
+            padding: 32px 20px;
+        }
+        
+        .hero-visual .visual-icon {
+            font-size: 72px;
+        }
+        
+        .quick-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .quick-stat {
+            padding: 12px;
+        }
+        
+        .quick-stat-value {
+            font-size: 18px;
+        }
+        
+        .user-greeting-card {
+            flex-wrap: wrap;
+            padding: 16px 18px;
+        }
+        
+        .user-greeting-action {
+            width: 100%;
+        }
+        
+        .user-greeting-action .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
         .steps-grid {
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 16px;
         }
         
         .journey-grid {
@@ -520,24 +857,20 @@
         }
         
         .categories-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
         
-        .hero-stats {
-            flex-wrap: wrap;
-            gap: 20px;
+        .category-card {
+            padding: 16px 12px;
         }
         
-        .cta-card {
-            padding: 40px 24px;
+        .category-card i {
+            font-size: 22px;
         }
         
-        .cta-title {
-            font-size: 28px;
-        }
-        
-        .cta-description {
-            font-size: 16px;
+        .category-card span {
+            font-size: 12px;
         }
         
         .section-title {
@@ -548,56 +881,56 @@
             font-size: 16px;
         }
         
-        .stat-value {
+        .section-header-with-link .section-title {
             font-size: 24px;
         }
         
-        .step-card {
-            padding: 30px 20px;
+        .cta-card {
+            padding: 32px 20px;
         }
         
-        .blog-teaser-links {
+        .cta-title {
+            font-size: 26px;
+        }
+        
+        .cta-description {
+            font-size: 16px;
+        }
+        
+        .cta-actions {
             flex-direction: column;
-            gap: 8px;
+            align-items: center;
+        }
+        
+        .cta-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .blog-teaser-links a {
+            font-size: 13px;
         }
     }
     
     @media (max-width: 480px) {
-        .hero-cta {
-            flex-direction: column;
+        .quick-stats {
+            grid-template-columns: 1fr 1fr;
         }
         
-        .hero-cta .btn {
-            width: 100%;
-            text-align: center;
-        }
-        
-        .btn-text {
-            width: 100%;
-            text-align: center;
-            justify-content: center;
+        .quick-stat:last-child {
+            grid-column: span 2;
         }
         
         .categories-grid {
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
         }
         
-        .category-card {
-            padding: 16px;
-        }
-        
-        .category-card i {
-            font-size: 24px;
-        }
-        
-        .step-icon {
-            width: 64px;
-            height: 64px;
-        }
-        
-        .step-icon i {
+        .hero-title {
             font-size: 28px;
+        }
+        
+        .user-greeting-text h3 {
+            font-size: 16px;
         }
     }
 </style>
@@ -605,331 +938,344 @@
 
 {% block content %}
 
-{# Hero Section #}
+<!-- ============================================
+     HERO SECTION
+     ============================================ -->
 <section class="hero">
     <div class="container">
         <div class="hero-grid">
+            <!-- Left Column: Content -->
             <div class="hero-content">
-                <span class="hero-badge">
-                    <i class="fas fa-sparkles"></i> 
-                    Quick import from any social platform
-                </span>
+                <!-- Badge -->
+                {% if user.is_authenticated %}
+                    <span class="hero-badge">
+                        <i class="fas fa-check-circle"></i> 
+                        Welcome back, {{ user.get_full_name|default:user.username }}
+                    </span>
+                {% else %}
+                    <span class="hero-badge">
+                        <i class="fas fa-sparkles"></i> 
+                        Start your journey today
+                    </span>
+                {% endif %}
+
+                <!-- Title -->
                 <h1 class="hero-title">
-                    Turn Your Content Into a 
-                    <span class="gradient-text">Structured Journey</span>
+                    {% if user.is_authenticated %}
+                        Ready to Continue<br>Your <span class="gradient-text">Journey</span>?
+                    {% else %}
+                        Turn Your Content<br>Into a <span class="gradient-text">Structured Journey</span>
+                    {% endif %}
                 </h1>
+
+                <!-- Description -->
                 <p class="hero-description">
-                    Import your content via links, organize it into days, build a following, or raise funds—all in one beautiful timeline.
+                    {% if user.is_authenticated %}
+                        {% if user_journey_count > 0 %}
+                            You have <strong>{{ user_journey_count }}</strong> journey{{ user_journey_count|pluralize }} in progress. 
+                            Pick up where you left off or start something new.
+                        {% else %}
+                            Ready to start your first journey? Create your first structured journey today.
+                        {% endif %}
+                    {% else %}
+                        Create beautiful, trackable journeys from your content. 
+                        Build community, raise funds, and document your progress.
+                    {% endif %}
                 </p>
+
+                <!-- CTA Buttons -->
                 <div class="hero-cta">
-                    <a href="{% url 'signup' %}" class="btn btn-primary">
-                        Start Your Journey
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                    <a href="{% url 'discover' %}" class="btn btn-outline">
-                        Explore Journeys
-                    </a>
-                    <a href="{% url 'blog_index' %}" class="btn-text">
-                        <i class="fas fa-newspaper"></i>
-                        Read Our Blog
-                    </a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                            Go to Dashboard
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="{% url 'create_journey' %}" class="btn btn-outline">
+                            <i class="fas fa-plus-circle"></i>
+                            New Journey
+                        </a>
+                    {% else %}
+                        <a href="{% url 'signup' %}" class="btn btn-primary">
+                            Start Your Journey — Free
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="{% url 'discover' %}" class="btn btn-outline">
+                            Explore Journeys
+                        </a>
+                    {% endif %}
                 </div>
-                
-                <div class="blog-teaser">
-                    <p><i class="fas fa-feather-alt"></i> Latest from our blog:</p>
-                    <div class="blog-teaser-links">
-                        <a href="{% url 'blog_challenge_lost' %}">
-                            📉 Why challenges lose momentum after Day 7 →
-                        </a>
-                        <a href="{% url 'blog_journey_page' %}">
-                            🎓 Why coaches need journey pages →
-                        </a>
-                        <a href="{% url 'blog_buried_asset' %}">
-                            💎 Your most valuable asset is buried →
-                        </a>
+
+                <!-- ============================================
+                     LOGGED IN: Personalized Content
+                     ============================================ -->
+                {% if user.is_authenticated %}
+
+                    <!-- Greeting Card -->
+                    <div class="user-greeting-card">
+                        <div class="user-avatar">
+                            {{ user.get_full_name|default:user.username|make_list|first }}
+                        </div>
+                        <div class="user-greeting-text">
+                            <h3>Good to see you!</h3>
+                            <p>
+                                You're following <strong>{{ user_following|default:0 }}</strong> creator{{ user_following|default:0|pluralize }} · 
+                                <strong>{{ user_notifications|default:0 }}</strong> notification{{ user_notifications|default:0|pluralize }}
+                            </p>
+                        </div>
+                        <div class="user-greeting-action">
+                            <a href="{% url 'creator_profile' username=user.username %}" class="btn btn-outline" style="padding: 6px 16px; font-size: 13px;">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="hero-stats">
-                  
-                </div>
+
+                    <!-- Quick Stats (Real Data) -->
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">{{ user_journey_count|default:0 }}</div>
+                            <div class="quick-stat-label">Total Journeys</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">{{ user_completed_journeys|default:0 }}</div>
+                            <div class="quick-stat-label">Completed</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value">{{ user_following|default:0 }}</div>
+                            <div class="quick-stat-label">Followers</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Journeys -->
+                    <div class="recent-journeys-section">
+                        <div class="recent-journeys-header">
+                            <h4>
+                                <i class="fas fa-clock"></i>
+                                Your Recent Journeys
+                            </h4>
+                            <a href="{% url 'dashboard' %}">View All →</a>
+                        </div>
+
+                        {% if user_journeys %}
+                            <div class="mini-journey-list">
+                                {% for journey in user_journeys %}
+                                    <a href="{% url 'journey_detail' journey.slug %}" class="mini-journey-item">
+                                        <div class="mini-journey-icon">
+                                            <i class="fas fa-route"></i>
+                                        </div>
+                                        <div class="mini-journey-info">
+                                            <div class="title">{{ journey.title }}</div>
+                                            <div class="meta">
+                                                {% if journey.journey_type == 'daily' %}
+                                                    Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                                {% else %}
+                                                    {{ journey.activities.count }} milestones
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="mini-journey-progress">
+                                            <div class="percentage">{{ journey.get_progress_percentage|floatformat:0 }}%</div>
+                                            <div class="bar-track">
+                                                <div class="bar-fill" style="width: {{ journey.get_progress_percentage }}%"></div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty-journeys-state">
+                                <i class="fas fa-compass"></i>
+                                <h4>No journeys created yet</h4>
+                                <p>Start your first journey and share your story with the world.</p>
+                                <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Create Your First Journey
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                <!-- ============================================
+                     NOT LOGGED IN: Blog Teaser
+                     ============================================ -->
+                {% else %}
+                    <div class="blog-teaser">
+                        <div class="blog-teaser-label">
+                            <i class="fas fa-feather-alt"></i>
+                            Latest from our blog
+                        </div>
+                        <div class="blog-teaser-links">
+                            <a href="{% url 'blog_challenge_lost' %}">
+                                <span class="emoji">📉</span>
+                                Why your 30-day challenge gets lost after Day 7
+                            </a>
+                            <a href="{% url 'blog_journey_page' %}">
+                                <span class="emoji">🎓</span>
+                                Why every coach needs a journey page
+                            </a>
+                            <a href="{% url 'blog_buried_asset' %}">
+                                <span class="emoji">💎</span>
+                                Your most valuable asset is buried in your feed
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
+
+            <!-- Right Column: Visual -->
             <div class="hero-visual">
-                <i class="fas fa-route"></i>
+                <span class="visual-icon">
+                    <i class="fas fa-route"></i>
+                </span>
                 <h4>Your Journey Timeline</h4>
-                <p>Beautiful, organized, and trackable</p>
+                <p>
+                    {% if user.is_authenticated %}
+                        {{ user_journey_count|default:0 }} journey{{ user_journey_count|default:0|pluralize }} · 
+                        {{ user_completed_journeys|default:0 }} completed
+                    {% else %}
+                        Beautiful, organized, and trackable
+                    {% endif %}
+                </p>
+                <div class="visual-footer">
+                    <small>
+                        <i class="fas fa-check-circle"></i>
+                        {% if user.is_authenticated %}
+                            Welcome back!
+                        {% else %}
+                            Join the community
+                        {% endif %}
+                    </small>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-{# How It Works #}
+<!-- ============================================
+     HOW IT WORKS
+     ============================================ -->
 <section class="how-it-works">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">How Rallynex Works</h2>
-            <p class="section-subtitle">Three simple steps to organize your content</p>
+            <p class="section-subtitle">Three simple steps to organize your content into a journey</p>
         </div>
-        
+
         <div class="steps-grid">
             <div class="step-card">
                 <div class="step-icon">
-                    <i class="fas fa-link"></i>
+                    <i class="fas fa-plus-circle"></i>
                 </div>
-                <h3 class="step-title">1. Import Your Content</h3>
+                <span class="step-number">Step 1</span>
+                <h3 class="step-title">Create Your Journey</h3>
                 <p class="step-description">
-                    Import your content via links from TikTok, Instagram, YouTube, or any platform. No API setup required.
+                    Set up your journey on Rallynex. Choose daily challenges or 
+                    milestone-based journeys that fit your content.
                 </p>
             </div>
-            
+
             <div class="step-card">
                 <div class="step-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
-                <h3 class="step-title">2. Create Your Journey</h3>
+                <span class="step-number">Step 2</span>
+                <h3 class="step-title">Add Your Content</h3>
                 <p class="step-description">
-                    Set your duration, add milestones or daily challenges, and customize your page in minutes.
+                    Add daily updates, milestones, and media directly on Rallynex. 
+                    Everything lives in one organized place.
                 </p>
             </div>
-            
+
             <div class="step-card">
                 <div class="step-icon">
                     <i class="fas fa-users"></i>
                 </div>
-                <h3 class="step-title">3. Build Your Following</h3>
+                <span class="step-number">Step 3</span>
+                <h3 class="step-title">Build Your Following</h3>
                 <p class="step-description">
-                    Share your journey page. Followers track progress, leave comments, and support your cause.
+                    Share your journey page. Followers track progress, 
+                    leave comments, and support your cause.
                 </p>
             </div>
         </div>
     </div>
 </section>
 
-{# Featured Journeys Section - DYNAMIC FROM DATABASE #}
+<!-- ============================================
+     FEATURED JOURNEYS
+     ============================================ -->
 <section class="featured-section">
     <div class="container">
         <div class="section-header-with-link">
             <div>
-                <h2 class="section-title" style="margin-bottom: 8px;">🌟 Featured Journeys</h2>
+                <h2 class="section-title">🌟 Featured Journeys</h2>
                 <p class="section-subtitle">Discover inspiring transformations from our community</p>
             </div>
             <a href="{% url 'discover' %}" class="view-all-link">
-                View All Journeys <i class="fas fa-arrow-right"></i>
+                View All <i class="fas fa-arrow-right"></i>
             </a>
         </div>
-        
+
         {% if featured_journeys %}
             <div class="journey-grid">
                 {% for journey in featured_journeys %}
                     <a href="{% url 'journey_detail' journey.slug %}" class="journey-card">
                         <div class="journey-cover">
                             {% if journey.cover_image %}
-                                <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                             {% else %}
                                 <i class="fas fa-route"></i>
                             {% endif %}
                         </div>
                         <div class="journey-info">
-                            <span class="category-badge">
-                                {% if journey.category == 'fitness' %}
-                                    💪 Fitness
-                                {% elif journey.category == 'learning' %}
-                                    📚 Learning
-                                {% elif journey.category == 'creative' %}
-                                    🎨 Creative
-                                {% elif journey.category == 'business' %}
-                                    📈 Business
-                                {% elif journey.category == 'personal' %}
-                                    🌱 Personal
-                                {% elif journey.category == 'cause' %}
-                                    🤝 Cause
-                                {% else %}
-                                    🚀 Journey
-                                {% endif %}
+                            <span class="journey-category">
+                                {% if journey.category == 'fitness' %}💪 Fitness
+                                {% elif journey.category == 'learning' %}📚 Learning
+                                {% elif journey.category == 'creative' %}🎨 Creative
+                                {% elif journey.category == 'business' %}📈 Business
+                                {% elif journey.category == 'personal' %}🌱 Personal
+                                {% elif journey.category == 'cause' %}🤝 Cause
+                                {% else %}🚀 Journey{% endif %}
                             </span>
-                            <h3 class="journey-title" style="margin-top: 4px;">{{ journey.title }}</h3>
+                            <h3 class="journey-title">{{ journey.title }}</h3>
                             <div class="journey-creator">
                                 by {{ journey.creator.user.get_full_name|default:journey.creator.user.username }}
                             </div>
-                            <div class="journey-progress">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%"></div>
+                            <div class="journey-footer">
+                                <div class="journey-stats">
+                                    <span><i class="fas fa-heart"></i> {{ journey.followers.count }}</span>
+                                    <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
                                 </div>
-                                <div class="progress-text">
-                                    {% if journey.journey_type == 'daily' %}
-                                        Day {{ journey.get_current_day }} of {{ journey.duration }}
-                                    {% else %}
-                                        {{ journey.activities.count }} of {{ journey.duration }} milestones
-                                    {% endif %}
+                                <div class="journey-progress-text">
+                                    {{ journey.get_progress_percentage|floatformat:0 }}% complete
                                 </div>
-                            </div>
-                            <div class="journey-stats">
-                                <span><i class="fas fa-heart"></i> {{ journey.followers.count }}</span>
-                                <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
                             </div>
                         </div>
                     </a>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="empty-state">
-                <i class="fas fa-compass"></i>
-                <h3>No featured journeys yet</h3>
+            <div class="empty-journeys-state" style="padding: 48px 20px;">
+                <i class="fas fa-compass" style="font-size: 48px;"></i>
+                <h4>No featured journeys yet</h4>
                 <p>Be the first to create a featured journey!</p>
-                <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Your First Journey</a>
+                <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                    Create Your First Journey
+                </a>
             </div>
         {% endif %}
     </div>
 </section>
 
-{# Trending Journeys Section - DYNAMIC FROM DATABASE #}
-<section class="featured-section" style="background: var(--bg-primary);">
-    <div class="container">
-        <div class="section-header-with-link">
-            <div>
-                <h2 class="section-title" style="margin-bottom: 8px;">🔥 Trending Now</h2>
-                <p class="section-subtitle">Most popular journeys this week</p>
-            </div>
-            <a href="{% url 'discover' %}" class="view-all-link">
-                View All Journeys <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-        
-        {% if trending_journeys %}
-            <div class="journey-grid">
-                {% for journey in trending_journeys %}
-                    <a href="{% url 'journey_detail' journey.slug %}" class="journey-card">
-                        <div class="journey-cover">
-                            {% if journey.cover_image %}
-                                <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
-                                <i class="fas fa-fire"></i>
-                            {% endif %}
-                        </div>
-                        <div class="journey-info">
-                            <span class="category-badge">
-                                {% if journey.category == 'fitness' %}
-                                    💪 Fitness
-                                {% elif journey.category == 'learning' %}
-                                    📚 Learning
-                                {% elif journey.category == 'creative' %}
-                                    🎨 Creative
-                                {% elif journey.category == 'business' %}
-                                    📈 Business
-                                {% elif journey.category == 'personal' %}
-                                    🌱 Personal
-                                {% elif journey.category == 'cause' %}
-                                    🤝 Cause
-                                {% else %}
-                                    🚀 Journey
-                                {% endif %}
-                            </span>
-                            <h3 class="journey-title" style="margin-top: 4px;">{{ journey.title }}</h3>
-                            <div class="journey-creator">
-                                by {{ journey.creator.user.get_full_name|default:journey.creator.user.username }}
-                            </div>
-                            <div class="journey-progress">
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%"></div>
-                                </div>
-                                <div class="progress-text">
-                                    {% if journey.journey_type == 'daily' %}
-                                        Day {{ journey.get_current_day }} of {{ journey.duration }}
-                                    {% else %}
-                                        {{ journey.activities.count }} of {{ journey.duration }} milestones
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="journey-stats">
-                                <span><i class="fas fa-heart"></i> {{ journey.followers.count }}</span>
-                                <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
-                            </div>
-                        </div>
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <i class="fas fa-chart-line"></i>
-                <h3>No trending journeys yet</h3>
-                <p>Check back soon for popular journeys!</p>
-            </div>
-        {% endif %}
-    </div>
-</section>
-
-{# Latest Blog Posts Section #}
-<section class="blog-section">
-    <div class="container">
-        <div class="section-header-with-link">
-            <div>
-                <h2 class="section-title" style="margin-bottom: 8px;">📖 Latest from the Blog</h2>
-                <p class="section-subtitle">Insights for creators, coaches, and journey-builders</p>
-            </div>
-            <a href="{% url 'blog_index' %}" class="view-all-link">
-                View All Articles <i class="fas fa-arrow-right"></i>
-            </a>
-        </div>
-        
-        <div class="journey-grid">
-            <!-- Blog Post 1 -->
-            <a href="{% url 'blog_challenge_lost' %}" class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="journey-info">
-                    <span class="category-badge">📉 Challenge Retention</span>
-                    <h3 class="journey-title" style="margin-top: 4px;">Why Your 30-Day Challenge Gets Lost After Day 7</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Even when people are interested, they disappear. Here's why and how to fix it.</p>
-                    <div class="journey-stats" style="margin-top: 12px;">
-                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-                        <span><i class="far fa-clock"></i> 8 min read</span>
-                    </div>
-                </div>
-            </a>
-            
-            <!-- Blog Post 2 -->
-            <a href="{% url 'blog_journey_page' %}" class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-chalkboard-user"></i>
-                </div>
-                <div class="journey-info">
-                    <span class="category-badge">🎓 Coach Marketing</span>
-                    <h3 class="journey-title" style="margin-top: 4px;">Why Every Coach Needs a Journey Page</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Not more social media posts. Structure converts better than content.</p>
-                    <div class="journey-stats" style="margin-top: 12px;">
-                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-                        <span><i class="far fa-clock"></i> 8 min read</span>
-                    </div>
-                </div>
-            </a>
-            
-            <!-- Blog Post 3 -->
-            <a href="{% url 'blog_buried_asset' %}" class="journey-card">
-                <div class="journey-cover">
-                    <i class="fas fa-treasure"></i>
-                </div>
-                <div class="journey-info">
-                    <span class="category-badge">💎 Content Assets</span>
-                    <h3 class="journey-title" style="margin-top: 4px;">Your Most Valuable Asset Is Buried In Your Feed</h3>
-                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 8px;">Most creators are sitting on assets they don't even recognize.</p>
-                    <div class="journey-stats" style="margin-top: 12px;">
-                        <span><i class="far fa-calendar"></i> Jun 7, 2026</span>
-                        <span><i class="far fa-clock"></i> 4 min read</span>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</section>
-
-{# Categories #}
+<!-- ============================================
+     CATEGORIES
+     ============================================ -->
 <section class="categories-section">
     <div class="container">
         <div class="section-header">
             <h2 class="section-title">Browse by Category</h2>
+            <p class="section-subtitle">Find journeys that match your interests</p>
         </div>
-        
+
         <div class="categories-grid">
             <a href="{% url 'discover' %}?category=fitness" class="category-card">
                 <i class="fas fa-dumbbell"></i>
@@ -959,18 +1305,48 @@
     </div>
 </section>
 
-{# CTA #}
+<!-- ============================================
+     CTA SECTION
+     ============================================ -->
 <section class="cta-section">
     <div class="container">
         <div class="cta-card">
-            <h2 class="cta-title">Ready to Start Your Journey? 🚀</h2>
+            <h2 class="cta-title">
+                {% if user.is_authenticated %}
+                    Ready for Your Next Journey? 🚀
+                {% else %}
+                    Ready to Start Your Journey? 🚀
+                {% endif %}
+            </h2>
             <p class="cta-description">
-                Join thousands of creators organizing their content with Rallynex.
+                {% if user.is_authenticated %}
+                    You've experienced the power of structured content. 
+                    Start creating your next journey today.
+                {% else %}
+                    Join creators who are organizing their content into 
+                    beautiful, trackable journeys.
+                {% endif %}
             </p>
-            <a href="{% url 'signup' %}" class="btn btn-primary">
-                Get Started — It's Free
-                <i class="fas fa-arrow-right"></i>
-            </a>
+            <div class="cta-actions">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i>
+                        Create New Journey
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                {% else %}
+                    <a href="{% url 'signup' %}" class="btn btn-primary">
+                        Get Started — It's Free
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="{% url 'discover' %}" class="btn btn-outline">
+                        Explore Journeys
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </section>

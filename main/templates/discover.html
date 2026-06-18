@@ -1,664 +1,788 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
-{# ===== SEO BLOCKS FOR DISCOVER PAGE ===== #}
+{# ===== SEO BLOCKS ===== #}
 {% block title %}Discover Journeys | Rallynex{% endblock %}
 
 {% block meta_title %}
     {% if request.GET.q %}
-        Search results for "{{ request.GET.q }}" | Discover Journeys | Rallynex
+        Search: "{{ request.GET.q }}" | Discover Journeys | Rallynex
     {% elif request.GET.category %}
         {{ request.GET.category|title }} Journeys | Discover | Rallynex
-    {% elif request.GET.journey_type == 'daily' %}
-        Daily Challenge Journeys | Discover | Rallynex
-    {% elif request.GET.journey_type == 'milestone' %}
-        Milestone Journeys | Discover | Rallynex
-    {% elif request.GET.funding_enabled %}
-        Fundraising Journeys | Support Creators | Rallynex
     {% else %}
-        Discover Journeys - Daily Challenges & Milestone Tracking | Rallynex
+        Discover Journeys - Daily Challenges & Milestones | Rallynex
     {% endif %}
 {% endblock %}
 
 {% block meta_description %}
     {% if request.GET.q %}
-        Find "{{ request.GET.q }}" journeys and challenges on Rallynex. Discover daily content, track progress, and support creators.
+        Find "{{ request.GET.q }}" journeys and challenges on Rallynex.
     {% elif request.GET.category == 'fitness' %}
-        Discover fitness journeys and daily workout challenges. Track your progress, stay motivated, and achieve your fitness goals on Rallynex.
+        Discover fitness journeys and daily workout challenges. Track your progress on Rallynex.
     {% elif request.GET.category == 'learning' %}
-        Explore learning journeys and educational challenges. Master new skills with daily content and milestone tracking on Rallynex.
-    {% elif request.GET.category == 'creative' %}
-        Find creative journeys for artists, designers, and makers. Daily creative challenges and portfolio-building milestones on Rallynex.
-    {% elif request.GET.category == 'business' %}
-        Discover business and entrepreneurship journeys. Build your startup, learn marketing, and track business milestones on Rallynex.
-    {% elif request.GET.journey_type == 'daily' %}
-        Browse daily challenge journeys on Rallynex. Commit to daily content, build habits, and track your progress day by day.
-    {% elif request.GET.journey_type == 'milestone' %}
-        Explore milestone-based journeys on Rallynex. Complete key objectives and track progress across major milestones.
-    {% elif request.GET.funding_enabled %}
-        Support creators and causes through fundraising journeys on Rallynex. Donate, follow progress, and make an impact.
+        Explore learning journeys and educational challenges. Master new skills on Rallynex.
     {% else %}
-        Discover thousands of structured journeys on Rallynex. Find daily challenges, milestone trackers, and community-driven content from creators worldwide.
+        Discover thousands of structured journeys on Rallynex. Find daily challenges, milestone trackers, and community content.
     {% endif %}
-{% endblock %}
-
-{% block meta_keywords %}
-    {% if request.GET.q %}{{ request.GET.q }}, {% endif %}
-    discover journeys, find challenges, daily challenges, milestone tracker, 
-    {% if request.GET.category %}{{ request.GET.category }} challenges, {% endif %}
-    content journey, rallynex discover, creator platform, structured content,
-    habit tracking, progress tracking, community challenges
-{% endblock %}
-
-{% block og_title %}
-    {% if request.GET.q %}
-        Search results for "{{ request.GET.q }}" | Rallynex Discover
-    {% elif request.GET.category %}
-        {{ request.GET.category|title }} Journeys | Rallynex
-    {% else %}
-        Discover Journeys on Rallynex
-    {% endif %}
-{% endblock %}
-
-{% block og_description %}
-    {% if request.GET.q %}
-        Found {{ total_count }} journey{{ total_count|pluralize }} matching "{{ request.GET.q }}". Find your next challenge on Rallynex.
-    elif request.GET.category %}
-        Explore the best {{ request.GET.category }} journeys on Rallynex. Join the community and start your journey today.
-    {% else %}
-        Browse {{ total_count }}+ structured journeys. Find daily challenges, milestone journeys, and support creators on Rallynex.
-    {% endif %}
-{% endblock %}
-
-{% block og_image %}
-    {{ request.scheme }}://{{ request.get_host }}{% static 'icons/og-discover.jpg' %}
-{% endblock %}
-
-{% block twitter_title %}
-    Discover Journeys | Rallynex - Find Your Next Challenge
-{% endblock %}
-
-{% block twitter_description %}
-    Browse thousands of journeys from creators worldwide. Daily challenges, milestone tracking, and community support.
-{% endblock %}
-
-{% block canonical_url %}
-    {{ request.build_absolute_uri }}
-{% endblock %}
-
-{# Structured data for listing page #}
-{% block extra_schema %}
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "{% if request.GET.q %}Search results for '{{ request.GET.q }}'{% else %}Discover Journeys{% endif %}",
-    "description": "{% if request.GET.q %}Journeys matching '{{ request.GET.q }}' on Rallynex{% else %}Browse all public journeys on Rallynex{% endif %}",
-    "url": "{{ request.build_absolute_uri }}",
-    "numberOfItems": {{ total_count|default:0 }},
-    "mainEntity": {
-        "@type": "ItemList",
-        "itemListElement": [
-            {% for journey in journeys %}
-            {
-                "@type": "ListItem",
-                "position": {{ forloop.counter }},
-                "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'journey_detail' slug=journey.slug %}"
-            }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ]
-    },
-    "potentialAction": {
-        "@type": "SearchAction",
-        "target": "{{ request.scheme }}://{{ request.get_host }}/discover/?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-    }
-}
-</script>
-
-{# Breadcrumbs for discover page #}
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-        {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "{{ request.scheme }}://{{ request.get_host }}/"
-        },
-        {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Discover",
-            "item": "{{ request.build_absolute_uri }}"
-        }
-        {% if request.GET.category %}
-        ,{
-            "@type": "ListItem",
-            "position": 3,
-            "name": "{{ request.GET.category|title }}",
-            "item": "{{ request.build_absolute_uri }}"
-        }
-        {% endif %}
-    ]
-}
-</script>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-    .discover-header {
-        padding: 40px 0;
-        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--card-bg) 100%);
-        border-bottom: 1px solid var(--border-color);
+    /* ============================================
+       MODERN DISCOVER PAGE - PROFESSIONAL
+       ============================================ */
+    
+    /* ----- Hero Section ----- */
+    .discover-hero {
+        padding: 60px 0 40px;
+        background: var(--bg-primary);
+        position: relative;
+        overflow: hidden;
     }
     
-    .discover-title {
-        font-size: 36px;
-        font-weight: 700;
-        margin-bottom: 24px;
+    .discover-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.04) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    
+    .discover-hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .discover-hero h1 {
+        font-size: 42px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 8px;
         color: var(--text-primary);
     }
     
-    /* Search Bar */
-    .search-form {
+    .discover-hero h1 i {
+        color: var(--accent);
+        margin-right: 4px;
+    }
+    
+    .discover-hero .subtitle {
+        font-size: 18px;
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+    }
+    
+    /* ----- Modern Search Bar ----- */
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto 24px;
+    }
+    
+    .search-bar {
         display: flex;
-        gap: 12px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-    
-    .search-input-wrapper {
-        flex: 1;
-        min-width: 250px;
-        position: relative;
-    }
-    
-    .search-input-wrapper i {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-    }
-    
-    .search-input {
-        width: 100%;
-        padding: 14px 16px 14px 48px;
+        gap: 0;
         background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 30px;
+        border: 2px solid var(--border-color);
+        border-radius: 60px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+    
+    .search-bar:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 4px 24px rgba(59, 130, 246, 0.12);
+        transform: translateY(-2px);
+    }
+    
+    .search-bar .search-icon {
+        display: flex;
+        align-items: center;
+        padding: 0 18px 0 24px;
+        color: var(--text-muted);
+        font-size: 18px;
+    }
+    
+    .search-bar input {
+        flex: 1;
+        padding: 16px 0;
+        background: transparent;
+        border: none;
+        outline: none;
         color: var(--text-primary);
         font-size: 16px;
-        outline: none;
-        transition: border-color 0.2s;
+        min-width: 0;
     }
     
-    .search-input:focus {
-        border-color: var(--accent);
-    }
-    
-    .search-input::placeholder {
+    .search-bar input::placeholder {
         color: var(--text-muted);
     }
     
-    .filter-select {
-        padding: 14px 20px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 30px;
-        color: var(--text-primary);
-        font-size: 14px;
-        outline: none;
-        cursor: pointer;
-        min-width: 150px;
-        transition: border-color 0.2s;
-    }
-    
-    .filter-select:focus {
-        border-color: var(--accent);
-    }
-    
-    .search-btn {
-        padding: 14px 28px;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        border-radius: 30px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .search-btn:hover {
-        background: var(--accent-hover);
-        transform: scale(1.02);
-    }
-    
-    /* Filters Row */
-    .filters-row {
+    .search-bar .search-actions {
         display: flex;
-        gap: 12px;
+        align-items: center;
+        gap: 8px;
+        padding-right: 8px;
+    }
+    
+    .search-bar .search-btn {
+        padding: 10px 24px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+    
+    .search-bar .search-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.03);
+    }
+    
+    .search-bar .clear-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0 12px;
+        font-size: 18px;
+        display: none;
+    }
+    
+    .search-bar .clear-btn.visible {
+        display: block;
+    }
+    
+    /* ----- Filter Chips - MONOCHROME ----- */
+    .filter-chips {
+        display: flex;
+        gap: 10px;
         flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 20px;
     }
     
     .filter-chip {
-        padding: 8px 16px;
+        padding: 8px 20px;
         background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 30px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 40px;
         color: var(--text-secondary);
-        font-size: 14px;
+        font-size: 13px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.25s ease;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
     
-    .filter-chip:hover,
+    .filter-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+    }
+    
     .filter-chip.active {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: white;
     }
     
-    .filter-chip i {
-        margin-right: 0px;
+    .filter-chip .chip-icon {
+        font-size: 14px;
+        opacity: 0.7;
     }
     
-    /* Results */
-    .results-section {
-        padding: 40px 0 60px;
-        min-height: 400px;
+    .filter-chip.active .chip-icon {
+        opacity: 1;
     }
     
+    .filter-chip .chip-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 0 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .filter-chip.active .chip-badge {
+        background: rgba(255,255,255,0.25);
+    }
+    
+    /* ----- Results Header ----- */
     .results-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 30px;
+        margin-bottom: 28px;
         flex-wrap: wrap;
         gap: 16px;
+        padding: 0 4px;
     }
     
     .results-count {
+        font-size: 15px;
         color: var(--text-secondary);
-        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
-    .sort-select {
-        padding: 8px 16px;
+    .results-count strong {
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+    
+    .results-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 4px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 20px;
-        color: var(--text-primary);
-        font-size: 14px;
-        outline: none;
-        cursor: pointer;
+        border-radius: 12px;
+        padding: 4px;
     }
     
-    /* Journey Grid */
-    .journey-grid {
+    .view-toggle button {
+        padding: 6px 12px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 14px;
+    }
+    
+    .view-toggle button.active {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    
+    .view-toggle button:hover:not(.active) {
+        color: var(--text-primary);
+    }
+    
+    .sort-select-modern {
+        padding: 8px 16px 8px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+    
+    .sort-select-modern:focus {
+        border-color: var(--accent);
+    }
+    
+    /* ----- Journey Grid ----- */
+    .journey-grid-modern {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 24px;
-        margin-bottom: 40px;
+        margin-bottom: 48px;
     }
     
-    .journey-card {
+    .journey-card-modern {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
+        border-radius: 20px;
         overflow: hidden;
-        transition: transform 0.3s, border-color 0.3s;
-        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         text-decoration: none;
         display: block;
+        position: relative;
     }
     
-    .journey-card:hover {
-        transform: translateY(-4px);
+    .journey-card-modern:hover {
+        transform: translateY(-8px);
         border-color: var(--accent);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
     }
     
-    .journey-cover {
-        aspect-ratio: 1;
+    .card-image {
+        aspect-ratio: 16/10;
         background: var(--bg-secondary);
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
-        overflow: hidden;
     }
     
-    .journey-cover img {
+    .card-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s;
+        transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
     }
     
-    .journey-card:hover .journey-cover img {
-        transform: scale(1.05);
+    .journey-card-modern:hover .card-image img {
+        transform: scale(1.06);
     }
     
-    .journey-cover i {
+    .card-image .placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
         font-size: 48px;
         color: var(--text-muted);
+        opacity: 0.3;
+        background: var(--bg-secondary);
     }
     
-    .journey-category {
+    .card-image::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 100%);
+        pointer-events: none;
+        opacity: 0.4;
+        transition: opacity 0.3s ease;
+    }
+    
+    .journey-card-modern:hover .card-image::after {
+        opacity: 0.6;
+    }
+    
+    /* ----- Card Badges - MONOCHROME ----- */
+    .card-badges {
         position: absolute;
         top: 12px;
         left: 12px;
-        padding: 4px 12px;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(5px);
-        border-radius: 30px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #fff;
-    }
-    
-    .journey-funded-badge {
-        position: absolute;
-        top: 12px;
         right: 12px;
-        padding: 4px 10px;
-        background: rgba(59, 130, 246, 0.9);
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        z-index: 2;
+    }
+    
+    .card-badge {
+        padding: 4px 12px;
         border-radius: 30px;
         font-size: 11px;
-        font-weight: 500;
-        color: #fff;
-    }
-    
-    .journey-type-badge {
-        position: absolute;
-        bottom: 12px;
-        left: 12px;
-        padding: 4px 10px;
-        border-radius: 30px;
-        font-size: 10px;
-        font-weight: 500;
-        backdrop-filter: blur(5px);
-    }
-    
-    .journey-type-badge.daily {
-        background: rgba(59, 130, 246, 0.8);
-        color: #fff;
-    }
-    
-    .journey-type-badge.milestone {
-        background: rgba(139, 92, 246, 0.8);
-        color: #fff;
-    }
-    
-    .journey-type-badge i {
-        margin-right: 4px;
-        font-size: 9px;
-    }
-    
-    .journey-info {
-        padding: 20px;
-    }
-    
-    .journey-title {
         font-weight: 600;
+        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.65);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid rgba(255,255,255,0.08);
+        letter-spacing: 0.02em;
+    }
+    
+    .card-badge i {
+        font-size: 10px;
+        opacity: 0.7;
+    }
+    
+    .card-badge.category {
+        background: rgba(0, 0, 0, 0.75);
+    }
+    
+    .card-badge.type {
+        background: rgba(0, 0, 0, 0.6);
+    }
+    
+    .card-badge.funding {
+        background: rgba(34, 197, 94, 0.8);
+    }
+    
+    .card-badge.funding i {
+        opacity: 1;
+    }
+    
+    /* ----- Card Content ----- */
+    .card-content {
+        padding: 20px 22px 22px;
+        position: relative;
+        background: var(--card-bg);
+    }
+    
+    .card-title {
         font-size: 18px;
-        margin-bottom: 8px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        line-height: 1.3;
         display: -webkit-box;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        color: var(--text-primary);
+        transition: color 0.2s;
     }
     
-    .journey-card:hover .journey-title {
+    .journey-card-modern:hover .card-title {
         color: var(--accent);
     }
     
-    .journey-creator {
+    /* ----- Creator Section with Profile Redirect ----- */
+    .card-creator {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
     
-    .creator-avatar {
-        width: 24px;
-        height: 24px;
+    .card-creator-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s ease;
+        flex: 1;
+    }
+    
+    .card-creator-link:hover .avatar {
+        border-color: var(--accent);
+        transform: scale(1.05);
+    }
+    
+    .card-creator-link:hover .name {
+        color: var(--accent);
+    }
+    
+    .card-creator .avatar {
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: var(--bg-secondary);
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        flex-shrink: 0;
+        border: 2px solid var(--border-color);
+        transition: all 0.2s ease;
     }
     
-    .creator-avatar i {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-    
-    .creator-avatar img {
+    .card-creator .avatar img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 50%;
     }
     
-    .creator-name {
-        color: var(--text-secondary);
+    .card-creator .avatar i {
         font-size: 14px;
+        color: var(--text-muted);
     }
     
-    .journey-description {
-        color: var(--text-secondary);
+    .card-creator .name {
         font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    
+    .card-description {
+        font-size: 14px;
+        color: var(--text-secondary);
         line-height: 1.5;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
     
-    .journey-progress {
-        margin-bottom: 12px;
+    .card-progress {
+        margin-bottom: 14px;
     }
     
-    .progress-header {
+    .card-progress .progress-label {
         display: flex;
         justify-content: space-between;
         font-size: 12px;
         color: var(--text-secondary);
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     
-    .progress-bar {
+    .card-progress .progress-bar {
         height: 4px;
         background: var(--bg-tertiary);
-        border-radius: 2px;
+        border-radius: 4px;
         overflow: hidden;
     }
     
-    .progress-fill {
+    .card-progress .progress-bar .fill {
         height: 100%;
-        background: var(--accent);
-        border-radius: 2px;
-        transition: width 0.3s ease;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        transition: width 0.8s ease;
     }
     
-    .progress-bar.milestone .progress-fill {
-        background: #8b5cf6;
-    }
-    
-    .journey-stats {
+    .card-footer {
         display: flex;
-        gap: 16px;
-        color: var(--text-secondary);
-        font-size: 13px;
-        padding-top: 12px;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 14px;
         border-top: 1px solid var(--border-color);
     }
     
-    .journey-stats i {
-        margin-right: 4px;
-        color: var(--text-muted);
+    .card-stats {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
     }
     
-    /* Pagination */
-    .pagination {
+    .card-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .card-stats i {
+        font-size: 13px;
+        color: var(--text-muted);
+        opacity: 0.7;
+    }
+    
+    .card-action {
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: gap 0.2s;
+    }
+    
+    .journey-card-modern:hover .card-action {
+        gap: 8px;
+    }
+    
+    /* ----- Empty State ----- */
+    .empty-state-modern {
+        text-align: center;
+        padding: 80px 20px;
+        background: var(--card-bg);
+        border: 2px dashed var(--border-color);
+        border-radius: 24px;
+    }
+    
+    .empty-state-modern .empty-icon {
+        font-size: 72px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 20px;
+        display: block;
+    }
+    
+    .empty-state-modern h3 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-state-modern p {
+        font-size: 16px;
+        color: var(--text-secondary);
+        max-width: 400px;
+        margin: 0 auto 24px;
+    }
+    
+    .empty-state-modern .btn {
+        padding: 12px 28px;
+    }
+    
+    /* ----- Pagination ----- */
+    .pagination-modern {
         display: flex;
         justify-content: center;
-        gap: 8px;
-        margin-top: 40px;
+        gap: 6px;
+        margin-top: 8px;
         flex-wrap: wrap;
     }
     
-    .pagination a,
-    .pagination span {
+    .pagination-modern a,
+    .pagination-modern span {
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 40px;
-        height: 40px;
-        padding: 0 12px;
+        min-width: 44px;
+        height: 44px;
+        padding: 0 16px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 10px;
+        border-radius: 12px;
         color: var(--text-secondary);
         font-size: 14px;
-        transition: all 0.2s;
+        font-weight: 500;
+        transition: all 0.2s ease;
         text-decoration: none;
     }
     
-    .pagination a:hover {
+    .pagination-modern a:hover {
         background: var(--bg-secondary);
         border-color: var(--accent);
         color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
     }
     
-    .pagination .current {
+    .pagination-modern .current {
         background: var(--accent);
         border-color: var(--accent);
-        color: #fff;
+        color: white;
     }
     
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
+    .pagination-modern .disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
     }
     
-    .empty-state i {
-        font-size: 64px;
-        color: var(--text-muted);
-        margin-bottom: 20px;
-    }
-    
-    .empty-state h3 {
-        font-size: 20px;
-        margin-bottom: 12px;
-        color: var(--text-primary);
-    }
-    
-    .empty-state p {
-        color: var(--text-secondary);
-        margin-bottom: 24px;
-    }
-    
-    /* Responsive */
+    /* ----- Responsive ----- */
     @media (max-width: 1024px) {
-        .journey-grid {
+        .journey-grid-modern {
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
         }
     }
     
     @media (max-width: 768px) {
-        .discover-header {
-            padding: 24px 0;
+        .discover-hero {
+            padding: 32px 0 24px;
         }
         
-        .discover-title {
+        .discover-hero h1 {
             font-size: 28px;
         }
         
-        .journey-grid {
-            grid-template-columns: 1fr;
+        .discover-hero .subtitle {
+            font-size: 16px;
+        }
+        
+        .search-bar {
+            border-radius: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .search-bar .search-icon {
+            padding: 0 0 0 16px;
+        }
+        
+        .search-bar input {
+            padding: 14px 0;
+            font-size: 15px;
+        }
+        
+        .search-bar .search-actions {
+            width: 100%;
+            padding: 0 12px 12px;
+        }
+        
+        .search-bar .search-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .journey-grid-modern {
+            grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
         
-        .search-form {
-            flex-direction: column;
+        .card-content {
+            padding: 16px 18px 18px;
         }
         
-        .filter-select {
-            width: 100%;
-        }
-        
-        .search-btn {
-            width: 100%;
-        }
-        
-        .filters-row {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            padding-bottom: 8px;
-            scrollbar-width: thin;
-        }
-        
-        .filter-chip {
-            white-space: nowrap;
+        .card-title {
+            font-size: 16px;
         }
         
         .results-header {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
         }
         
-        .sort-select {
-            width: 100%;
+        .results-controls {
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
         
-        .journey-info {
-            padding: 16px;
-        }
-        
-        .journey-title {
-            font-size: 16px;
-        }
-        
-        .empty-state {
-            padding: 40px 20px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .filters-row {
+        .filter-chips {
             gap: 8px;
         }
         
         .filter-chip {
-            padding: 6px 12px;
             font-size: 12px;
+            padding: 6px 14px;
         }
         
-        .pagination a,
-        .pagination span {
-            min-width: 36px;
-            height: 36px;
+        .pagination-modern a,
+        .pagination-modern span {
+            min-width: 38px;
+            height: 38px;
             font-size: 13px;
+        }
+        
+        .empty-state-modern {
+            padding: 48px 16px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .discover-hero h1 {
+            font-size: 24px;
+        }
+        
+        .journey-grid-modern {
+            grid-template-columns: 1fr;
+        }
+        
+        .card-stats {
+            font-size: 12px;
+            gap: 12px;
+        }
+        
+        .view-toggle {
+            display: none;
+        }
+        
+        .card-image {
+            aspect-ratio: 16/9;
         }
     }
 </style>
@@ -666,243 +790,379 @@
 
 {% block content %}
 
-{# Header #}
-<div class="discover-header">
+<!-- ============================================
+     DISCOVER HERO
+     ============================================ -->
+<div class="discover-hero">
     <div class="container">
-        <h1 class="discover-title">
-            <i class="fas fa-compass"></i> Discover Journeys
-        </h1>
-        
-        {# Search Form #}
-        <form method="get" class="search-form" id="searchForm">
-            <div class="search-input-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" name="q" class="search-input" 
-                       placeholder="Search journeys, creators, or topics..." 
-                       value="{{ form.q.value|default:'' }}">
+        <div class="discover-hero-content">
+            <h1>
+                <i class="fas fa-compass"></i> 
+                Discover Journeys
+            </h1>
+            <p class="subtitle">Find the perfect journey — from daily challenges to milestone achievements</p>
+            
+            <!-- Modern Search Bar -->
+            <div class="search-container">
+                <form method="get" id="searchForm" autocomplete="off">
+                    <div class="search-bar">
+                        <span class="search-icon">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            name="q" 
+                            id="searchInput"
+                            placeholder="Search journeys, creators, or topics..." 
+                            value="{{ request.GET.q|default:'' }}"
+                            aria-label="Search journeys"
+                        >
+                        <div class="search-actions">
+                            <button type="button" class="clear-btn" id="clearBtn" aria-label="Clear search">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
+                            <button type="submit" class="search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden filters preserved -->
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'q' and key != 'page' and key != 'sort' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                </form>
             </div>
             
-            <select name="category" class="filter-select">
-                <option value="">📁 All Categories</option>
-                {% for value, label in categories %}
-                    <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>
-                        {{ label }}
-                    </option>
-                {% endfor %}
-            </select>
-            
-            <select name="journey_type" class="filter-select">
-                <option value="">🎯 All Types</option>
-                <option value="daily" {% if form.journey_type.value == 'daily' %}selected{% endif %}>📅 Daily Challenge</option>
-                <option value="milestone" {% if form.journey_type.value == 'milestone' %}selected{% endif %}>🏆 Milestone Journey</option>
-            </select>
-            
-            <button type="submit" class="search-btn">
-                <i class="fas fa-search"></i> Search
-            </button>
-        </form>
-        
-        {# Quick Filters #}
-        <div class="filters-row">
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-created_at" 
-               class="filter-chip {% if not request.GET.sort or request.GET.sort == '-created_at' %}active{% endif %}">
-                <i class="fas fa-clock"></i> Newest
-            </a>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-view_count" 
-               class="filter-chip {% if request.GET.sort == '-view_count' %}active{% endif %}">
-                <i class="fas fa-fire"></i> Trending
-            </a>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=title" 
-               class="filter-chip {% if request.GET.sort == 'title' %}active{% endif %}">
-                <i class="fas fa-arrow-up-a-z"></i> Title A-Z
-            </a>
-            <a href="?{% for key, value in request.GET.items %}{% if key != 'funding_enabled' %}{{ key }}={{ value }}&{% endif %}{% endfor %}funding_enabled=on" 
-               class="filter-chip {% if request.GET.funding_enabled %}active{% endif %}">
-                <i class="fas fa-hand-holding-heart"></i> Fundraising
-            </a>
+            <!-- Filter Chips -->
+            <div class="filter-chips">
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-created_at" 
+                   class="filter-chip {% if not request.GET.sort or request.GET.sort == '-created_at' %}active{% endif %}">
+                    <i class="fas fa-clock chip-icon"></i> Newest
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-view_count" 
+                   class="filter-chip {% if request.GET.sort == '-view_count' %}active{% endif %}">
+                    <i class="fas fa-fire chip-icon"></i> Trending
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-get_follower_count" 
+                   class="filter-chip {% if request.GET.sort == '-get_follower_count' %}active{% endif %}">
+                    <i class="fas fa-users chip-icon"></i> Popular
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'funding_enabled' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}funding_enabled=on" 
+                   class="filter-chip {% if request.GET.funding_enabled %}active{% endif %}">
+                    <i class="fas fa-hand-holding-heart chip-icon"></i> Fundraising
+                    {% if request.GET.funding_enabled %}
+                        <span class="chip-badge">✓</span>
+                    {% endif %}
+                </a>
+                
+                {% if request.GET.category or request.GET.q or request.GET.journey_type or request.GET.funding_enabled %}
+                    <a href="{% url 'discover' %}" class="filter-chip" style="border-color: var(--error); color: var(--error);">
+                        <i class="fas fa-times"></i> Clear All
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 
-{# Results #}
-<section class="results-section">
+<!-- ============================================
+     RESULTS
+     ============================================ -->
+<section style="padding: 32px 0 60px; min-height: 400px;">
     <div class="container">
+        <!-- Results Header -->
         <div class="results-header">
-            <span class="results-count">
-                <i class="fas fa-compass"></i> 
-                {{ total_count }} journey{{ total_count|pluralize }} found
-            </span>
+            <div class="results-count">
+                <i class="fas fa-route" style="color: var(--accent);"></i>
+                <strong>{{ total_count }}</strong> journey{{ total_count|pluralize }} found
+                {% if request.GET.q %}
+                    <span style="color: var(--text-muted);">for "<strong>{{ request.GET.q }}</strong>"</span>
+                {% endif %}
+            </div>
             
-            <form method="get" class="sort-form" id="sortForm">
-                {% for key, value in request.GET.items %}
-                    {% if key != 'sort' %}
-                        <input type="hidden" name="{{ key }}" value="{{ value }}">
-                    {% endif %}
-                {% endfor %}
-                <select name="sort" class="sort-select" onchange="this.form.submit()">
-                    <option value="-created_at" {% if request.GET.sort == '-created_at' or not request.GET.sort %}selected{% endif %}>
-                        📅 Newest First
-                    </option>
-                    <option value="-view_count" {% if request.GET.sort == '-view_count' %}selected{% endif %}>
-                        🔥 Most Viewed
-                    </option>
-                    <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>
-                        📝 Title A-Z
-                    </option>
-                    <option value="-get_follower_count" {% if request.GET.sort == '-get_follower_count' %}selected{% endif %}>
-                        👥 Most Followed
-                    </option>
-                </select>
-            </form>
-        </div>
-        
-        {% if journeys %}
-        <div class="journey-grid">
-            {% for journey in journeys %}
-            <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-card">
-                <div class="journey-cover">
-                    {% if journey.cover_image %}
-                        <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
-                    {% else %}
-                        <i class="fas fa-flag-checkered"></i>
-                    {% endif %}
-                    
-                    <span class="journey-category">{{ journey.get_category_display }}</span>
-                    
-                    {% if journey.funding_enabled %}
-                    <span class="journey-funded-badge">
-                        <i class="fas fa-hand-holding-heart"></i> Fundraising
-                    </span>
-                    {% endif %}
-                    
-                    <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
-                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
-                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
-                    </span>
+            <div class="results-controls">
+                <div class="view-toggle">
+                    <button class="active" title="Grid view">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button title="List view" disabled style="opacity:0.4;">
+                        <i class="fas fa-list"></i>
+                    </button>
                 </div>
                 
-                <div class="journey-info">
-                    <h3 class="journey-title">{{ journey.title }}</h3>
-                    
-                    <div class="journey-creator">
-                        <div class="creator-avatar">
-                            {% if journey.creator.image %}
-                                <img src="{{ journey.creator.image.url }}" alt="{{ journey.creator.get_display_name }}" loading="lazy">
-                            {% else %}
-                                <i class="fas fa-user"></i>
-                            {% endif %}
-                        </div>
-                        <span class="creator-name">@{{ journey.creator.user.username }}</span>
-                    </div>
-                    
-                    <p class="journey-description">{{ journey.description|truncatechars:100 }}</p>
-                    
-                    <div class="journey-progress">
-                        <div class="progress-header">
-                            <span>
-                                {% if journey.journey_type == 'milestone' %}
-                                    {{ journey.get_current_day }}/{{ journey.duration }} Milestones
+                <form method="get" id="sortForm">
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'sort' and key != 'page' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <select name="sort" class="sort-select-modern" onchange="this.form.submit()">
+                        <option value="-created_at" {% if not request.GET.sort or request.GET.sort == '-created_at' %}selected{% endif %}>
+                            <i class="fas fa-clock"></i> Newest First
+                        </option>
+                        <option value="-view_count" {% if request.GET.sort == '-view_count' %}selected{% endif %}>
+                            <i class="fas fa-fire"></i> Most Viewed
+                        </option>
+                        <option value="-get_follower_count" {% if request.GET.sort == '-get_follower_count' %}selected{% endif %}>
+                            <i class="fas fa-users"></i> Most Followed
+                        </option>
+                        <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>
+                            <i class="fas fa-sort-alpha-down"></i> Title A-Z
+                        </option>
+                    </select>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Journey Grid -->
+        {% if journeys %}
+            <div class="journey-grid-modern">
+                {% for journey in journeys %}
+                    <div class="journey-card-modern">
+                        <a href="{% url 'journey_detail' slug=journey.slug %}" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="card-image">
+                                {% if journey.cover_image %}
+                                    <img 
+                                        src="{{ journey.cover_image.url }}?w=600&h=375&fit=crop&q=85&f=auto"
+                                        alt="{{ journey.title }}"
+                                        loading="lazy"
+                                        decoding="async"
+                                        width="400"
+                                        height="250"
+                                        fetchpriority="{% if forloop.counter <= 3 %}high{% else %}low{% endif %}"
+                                        srcset="
+                                            {{ journey.cover_image.url }}?w=400&h=250&fit=crop&q=80&f=auto 400w,
+                                            {{ journey.cover_image.url }}?w=600&h=375&fit=crop&q=85&f=auto 600w,
+                                            {{ journey.cover_image.url }}?w=800&h=500&fit=crop&q=85&f=auto 800w,
+                                            {{ journey.cover_image.url }}?w=1200&h=750&fit=crop&q=90&f=auto 1200w
+                                        "
+                                        sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                    >
                                 {% else %}
-                                    Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                    <div class="placeholder">
+                                        <i class="fas fa-flag-checkered"></i>
+                                    </div>
                                 {% endif %}
-                            </span>
-                            <span>{{ journey.get_progress_percentage }}%</span>
-                        </div>
-                        <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
-                            <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                                
+                                <div class="card-badges">
+                                    <span class="card-badge category">
+                                        <i class="fas fa-tag"></i> {{ journey.get_category_display }}
+                                    </span>
+                                    <span class="card-badge type">
+                                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i>
+                                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
+                                    </span>
+                                    {% if journey.funding_enabled %}
+                                        <span class="card-badge funding">
+                                            <i class="fas fa-hand-holding-heart"></i> Fundraising
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="card-content">
+                                <h3 class="card-title">{{ journey.title }}</h3>
+                            </div>
+                        </a>
+                        
+                        <!-- CREATOR PROFILE REDIRECT -->
+                        <div class="card-content" style="padding-top: 0;">
+                            <div class="card-creator">
+                                <a href="{% url 'creator_profile' username=journey.creator.user.username %}" 
+                                   class="card-creator-link"
+                                   onclick="event.stopPropagation();">
+                                    <div class="avatar">
+                                        {% if journey.creator.image %}
+                                            <img src="{{ journey.creator.image.url }}?w=56&h=56&fit=crop&q=80&f=auto" alt="{{ journey.creator.get_display_name }}" loading="lazy">
+                                        {% else %}
+                                            <i class="fas fa-user"></i>
+                                        {% endif %}
+                                    </div>
+                                    <span class="name">@{{ journey.creator.user.username }}</span>
+                                </a>
+                            </div>
+                            
+                            <a href="{% url 'journey_detail' slug=journey.slug %}" style="text-decoration: none; color: inherit; display: block;">
+                                <p class="card-description">{{ journey.description|truncatechars:100 }}</p>
+                                
+                                <div class="card-progress">
+                                    <div class="progress-label">
+                                        <span>
+                                            {% if journey.journey_type == 'milestone' %}
+                                                {{ journey.get_current_day }}/{{ journey.duration }} milestones
+                                            {% else %}
+                                                Day {{ journey.get_current_day }} of {{ journey.duration }}
+                                            {% endif %}
+                                        </span>
+                                        <span>{{ journey.get_progress_percentage }}%</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-footer">
+                                    <div class="card-stats">
+                                        <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
+                                        <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
+                                        <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+                                    </div>
+                                    <span class="card-action">
+                                        View <i class="fas fa-arrow-right"></i>
+                                    </span>
+                                </div>
+                            </a>
                         </div>
                     </div>
+                {% endfor %}
+            </div>
+            
+            <!-- ============================================
+                 PAGINATION - 10 PER PAGE
+                 ============================================ -->
+            {% if journeys.has_other_pages %}
+                <div class="pagination-modern">
+                    {% if journeys.has_previous %}
+                        <a href="?page={{ journeys.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% else %}
+                        <span class="disabled"><i class="fas fa-chevron-left"></i></span>
+                    {% endif %}
                     
-                    <div class="journey-stats">
-                        <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
-                        <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
-                        <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
-                    </div>
+                    {% for num in journeys.paginator.page_range %}
+                        {% if journeys.number == num %}
+                            <span class="current">{{ num }}</span>
+                        {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
+                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if journeys.has_next %}
+                        <a href="?page={{ journeys.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+                    {% endif %}
                 </div>
-            </a>
-            {% endfor %}
-        </div>
-        
-        {# Pagination #}
-        {% if journeys.has_other_pages %}
-        <div class="pagination">
-            {% if journeys.has_previous %}
-                <a href="?page={{ journeys.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous page">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
             {% endif %}
             
-            {% for num in journeys.paginator.page_range %}
-                {% if journeys.number == num %}
-                    <span class="current" aria-current="page">{{ num }}</span>
-                {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
-                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                        {{ num }}
-                    </a>
-                {% endif %}
-            {% endfor %}
+            <!-- Debug info - remove after confirming -->
+            <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+                <span>Showing {{ journeys|length }} of {{ total_count }} journeys</span>
+                <span style="margin: 0 8px;">·</span>
+                <span>Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}</span>
+            </div>
             
-            {% if journeys.has_next %}
-                <a href="?page={{ journeys.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next page">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            {% endif %}
-        </div>
-        {% endif %}
-        
         {% else %}
-        <div class="empty-state">
-            <i class="fas fa-compass"></i>
-            <h3>No journeys found</h3>
-            <p>Try adjusting your search or filters to find what you're looking for.</p>
-            <a href="{% url 'discover' %}" class="btn btn-primary">
-                <i class="fas fa-sync-alt"></i> Reset Filters
-            </a>
-        </div>
+            <!-- Empty State -->
+            <div class="empty-state-modern">
+                <span class="empty-icon">
+                    <i class="fas fa-compass"></i>
+                </span>
+                <h3>No journeys found</h3>
+                <p>
+                    {% if request.GET.q %}
+                        We couldn't find any journeys matching "<strong>{{ request.GET.q }}</strong>". 
+                        Try adjusting your search terms.
+                    {% else %}
+                        There are no journeys matching your current filters. 
+                        Try clearing some filters or check back later.
+                    {% endif %}
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <a href="{% url 'discover' %}" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Reset All Filters
+                    </a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'create_journey' %}" class="btn btn-outline">
+                            <i class="fas fa-plus-circle"></i> Create a Journey
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         {% endif %}
     </div>
 </section>
 
+<!-- ============================================
+     JAVASCRIPT
+     ============================================ -->
 <script>
-    // Preserve filter state when sorting
-    const sortForm = document.getElementById('sortForm');
-    if (sortForm) {
-        // Ensure form submits properly
-        const sortSelect = sortForm.querySelector('.sort-select');
-        if (sortSelect) {
-            sortSelect.addEventListener('change', function() {
-                this.form.submit();
+    (function() {
+        'use strict';
+        
+        // ---- Clear search input ----
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        if (searchInput && clearBtn) {
+            searchInput.addEventListener('input', function() {
+                clearBtn.classList.toggle('visible', this.value.length > 0);
+            });
+            
+            if (searchInput.value.length > 0) {
+                clearBtn.classList.add('visible');
+            }
+            
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                this.classList.remove('visible');
+                searchInput.focus();
+                document.getElementById('searchForm').submit();
             });
         }
-    }
-    
-    // Auto-submit search when category or journey_type changes
-    const categorySelect = document.querySelector('select[name="category"]');
-    const journeyTypeSelect = document.querySelector('select[name="journey_type"]');
-    
-    function submitSearch() {
-        document.getElementById('searchForm').submit();
-    }
-    
-    if (categorySelect) {
-        categorySelect.addEventListener('change', submitSearch);
-    }
-    if (journeyTypeSelect) {
-        journeyTypeSelect.addEventListener('change', submitSearch);
-    }
-    
-    // Debounced search for text input
-    const searchInput = document.querySelector('input[name="q"]');
-    let searchTimeout;
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                document.getElementById('searchForm').submit();
-            }, 500);
+        
+        // ---- Debounced search ----
+        let searchTimeout;
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    searchTimeout = setTimeout(() => {
+                        document.getElementById('searchForm').submit();
+                    }, 400);
+                }
+            });
+        }
+        
+        // ---- Keyboard shortcuts ----
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                }
+            }
+            
+            if (e.key === 'Escape' && document.activeElement === searchInput) {
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    clearBtn.classList.remove('visible');
+                    document.getElementById('searchForm').submit();
+                } else {
+                    searchInput.blur();
+                }
+            }
         });
-    }
+        
+        console.log('🔍 Discover page initialized');
+        console.log('📄 Current page: {{ journeys.number|default:1 }}');
+        console.log('📊 Total pages: {{ journeys.paginator.num_pages|default:1 }}');
+        console.log('📦 Items on this page: {{ journeys|length|default:0 }}');
+        console.log('📈 Total items: {{ total_count }}');
+    })();
 </script>
 
 {% endblock %}

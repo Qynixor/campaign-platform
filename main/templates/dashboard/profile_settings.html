@@ -55,6 +55,7 @@
         justify-content: center;
         overflow: hidden;
         position: relative;
+        flex-shrink: 0;
     }
     
     .avatar-preview img {
@@ -77,9 +78,10 @@
         color: white;
         font-size: 10px;
         text-align: center;
-        padding: 2px;
+        padding: 4px;
         opacity: 0;
         transition: opacity 0.2s;
+        cursor: pointer;
     }
     
     .avatar-preview:hover .avatar-overlay {
@@ -92,11 +94,13 @@
     
     .avatar-upload .btn {
         margin-bottom: 8px;
+        display: inline-block;
     }
     
     .avatar-upload p {
         color: var(--text-muted);
         font-size: 12px;
+        margin: 4px 0 0;
     }
     
     .form-group {
@@ -109,6 +113,12 @@
         font-weight: 500;
         margin-bottom: 8px;
         color: var(--text-secondary);
+    }
+    
+    .form-group label i {
+        margin-right: 6px;
+        width: 18px;
+        color: var(--accent);
     }
     
     .form-group input,
@@ -128,6 +138,7 @@
     .form-group input:focus,
     .form-group textarea:focus {
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .form-group input::placeholder,
@@ -152,21 +163,30 @@
         margin-top: 6px;
     }
     
+    .form-hint i {
+        margin-right: 4px;
+    }
+    
     .section-title {
         font-size: 18px;
         font-weight: 600;
-        margin-bottom: 24px;
+        margin: 32px 0 20px;
         padding-bottom: 16px;
         border-bottom: 1px solid var(--border-color);
         color: var(--text-primary);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+    }
+    
+    .section-title:first-of-type {
+        margin-top: 0;
     }
     
     .section-title i {
         color: var(--accent);
         font-size: 18px;
+        width: 24px;
     }
     
     .form-actions {
@@ -239,27 +259,49 @@
     
     .social-input-group:focus-within {
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .social-prefix {
         padding: 14px 12px;
         background: var(--bg-secondary);
         color: var(--text-muted);
-        font-size: 14px;
+        font-size: 13px;
         border-right: 1px solid var(--border-color);
+        white-space: nowrap;
+        font-weight: 500;
     }
     
     .social-input-group input {
         flex: 1;
-        border: none;
-        background: transparent;
+        border: none !important;
+        background: transparent !important;
         padding: 14px 12px;
+        border-radius: 0 !important;
     }
     
     .social-input-group input:focus {
-        outline: none;
-        border: none;
-        box-shadow: none;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* PayPal badge styling */
+    .paypal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: rgba(0, 156, 222, 0.1);
+        color: #0070ba;
+        border: 1px solid rgba(0, 156, 222, 0.2);
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 4px;
+    }
+    
+    .paypal-badge i {
+        font-size: 14px;
     }
     
     @media (max-width: 768px) {
@@ -293,9 +335,12 @@
             flex-direction: column;
         }
         
-        .form-actions .btn {
+        .form-actions .btn,
+        .form-actions .btn-secondary,
+        .form-actions .btn-primary {
             width: 100%;
             text-align: center;
+            justify-content: center;
         }
         
         .section-title {
@@ -313,6 +358,7 @@
             border-right: none;
             border-bottom: 1px solid var(--border-color);
             text-align: center;
+            padding: 10px 12px;
         }
     }
 </style>
@@ -324,7 +370,7 @@
     
     <div class="settings-header">
         <h1 class="settings-title">⚙️ Profile Settings</h1>
-        <p class="settings-subtitle" style="padding-left: 20px;">Manage your public profile information</p>
+        <p class="settings-subtitle">Manage your public profile information</p>
     </div>
     
     {% if messages %}
@@ -349,15 +395,15 @@
     <form method="post" enctype="multipart/form-data" class="settings-card" id="profileForm">
         {% csrf_token %}
         
-        {# Avatar #}
+        {# Avatar Section #}
         <div class="avatar-section">
             <div class="avatar-preview" id="avatarPreview">
-                {% if profile.image %}
+                {% if profile.image and profile.image.url %}
                     <img src="{{ profile.image.url }}" alt="Avatar">
                 {% else %}
                     <i class="fas fa-user"></i>
                 {% endif %}
-                <div class="avatar-overlay">
+                <div class="avatar-overlay" onclick="document.getElementById('id_image').click()">
                     <i class="fas fa-camera"></i> Change
                 </div>
             </div>
@@ -366,30 +412,31 @@
                     <i class="fas fa-camera"></i> Change Photo
                 </label>
                 <input type="file" name="image" id="id_image" accept="image/*" style="display: none;">
-                <p><i class="fas fa-info-circle"></i> JPG, PNG, or WebP. Max 5MB. Recommended: Square image</p>
+                <p><i class="fas fa-info-circle"></i> JPG, PNG, or WebP. Max 5MB. Recommended: Square image 400x400</p>
+                {% if profile.image %}
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">
+                    <i class="fas fa-check-circle" style="color: #22c55e;"></i> Current photo uploaded
+                </p>
+                {% endif %}
             </div>
         </div>
         
-        {# Basic Info #}
+        {# Basic Information #}
         <h3 class="section-title">
             <i class="fas fa-user-circle"></i>
             Basic Information
         </h3>
         
         <div class="form-group">
-            <label for="id_display_name">Display Name</label>
-            <input type="text" name="display_name" id="id_display_name" 
-                   value="{{ form.display_name.value|default:user.username }}"
-                   placeholder="How you want to be seen">
-            <div class="form-hint">This is what people will see on your profile</div>
-        </div>
-        
-        <div class="form-group">
-            <label for="id_bio">Bio</label>
+            <label for="id_bio">
+                <i class="fas fa-align-left"></i> Bio
+            </label>
             <textarea name="bio" id="id_bio" 
                       placeholder="Tell us about yourself..."
                       maxlength="200">{{ form.bio.value|default:'' }}</textarea>
-            <div class="form-hint" id="bioCharCount">Brief description for your profile. Max 200 characters.</div>
+            <div class="form-hint" id="bioCharCount">
+                <i class="fas fa-info-circle"></i> Brief description. Max 200 characters.
+            </div>
         </div>
         
         <div class="form-group">
@@ -399,6 +446,7 @@
             <input type="text" name="location" id="id_location" 
                    value="{{ form.location.value|default:'' }}"
                    placeholder="City, Country">
+            <div class="form-hint"><i class="fas fa-info-circle"></i> Your city and country</div>
         </div>
         
         {# Social Links #}
@@ -412,11 +460,12 @@
                 <i class="fab fa-tiktok"></i> TikTok
             </label>
             <div class="social-input-group">
-                <span class="social-prefix">tiktok.com/@</span>
+                <span class="social-prefix">@</span>
                 <input type="text" name="tiktok_username" id="id_tiktok_username" 
                        value="{{ form.tiktok_username.value|default:'' }}"
                        placeholder="username">
             </div>
+            <div class="form-hint"><i class="fas fa-info-circle"></i> Enter your TikTok username without the @</div>
         </div>
         
         <div class="form-group">
@@ -424,57 +473,28 @@
                 <i class="fab fa-instagram"></i> Instagram
             </label>
             <div class="social-input-group">
-                <span class="social-prefix">instagram.com/</span>
+                <span class="social-prefix">@</span>
                 <input type="text" name="instagram_username" id="id_instagram_username" 
                        value="{{ form.instagram_username.value|default:'' }}"
-                       placeholder="@username">
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label for="id_twitter_username">
-                <i class="fab fa-twitter"></i> Twitter/X
-            </label>
-            <div class="social-input-group">
-                <span class="social-prefix">twitter.com/</span>
-                <input type="text" name="twitter_username" id="id_twitter_username" 
-                       value="{{ form.twitter_username.value|default:'' }}"
-                       placeholder="@username">
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label for="id_github_username">
-                <i class="fab fa-github"></i> GitHub
-            </label>
-            <div class="social-input-group">
-                <span class="social-prefix">github.com/</span>
-                <input type="text" name="github_username" id="id_github_username" 
-                       value="{{ form.github_username.value|default:'' }}"
                        placeholder="username">
             </div>
+            <div class="form-hint"><i class="fas fa-info-circle"></i> Enter your Instagram username without the @</div>
         </div>
         
         <div class="form-group">
             <label for="id_youtube_channel">
                 <i class="fab fa-youtube"></i> YouTube Channel
             </label>
-            <input type="text" name="youtube_channel" id="id_youtube_channel" 
-                   value="{{ form.youtube_channel.value|default:'' }}"
-                   placeholder="@channel or channel URL">
-            <div class="form-hint">Enter your YouTube handle or full channel URL</div>
+            <div class="social-input-group">
+                <span class="social-prefix">@</span>
+                <input type="text" name="youtube_channel" id="id_youtube_channel" 
+                       value="{{ form.youtube_channel.value|default:'' }}"
+                       placeholder="channelname">
+            </div>
+            <div class="form-hint"><i class="fas fa-info-circle"></i> Enter your YouTube channel handle without the @</div>
         </div>
         
-        <div class="form-group">
-            <label for="id_website">
-                <i class="fas fa-globe"></i> Website
-            </label>
-            <input type="url" name="website" id="id_website" 
-                   value="{{ form.website.value|default:'' }}"
-                   placeholder="https://yourwebsite.com">
-        </div>
-        
-        {# Payment Info #}
+        {# Payment Information #}
         <h3 class="section-title">
             <i class="fas fa-credit-card"></i>
             Payment Information
@@ -487,7 +507,14 @@
             <input type="email" name="paypal_email" id="id_paypal_email" 
                    value="{{ form.paypal_email.value|default:'' }}"
                    placeholder="your@email.com">
-            <div class="form-hint">Used to receive donations and payments from your journeys</div>
+            <div class="form-hint">
+                <i class="fas fa-info-circle"></i> Used to receive donations and payments from your journeys
+            </div>
+            {% if profile.paypal_email %}
+            <div class="paypal-badge">
+                <i class="fab fa-paypal"></i> PayPal connected: {{ profile.paypal_email }}
+            </div>
+            {% endif %}
         </div>
         
         {# Actions #}
@@ -504,113 +531,125 @@
 </div>
 
 <script>
-    // Avatar preview
-    const avatarInput = document.getElementById('id_image');
-    const avatarPreview = document.getElementById('avatarPreview');
-    
-    if (avatarInput) {
-        avatarInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Validate file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File is too large! Maximum size is 5MB.');
-                    this.value = '';
-                    return;
+    (function() {
+        'use strict';
+        
+        // Avatar preview
+        const avatarInput = document.getElementById('id_image');
+        const avatarPreview = document.getElementById('avatarPreview');
+        
+        if (avatarInput && avatarPreview) {
+            avatarInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validate file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('File is too large! Maximum size is 5MB.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Validate file type
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Invalid file type! Please upload JPG, PNG, WebP, or GIF.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        avatarPreview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <div class="avatar-overlay" onclick="document.getElementById('id_image').click()">
+                                <i class="fas fa-camera"></i> Change
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
                 }
+            });
+        }
+        
+        // Bio character counter
+        const bioTextarea = document.getElementById('id_bio');
+        const bioCharCount = document.getElementById('bioCharCount');
+        
+        if (bioTextarea && bioCharCount) {
+            function updateBioCharCount() {
+                const count = bioTextarea.value.length;
+                const remaining = 200 - count;
                 
-                // Validate file type
-                const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-                if (!allowedTypes.includes(file.type)) {
-                    alert('Invalid file type! Please upload JPG, PNG, WebP, or GIF.');
-                    this.value = '';
-                    return;
+                if (remaining < 0) {
+                    bioCharCount.innerHTML = `<i class="fas fa-exclamation-circle"></i> Too long! Maximum 200 characters. (${Math.abs(remaining)} over)`;
+                    bioCharCount.style.color = '#ef4444';
+                } else if (remaining < 20) {
+                    bioCharCount.innerHTML = `<i class="fas fa-info-circle"></i> ${remaining} characters remaining`;
+                    bioCharCount.style.color = '#f59e0b';
+                } else {
+                    bioCharCount.innerHTML = `<i class="fas fa-info-circle"></i> ${remaining} characters remaining. Max 200.`;
+                    bioCharCount.style.color = 'var(--text-muted)';
                 }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    avatarPreview.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview">
-                        <div class="avatar-overlay">
-                            <i class="fas fa-camera"></i> Change
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
             }
-        });
-    }
-    
-    // Bio character counter
-    const bioTextarea = document.getElementById('id_bio');
-    const bioCharCount = document.getElementById('bioCharCount');
-    
-    if (bioTextarea && bioCharCount) {
-        function updateBioCharCount() {
-            const count = bioTextarea.value.length;
-            const remaining = 200 - count;
             
-            if (remaining < 0) {
-                bioCharCount.innerHTML = `<i class="fas fa-exclamation-circle"></i> Too long! Maximum 200 characters. (${Math.abs(remaining)} over)`;
-                bioCharCount.style.color = '#ef4444';
-            } else if (remaining < 20) {
-                bioCharCount.innerHTML = `<i class="fas fa-info-circle"></i> ${remaining} characters remaining`;
-                bioCharCount.style.color = '#f59e0b';
-            } else {
-                bioCharCount.innerHTML = `<i class="fas fa-info-circle"></i> Brief description for your profile. Max 200 characters. (${remaining} left)`;
-                bioCharCount.style.color = 'var(--text-muted)';
+            bioTextarea.addEventListener('input', updateBioCharCount);
+            updateBioCharCount();
+        }
+        
+        // Form submission loading state
+        const profileForm = document.getElementById('profileForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (profileForm && submitBtn) {
+            profileForm.addEventListener('submit', function() {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                submitBtn.style.opacity = '0.7';
+            });
+        }
+        
+        // Auto-dismiss success messages
+        const successMessages = document.querySelectorAll('.success-message');
+        successMessages.forEach(message => {
+            setTimeout(() => {
+                message.style.transition = 'opacity 0.3s ease';
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    if (message.parentNode) message.remove();
+                }, 300);
+            }, 4000);
+        });
+        
+        // Clean @ from username fields
+        function cleanUsername(input) {
+            if (input) {
+                let value = input.value;
+                if (value.startsWith('@')) {
+                    input.value = value.substring(1);
+                }
             }
         }
         
-        bioTextarea.addEventListener('input', updateBioCharCount);
-        updateBioCharCount();
-    }
-    
-    // Form submission loading state
-    const profileForm = document.getElementById('profileForm');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    if (profileForm && submitBtn) {
-        profileForm.addEventListener('submit', function() {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-        });
-    }
-    
-    // Auto-dismiss success messages
-    const successMessages = document.querySelectorAll('.success-message');
-    successMessages.forEach(message => {
-        setTimeout(() => {
-            message.style.opacity = '0';
-            setTimeout(() => {
-                if (message.parentNode) message.remove();
-            }, 300);
-        }, 3000);
-    });
-    
-    // Remove @ from Instagram/Twitter input if user types it
-    const instagramInput = document.getElementById('id_instagram_username');
-    const twitterInput = document.getElementById('id_twitter_username');
-    const tiktokInput = document.getElementById('id_tiktok_username');
-    
-    function cleanUsername(input) {
-        if (input) {
-            let value = input.value;
-            if (value.startsWith('@')) {
-                input.value = value.substring(1);
+        const usernameInputs = [
+            document.getElementById('id_instagram_username'),
+            document.getElementById('id_tiktok_username'),
+            document.getElementById('id_youtube_channel')
+        ];
+        
+        usernameInputs.forEach(input => {
+            if (input) {
+                input.addEventListener('blur', () => cleanUsername(input));
+                // Also clean on input if they type @
+                input.addEventListener('input', () => {
+                    if (input.value.startsWith('@')) {
+                        input.value = input.value.substring(1);
+                    }
+                });
             }
-        }
-    }
-    
-    if (instagramInput) {
-        instagramInput.addEventListener('blur', () => cleanUsername(instagramInput));
-    }
-    if (twitterInput) {
-        twitterInput.addEventListener('blur', () => cleanUsername(twitterInput));
-    }
-    if (tiktokInput) {
-        tiktokInput.addEventListener('blur', () => cleanUsername(tiktokInput));
-    }
+        });
+        
+        console.log('⚙️ Profile settings page loaded');
+    })();
 </script>
 
 {% endblock %}

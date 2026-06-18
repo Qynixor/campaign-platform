@@ -1,32 +1,70 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ profile.get_display_name }} | Rallynex{% endblock %}
+{% block title %}{{ profile.user.get_full_name|default:profile.user.username }} | Rallynex{% endblock %}
+
+{% block meta_title %}{{ profile.user.get_full_name|default:profile.user.username }} - Creator Profile | Rallynex{% endblock %}
+
+{% block meta_description %}
+    {% if profile.bio and profile.bio != 'No bio available' %}
+        {{ profile.bio|truncatechars:160 }}
+    {% else %}
+        Explore {{ profile.user.get_full_name|default:profile.user.username }}'s journeys on Rallynex.
+    {% endif %}
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .profile-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 30px 20px;
+    /* ============================================
+       PUBLIC PROFILE PAGE
+       ============================================ */
+    
+    .profile-page {
+        padding: 40px 0 60px;
+        background: var(--bg-primary);
+        min-height: calc(100vh - 200px);
     }
     
-    /* Profile Header */
+    /* ----- Profile Header ----- */
     .profile-header {
         display: flex;
+        gap: 48px;
         align-items: flex-start;
-        gap: 40px;
         margin-bottom: 40px;
         flex-wrap: wrap;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px;
+        transition: border-color 0.3s;
+    }
+    
+    .profile-header:hover {
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+    
+    /* ----- Avatar ----- */
+    .profile-avatar-wrapper {
+        flex-shrink: 0;
     }
     
     .profile-avatar {
-        width: 120px;
-        height: 120px;
+        width: 140px;
+        height: 140px;
         border-radius: 50%;
-        overflow: hidden;
         background: var(--bg-secondary);
-        flex-shrink: 0;
+        border: 3px solid var(--border-color);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .profile-avatar:hover {
+        border-color: var(--accent);
+        transform: scale(1.02);
     }
     
     .profile-avatar img {
@@ -35,138 +73,326 @@
         object-fit: cover;
     }
     
-    .profile-avatar i {
-        font-size: 60px;
+    .profile-avatar .avatar-placeholder {
+        font-size: 56px;
         color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
+        opacity: 0.3;
     }
     
+    /* ----- Profile Info ----- */
     .profile-info {
         flex: 1;
+        min-width: 200px;
     }
     
     .profile-name-row {
         display: flex;
         align-items: center;
-        gap: 16px;
-        margin-bottom: 12px;
+        gap: 12px;
         flex-wrap: wrap;
+        margin-bottom: 4px;
     }
     
     .profile-name {
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 700;
         color: var(--text-primary);
+        letter-spacing: -0.02em;
     }
     
     .profile-username {
+        font-size: 18px;
         color: var(--text-secondary);
-        font-size: 16px;
+        margin-bottom: 12px;
     }
     
-    .verified-badge {
+    /* Badges */
+    .profile-badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 14px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .profile-badge.self {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--success);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    
+    .profile-badge.staff {
+        background: rgba(139, 92, 246, 0.12);
+        color: #8b5cf6;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .profile-badge.verified {
+        background: rgba(59, 130, 246, 0.12);
         color: var(--accent);
-        font-size: 20px;
+        border: 1px solid rgba(59, 130, 246, 0.2);
     }
     
+    .profile-badge i {
+        font-size: 12px;
+    }
+    
+    /* Bio */
     .profile-bio {
+        font-size: 16px;
         color: var(--text-secondary);
-        font-size: 15px;
-        line-height: 1.6;
-        margin-bottom: 16px;
+        line-height: 1.7;
         max-width: 600px;
+        margin: 12px 0 16px;
+        padding: 0;
     }
     
+    .profile-bio:empty,
+    .profile-bio:contains("No bio available") {
+        display: none;
+    }
+    
+    /* Social Links */
+    .profile-social {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    
+    .profile-social a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .profile-social a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .profile-social a i {
+        font-size: 14px;
+    }
+    
+    .profile-social a.tiktok {
+        background: #000;
+        color: #fff;
+        border-color: #333;
+    }
+    
+    .profile-social a.tiktok:hover {
+        background: #00f2ea;
+        color: #000;
+        border-color: #00f2ea;
+        box-shadow: 0 4px 12px rgba(0, 242, 234, 0.3);
+    }
+    
+    .profile-social a.instagram {
+        background: linear-gradient(135deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+        color: #fff;
+        border-color: #e1306c;
+    }
+    
+    .profile-social a.instagram:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 4px 16px rgba(225, 48, 108, 0.4);
+    }
+    
+    .profile-social a.youtube {
+        background: #ff0000;
+        color: #fff;
+        border-color: #ff0000;
+    }
+    
+    .profile-social a.youtube:hover {
+        background: #cc0000;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(255, 0, 0, 0.4);
+    }
+    
+    .profile-social a.website {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+    
+    .profile-social a.website:hover {
+        background: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Meta */
     .profile-meta {
         display: flex;
         gap: 24px;
+        flex-wrap: wrap;
         margin-bottom: 16px;
-        color: var(--text-secondary);
-        font-size: 14px;
-        flex-wrap: wrap;
     }
     
-    .profile-meta i {
-        margin-right: 6px;
-        color: var(--text-muted);
-    }
-    
-    .social-links {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-    
-    .social-link {
-        width: 40px;
-        height: 40px;
-        background: var(--bg-secondary);
-        border-radius: 50%;
+    .profile-meta-item {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
         color: var(--text-secondary);
-        font-size: 18px;
-        transition: all 0.2s;
+    }
+    
+    .profile-meta-item i {
+        color: var(--text-muted);
+        opacity: 0.6;
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
+    }
+    
+    .profile-meta-item a {
+        color: var(--accent);
         text-decoration: none;
     }
     
-    .social-link:hover {
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        transform: translateY(-2px);
+    .profile-meta-item a:hover {
+        text-decoration: underline;
     }
     
     /* Stats */
     .profile-stats {
         display: flex;
         gap: 40px;
-        margin-bottom: 40px;
-        padding: 20px 0;
+        padding: 16px 0;
         border-top: 1px solid var(--border-color);
         border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
         flex-wrap: wrap;
     }
     
-    .stat-item {
+    .profile-stat {
         text-align: center;
     }
     
-    .stat-value {
-        font-size: 24px;
+    .profile-stat-value {
+        font-size: 26px;
         font-weight: 700;
         color: var(--text-primary);
+        line-height: 1.2;
     }
     
-    .stat-label {
-        font-size: 14px;
+    .profile-stat-label {
+        font-size: 13px;
         color: var(--text-secondary);
+        font-weight: 500;
+        margin-top: 2px;
     }
     
-    /* Journeys Grid */
-    .journeys-section {
-        margin-top: 40px;
+    /* Actions */
+    .profile-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
     }
     
-    .section-header {
+    .profile-actions .btn {
+        padding: 10px 24px;
+    }
+    
+    /* PayPal badge */
+    .paypal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        background: rgba(0, 156, 222, 0.1);
+        color: #0070ba;
+        border: 1px solid rgba(0, 156, 222, 0.2);
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .paypal-badge i {
+        font-size: 14px;
+    }
+    
+    /* ----- Journeys Section ----- */
+    .profile-journeys {
+        margin-top: 8px;
+    }
+    
+    .profile-journeys-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 24px;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
     }
     
-    .section-title {
+    .profile-journeys-header h2 {
         font-size: 22px;
         font-weight: 700;
         color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     
+    .profile-journeys-header h2 i {
+        color: var(--accent);
+        opacity: 0.8;
+    }
+    
+    .profile-journeys-header .count {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 400;
+    }
+    
+    /* Filter chips */
+    .journey-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .journey-filters .filter-chip {
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 500;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    
+    .journey-filters .filter-chip:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
+    
+    .journey-filters .filter-chip.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+    
+    /* ----- Journey Grid ----- */
     .journey-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -178,19 +404,19 @@
         border: 1px solid var(--border-color);
         border-radius: 16px;
         overflow: hidden;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         text-decoration: none;
         display: block;
     }
     
     .journey-card:hover {
-        transform: translateY(-4px);
+        transform: translateY(-6px);
         border-color: var(--accent);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
     }
     
     .journey-cover {
-        aspect-ratio: 1;
+        aspect-ratio: 16/10;
         background: var(--bg-secondary);
         display: flex;
         align-items: center;
@@ -203,218 +429,257 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        transition: transform 0.5s ease;
     }
     
     .journey-card:hover .journey-cover img {
         transform: scale(1.05);
     }
     
-    .journey-cover i {
-        font-size: 48px;
+    .journey-cover .placeholder {
+        font-size: 40px;
         color: var(--text-muted);
-    }
-    
-    .journey-category {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        padding: 4px 12px;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(5px);
-        border-radius: 30px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #fff;
+        opacity: 0.3;
     }
     
     .journey-type-badge {
         position: absolute;
         bottom: 12px;
         left: 12px;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 30px;
-        font-size: 10px;
-        font-weight: 500;
-        backdrop-filter: blur(5px);
-    }
-    
-    .journey-type-badge.daily {
-        background: rgba(59, 130, 246, 0.8);
-        color: #fff;
-    }
-    
-    .journey-type-badge.milestone {
-        background: rgba(139, 92, 246, 0.8);
-        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        letter-spacing: 0.02em;
     }
     
     .journey-type-badge i {
-        margin-right: 4px;
-        font-size: 9px;
+        font-size: 10px;
+        opacity: 0.8;
     }
     
-    .journey-funded-badge {
+    .journey-status-badge {
         position: absolute;
         top: 12px;
         right: 12px;
-        padding: 4px 10px;
-        background: rgba(59, 130, 246, 0.9);
+        padding: 4px 12px;
         border-radius: 30px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #fff;
+        font-size: 10px;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .journey-status-badge.active {
+        background: rgba(34, 197, 94, 0.85);
+    }
+    
+    .journey-status-badge.completed {
+        background: rgba(59, 130, 246, 0.85);
+    }
+    
+    .journey-status-badge.draft {
+        background: rgba(245, 158, 11, 0.85);
     }
     
     .journey-info {
-        padding: 20px;
+        padding: 16px 20px 20px;
     }
     
     .journey-title {
+        font-size: 17px;
         font-weight: 600;
-        font-size: 16px;
-        margin-bottom: 12px;
         color: var(--text-primary);
-        line-height: 1.4;
+        margin-bottom: 4px;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        transition: color 0.2s;
     }
     
     .journey-card:hover .journey-title {
         color: var(--accent);
     }
     
+    .journey-description {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
     .journey-progress {
         margin-bottom: 12px;
     }
     
-    .progress-header {
+    .journey-progress .progress-label {
         display: flex;
         justify-content: space-between;
         font-size: 12px;
         color: var(--text-secondary);
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     
-    .progress-bar {
+    .journey-progress .progress-bar {
         height: 4px;
         background: var(--bg-tertiary);
-        border-radius: 2px;
+        border-radius: 4px;
         overflow: hidden;
     }
     
-    .progress-fill {
+    .journey-progress .progress-bar .fill {
         height: 100%;
-        background: var(--accent);
-        border-radius: 2px;
-        transition: width 0.3s ease;
+        border-radius: 4px;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        transition: width 0.8s ease;
     }
     
-    .progress-bar.milestone .progress-fill {
-        background: #8b5cf6;
-    }
-    
-    .progress-text {
-        font-size: 12px;
-        color: var(--text-secondary);
-    }
-    
-    .journey-stats {
+    .journey-meta {
         display: flex;
         gap: 16px;
-        color: var(--text-secondary);
         font-size: 13px;
+        color: var(--text-secondary);
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
     }
     
-    .journey-stats i {
-        margin-right: 4px;
+    .journey-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .journey-meta i {
+        font-size: 12px;
         color: var(--text-muted);
+        opacity: 0.6;
     }
     
-    /* Empty State */
+    /* ----- Empty State ----- */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
         background: var(--card-bg);
-        border: 1px solid var(--border-color);
+        border: 2px dashed var(--border-color);
         border-radius: 20px;
     }
     
-    .empty-state i {
-        font-size: 48px;
+    .empty-state .empty-icon {
+        font-size: 56px;
         color: var(--text-muted);
+        opacity: 0.3;
+        display: block;
         margin-bottom: 16px;
     }
     
     .empty-state h3 {
-        font-size: 18px;
-        margin-bottom: 8px;
+        font-size: 20px;
+        font-weight: 600;
         color: var(--text-primary);
+        margin-bottom: 8px;
     }
     
     .empty-state p {
+        font-size: 15px;
         color: var(--text-secondary);
+        max-width: 400px;
+        margin: 0 auto 20px;
     }
     
-    /* Pagination */
+    /* ----- Pagination ----- */
     .pagination {
         display: flex;
         justify-content: center;
+        align-items: center;
         gap: 8px;
         margin-top: 40px;
         flex-wrap: wrap;
     }
     
-    .pagination a,
-    .pagination span {
-        min-width: 40px;
-        height: 40px;
-        padding: 0 12px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
-        text-decoration: none;
-        transition: all 0.2s;
+    .pagination .btn {
+        padding: 8px 20px;
         font-size: 14px;
     }
     
-    .pagination a:hover {
-        background: var(--bg-secondary);
-        border-color: var(--accent);
-        color: var(--accent);
+    .pagination .current-page {
+        padding: 8px 16px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     
-    .pagination .current {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
+    .pagination .current-page strong {
+        color: var(--text-primary);
     }
+    
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
     
     @media (max-width: 1024px) {
         .journey-grid {
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
         }
     }
     
     @media (max-width: 768px) {
-        .profile-container {
-            padding: 20px 16px;
+        .profile-page {
+            padding: 24px 0 40px;
         }
         
         .profile-header {
-            gap: 20px;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
+            padding: 24px;
+            gap: 20px;
         }
         
-        .profile-info {
-            text-align: center;
+        .profile-avatar {
+            width: 112px;
+            height: 112px;
+        }
+        
+        .profile-avatar .avatar-placeholder {
+            font-size: 44px;
         }
         
         .profile-name-row {
+            justify-content: center;
+        }
+        
+        .profile-name {
+            font-size: 26px;
+        }
+        
+        .profile-username {
+            font-size: 16px;
+        }
+        
+        .profile-bio {
+            text-align: center;
+            font-size: 15px;
+            margin: 8px auto 12px;
+        }
+        
+        .profile-social {
             justify-content: center;
         }
         
@@ -422,210 +687,456 @@
             justify-content: center;
         }
         
-        .social-links {
-            justify-content: center;
-        }
-        
-        .journey-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-        
         .profile-stats {
             justify-content: center;
             gap: 24px;
         }
         
-        .stat-value {
+        .profile-stat-value {
+            font-size: 22px;
+        }
+        
+        .profile-actions {
+            justify-content: center;
+        }
+        
+        .profile-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .journey-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .profile-journeys-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .profile-journeys-header h2 {
             font-size: 20px;
         }
         
-        .section-title {
-            font-size: 20px;
+        .journey-filters {
+            justify-content: center;
         }
     }
+    
+    @media (max-width: 480px) {
+        .profile-header {
+            padding: 20px 16px;
+        }
+        
+        .profile-avatar {
+            width: 88px;
+            height: 88px;
+        }
+        
+        .profile-avatar .avatar-placeholder {
+            font-size: 36px;
+        }
+        
+        .profile-name {
+            font-size: 22px;
+        }
+        
+        .profile-bio {
+            font-size: 14px;
+        }
+        
+        .journey-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .profile-stats {
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .profile-stat {
+            min-width: 60px;
+        }
+        
+        .profile-stat-value {
+            font-size: 20px;
+        }
+        
+        .profile-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .profile-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .pagination .btn {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+    }
+    
+    /* ============================================
+       ANIMATIONS
+       ============================================ */
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .profile-header {
+        animation: fadeInUp 0.4s ease;
+    }
+    
+    .journey-card {
+        animation: fadeInUp 0.4s ease;
+        animation-fill-mode: both;
+    }
+    
+    .journey-card:nth-child(1) { animation-delay: 0.05s; }
+    .journey-card:nth-child(2) { animation-delay: 0.10s; }
+    .journey-card:nth-child(3) { animation-delay: 0.15s; }
+    .journey-card:nth-child(4) { animation-delay: 0.20s; }
+    .journey-card:nth-child(5) { animation-delay: 0.25s; }
+    .journey-card:nth-child(6) { animation-delay: 0.30s; }
+    .journey-card:nth-child(7) { animation-delay: 0.35s; }
+    .journey-card:nth-child(8) { animation-delay: 0.40s; }
+    .journey-card:nth-child(9) { animation-delay: 0.45s; }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="profile-container">
-    
-    {# Profile Header #}
-    <div class="profile-header">
-        <div class="profile-avatar">
-            {% if profile.image %}
-                <img src="{{ profile.image.url }}" alt="{{ profile.get_display_name }}" loading="lazy">
-            {% else %}
-                <i class="fas fa-user"></i>
-            {% endif %}
-        </div>
+<div class="profile-page">
+    <div class="container">
         
-        <div class="profile-info">
-            <div class="profile-name-row">
-                <h1 class="profile-name">{{ profile.get_display_name }}</h1>
-                {% if profile.profile_verified %}
-                <span class="verified-badge" title="Verified Creator">
-                    <i class="fas fa-check-circle"></i>
-                </span>
-                {% endif %}
-                <span class="profile-username">@{{ profile.user.username }}</span>
-            </div>
+        <!-- ============================================
+             PROFILE HEADER
+             ============================================ -->
+        <div class="profile-header">
             
-            {% if profile.bio and profile.bio != 'No bio available' %}
-            <p class="profile-bio">{{ profile.bio }}</p>
-            {% endif %}
-            
-            <div class="profile-meta">
-                {% if profile.location %}
-                <span><i class="fas fa-map-pin"></i> {{ profile.location }}</span>
-                {% endif %}
-                <span><i class="fas fa-calendar-alt"></i> Joined {{ profile.created_at|date:"F Y" }}</span>
-            </div>
-            
-            <div class="social-links">
-                {% if profile.tiktok_username %}
-                <a href="https://tiktok.com/@{{ profile.tiktok_username|cut:'@' }}" target="_blank" class="social-link" rel="noopener noreferrer">
-                    <i class="fab fa-tiktok"></i>
-                </a>
-                {% endif %}
-                {% if profile.instagram_username %}
-                <a href="https://instagram.com/{{ profile.instagram_username|cut:'@' }}" target="_blank" class="social-link" rel="noopener noreferrer">
-                    <i class="fab fa-instagram"></i>
-                </a>
-                {% endif %}
-                {% if profile.youtube_channel %}
-                <a href="{{ profile.youtube_channel }}" target="_blank" class="social-link" rel="noopener noreferrer">
-                    <i class="fab fa-youtube"></i>
-                </a>
-                {% endif %}
-                {% if profile.twitter_username %}
-                <a href="https://twitter.com/{{ profile.twitter_username|cut:'@' }}" target="_blank" class="social-link" rel="noopener noreferrer">
-                    <i class="fab fa-twitter"></i>
-                </a>
-                {% endif %}
-                {% if profile.github_username %}
-                <a href="https://github.com/{{ profile.github_username|cut:'@' }}" target="_blank" class="social-link" rel="noopener noreferrer">
-                    <i class="fab fa-github"></i>
-                </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    {# Stats #}
-    <div class="profile-stats">
-        <div class="stat-item">
-            <div class="stat-value">{{ journeys.paginator.count|default:0 }}</div>
-            <div class="stat-label">Journeys</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ total_followers|default:0 }}</div>
-            <div class="stat-label">Followers</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">{{ total_views|default:0 }}</div>
-            <div class="stat-label">Total Views</div>
-        </div>
-    </div>
-    
-    {# Journeys #}
-    <div class="journeys-section">
-        <div class="section-header">
-            <h2 class="section-title">
-                <i class="fas fa-flag-checkered"></i> 
-                {% if profile.user == request.user %}My Journeys{% else %}Journeys{% endif %}
-            </h2>
-        </div>
-        
-        {% if journeys %}
-        <div class="journey-grid">
-            {% for journey in journeys %}
-            <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-card">
-                <div class="journey-cover">
-                    {% if journey.cover_image %}
-                        <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
+            <!-- Avatar -->
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
+                    {% if profile.image and profile.image.url %}
+                        <img src="{{ profile.image.url }}" alt="{{ profile.user.get_full_name|default:profile.user.username }}" loading="lazy">
                     {% else %}
-                        <i class="fas fa-flag-checkered"></i>
-                    {% endif %}
-                    <span class="journey-category">{{ journey.get_category_display|default:"Uncategorized" }}</span>
-                    
-                    <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
-                        <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
-                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
-                    </span>
-                    
-                    {% if journey.funding_enabled %}
-                    <span class="journey-funded-badge" title="Funding enabled">
-                        <i class="fas fa-hand-holding-heart"></i>
-                    </span>
+                        <span class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </span>
                     {% endif %}
                 </div>
-                <div class="journey-info">
-                    <h3 class="journey-title">{{ journey.title }}</h3>
-                    <div class="journey-progress">
-                        <div class="progress-header">
-                            <span>
-                                {% if journey.journey_type == 'milestone' %}
-                                    {{ journey.get_current_day }}/{{ journey.duration }} Milestones
-                                {% else %}
-                                    Day {{ journey.get_current_day }}/{{ journey.duration }}
-                                {% endif %}
-                            </span>
-                            <span>{{ journey.get_progress_percentage }}%</span>
-                        </div>
-                        <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
-                            <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
-                        </div>
-                    </div>
-                    <div class="journey-stats">
-                        <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
-                        <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-        
-        {# Pagination #}
-        {% if journeys.has_other_pages %}
-        <div class="pagination">
-            {% if journeys.has_previous %}
-                <a href="?page={{ journeys.previous_page_number }}" aria-label="Previous page">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            {% endif %}
+            </div>
             
-            {% for num in journeys.paginator.page_range %}
-                {% if journeys.number == num %}
-                    <span class="current" aria-current="page">{{ num }}</span>
-                {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
-                    <a href="?page={{ num }}">{{ num }}</a>
+            <!-- Info -->
+            <div class="profile-info">
+                <div class="profile-name-row">
+                    <h1 class="profile-name">
+                        {{ profile.user.get_full_name|default:profile.user.username }}
+                    </h1>
+                    
+                    {% if request.user == profile.user %}
+                        <span class="profile-badge self">
+                            <i class="fas fa-check-circle"></i> You
+                        </span>
+                    {% endif %}
+                    
+                    {% if profile.user.is_staff or profile.user.is_superuser %}
+                        <span class="profile-badge staff">
+                            <i class="fas fa-shield-alt"></i> Staff
+                        </span>
+                    {% endif %}
+                    
+                    {% if profile.profile_verified %}
+                        <span class="profile-badge verified">
+                            <i class="fas fa-check-circle"></i> Verified
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-username">@{{ profile.user.username }}</div>
+                
+                <!-- Bio - Only show if it's not the default -->
+                {% if profile.bio and profile.bio != 'No bio available' %}
+                    <p class="profile-bio">{{ profile.bio|linebreaksbr }}</p>
                 {% endif %}
-            {% endfor %}
-            
-            {% if journeys.has_next %}
-                <a href="?page={{ journeys.next_page_number }}" aria-label="Next page">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            {% endif %}
+                
+                <!-- Social Links - Show all social connections -->
+                <div class="profile-social">
+                    {% if profile.tiktok_username %}
+                        <a href="https://tiktok.com/@{{ profile.tiktok_username|cut:'@' }}" target="_blank" rel="noopener" class="tiktok">
+                            <i class="fab fa-tiktok"></i> {{ profile.tiktok_username }}
+                        </a>
+                    {% endif %}
+                    
+                    {% if profile.instagram_username %}
+                        <a href="https://instagram.com/{{ profile.instagram_username|cut:'@' }}" target="_blank" rel="noopener" class="instagram">
+                            <i class="fab fa-instagram"></i> {{ profile.instagram_username }}
+                        </a>
+                    {% endif %}
+                    
+                    {% if profile.youtube_channel %}
+                        <a href="https://youtube.com/@{{ profile.youtube_channel|cut:'@' }}" target="_blank" rel="noopener" class="youtube">
+                            <i class="fab fa-youtube"></i> {{ profile.youtube_channel }}
+                        </a>
+                    {% endif %}
+                    
+                    <!-- Website link from location field if it looks like a URL -->
+                    {% if profile.location and 'http' in profile.location %}
+                        <a href="{{ profile.location }}" target="_blank" rel="noopener" class="website">
+                            <i class="fas fa-globe"></i> Website
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- PayPal Badge - Only show if PayPal email is set -->
+                {% if profile.paypal_email %}
+                <div style="margin-bottom: 12px;">
+                    <span class="paypal-badge">
+                        <i class="fab fa-paypal"></i> PayPal Ready
+                    </span>
+                </div>
+                {% endif %}
+                
+                <!-- Meta -->
+                <div class="profile-meta">
+                    <!-- Location (only if it's not a URL) -->
+                    {% if profile.location and 'http' not in profile.location %}
+                        <span class="profile-meta-item">
+                            <i class="fas fa-map-marker-alt"></i> {{ profile.location }}
+                        </span>
+                    {% endif %}
+                    
+                    <span class="profile-meta-item">
+                        <i class="fas fa-calendar-alt"></i> Joined {{ profile.user.date_joined|date:"F Y" }}
+                    </span>
+                    
+                    <span class="profile-meta-item">
+                        <i class="fas fa-clock"></i> Active {{ profile.last_activity|timesince }} ago
+                    </span>
+                </div>
+                
+                <!-- Stats -->
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <div class="profile-stat-value">{{ journeys.paginator.count|default:0 }}</div>
+                        <div class="profile-stat-label">Journeys</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-value">{{ total_activities|default:0 }}</div>
+                        <div class="profile-stat-label">Activities</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-stat-value">{{ total_followers|default:0 }}</div>
+                        <div class="profile-stat-label">Followers</div>
+                    </div>
+                    {% if profile.paypal_email %}
+                    <div class="profile-stat">
+                        <div class="profile-stat-value">✓</div>
+                        <div class="profile-stat-label">PayPal Ready</div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="profile-actions">
+                    {% if request.user == profile.user %}
+                        <a href="{% url 'profile_settings' %}" class="btn btn-outline">
+                            <i class="fas fa-cog"></i> Edit Profile
+                        </a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> New Journey
+                        </a>
+                    {% else %}
+                        <a href="{% url 'discover' %}?q={{ profile.user.username }}" class="btn btn-outline">
+                            <i class="fas fa-search"></i> View Journeys
+                        </a>
+                        {% if profile.paypal_email %}
+                        <button class="btn btn-outline" onclick="alert('Support this creator via PayPal: {{ profile.paypal_email }}')">
+                            <i class="fas fa-heart"></i> Support
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        {% endif %}
         
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-flag-checkered"></i>
-            <h3>No journeys yet</h3>
-            <p>{% if profile.user == request.user %}You haven't created any public journeys yet.{% else %}This creator hasn't started any public journeys.{% endif %}</p>
-            {% if profile.user == request.user %}
-            <a href="{% url 'create_journey' %}" class="btn btn-primary" style="margin-top: 20px; display: inline-block;">
-                <i class="fas fa-plus"></i> Create Your First Journey
-            </a>
+        <!-- ============================================
+             JOURNEYS SECTION
+             ============================================ -->
+        <div class="profile-journeys">
+            <div class="profile-journeys-header">
+                <h2>
+                    <i class="fas fa-flag-checkered"></i>
+                    {% if request.user == profile.user %}
+                        Your Journeys
+                    {% else %}
+                        {{ profile.user.get_full_name|default:profile.user.username }}'s Journeys
+                    {% endif %}
+                    <span class="count">({{ journeys.paginator.count|default:0 }})</span>
+                </h2>
+            </div>
+            
+            <!-- Journey Filter Chips -->
+            <div class="journey-filters">
+                <a href="?filter=all" class="filter-chip {% if not filter_type or filter_type == 'all' %}active{% endif %}">
+                    <i class="fas fa-th-list"></i> All
+                </a>
+                <a href="?filter=active" class="filter-chip {% if filter_type == 'active' %}active{% endif %}">
+                    <i class="fas fa-play-circle"></i> Active
+                </a>
+                <a href="?filter=completed" class="filter-chip {% if filter_type == 'completed' %}active{% endif %}">
+                    <i class="fas fa-check-circle"></i> Completed
+                </a>
+                <a href="?filter=milestone" class="filter-chip {% if filter_type == 'milestone' %}active{% endif %}">
+                    <i class="fas fa-flag"></i> Milestone
+                </a>
+                <a href="?filter=daily" class="filter-chip {% if filter_type == 'daily' %}active{% endif %}">
+                    <i class="fas fa-calendar-day"></i> Daily
+                </a>
+            </div>
+            
+            {% if journeys %}
+                <div class="journey-grid">
+                    {% for journey in journeys %}
+                        <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-card">
+                            <div class="journey-cover">
+                                {% if journey.cover_image %}
+                                    <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
+                                {% else %}
+                                    <span class="placeholder">
+                                        <i class="fas fa-route"></i>
+                                    </span>
+                                {% endif %}
+                                
+                                <span class="journey-type-badge">
+                                    <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i>
+                                    {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
+                                </span>
+                                
+                                {% if journey.is_active %}
+                                    <span class="journey-status-badge active">
+                                        <i class="fas fa-play-circle"></i> Active
+                                    </span>
+                                {% else %}
+                                    <span class="journey-status-badge completed">
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="journey-info">
+                                <h3 class="journey-title">{{ journey.title }}</h3>
+                                <p class="journey-description">{{ journey.description|truncatechars:80 }}</p>
+                                
+                                <div class="journey-progress">
+                                    <div class="progress-label">
+                                        <span>
+                                            {% if journey.journey_type == 'milestone' %}
+                                                {{ journey.activities.count }}/{{ journey.duration }} Milestones
+                                            {% else %}
+                                                Day {{ journey.get_current_day }}/{{ journey.duration }}
+                                            {% endif %}
+                                        </span>
+                                        <span>{{ journey.get_progress_percentage }}%</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="journey-meta">
+                                    <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
+                                    <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
+                                    <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+                                </div>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if journeys.has_other_pages %}
+                    <div class="pagination">
+                        {% if journeys.has_previous %}
+                            <a href="?page={{ journeys.previous_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}" class="btn btn-outline">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        {% endif %}
+                        
+                        <span class="current-page">
+                            Page <strong>{{ journeys.number }}</strong> of <strong>{{ journeys.paginator.num_pages }}</strong>
+                        </span>
+                        
+                        {% if journeys.has_next %}
+                            <a href="?page={{ journeys.next_page_number }}{% if filter_type %}&filter={{ filter_type }}{% endif %}" class="btn btn-outline">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="empty-state">
+                    <span class="empty-icon">
+                        <i class="fas fa-compass"></i>
+                    </span>
+                    <h3>
+                        {% if request.user == profile.user %}
+                            No journeys yet
+                        {% else %}
+                            No public journeys yet
+                        {% endif %}
+                    </h3>
+                    <p>
+                        {% if request.user == profile.user %}
+                            Start your first journey and share your story with the community.
+                        {% else %}
+                            This creator hasn't published any public journeys yet.
+                        {% endif %}
+                    </p>
+                    {% if request.user == profile.user %}
+                        <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle"></i> Create Your First Journey
+                        </a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
-        {% endif %}
+        
     </div>
-    
 </div>
+
+<script>
+    (function() {
+        'use strict';
+        console.log('👤 Profile page loaded');
+        
+        // Log profile data for debugging
+        console.log('Profile:', {
+            username: '{{ profile.user.username }}',
+            bio: '{{ profile.bio|truncatechars:50 }}',
+            tiktok: '{{ profile.tiktok_username }}',
+            instagram: '{{ profile.instagram_username }}',
+            youtube: '{{ profile.youtube_channel }}',
+            paypal: '{{ profile.paypal_email }}',
+            location: '{{ profile.location }}'
+        });
+    })();
+</script>
 
 {% endblock %}

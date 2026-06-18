@@ -301,7 +301,49 @@ def landing_view(request):
         'trending_journeys': trending_journeys,
     }
     
+    # ========== ADD USER-SPECIFIC DATA FOR LOGGED-IN USERS ==========
+    if request.user.is_authenticated:
+        try:
+            profile = request.user.profile
+            user_journeys = Journey.objects.filter(creator=profile, is_active=True)
+            
+            context.update({
+                'user_journeys': user_journeys[:3],  # Recent 3 journeys
+                'user_journey_count': user_journeys.count(),
+                'user_completed_journeys': user_journeys.filter(status='completed').count() if hasattr(Journey, 'status') else 0,
+                'user_following': JourneyFollow.objects.filter(user=request.user).count(),
+                'user_notifications': Notification.objects.filter(user=request.user, viewed=False).count() if hasattr(request.user, 'notifications') else 0,
+            })
+        except Profile.DoesNotExist:
+            # User doesn't have a profile yet
+            context.update({
+                'user_journeys': [],
+                'user_journey_count': 0,
+                'user_completed_journeys': 0,
+                'user_following': 0,
+                'user_notifications': 0,
+            })
+    
     return render(request, 'landing.html', context)
+
+
+
+# Add this to your views.py (somewhere near the other notification views)
+
+@login_required
+def unread_notification_count(request):
+    """API endpoint for unread notification count"""
+    try:
+        from .models import Notification
+        unread_count = Notification.objects.filter(
+            user=request.user, 
+            viewed=False
+        ).count()
+        return JsonResponse({'unread_count': unread_count})
+    except Exception as e:
+        return JsonResponse({'unread_count': 0})
+
+
 
 def discover_view(request):
     """Browse and discover journeys"""
@@ -332,7 +374,7 @@ def discover_view(request):
         if form.cleaned_data.get('funding_enabled'):
             journeys = journeys.filter(funding_enabled=True)
         
-        # Sort - FIXED: ensure valid sort field
+        # Sort
         sort = form.cleaned_data.get('sort')
         allowed_sorts = ['-created_at', 'created_at', '-view_count', 'view_count', 'title', '-title']
         
@@ -343,15 +385,18 @@ def discover_view(request):
     else:
         journeys = journeys.order_by('-created_at')
     
-    # Handle sort from GET parameter directly (for filter chips)
+    # Handle sort from GET parameter directly
     sort_param = request.GET.get('sort')
     if sort_param:
         allowed_sorts = ['-created_at', 'created_at', '-view_count', 'view_count', 'title', '-title']
         if sort_param in allowed_sorts:
             journeys = journeys.order_by(sort_param)
     
-    # Pagination
-    paginator = Paginator(journeys, 12)
+    # Get total count before pagination
+    total_count = journeys.count()
+    
+    # Pagination - 10 items per page
+    paginator = Paginator(journeys, 10)  # ← CHANGED TO 10
     page = request.GET.get('page')
     
     try:
@@ -361,17 +406,20 @@ def discover_view(request):
     except EmptyPage:
         journeys_page = paginator.page(paginator.num_pages)
     
-    # Get categories for filter sidebar
+    # Get categories
     categories = Journey.CATEGORY_CHOICES
     
     context = {
         'form': form,
-        'journeys': journeys_page,
+        'journeys': journeys_page,  # Paginated page
         'categories': categories,
-        'total_count': journeys.count(),
+        'total_count': total_count,
     }
     
     return render(request, 'discover.html', context)
+
+
+
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -464,8 +512,6 @@ def journey_detail_view(request, slug):
     
     return render(request, 'journey/detail.html', context)
 
-
-
 def creator_profile_view(request, username):
     """View a creator's profile and their journeys"""
     profile = get_object_or_404(
@@ -496,8 +542,6 @@ def creator_profile_view(request, username):
     }
     
     return render(request, 'creator/profile.html', context)
-
-
 # ============================================================================
 # DASHBOARD VIEWS
 # ============================================================================
