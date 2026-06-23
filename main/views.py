@@ -2647,3 +2647,154 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+# ============================================================================
+# HOME FEED VIEWS
+# ============================================================================
+
+def home_feed_view(request):
+    """
+    The main feed/home page - shows journeys and activities
+    in an immersive, infinite-scroll format.
+    """
+    
+    # ====== BASE QUERY: All public, active journeys ======
+    base_journeys = Journey.objects.filter(
+        is_public=True,
+        is_active=True
+    ).select_related('creator__user').prefetch_related('activities', 'followers')
+    
+    if request.user.is_authenticated:
+        # Get user's followed journey IDs
+        followed_journey_ids = JourneyFollow.objects.filter(
+            user=request.user
+        ).values_list('journey_id', flat=True)
+        
+        # Get IDs of creators the user follows (through JourneyFollow)
+        followed_creator_ids = JourneyFollow.objects.filter(
+            user=request.user
+        ).values_list('journey__creator_id', flat=True).distinct()
+        
+        # Build personalized feed
+        if followed_journey_ids.exists() or followed_creator_ids.exists():
+            journeys = base_journeys.filter(
+                Q(id__in=followed_journey_ids) |
+                Q(creator_id__in=followed_creator_ids) |
+                Q(is_featured=True)
+            )
+        else:
+            journeys = base_journeys
+        
+        # Simple ordering without complex annotations
+        journeys = journeys.order_by('-created_at', '-view_count')
+        
+        # Get current user's own journeys
+        own_journeys = Journey.objects.filter(
+            creator__user=request.user, is_active=True
+        ).order_by('-created_at')
+        
+    else:
+        # For non-logged-in users: show all public journeys
+        journeys = base_journeys.order_by('-created_at', '-view_count')
+        own_journeys = []
+    
+    # ====== FEED ITEMS ======
+    feed_items = []
+    
+    for journey in journeys[:20]:
+        cover_url = '/static/images/default-cover.jpg'
+        if journey.cover_image:
+            cover_url = journey.cover_image.url
+        
+        feed_items.append({
+            'type': 'journey_card',
+            'data': journey,
+            'cover': cover_url,
+            'progress': journey.get_progress_percentage(),
+            'days_left': journey.duration - journey.get_current_day(),
+        })
+    
+    # Add activities with media
+    recent_activities = Activity.objects.filter(
+        journey__is_public=True,
+        journey__is_active=True,
+    ).exclude(
+        file=''
+    ).select_related('journey', 'journey__creator__user').order_by('-created_at')[:10]
+    
+    for activity in recent_activities:
+        feed_items.append({
+            'type': 'activity_card',
+            'data': activity,
+            'journey': activity.journey,
+            'media_url': activity.file.url if activity.file else None,
+            'is_video': activity.is_video,
+        })
+    
+    # Sort by recency
+    feed_items = sorted(
+        feed_items, 
+        key=lambda x: x['data'].created_at if hasattr(x['data'], 'created_at') else timezone.now(), 
+        reverse=True
+    )
+    
+    context = {
+        'feed_items': feed_items[:30],
+        'own_journeys': own_journeys[:5],
+        'is_authenticated': request.user.is_authenticated,
+        'unread_count': Notification.objects.filter(user=request.user, viewed=False).count() if request.user.is_authenticated else 0,
+        'total_journeys': base_journeys.count(),
+    }
+    
+    return render(request, 'home_feed.html', context)
+
+def api_feed_load_more(request):
+    """Load more feed items for infinite scroll"""
+    last_id = request.GET.get('last_id')
+    limit = 20
+    
+    try:
+        last_id = int(last_id) if last_id else 999999999
+    except (ValueError, TypeError):
+        last_id = 999999999
+    
+    # Show ALL public journeys
+    journeys = Journey.objects.filter(
+        is_public=True,
+        is_active=True,
+        id__lt=last_id
+    ).select_related('creator__user').order_by('-created_at')[:limit]
+    
+    feed_items = []
+    for journey in journeys:
+        cover_url = '/static/images/default-cover.jpg'
+        if journey.cover_image:
+            cover_url = journey.cover_image.url
+        
+        feed_items.append({
+            'type': 'journey_card',
+            'id': journey.id,
+            'title': journey.title,
+            'creator': journey.creator.user.username,
+            'cover_url': cover_url,
+            'progress': journey.get_progress_percentage(),
+            'url': reverse('journey_detail', kwargs={'slug': journey.slug}),
+        })
+    
+    return JsonResponse({
+        'items': feed_items, 
+        'has_more': len(feed_items) == limit
+    })
+def unread_notification_count(request):
+    """API endpoint for unread notification count - handles unauthenticated users"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'unread_count': 0})
+    
+    try:
+        unread_count = Notification.objects.filter(
+            user=request.user, 
+            viewed=False
+        ).count()
+        return JsonResponse({'unread_count': unread_count})
+    except Exception as e:
+        return JsonResponse({'unread_count': 0})

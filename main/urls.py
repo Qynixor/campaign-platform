@@ -44,7 +44,19 @@ path('api/notifications/unread-count/', views.unread_notification_count, name='u
     # ============================================================================
     # PUBLIC PAGES
     # ============================================================================
-    path('', views.landing_view, name='landing'),
+    # In urls.py - add this before your landing path
+    # ====== 🏠 HOME FEED ======
+    path('', views.home_feed_view, name='home_feed'),
+    
+    # ====== 📄 LANDING (moved) ======
+    path('landing/', views.landing_view, name='landing'),
+    
+    # ====== 📡 API FOR INFINITE SCROLL ======
+    path('api/feed/load-more/', views.api_feed_load_more, name='api_feed_load_more'),
+    
+    # ====== 🔔 NOTIFICATIONS API ======
+    path('api/notifications/unread-count/', views.unread_notification_count, name='unread_notification_count'),
+    
     path('discover/', views.discover_view, name='discover'),
     path('j/<slug:slug>/', views.journey_detail_view, name='journey_detail'),
     path('@<str:username>/', views.creator_profile_view, name='creator_profile'),
@@ -105,7 +117,7 @@ path('api/notifications/unread-count/', views.unread_notification_count, name='u
     
     # ============================================================================
     # DONATIONS
-    # ============================================================================
+    # ===========================a=================================================
     path('j/<slug:slug>/donate/', views.donation_view, name='donate'),
     path('donation/<int:donation_id>/process/', views.process_donation_view, name='process_donation'),
     path('donation/success/', views.donation_success_view, name='donation_success'),
@@ -172,6 +184,8 @@ path('templates/<int:template_id>/admin-create/', views.admin_create_journey_fro
     path('blog/challenge-lost-after-day-7/', views.blog_challenge_lost, name='blog_challenge_lost'),
     path('tools/youtube-playlist-import/', views.youtube_playlist_import_view, name='youtube_playlist_import'),
     path('start/', views.conversion_start_view, name='conversion_start'),
+
+
 ]
 
 # ============================================================================

@@ -1,0 +1,1268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== FEED - EDGE TO EDGE ====== */
+    .feed-wrap {
+        max-width: 100%;
+        padding: 0;
+        margin: 0 auto;
+    }
+    
+    @media (min-width: 768px) {
+        .feed-wrap {
+            max-width: 600px;
+            padding: 0;
+            margin: 0 auto;
+        }
+    }
+    
+    /* ====== STORIES ====== */
+    .stories-section {
+        padding: 12px 12px 8px;
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+    
+    @media (min-width: 768px) {
+        .stories-section {
+            padding: 16px 12px 12px;
+        }
+    }
+    
+    .stories-scroll {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 0 0 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+    .stories-scroll::-webkit-scrollbar { display: none; }
+    
+    .story-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        min-width: 60px;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--text-primary);
+        scroll-snap-align: start;
+        flex-shrink: 0;
+        transition: transform 0.15s;
+    }
+    
+    .story-item:active { transform: scale(0.92); }
+    
+    .story-ring {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        padding: 2px;
+        background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);
+        position: relative;
+        flex-shrink: 0;
+    }
+    
+    .story-ring.viewed {
+        background: var(--border-color);
+    }
+    
+    .story-ring img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid var(--bg-primary);
+        object-fit: cover;
+        display: block;
+        background: var(--bg-secondary);
+    }
+    
+    .story-ring .add {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        border: 2px solid var(--bg-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .story-name {
+        font-size: 10px;
+        color: var(--text-secondary);
+        max-width: 56px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+    
+    /* ====== COMPOSE BAR ====== */
+    .compose-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        margin: 10px 12px 14px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        cursor: text;
+        transition: all 0.2s;
+    }
+    
+    @media (min-width: 768px) {
+        .compose-bar {
+            margin: 12px 12px 16px;
+        }
+    }
+    
+    .compose-bar:hover {
+        border-color: var(--accent);
+    }
+    
+    .compose-bar img {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .compose-bar .input {
+        flex: 1;
+        padding: 6px 14px;
+        background: var(--bg-tertiary);
+        border-radius: 20px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        border: none;
+        cursor: text;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .compose-bar .actions {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .compose-bar .actions button {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+    }
+    
+    .compose-bar .actions button:hover {
+        background: var(--bg-tertiary);
+        color: var(--accent);
+    }
+    
+    /* ====== TWEET CARD - WITH CLEAR SEPARATION ====== */
+    .tweet {
+        background: var(--bg-secondary);
+        border-radius: 0;
+        margin: 0 0 10px 0;
+        padding: 0;
+        transition: background 0.15s;
+        will-change: transform;
+        cursor: default;
+        position: relative;
+    }
+    
+    /* Mobile: Add bottom border and spacing between posts */
+    @media (max-width: 767px) {
+        .tweet {
+            margin: 0 0 12px 0;
+            border-bottom: 8px solid var(--bg-primary);
+            border-radius: 0;
+            background: var(--bg-secondary);
+        }
+        
+        /* Add subtle shadow between posts for depth */
+        .tweet::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: var(--bg-primary);
+            pointer-events: none;
+        }
+    }
+    
+    @media (min-width: 768px) {
+        .tweet {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin: 0 12px 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        
+        .tweet:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: var(--accent-alpha);
+        }
+    }
+    
+    /* Header - with padding */
+    .tweet-header {
+        display: flex;
+        gap: 10px;
+        padding: 12px 14px 6px;
+        background: var(--bg-secondary);
+    }
+    
+    @media (min-width: 768px) {
+        .tweet-header {
+            padding: 14px 16px 8px;
+        }
+    }
+    
+    .tweet-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+    }
+    
+    .tweet-author {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .tweet-author .name {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    
+    .tweet-author .name:hover {
+        text-decoration: underline;
+    }
+    
+    .tweet-author .handle {
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    
+    .tweet-author .badge {
+        background: var(--accent);
+        color: #fff;
+        font-size: 8px;
+        padding: 0 5px;
+        border-radius: 8px;
+        font-weight: 600;
+        line-height: 14px;
+        white-space: nowrap;
+    }
+    
+    .tweet-author .time {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-left: auto;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .tweet-author .dot {
+        color: var(--text-secondary);
+        font-size: 12px;
+    }
+    
+    /* Content - with padding */
+    .tweet-content {
+        padding: 0 14px 8px;
+        background: var(--bg-secondary);
+    }
+    
+    @media (min-width: 768px) {
+        .tweet-content {
+            padding: 0 16px 10px;
+        }
+    }
+    
+    .tweet-content .text {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .tweet-content .text .hashtag,
+    .tweet-content .text .mention {
+        color: var(--accent);
+        text-decoration: none;
+    }
+    
+    /* ====== MEDIA - EDGE TO EDGE, ZERO PADDING ====== */
+    .tweet-media {
+        width: 100%;
+        background: #000;
+        position: relative;
+        aspect-ratio: 16/9;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        background: var(--bg-tertiary);
+    }
+    
+    .tweet-media img,
+    .tweet-media video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* For portrait images, maintain aspect ratio but fill */
+    .tweet-media.portrait {
+        aspect-ratio: 4/5;
+    }
+    
+    .tweet-media.square {
+        aspect-ratio: 1/1;
+    }
+    
+    .tweet-media .play-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.1);
+        opacity: 0;
+        transition: opacity 0.25s;
+        cursor: pointer;
+    }
+    
+    .tweet-media:hover .play-overlay {
+        opacity: 1;
+    }
+    
+    .tweet-media .play-overlay i {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.92);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #000;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    }
+    
+    .tweet-media .duration {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0,0,0,0.75);
+        color: #fff;
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    
+    .tweet-media .media-type {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        font-size: 10px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+        backdrop-filter: blur(4px);
+        letter-spacing: 0.5px;
+    }
+    
+    /* ====== PROGRESS - with padding ====== */
+    .tweet-progress {
+        padding: 8px 14px 4px;
+        background: var(--bg-secondary);
+    }
+    
+    @media (min-width: 768px) {
+        .tweet-progress {
+            padding: 10px 16px 6px;
+        }
+    }
+    
+    .tweet-progress .meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-bottom: 3px;
+        font-weight: 500;
+    }
+    
+    .tweet-progress .bar {
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .tweet-progress .bar .fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #4facfe);
+        border-radius: 4px;
+        transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    /* ====== ACTIONS - with padding ====== */
+    .tweet-actions {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 14px 12px;
+        border-top: 1px solid var(--border-color);
+        margin-top: 4px;
+        background: var(--bg-secondary);
+    }
+    
+    @media (min-width: 768px) {
+        .tweet-actions {
+            padding: 8px 16px 14px;
+        }
+    }
+    
+    .tweet-actions button,
+    .tweet-actions a {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: none;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+    
+    .tweet-actions button:hover,
+    .tweet-actions a:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+    
+    .tweet-actions button:active {
+        transform: scale(0.92);
+    }
+    
+    .tweet-actions button i {
+        font-size: 16px;
+        min-width: 20px;
+    }
+    
+    .tweet-actions .liked {
+        color: #f5576c;
+    }
+    
+    .tweet-actions .liked i {
+        animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+        100% { transform: scale(1); }
+    }
+    
+    .tweet-actions .count {
+        font-size: 13px;
+        font-weight: 500;
+    }
+    
+    .tweet-actions .count-update {
+        animation: count-pop 0.25s ease;
+    }
+    
+    @keyframes count-pop {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* ====== EMPTY STATE ====== */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px 60px;
+        color: var(--text-secondary);
+    }
+    
+    .empty-state .icon {
+        font-size: 56px;
+        display: block;
+        margin-bottom: 16px;
+        opacity: 0.3;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        max-width: 340px;
+        margin: 0 auto 20px;
+        line-height: 1.6;
+    }
+    
+    .empty-state .btn {
+        display: inline-block;
+        padding: 12px 32px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .empty-state .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px var(--accent-alpha);
+    }
+    
+    /* ====== LOAD MORE ====== */
+    .load-wrap {
+        text-align: center;
+        padding: 16px 0 24px;
+    }
+    
+    .load-wrap button {
+        padding: 10px 32px;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .load-wrap button:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
+        background: var(--bg-secondary);
+    }
+    
+    .load-wrap button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .load-wrap .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--border-color);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 480px) {
+        .stories-section {
+            padding: 8px 8px 4px;
+        }
+        
+        .stories-scroll {
+            gap: 10px;
+        }
+        
+        .story-ring {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .story-name {
+            font-size: 9px;
+            max-width: 50px;
+        }
+        
+        .compose-bar {
+            margin: 8px 8px 12px;
+            padding: 8px 10px;
+        }
+        
+        .compose-bar img {
+            width: 28px;
+            height: 28px;
+        }
+        
+        .tweet {
+            margin: 0 0 10px 0;
+        }
+        
+        .tweet-header {
+            padding: 10px 12px 4px;
+        }
+        
+        .tweet-avatar {
+            width: 34px;
+            height: 34px;
+        }
+        
+        .tweet-author .name {
+            font-size: 13px;
+        }
+        
+        .tweet-content {
+            padding: 0 12px 6px;
+        }
+        
+        .tweet-content .text {
+            font-size: 13px;
+        }
+        
+        .tweet-progress {
+            padding: 6px 12px 2px;
+        }
+        
+        .tweet-actions {
+            padding: 4px 12px 10px;
+        }
+        
+        .tweet-actions button,
+        .tweet-actions a {
+            font-size: 12px;
+            padding: 3px 6px;
+        }
+        
+        .tweet-actions button i {
+            font-size: 14px;
+            min-width: 18px;
+        }
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: 0.01ms !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="feed-wrap">
+    
+    <!-- ====== STORIES ====== -->
+    <div class="stories-section">
+        <div class="stories-scroll" id="storiesScroll">
+            {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="story-item">
+                <div class="story-ring" style="position:relative;">
+                    <img src="{{ user.profile.image.url }}" alt="Your story" loading="lazy" width="52" height="52">
+                    <span class="add">+</span>
+                </div>
+                <span class="story-name">You</span>
+            </a>
+            {% endif %}
+            
+            {% for story in stories|slice:":15" %}
+            <a href="#" class="story-item">
+                <div class="story-ring {% if story.viewed %}viewed{% endif %}">
+                    <img src="{{ story.creator.image.url }}" alt="{{ story.creator.user.username }}" loading="lazy" width="52" height="52">
+                </div>
+                <span class="story-name">{{ story.creator.user.username|truncatechars:7 }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- ====== COMPOSE ====== -->
+    {% if user.is_authenticated %}
+    <div class="compose-bar" onclick="location.href='{% url 'create_journey' %}'" role="button" tabindex="0">
+        <img src="{{ user.profile.image.url }}" alt="" loading="lazy" width="34" height="34">
+        <span class="input">Share your progress...</span>
+        <div class="actions">
+            <button onclick="event.stopPropagation();location.href='{% url 'create_journey' %}'" aria-label="Add media">
+                <i class="fas fa-image"></i>
+            </button>
+            <button onclick="event.stopPropagation();location.href='{% url 'create_journey' %}'" aria-label="Create">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- ====== FEED ====== -->
+    <div id="feed">
+        {% for item in feed_items %}
+            {% if item.type == 'journey_card' %}
+                {% with j=item.data %}
+                <article class="tweet" data-id="{{ j.id }}" data-type="journey">
+                    
+                    <!-- Header -->
+                    <div class="tweet-header">
+                        <a href="{% url 'creator_profile' username=j.creator.user.username %}" aria-hidden="true">
+                            <img src="{{ j.creator.image.url }}" alt="{{ j.creator.user.username }}" class="tweet-avatar" loading="lazy" width="38" height="38">
+                        </a>
+                        <div class="tweet-author">
+                            <a href="{% url 'creator_profile' username=j.creator.user.username %}" class="name">
+                                {{ j.creator.user.username }}
+                                {% if j.creator.is_verified %}<span class="badge">✓</span>{% endif %}
+                            </a>
+                            <a href="{% url 'creator_profile' username=j.creator.user.username %}" class="handle">
+                                @{{ j.creator.user.username|truncatechars:12 }}
+                            </a>
+                            <span class="dot">·</span>
+                            <span class="time">{{ j.created_at|timesince }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="tweet-content">
+                        <div class="text">
+                            <strong>{{ j.title }}</strong>
+                            {% if j.description %}
+                            <br>{{ j.description|truncatechars:140 }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Media - EDGE TO EDGE, ZERO PADDING -->
+                    {% if j.cover_video or j.cover_image %}
+                    <div class="tweet-media">
+                        {% if j.cover_video %}
+                            <video muted loop playsinline preload="none" poster="{{ j.cover_image.url|default:'' }}">
+                                <source src="{{ j.cover_video.url }}" type="video/mp4">
+                            </video>
+                            <span class="duration">0:30</span>
+                        {% elif j.cover_image %}
+                            <img src="{{ j.cover_image.url }}" alt="{{ j.title }}" loading="lazy" decoding="async" width="600" height="338">
+                        {% endif %}
+                        <div class="play-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <span class="media-type">📌 Journey</span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Progress -->
+                    <div class="tweet-progress">
+                        <div class="meta">
+                            <span>Day {{ j.get_current_day }}/{{ j.duration }}</span>
+                            <span>{{ j.get_progress_percentage }}%</span>
+                        </div>
+                        <div class="bar">
+                            <div class="fill" style="width:{{ j.get_progress_percentage }}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="tweet-actions">
+                        <a href="{{ j.get_absolute_url }}" aria-label="View journey">
+                            <i class="fas fa-arrow-right"></i> View
+                        </a>
+                        
+                        <button class="follow-btn" data-slug="{{ j.slug }}" aria-label="Follow journey">
+                            {% if user in j.followers.all %}
+                                <i class="fas fa-check-circle"></i> Following
+                            {% else %}
+                                <i class="fas fa-plus-circle"></i> Follow
+                            {% endif %}
+                        </button>
+                        
+                        <button class="save-btn" data-slug="{{ j.slug }}" aria-label="Save journey">
+                            <i class="far fa-bookmark"></i>
+                        </button>
+                        
+                        <button class="share-btn" data-url="{{ j.get_absolute_url }}" aria-label="Share">
+                            <i class="far fa-share-square"></i>
+                        </button>
+                    </div>
+                    
+                </article>
+                {% endwith %}
+            
+            {% elif item.type == 'activity_card' %}
+                {% with a=item.data %}
+                <article class="tweet" data-id="{{ a.id }}" data-type="activity">
+                    
+                    <!-- Header -->
+                    <div class="tweet-header">
+                        <a href="{% url 'creator_profile' username=a.journey.creator.user.username %}" aria-hidden="true">
+                            <img src="{{ a.journey.creator.image.url }}" alt="{{ a.journey.creator.user.username }}" class="tweet-avatar" loading="lazy" width="38" height="38">
+                        </a>
+                        <div class="tweet-author">
+                            <a href="{% url 'creator_profile' username=a.journey.creator.user.username %}" class="name">
+                                {{ a.journey.creator.user.username }}
+                            </a>
+                            <a href="{% url 'creator_profile' username=a.journey.creator.user.username %}" class="handle">
+                                @{{ a.journey.creator.user.username|truncatechars:12 }}
+                            </a>
+                            <span class="dot">·</span>
+                            <span class="time">{{ a.created_at|timesince }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="tweet-content">
+                        <div class="text">
+                            {{ a.content|truncatechars:200 }}
+                            <br>
+                            <small style="color:var(--text-secondary);font-size:12px;">
+                                Day {{ a.day_number_field }} · 
+                                <a href="{% url 'journey_detail' slug=a.journey.slug %}" style="color:var(--accent);text-decoration:none;">
+                                    {{ a.journey.title }}
+                                </a>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Media - EDGE TO EDGE, ZERO PADDING -->
+                    {% if a.file or a.embed_html %}
+                    <div class="tweet-media">
+                        {% if a.is_video and a.file %}
+                            <video muted loop playsinline preload="none">
+                                <source src="{{ a.file.url }}" type="video/mp4">
+                            </video>
+                            <span class="duration">0:45</span>
+                        {% elif a.file %}
+                            <img src="{{ a.file.url }}" alt="{{ a.content }}" loading="lazy" decoding="async" width="600" height="338">
+                        {% elif a.embed_html %}
+                            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-tertiary);">
+                                {{ a.embed_html|safe }}
+                            </div>
+                        {% endif %}
+                        <div class="play-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <span class="media-type">📝 Update</span>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Actions -->
+                    <div class="tweet-actions">
+                        <button class="like-btn" data-id="{{ a.id }}" aria-label="Like">
+                            <i class="far fa-heart"></i> <span class="count">{{ a.loves.count }}</span>
+                        </button>
+                        
+                        <button class="comment-btn" data-id="{{ a.id }}" aria-label="Comment">
+                            <i class="far fa-comment"></i> <span class="count">{{ a.comments.count }}</span>
+                        </button>
+                        
+                        <button class="share-btn" data-url="{% url 'journey_detail' slug=a.journey.slug %}" aria-label="Share">
+                            <i class="far fa-share-square"></i>
+                        </button>
+                    </div>
+                    
+                </article>
+                {% endwith %}
+            {% endif %}
+        {% empty %}
+            <div class="empty-state">
+                <span class="icon">🚀</span>
+                <h3>Start your journey</h3>
+                <p>Share your progress and inspire the community.</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_journey' %}" class="btn">Create Journey</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn">Join Now</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- ====== LOAD MORE ====== -->
+    <div class="load-wrap" id="loadWrap">
+        <button id="loadBtn" {% if not feed_items %}style="display:none;"{% endif %}>
+            Load more
+        </button>
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    // ====== CONFIG ======
+    const CONFIG = {
+        LOAD_THRESHOLD: 200,
+        MAX_RETRIES: 3,
+    };
+    
+    let isLoading = false;
+    let lastId = null;
+    let hasMore = true;
+    let retryCount = 0;
+    
+    // ====== DOM REFS ======
+    const feed = document.getElementById('feed');
+    const loadBtn = document.getElementById('loadBtn');
+    const loadWrap = document.getElementById('loadWrap');
+    
+    // ====== GET LAST ID ======
+    document.querySelectorAll('.tweet').forEach(el => {
+        const id = el.dataset.id;
+        if (id) lastId = id;
+    });
+    
+    // ====== INTERSECTION OBSERVER ======
+    if (loadWrap && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !isLoading && hasMore) {
+                loadMore();
+            }
+        }, { rootMargin: `${CONFIG.LOAD_THRESHOLD}px` });
+        observer.observe(loadWrap);
+    }
+    
+    // ====== LOAD MORE ======
+    function loadMore() {
+        if (isLoading || !hasMore) return;
+        isLoading = true;
+        
+        const btn = loadBtn;
+        btn.innerHTML = '<span class="spinner"></span> Loading';
+        btn.disabled = true;
+        
+        const url = `/api/feed/load-more/?last_id=${lastId || ''}`;
+        
+        fetch(url, {
+            signal: AbortSignal.timeout(8000)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Network error');
+            return res.json();
+        })
+        .then(data => {
+            if (data.items && data.items.length > 0) {
+                renderItems(data.items);
+                const last = data.items[data.items.length - 1];
+                lastId = last.id;
+                retryCount = 0;
+            }
+            
+            hasMore = data.has_more !== false;
+            if (!hasMore) {
+                btn.style.display = 'none';
+            }
+        })
+        .catch(err => {
+            console.warn('Load error:', err);
+            if (retryCount < CONFIG.MAX_RETRIES) {
+                retryCount++;
+                btn.innerHTML = `Retry (${retryCount}/${CONFIG.MAX_RETRIES})`;
+                btn.disabled = false;
+            } else {
+                btn.innerHTML = 'Failed to load';
+                btn.disabled = true;
+            }
+        })
+        .finally(() => {
+            isLoading = false;
+            if (hasMore && !btn.disabled) {
+                btn.innerHTML = 'Load more';
+                btn.disabled = false;
+            }
+        });
+    }
+    
+    // ====== RENDER ======
+    function renderItems(items) {
+        const fragment = document.createDocumentFragment();
+        
+        items.forEach((item, idx) => {
+            const el = document.createElement('article');
+            el.className = 'tweet';
+            el.dataset.id = item.id;
+            el.dataset.type = item.type;
+            
+            if (item.type === 'journey') {
+                el.innerHTML = `
+                    <div class="tweet-header">
+                        <a href="/@${item.creator}/" aria-hidden="true">
+                            <img src="${item.creator_avatar || '/static/images/default-avatar.jpg'}" class="tweet-avatar" loading="lazy" width="38" height="38">
+                        </a>
+                        <div class="tweet-author">
+                            <a href="/@${item.creator}/" class="name">${item.creator}</a>
+                            <a href="/@${item.creator}/" class="handle">@${item.creator}</a>
+                            <span class="dot">·</span>
+                            <span class="time">${item.time_ago}</span>
+                        </div>
+                    </div>
+                    <div class="tweet-content">
+                        <div class="text"><strong>${item.title}</strong>${item.description ? '<br>' + item.description : ''}</div>
+                    </div>
+                    <div class="tweet-media">
+                        <img src="${item.cover_url || '/static/images/default-cover.jpg'}" alt="${item.title}" loading="lazy" decoding="async" width="600" height="338">
+                        <span class="media-type">📌 Journey</span>
+                    </div>
+                    <div class="tweet-progress">
+                        <div class="meta"><span>Day ${item.current_day}/${item.duration}</span><span>${item.progress}%</span></div>
+                        <div class="bar"><div class="fill" style="width:${item.progress}%;"></div></div>
+                    </div>
+                    <div class="tweet-actions">
+                        <a href="${item.url}"><i class="fas fa-arrow-right"></i> View</a>
+                        <button class="follow-btn" data-slug="${item.slug}"><i class="fas fa-plus-circle"></i> Follow</button>
+                        <button class="save-btn" data-slug="${item.slug}"><i class="far fa-bookmark"></i></button>
+                        <button class="share-btn" data-url="${item.url}"><i class="far fa-share-square"></i></button>
+                    </div>
+                `;
+            } else {
+                el.innerHTML = `
+                    <div class="tweet-header">
+                        <a href="/@${item.creator}/" aria-hidden="true">
+                            <img src="${item.creator_avatar || '/static/images/default-avatar.jpg'}" class="tweet-avatar" loading="lazy" width="38" height="38">
+                        </a>
+                        <div class="tweet-author">
+                            <a href="/@${item.creator}/" class="name">${item.creator}</a>
+                            <a href="/@${item.creator}/" class="handle">@${item.creator}</a>
+                            <span class="dot">·</span>
+                            <span class="time">${item.time_ago}</span>
+                        </div>
+                    </div>
+                    <div class="tweet-content">
+                        <div class="text">${item.content || ''}</div>
+                    </div>
+                    <div class="tweet-actions">
+                        <button class="like-btn" data-id="${item.id}"><i class="far fa-heart"></i> <span class="count">${item.likes || 0}</span></button>
+                        <button class="comment-btn" data-id="${item.id}"><i class="far fa-comment"></i> <span class="count">${item.comments || 0}</span></button>
+                        <button class="share-btn" data-url="${item.url}"><i class="far fa-share-square"></i></button>
+                    </div>
+                `;
+            }
+            
+            fragment.appendChild(el);
+        });
+        
+        feed.appendChild(fragment);
+        bindEvents();
+    }
+    
+    // ====== EVENT BINDING ======
+    function bindEvents() {
+        document.querySelectorAll('.follow-btn, .save-btn, .like-btn, .share-btn').forEach(btn => {
+            btn.replaceWith(btn.cloneNode(true));
+        });
+        attachListeners();
+    }
+    
+    function attachListeners() {
+        document.querySelectorAll('.follow-btn').forEach(btn => {
+            btn.addEventListener('click', handleFollow);
+        });
+        
+        document.querySelectorAll('.save-btn').forEach(btn => {
+            btn.addEventListener('click', handleSave);
+        });
+        
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            btn.addEventListener('click', handleLike);
+        });
+        
+        document.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', handleShare);
+        });
+    }
+    
+    // ====== HANDLERS ======
+    function handleFollow(e) {
+        const btn = e.currentTarget;
+        const slug = btn.dataset.slug;
+        if (!slug) return;
+        
+        fetch(`/api/journey/${slug}/follow/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = data.following 
+                ? '<i class="fas fa-check-circle"></i> Following'
+                : '<i class="fas fa-plus-circle"></i> Follow';
+        })
+        .catch(() => {});
+    }
+    
+    function handleSave(e) {
+        const btn = e.currentTarget;
+        const slug = btn.dataset.slug;
+        if (!slug) return;
+        
+        fetch(`/api/journey/${slug}/save/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = data.saved 
+                ? '<i class="fas fa-bookmark"></i>'
+                : '<i class="far fa-bookmark"></i>';
+        })
+        .catch(() => {});
+    }
+    
+    function handleLike(e) {
+        const btn = e.currentTarget;
+        const id = btn.dataset.id;
+        const countSpan = btn.querySelector('.count');
+        if (!id) return;
+        
+        fetch(`/api/activity/${id}/love/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            countSpan.textContent = data.love_count;
+            countSpan.classList.remove('count-update');
+            void countSpan.offsetWidth;
+            countSpan.classList.add('count-update');
+            
+            if (data.loved) {
+                btn.classList.add('liked');
+                btn.querySelector('i').className = 'fas fa-heart';
+            } else {
+                btn.classList.remove('liked');
+                btn.querySelector('i').className = 'far fa-heart';
+            }
+        })
+        .catch(() => {});
+    }
+    
+    function handleShare(e) {
+        const btn = e.currentTarget;
+        const url = btn.dataset.url || window.location.href;
+        
+        if (navigator.share) {
+            navigator.share({ title: 'Rallynex', url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => { btn.innerHTML = orig; }, 1500);
+            }).catch(() => {});
+        }
+    }
+    
+    // ====== VIDEO HOVER ======
+    document.addEventListener('mouseover', function(e) {
+        const video = e.target.closest('.tweet-media video');
+        if (video) {
+            video.play().catch(() => {});
+        }
+    });
+    
+    document.addEventListener('mouseout', function(e) {
+        const video = e.target.closest('.tweet-media video');
+        if (video) {
+            video.pause();
+        }
+    });
+    
+    // ====== LOAD BTN ======
+    if (loadBtn) {
+        loadBtn.addEventListener('click', loadMore);
+    }
+    
+    // ====== INIT ======
+    attachListeners();
+    
+    // ====== KEYBOARD ======
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'j' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const cards = document.querySelectorAll('.tweet');
+            const current = document.activeElement?.closest('.tweet');
+            if (current) {
+                const next = current.nextElementSibling;
+                if (next) next.querySelector('a, button')?.focus();
+            } else if (cards.length) {
+                cards[0].querySelector('a, button')?.focus();
+            }
+        }
+        if (e.key === 'k' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const current = document.activeElement?.closest('.tweet');
+            if (current) {
+                const prev = current.previousElementSibling;
+                if (prev) prev.querySelector('a, button')?.focus();
+            }
+        }
+    });
+    
+})();
+</script>
+{% endblock %}

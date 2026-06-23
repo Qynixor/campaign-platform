@@ -405,11 +405,23 @@
         color: var(--text-secondary);
         font-weight: 500;
         transition: color 0.2s;
+        position: relative;
     }
     
     .nav-links a:hover,
     .nav-links a.active {
         color: var(--text-primary);
+    }
+    
+    .nav-links a.active::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent);
+        border-radius: 2px;
     }
     
     .nav-actions {
@@ -429,8 +441,9 @@
         background: var(--navbar-bg);
         backdrop-filter: blur(10px);
         border-top: 1px solid var(--border-color);
-        padding: 12px 24px;
+        padding: 8px 16px 12px;
         z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom, 12px);
     }
     
     .mobile-nav-items {
@@ -444,19 +457,27 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
+        gap: 2px;
         color: var(--text-muted);
-        font-size: 12px;
+        font-size: 10px;
         transition: color 0.2s;
         position: relative;
+        padding: 4px 8px;
+        border-radius: 8px;
+        min-width: 56px;
     }
     
     .mobile-nav-item i {
         font-size: 22px;
+        transition: transform 0.2s;
     }
     
     .mobile-nav-item.active {
         color: var(--text-primary);
+    }
+    
+    .mobile-nav-item.active i {
+        transform: scale(1.05);
     }
     
     .mobile-nav-item .notification-icon-wrapper {
@@ -866,11 +887,12 @@
     {# Desktop Navigation #}
     <nav class="navbar">
         <div class="container">
-            <a href="{% url 'landing' %}" class="logo">
+            <a href="{% url 'home_feed' %}" class="logo">
                 <img src="{% static 'icons/mark.png' %}" alt="Rallynex Logo" class="logo-img" width="32" height="32">
                 <span class="logo-text">Rallynex</span>
             </a>
             <div class="nav-links">
+                <a href="{% url 'home_feed' %}">Home</a>
                 <a href="{% url 'discover' %}">Discover</a>
                 <a href="{% url 'template_store' %}">Templates</a>
                 <a href="{% url 'blog_index' %}">Blog</a>
@@ -963,6 +985,7 @@
                 <div class="footer-links">
                     <h4>Platform</h4>
                     <ul>
+                        <li><a href="{% url 'home_feed' %}">Home</a></li>
                         <li><a href="{% url 'discover' %}">Discover</a></li>
                         <li><a href="{% url 'template_store' %}">Templates</a></li>
                         <li><a href="{% url 'blog_index' %}">Blog</a></li>
@@ -997,17 +1020,21 @@
     {% if user.is_authenticated %}
     <nav class="mobile-bottom-nav">
         <div class="mobile-nav-items">
-            <a href="{% url 'landing' %}" class="mobile-nav-item">
+            <a href="{% url 'home_feed' %}" class="mobile-nav-item">
                 <i class="fas fa-home"></i>
+                <span>Home</span>
             </a>
             <a href="{% url 'template_store' %}" class="mobile-nav-item">
                 <i class="fas fa-store"></i>
+                <span>Store</span>
             </a>
             <a href="{% url 'discover' %}" class="mobile-nav-item">
                 <i class="fas fa-compass"></i>
+                <span>Discover</span>
             </a>
             <a href="{% url 'dashboard' %}" class="mobile-nav-item">
                 <i class="fas fa-user"></i>
+                <span>Profile</span>
             </a>
             <a href="{% url 'notifications' %}" class="mobile-nav-item">
                 <div class="notification-icon-wrapper">
@@ -1018,6 +1045,7 @@
                     <span class="bell-badge" id="mobileBadge" style="display: none;"></span>
                     {% endif %}
                 </div>
+                <span>Alerts</span>
             </a>
         </div>
     </nav>
@@ -1040,6 +1068,38 @@
     
     {# Theme Management & Flexible Notification Badge Script #}
     <script>
+        // ====== ACTIVE NAV LINK DETECTION ======
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            
+            // Desktop nav links
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href) {
+                    // Exact match for home
+                    if (href === '/' && (currentPath === '/' || currentPath === '')) {
+                        link.classList.add('active');
+                    } 
+                    // For other pages, check if current path starts with href (excluding home)
+                    else if (href !== '/' && currentPath.startsWith(href)) {
+                        link.classList.add('active');
+                    }
+                }
+            });
+            
+            // Mobile nav links
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href) {
+                    if (href === '/' && (currentPath === '/' || currentPath === '')) {
+                        item.classList.add('active');
+                    } else if (href !== '/' && currentPath.startsWith(href)) {
+                        item.classList.add('active');
+                    }
+                }
+            });
+        });
+
         // Notification Badge System
         function formatBadgeCount(count) {
             if (count <= 0) return { text: '', hide: true };
