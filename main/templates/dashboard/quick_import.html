@@ -47,6 +47,23 @@
         color: var(--text-secondary);
     }
     
+    /* ALERT STYLES - ADD THIS */
+    .alert {
+        padding: 14px 18px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        border: 1px solid transparent;
+    }
+    
+    .alert-success { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); color: #22c55e; }
+    .alert-error { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #ef4444; }
+    .alert-warning { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b; }
+    .alert-info { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: var(--accent); }
+    
     /* URL INPUT BAR */
     .url-bar {
         display: flex;
@@ -159,7 +176,6 @@
         background: var(--bg-primary);
     }
     
-    /* Safe placeholder styles */
     .safe-placeholder {
         width: 100%;
         min-height: 250px;
@@ -229,22 +245,6 @@
     
     .preview-media .no-preview span {
         font-size: 13px;
-    }
-    
-    .preview-media .platform-watermark {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        padding: 5px 10px;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(8px);
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 4px;
     }
     
     .preview-info {
@@ -351,11 +351,6 @@
         border-color: var(--accent);
     }
     
-    .form-group textarea::placeholder,
-    .form-group input::placeholder {
-        color: var(--text-muted);
-    }
-    
     .submit-btn {
         width: 100%;
         padding: 14px;
@@ -376,10 +371,6 @@
     .submit-btn:hover {
         background: var(--accent-hover);
         transform: scale(1.01);
-    }
-    
-    .submit-btn:active {
-        transform: scale(0.98);
     }
     
     .submit-btn:disabled {
@@ -439,52 +430,17 @@
         color: var(--accent);
     }
     
-    /* MESSAGES */
-    .alert {
-        padding: 14px 18px;
-        border-radius: 12px;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 13px;
-    }
-    
-    .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e; }
-    .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; }
-    .alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; }
-    .alert-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent); }
-    
-    /* Day suggestion highlight */
     .day-suggested {
         border-color: #22c55e !important;
         box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
         transition: all 0.3s;
     }
     
-    /* YouTube embed wrapper */
-    .youtube-embed-wrapper {
-        position: relative;
-        padding-bottom: 56.25%;
-        height: 0;
-        overflow: hidden;
-        background: #000;
-        width: 100%;
-    }
-    
-    .youtube-embed-wrapper iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-    
+    /* ANIMATION */
     @keyframes fadeOut {
-        0% { opacity: 1; }
-        70% { opacity: 1; }
-        100% { opacity: 0; visibility: hidden; }
+        0% { opacity: 1; transform: translateX(-50%) scale(1); }
+        70% { opacity: 1; transform: translateX(-50%) scale(1); }
+        100% { opacity: 0; transform: translateX(-50%) scale(0.95); visibility: hidden; }
     }
     
     @media (max-width: 500px) {
@@ -563,7 +519,7 @@
         </div>
     </div>
     
-    <form method="post" id="importForm">
+    <form method="post" id="importForm" action="{% url 'quick_import' %}">
         {% csrf_token %}
         
         <!-- URL INPUT -->
@@ -749,22 +705,22 @@
         submitBtn.disabled = true;
         
         try {
-            const response = await fetch('/api/preview/?url=' + encodeURIComponent(url));
+            const response = await fetch('/api/preview/?url=' + encodeURIComponent(url), {
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
             const data = await response.json();
             
             if (data.success) {
-                // For YouTube - safe to embed
                 if (platform === 'youtube' && data.html) {
                     previewMedia.innerHTML = data.html;
                     embedHtmlInput.value = data.html;
-                }
-                // For all other platforms - use safe placeholder
-                else {
+                } else {
                     showSafePlaceholder(url, platform);
                     embedHtmlInput.value = '';
                 }
                 
-                // Update info
                 if (data.title && platform !== 'youtube') {
                     previewTitle.textContent = data.title;
                 } else if (platform === 'youtube' && data.title) {
@@ -780,7 +736,6 @@
                     previewAuthor.style.display = 'none';
                 }
                 
-                // Auto-fill caption if empty
                 if (!captionInput.value && data.title) {
                     captionInput.value = data.title;
                 }
@@ -829,14 +784,15 @@
         });
     });
     
-    // Paste button
-    function pasteFromClipboard() {
-        navigator.clipboard.readText().then(text => {
+    // Paste button - FIXED
+    async function pasteFromClipboard() {
+        try {
+            const text = await navigator.clipboard.readText();
             urlInput.value = text;
             urlInput.dispatchEvent(new Event('input'));
-        }).catch(() => {
+        } catch (err) {
             urlInput.focus();
-        });
+        }
     }
     
     // Journey change — suggest day with highlight effect
@@ -852,7 +808,6 @@
                 dayInput.classList.remove('day-suggested');
             }, 2000);
             
-            // Show tooltip
             const tooltip = document.createElement('div');
             tooltip.textContent = `💡 Suggested day ${currentDay} for "${journeyTitle}"`;
             tooltip.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:8px 16px;border-radius:30px;font-size:12px;z-index:1000;animation:fadeOut 2s forwards;';

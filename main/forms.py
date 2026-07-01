@@ -7,22 +7,23 @@ from cloudinary.forms import CloudinaryFileField
 from .models import (
     Profile, SocialConnection, ImportedContent,
     Journey, Activity, JourneyFollow, Tag,
-    ActivityComment, Donation, PostJourneyProduct,
-    Report, 
+    ActivityComment, Report, 
+    SocialPostTemplate, QuickAddTracker
 )
 import re
 from datetime import timedelta
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
 # ============================================================================
-# AUTHENTICATION FORMS
+# AUTHENTICATION FORMS - KEPT
 # ============================================================================
 
 class SignUpForm(UserCreationForm):
-    """User registration form"""
+    """User registration form with social-first fields"""
     
     email = forms.EmailField(
         max_length=254,
@@ -61,7 +62,7 @@ class SignUpForm(UserCreationForm):
         })
     )
     
-    # Optional profile fields
+    # Optional profile fields - social-first
     tiktok_username = forms.CharField(
         max_length=50,
         required=False,
@@ -72,6 +73,15 @@ class SignUpForm(UserCreationForm):
     )
     
     instagram_username = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username (optional)'
+        })
+    )
+    
+    twitter_username = forms.CharField(
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
@@ -112,6 +122,12 @@ class SignUpForm(UserCreationForm):
             username = '@' + username
         return username
     
+    def clean_twitter_username(self):
+        username = self.cleaned_data.get('twitter_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
+    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email'].lower()
@@ -121,6 +137,7 @@ class SignUpForm(UserCreationForm):
             profile = user.profile
             profile.tiktok_username = self.cleaned_data.get('tiktok_username', '')
             profile.instagram_username = self.cleaned_data.get('instagram_username', '')
+            # Add twitter to profile (you may need to add this field)
             profile.save()
         return user
 
@@ -154,11 +171,11 @@ class LoginForm(AuthenticationForm):
 
 
 # ============================================================================
-# PROFILE FORMS
+# PROFILE FORMS - KEPT & ENHANCED
 # ============================================================================
 
 class ProfileForm(forms.ModelForm):
-    """Edit profile information"""
+    """Edit profile information - social-first"""
     
     image = CloudinaryFileField(
         required=False,
@@ -213,6 +230,15 @@ class ProfileForm(forms.ModelForm):
         })
     )
     
+    twitter_username = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': '@username'
+        })
+    )
+    
     youtube_channel = forms.CharField(
         max_length=100,
         required=False,
@@ -222,18 +248,10 @@ class ProfileForm(forms.ModelForm):
         })
     )
     
-    paypal_email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'your@paypal.com'
-        })
-    )
-    
     class Meta:
         model = Profile
         fields = ['image', 'bio', 'location', 'tiktok_username', 
-                  'instagram_username', 'youtube_channel', 'paypal_email']
+                  'instagram_username', 'twitter_username', 'youtube_channel']
     
     def clean_tiktok_username(self):
         username = self.cleaned_data.get('tiktok_username', '')
@@ -246,19 +264,26 @@ class ProfileForm(forms.ModelForm):
         if username and not username.startswith('@'):
             username = '@' + username
         return username
+    
+    def clean_twitter_username(self):
+        username = self.cleaned_data.get('twitter_username', '')
+        if username and not username.startswith('@'):
+            username = '@' + username
+        return username
 
 
 # ============================================================================
-# JOURNEY FORMS
+# JOURNEY FORMS - KEPT & ENHANCED FOR SOCIAL-FIRST
 # ============================================================================
+
 class JourneyForm(forms.ModelForm):
-    """Create/Edit a journey"""
+    """Create/Edit a journey - social-first focused"""
     
     title = forms.CharField(
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'e.g., 30 Days of Yoga',
+            'placeholder': 'e.g., 30 Days of Coding',
             'autofocus': True
         })
     )
@@ -344,7 +369,7 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    # FIXED: Allow creators to jump to their current day
+    # SOCIAL-FIRST: Allow creators mid-journey to jump to their current day
     current_day_override = forms.IntegerField(
         required=False,
         min_value=1,
@@ -353,7 +378,7 @@ class JourneyForm(forms.ModelForm):
             'placeholder': 'e.g., 34',
             'min': 1
         }),
-        help_text="Already started? Enter your current day number. Leave blank to start from Day 1."
+        help_text="Already started your challenge elsewhere? Enter your current day number. Leave blank to start from Day 1."
     )
     
     start_date = forms.DateTimeField(
@@ -364,6 +389,7 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
+    # SOCIAL-FIRST SETTINGS
     is_public = forms.BooleanField(
         required=False,
         initial=True,
@@ -384,7 +410,8 @@ class JourneyForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxInput(attrs={
             'class': 'form-checkbox'
-        })
+        }),
+        help_text="Automatically import posts from your connected social accounts"
     )
     
     import_hashtag = forms.CharField(
@@ -393,35 +420,36 @@ class JourneyForm(forms.ModelForm):
         widget=forms.TextInput(attrs={
             'class': 'form-input',
             'placeholder': '#MyJourney'
-        })
+        }),
+        help_text="Only import posts with this hashtag"
     )
     
-    funding_enabled = forms.BooleanField(
+    # SOCIAL SHARE SETTINGS (NEW)
+    social_share_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://yourdomain.com/journey'
+        }),
+        help_text="Custom URL for sharing your journey (optional)"
+    )
+    
+    auto_post_to_social = forms.BooleanField(
         required=False,
         widget=forms.CheckboxInput(attrs={
             'class': 'form-checkbox'
-        })
+        }),
+        help_text="Automatically post new updates to social media"
     )
     
-    funding_goal = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+    social_share_text = forms.CharField(
+        max_length=280,
         required=False,
-        widget=forms.NumberInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': '1000.00',
-            'step': '0.01'
-        })
-    )
-    
-    funding_description = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'What are you raising funds for?',
-            'rows': 3
-        })
+            'placeholder': 'Follow my journey on Rallynex! 🚀'
+        }),
+        help_text="Default text for social media shares"
     )
     
     tags_input = forms.CharField(
@@ -452,7 +480,7 @@ class JourneyForm(forms.ModelForm):
             'template_style', 'cover_image', 'cover_video',
             'duration', 'current_day_override', 'start_date',
             'is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag',
-            'funding_enabled', 'funding_goal', 'funding_description'
+            'social_share_url', 'auto_post_to_social', 'social_share_text'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -460,9 +488,9 @@ class JourneyForm(forms.ModelForm):
         
         if self.instance and self.instance.pk:
             self.fields['template_style'].initial = self.instance.template_style or 'default'
-            
-            # FIXED: Populate current_day_override
             self.fields['current_day_override'].initial = self.instance.current_day_override
+            self.fields['social_share_url'].initial = self.instance.social_share_url
+            self.fields['social_share_text'].initial = self.instance.social_share_text
             
             tags = self.instance.tags.all()
             if tags.exists():
@@ -530,7 +558,7 @@ class JourneyForm(forms.ModelForm):
             if template_style in style_type_map and not cleaned_data.get('journey_type'):
                 cleaned_data['journey_type'] = style_type_map[template_style]
         
-        # FIXED: Validate current_day_override against journey_type
+        # Validate current_day_override against journey_type
         current_day_override = cleaned_data.get('current_day_override')
         if current_day_override and journey_type == 'milestone':
             self.add_error('current_day_override', 'Day override is only for daily challenges, not milestone journeys.')
@@ -540,8 +568,9 @@ class JourneyForm(forms.ModelForm):
     def save(self, commit=True):
         journey = super().save(commit=False)
         
-        # FIXED: Save the override
         journey.current_day_override = self.cleaned_data.get('current_day_override')
+        journey.social_share_url = self.cleaned_data.get('social_share_url', '')
+        journey.social_share_text = self.cleaned_data.get('social_share_text', '')
         
         if commit:
             journey.save()
@@ -573,7 +602,7 @@ class JourneyForm(forms.ModelForm):
                         "Final Delivery ✅",
                     ]
             
-            journey.save(update_fields=['milestones', 'current_day_override'])
+            journey.save(update_fields=['milestones', 'current_day_override', 'social_share_url', 'social_share_text'])
             
             # Save tags
             tags_input = self.cleaned_data.get('tags_input', '')
@@ -586,25 +615,72 @@ class JourneyForm(forms.ModelForm):
         
         return journey
 
+
 class JourneySettingsForm(forms.ModelForm):
-    """Quick settings update for existing journey"""
+    """Quick settings update for existing journey - social-first"""
     
     class Meta:
         model = Journey
-        fields = ['is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag']
+        fields = ['is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag', 
+                  'social_share_url', 'auto_post_to_social', 'social_share_text']
         widgets = {
             'import_hashtag': forms.TextInput(attrs={
                 'class': 'form-input',
                 'placeholder': '#MyJourney'
-            })
+            }),
+            'social_share_url': forms.URLInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'https://yourdomain.com/journey'
+            }),
+            'social_share_text': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Follow my journey on Rallynex! 🚀'
+            }),
         }
 
 
 # ============================================================================
-# ACTIVITY FORMS
+# SOCIAL POST TEMPLATE FORM - NEW (Social-First)
 # ============================================================================
+
+class SocialPostTemplateForm(forms.ModelForm):
+    """Create templates for auto-posting to social media"""
+    
+    platform = forms.ChoiceField(
+        choices=SocialPostTemplate.PLATFORM_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    template_text = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Day {day} of {title}! {content}\n\nFollow my journey: {url}',
+            'rows': 3
+        }),
+        help_text="Use {day}, {title}, {url}, and {content} as placeholders"
+    )
+    
+    auto_post = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        help_text="Automatically post to this platform when new content is added"
+    )
+    
+    class Meta:
+        model = SocialPostTemplate
+        fields = ['platform', 'template_text', 'auto_post']
+
+
+# ============================================================================
+# ACTIVITY FORMS - KEPT & ENHANCED FOR SOCIAL-FIRST
+# ============================================================================
+
 class ActivityForm(forms.ModelForm):
-    """Post/Edit a day's activity"""
+    """Post/Edit a day's activity - social-first"""
     
     content = forms.CharField(
         max_length=500,
@@ -635,7 +711,42 @@ class ActivityForm(forms.ModelForm):
         widget=forms.HiddenInput()
     )
     
-    # NEW: Actual date field for milestone journeys
+    # SOCIAL-FIRST: Source tracking
+    source_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://twitter.com/.../status/12345'
+        }),
+        help_text="Link to the original social media post"
+    )
+    
+    source_platform = forms.ChoiceField(
+        choices=[('', 'Select platform')] + [
+            ('twitter', 'Twitter/X'),
+            ('instagram', 'Instagram'),
+            ('tiktok', 'TikTok'),
+            ('youtube', 'YouTube'),
+            ('facebook', 'Facebook'),
+            ('linkedin', 'LinkedIn'),
+        ],
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    embed_html = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': '<iframe src="..."></iframe>',
+            'rows': 2
+        }),
+        help_text="Embed code from social media (optional)"
+    )
+    
+    # Actual date field for milestone journeys
     actual_date = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -648,7 +759,8 @@ class ActivityForm(forms.ModelForm):
     
     class Meta:
         model = Activity
-        fields = ['content', 'file', 'day_number_field', 'actual_date']
+        fields = ['content', 'file', 'day_number_field', 'source_url', 'source_platform', 
+                  'embed_html', 'actual_date']
     
     def __init__(self, *args, **kwargs):
         self.journey = kwargs.pop('journey', None)
@@ -662,8 +774,6 @@ class ActivityForm(forms.ModelForm):
         if self.journey:
             if self.journey.journey_type == 'milestone':
                 self.fields['content'].widget.attrs['placeholder'] = f"What did you achieve in Milestone {self.day_number}?"
-                
-                # Make actual_date more prominent for milestones
                 self.fields['actual_date'].help_text = "Add the real date this milestone was completed"
             else:
                 self.fields['content'].widget.attrs['placeholder'] = f"What happened on Day {self.day_number}? Share your progress..."
@@ -685,7 +795,6 @@ class ActivityForm(forms.ModelForm):
             
             if day_number:
                 # Check if day is locked (future day)
-                # For milestone journeys, is_day_locked returns False so this passes
                 if self.journey.is_day_locked(day_number):
                     if self.journey.journey_type == 'daily':
                         raise ValidationError(f"Day {day_number} is not available yet.")
@@ -720,6 +829,11 @@ class ActivityForm(forms.ModelForm):
         
         return activity
 
+
+# ============================================================================
+# QUICK IMPORT FORM - CRITICAL FOR SOCIAL-FIRST
+# ============================================================================
+
 class QuickImportForm(forms.Form):
     """Smart Import - Paste link, auto-detect platform, preview content"""
     
@@ -747,7 +861,7 @@ class QuickImportForm(forms.Form):
         })
     )
     
-    # NEW: Caption field (editable by user)
+    # Editable caption (pre-filled from social post)
     caption = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
@@ -757,7 +871,7 @@ class QuickImportForm(forms.Form):
         })
     )
     
-    # NEW: Hidden fields for platform detection and embed data
+    # Hidden fields for platform detection and embed data
     detected_platform = forms.CharField(
         required=False,
         widget=forms.HiddenInput()
@@ -769,6 +883,36 @@ class QuickImportForm(forms.Form):
     )
     
     thumbnail_url = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    media_url = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    media_type = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    platform_post_id = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    posted_at = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    like_count = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    comment_count = forms.IntegerField(
         required=False,
         widget=forms.HiddenInput()
     )
@@ -801,9 +945,10 @@ class QuickImportForm(forms.Form):
             platform = 'facebook'
         elif 'twitter.com' in url or 'x.com' in url:
             platform = 'twitter'
+        elif 'linkedin.com' in url:
+            platform = 'linkedin'
         else:
-
-            raise ValidationError('Please enter a valid TikTok, Instagram, YouTube, Facebook or X/Twitter URL.')
+            raise ValidationError('Please enter a valid TikTok, Instagram, YouTube, Facebook, Twitter/X, or LinkedIn URL.')
         
         self.cleaned_data['detected_platform'] = platform
         return url
@@ -827,16 +972,9 @@ class QuickImportForm(forms.Form):
             # Check if day already has content (warning, not error)
             existing = Activity.objects.filter(journey=journey, day_number_field=day_number).first()
             if existing:
-                # Store existing activity for warning message
                 self.existing_activity = existing
         
         return day_number
-    
-    def clean_caption(self):
-        caption = self.cleaned_data.get('caption', '').strip()
-        
-        # If no caption provided, we'll generate one in the view
-        return caption
     
     def clean(self):
         cleaned_data = super().clean()
@@ -852,19 +990,17 @@ class QuickImportForm(forms.Form):
         return cleaned_data
     
     def get_detected_platform(self):
-        """Helper to get detected platform"""
         return self.cleaned_data.get('detected_platform')
     
     def has_existing_activity(self):
-        """Check if day already has content"""
         return hasattr(self, 'existing_activity')
     
     def get_existing_activity(self):
-        """Get existing activity if any"""
         return getattr(self, 'existing_activity', None)
 
+
 # ============================================================================
-# SOCIAL CONNECTION FORMS
+# SOCIAL CONNECTION FORMS - KEPT
 # ============================================================================
 
 class SocialConnectForm(forms.Form):
@@ -909,7 +1045,7 @@ class SocialSettingsForm(forms.ModelForm):
 
 
 # ============================================================================
-# COMMENT FORMS
+# COMMENT FORMS - KEPT
 # ============================================================================
 
 class CommentForm(forms.ModelForm):
@@ -930,87 +1066,16 @@ class CommentForm(forms.ModelForm):
 
 
 # ============================================================================
-# DONATION FORMS
+# SEARCH FORMS - KEPT
 # ============================================================================
 
-class DonationForm(forms.ModelForm):
-    """Make a donation to a journey"""
-    
-    amount = forms.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': '25.00',
-            'step': '1.00',
-            'min': 1
-        })
-    )
-    
-    donor_name = forms.CharField(
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Your name (optional)'
-        })
-    )
-    
-    donor_email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'your@email.com (for receipt)'
-        })
-    )
-    
-    message = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Leave a message of support...',
-            'rows': 3
-        })
-    )
-    
-    anonymous = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    class Meta:
-        model = Donation
-        fields = ['amount', 'donor_name', 'donor_email', 'message']
-    
-    def clean_amount(self):
-        amount = self.cleaned_data.get('amount')
-        if amount < 1:
-            raise ValidationError('Minimum donation is $1.')
-        return amount
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        
-        # If anonymous, clear donor name
-        if cleaned_data.get('anonymous'):
-            cleaned_data['donor_name'] = 'Anonymous'
-        
-        return cleaned_data
-
-
-# ============================================================================
-# SEARCH FORMS
-# ============================================================================
 class JourneySearchForm(forms.Form):
-    """Search and filter journeys"""
+    """Search and filter journeys - social-first"""
     
     SORT_CHOICES = [
         ('-created_at', 'Newest'),
         ('-view_count', 'Most Viewed'),
+        ('-get_follower_count', 'Most Followed'),
         ('title', 'Title A-Z'),
     ]
     
@@ -1038,13 +1103,6 @@ class JourneySearchForm(forms.Form):
         })
     )
     
-    funding_enabled = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
     sort = forms.ChoiceField(
         choices=SORT_CHOICES,
         required=False,
@@ -1054,8 +1112,9 @@ class JourneySearchForm(forms.Form):
         })
     )
 
+
 # ============================================================================
-# REPORT FORMS
+# REPORT FORMS - KEPT
 # ============================================================================
 
 class ReportForm(forms.ModelForm):
@@ -1084,119 +1143,7 @@ class ReportForm(forms.ModelForm):
 
 
 # ============================================================================
-# POST-JOURNEY PRODUCT FORMS
-# ============================================================================
-
-class PostJourneyProductForm(forms.ModelForm):
-    """Create a post-journey product"""
-    
-    title = forms.CharField(
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'e.g., Complete 30-Day Blueprint'
-        })
-    )
-    
-    description = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'What does this product include?',
-            'rows': 4
-        })
-    )
-    
-    price = forms.DecimalField(
-        max_digits=6,
-        decimal_places=2,
-        min_value=0.01,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': '29.99',
-            'step': '0.01',
-            'min': 0.01
-        })
-    )
-    
-    product_type = forms.ChoiceField(
-        choices=PostJourneyProduct.PRODUCT_TYPES,
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-            'data-trigger': 'product-type-change'
-        })
-    )
-    
-    pdf_file = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'post_journey_pdfs',
-            'resource_type': 'raw'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': '.pdf'
-        })
-    )
-    
-    video_file = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'post_journey_videos',
-            'resource_type': 'video'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'video/*'
-        })
-    )
-    
-    coaching_calendar_link = forms.URLField(
-        required=False,
-        widget=forms.URLInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'https://calendly.com/your-link'
-        })
-    )
-    
-    coaching_duration = forms.IntegerField(
-        min_value=15,
-        initial=60,
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'min': 15,
-            'step': 15
-        })
-    )
-    
-    class Meta:
-        model = PostJourneyProduct
-        fields = [
-            'title', 'description', 'price', 'product_type',
-            'pdf_file', 'video_file', 'coaching_calendar_link', 'coaching_duration'
-        ]
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        product_type = cleaned_data.get('product_type')
-        
-        if product_type == 'blueprint' and not cleaned_data.get('pdf_file'):
-            self.add_error('pdf_file', 'PDF file is required for blueprint products.')
-        
-        if product_type == 'behind_scenes' and not cleaned_data.get('video_file'):
-            self.add_error('video_file', 'Video file is required for behind the scenes products.')
-        
-        if product_type == 'coaching' and not cleaned_data.get('coaching_calendar_link'):
-            self.add_error('coaching_calendar_link', 'Calendar link is required for coaching products.')
-        
-        return cleaned_data
-
-
-
-# ============================================================================
-# CONTACT / SUPPORT FORMS
+# CONTACT / SUPPORT FORMS - KEPT
 # ============================================================================
 
 class ContactForm(forms.Form):
@@ -1217,11 +1164,16 @@ class ContactForm(forms.Form):
         })
     )
     
-    subject = forms.CharField(
-        max_length=200,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Subject'
+    subject = forms.ChoiceField(
+        choices=[
+            ('general', 'General Question'),
+            ('support', 'Technical Support'),
+            ('import', 'Content Import Issue'),
+            ('social', 'Social Media Integration'),
+            ('journey', 'Journey Help'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'form-select'
         })
     )
     
@@ -1243,12 +1195,23 @@ class NewsletterSignupForm(forms.Form):
             'placeholder': 'your@email.com'
         })
     )
-    
-    name = forms.CharField(
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Your name (optional)'
-        })
-    )
+
+
+# ============================================================================
+# COMMENTED OUT / REMOVED (Not Social-First Focused)
+# ============================================================================
+
+"""
+# REMOVED: DonationForm - Not core to social-first
+class DonationForm(forms.ModelForm):
+    ...
+
+# REMOVED: PostJourneyProductForm - Not core to social-first
+class PostJourneyProductForm(forms.ModelForm):
+    ...
+
+# REMOVED: Funding-related fields from JourneyForm
+'funding_enabled', 'funding_goal', 'funding_description' removed
+
+# REMOVED: paypal_email from ProfileForm
+"""

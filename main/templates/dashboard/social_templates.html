@@ -1,0 +1,750 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Social Templates - {{ journey.title }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .templates-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 24px 20px 40px;
+    }
+    
+    /* Header */
+    .templates-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .back-btn {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-secondary);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-primary);
+        font-size: 18px;
+        transition: all 0.2s;
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+    
+    .back-btn:hover {
+        background: var(--bg-tertiary);
+        transform: translateX(-2px);
+    }
+    
+    .templates-title {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .templates-title h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 2px;
+        color: var(--text-primary);
+    }
+    
+    .templates-title p {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+    
+    /* Info Card */
+    .info-card {
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .info-card i {
+        color: var(--accent);
+        font-size: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .info-card p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .info-card code {
+        background: var(--bg-primary);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: var(--text-primary);
+    }
+    
+    /* Template List */
+    .template-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .template-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s;
+    }
+    
+    .template-item:hover {
+        border-color: var(--accent);
+    }
+    
+    .template-item .platform-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    .template-item .platform-icon.tiktok { background: rgba(0, 242, 234, 0.1); color: #00f2ea; }
+    .template-item .platform-icon.instagram { background: rgba(220, 39, 67, 0.1); color: #dc2743; }
+    .template-item .platform-icon.youtube { background: rgba(255, 0, 0, 0.1); color: #ff0000; }
+    .template-item .platform-icon.twitter { background: rgba(29, 161, 242, 0.1); color: #1DA1F2; }
+    .template-item .platform-icon.facebook { background: rgba(24, 119, 242, 0.1); color: #1877f2; }
+    .template-item .platform-icon.linkedin { background: rgba(10, 102, 194, 0.1); color: #0a66c2; }
+    
+    .template-item .template-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .template-item .template-platform {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .template-item .template-preview {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+        word-break: break-word;
+    }
+    
+    .template-item .template-preview .placeholder {
+        color: var(--accent);
+        font-weight: 500;
+    }
+    
+    .template-item .template-status {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+    }
+    
+    .template-item .template-status.on {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+    
+    .template-item .template-status.off {
+        background: rgba(100, 116, 139, 0.1);
+        color: #64748b;
+    }
+    
+    .template-item .template-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    
+    .template-item .template-actions button,
+    .template-item .template-actions a {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .template-item .template-actions button:hover,
+    .template-item .template-actions a:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-color: var(--accent);
+    }
+    
+    .template-item .template-actions button.delete:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.05);
+    }
+    
+    /* Create/Edit Form */
+    .template-form-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    
+    .template-form-card .form-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-primary);
+    }
+    
+    .template-form-card .form-title i {
+        color: var(--accent);
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: var(--text-secondary);
+    }
+    
+    .form-group select,
+    .form-group textarea,
+    .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+    
+    .form-group select:focus,
+    .form-group textarea:focus,
+    .form-group input:focus {
+        border-color: var(--accent);
+    }
+    
+    .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: monospace;
+        font-size: 13px;
+    }
+    
+    .form-group textarea::placeholder {
+        font-family: inherit;
+        color: var(--text-muted);
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .form-hint code {
+        background: var(--bg-secondary);
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 0;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    
+    .checkbox-group label {
+        margin-bottom: 0;
+        cursor: pointer;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-primary {
+        padding: 10px 24px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-primary:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+    }
+    
+    .btn-secondary {
+        padding: 10px 24px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+    
+    .btn-secondary:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    /* Placeholder Helpers */
+    .placeholder-helpers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    
+    .placeholder-helper {
+        padding: 4px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: monospace;
+    }
+    
+    .placeholder-helper:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    /* Preview Section */
+    .preview-section {
+        margin-top: 16px;
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .preview-section .preview-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    
+    .preview-section .preview-content {
+        font-size: 14px;
+        color: var(--text-primary);
+        word-break: break-word;
+    }
+    
+    .preview-section .preview-content .highlight {
+        color: var(--accent);
+        font-weight: 500;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        background: var(--card-bg);
+        border: 1px dashed var(--border-color);
+        border-radius: 16px;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: var(--text-muted);
+        opacity: 0.4;
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 600px) {
+        .templates-container {
+            padding: 16px 12px 32px;
+        }
+        
+        .template-item {
+            flex-wrap: wrap;
+            padding: 14px 16px;
+        }
+        
+        .template-item .template-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+        
+        .template-form-card {
+            padding: 18px 16px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .info-card {
+            flex-direction: column;
+            padding: 14px 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="templates-container">
+    
+    {# Header #}
+    <div class="templates-header">
+        <a href="{% url 'journey_content' slug=journey.slug %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="templates-title">
+            <h1>📤 Social Templates</h1>
+            <p>Auto-post new content to your social media accounts</p>
+        </div>
+    </div>
+    
+    {# Info Card #}
+    <div class="info-card">
+        <i class="fas fa-info-circle"></i>
+        <p>
+            Create templates for each platform. Use <code>{day}</code>, <code>{title}</code>, 
+            <code>{url}</code>, and <code>{content}</code> as placeholders. 
+            When auto-post is on, new updates will be posted automatically.
+        </p>
+    </div>
+    
+    {# Template List #}
+    {% if templates %}
+    <div class="template-list">
+        {% for template in templates %}
+        <div class="template-item">
+            <div class="platform-icon {{ template.platform }}">
+                <i class="fab fa-{% if template.platform == 'twitter' %}x-twitter{% elif template.platform == 'tiktok' %}tiktok{% elif template.platform == 'youtube' %}youtube{% elif template.platform == 'instagram' %}instagram{% elif template.platform == 'facebook' %}facebook{% elif template.platform == 'linkedin' %}linkedin{% else %}link{% endif %}"></i>
+            </div>
+            <div class="template-info">
+                <div class="template-platform">{{ template.get_platform_display }}</div>
+                <div class="template-preview">
+                    {{ template.template_text|truncatechars:60 }}
+                </div>
+            </div>
+            <span class="template-status {% if template.auto_post %}on{% else %}off{% endif %}">
+                {% if template.auto_post %}Auto On{% else %}Auto Off{% endif %}
+            </span>
+            <div class="template-actions">
+                <button onclick="editTemplate({{ template.id }})" title="Edit">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <form method="post" action="{% url 'delete_social_template' template.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="delete" onclick="return confirm('Delete this template?')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {# Create/Edit Form #}
+    <div class="template-form-card" id="templateForm">
+        <div class="form-title">
+            <i class="fas fa-plus-circle"></i>
+            <span id="formTitle">Create Template</span>
+        </div>
+        
+        <form method="post" id="templateFormElement">
+            {% csrf_token %}
+            <input type="hidden" name="template_id" id="templateId">
+            
+            <div class="form-group">
+                <label for="platform">Platform</label>
+                <select name="platform" id="platform" required>
+                    <option value="">Select platform</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="twitter">Twitter/X</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="linkedin">LinkedIn</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="templateText">Template Text</label>
+                <textarea name="template_text" id="templateText" 
+                          placeholder='Day {day} of {title}! {content}
+Follow my journey: {url}'
+                          rows="4" required></textarea>
+                <div class="form-hint">
+                    <span><i class="fas fa-info-circle"></i> Max 280 characters for Twitter/X</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="placeholder-helpers">
+                    <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">Insert:</span>
+                    <span class="placeholder-helper" onclick="insertPlaceholder('{day}')">{day}</span>
+                    <span class="placeholder-helper" onclick="insertPlaceholder('{title}')">{title}</span>
+                    <span class="placeholder-helper" onclick="insertPlaceholder('{url}')">{url}</span>
+                    <span class="placeholder-helper" onclick="insertPlaceholder('{content}')">{content}</span>
+                </div>
+            </div>
+            
+            {# Preview #}
+            <div class="preview-section" id="previewSection">
+                <div class="preview-label"><i class="fas fa-eye"></i> Preview</div>
+                <div class="preview-content" id="previewContent">
+                    <span style="color:var(--text-muted);">Enter template text to see preview</span>
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" name="auto_post" id="autoPost">
+                <label for="autoPost">🚀 Auto-post new content</label>
+            </div>
+            <p class="form-hint" style="margin-top:-4px;margin-bottom:16px;">
+                When enabled, new activities will be automatically posted to this platform
+            </p>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="resetForm()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> <span id="submitText">Create Template</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    {# Empty State #}
+    {% if not templates %}
+    <div class="empty-state">
+        <i class="fas fa-file-alt"></i>
+        <h3>No templates yet</h3>
+        <p>Create your first template to start auto-posting to social media.</p>
+    </div>
+    {% endif %}
+    
+</div>
+
+<script>
+    const templateForm = document.getElementById('templateFormElement');
+    const templateText = document.getElementById('templateText');
+    const platformSelect = document.getElementById('platform');
+    const autoPostCheck = document.getElementById('autoPost');
+    const previewContent = document.getElementById('previewContent');
+    const formTitle = document.getElementById('formTitle');
+    const submitText = document.getElementById('submitText');
+    const templateIdInput = document.getElementById('templateId');
+    
+    // Placeholders for preview
+    const sampleData = {
+        day: 5,
+        title: '30 Days of Coding',
+        url: 'https://rallynex.com/j/coding-30days',
+        content: 'Finally understood recursion! 🧠'
+    };
+    
+    // Preview rendering
+    function renderPreview() {
+        let text = templateText.value || 'Enter template text to see preview';
+        let rendered = text;
+        
+        if (text) {
+            rendered = text
+                .replace(/{day}/g, `<span class="highlight">${sampleData.day}</span>`)
+                .replace(/{title}/g, `<span class="highlight">${sampleData.title}</span>`)
+                .replace(/{url}/g, `<span class="highlight">${sampleData.url}</span>`)
+                .replace(/{content}/g, `<span class="highlight">${sampleData.content}</span>`);
+        }
+        
+        previewContent.innerHTML = rendered || '<span style="color:var(--text-muted);">Enter template text to see preview</span>';
+    }
+    
+    templateText.addEventListener('input', renderPreview);
+    renderPreview();
+    
+    // Insert placeholder at cursor
+    function insertPlaceholder(placeholder) {
+        const start = templateText.selectionStart;
+        const end = templateText.selectionEnd;
+        const text = templateText.value;
+        templateText.value = text.substring(0, start) + placeholder + text.substring(end);
+        templateText.focus();
+        templateText.selectionStart = templateText.selectionEnd = start + placeholder.length;
+        renderPreview();
+    }
+    
+    // Edit template
+    function editTemplate(id) {
+        fetch(`/api/social-template/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    formTitle.textContent = 'Edit Template';
+                    submitText.textContent = 'Update Template';
+                    templateIdInput.value = data.id;
+                    platformSelect.value = data.platform;
+                    templateText.value = data.template_text;
+                    autoPostCheck.checked = data.auto_post;
+                    renderPreview();
+                    document.getElementById('templateForm').scrollIntoView({ behavior: 'smooth' });
+                }
+            })
+            .catch(() => {
+                // Fallback: reload page with query param
+                window.location.href = `?edit=${id}`;
+            });
+    }
+    
+    // Reset form
+    function resetForm() {
+        formTitle.textContent = 'Create Template';
+        submitText.textContent = 'Create Template';
+        templateIdInput.value = '';
+        platformSelect.value = '';
+        templateText.value = '';
+        autoPostCheck.checked = false;
+        renderPreview();
+    }
+    
+    // Check for edit parameter on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+            editTemplate(editId);
+        }
+    });
+    
+    // Form submission
+    templateForm.addEventListener('submit', function(e) {
+        const text = templateText.value.trim();
+        const platform = platformSelect.value;
+        
+        if (!platform) {
+            e.preventDefault();
+            alert('Please select a platform.');
+            return;
+        }
+        
+        if (!text) {
+            e.preventDefault();
+            alert('Please enter template text.');
+            return;
+        }
+        
+        // Max length warning for Twitter
+        if (platform === 'twitter' && text.length > 280) {
+            if (!confirm(`⚠️ This template is ${text.length} characters (max 280 for Twitter). Continue?`)) {
+                e.preventDefault();
+                return;
+            }
+        }
+        
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    });
+</script>
+
+{% endblock %}

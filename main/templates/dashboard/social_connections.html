@@ -6,430 +6,357 @@
 {% block extra_css %}
 <style>
     .connections-container {
-        max-width: 700px;
+        max-width: 720px;
         margin: 0 auto;
-        padding: 30px 20px;
-        min-height: calc(100vh - 200px);
+        padding: 24px 16px 60px;
     }
     
     .connections-header {
-        margin-bottom: 30px;
+        text-align: center;
+        margin-bottom: 32px;
     }
     
-    .connections-title {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        color: var(--text-primary);
-    }
-    
-    .connections-subtitle {
-        color: var(--text-secondary);
-        font-size: 14px;
-    }
-    
-    /* Platform Cards */
-    .platform-list {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        margin-bottom: 40px;
-    }
-    
-    .platform-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
-        padding: 24px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        transition: all 0.3s ease;
-        flex-wrap: wrap;
-    }
-    
-    .platform-card:hover {
-        transform: translateY(-2px);
-        border-color: var(--accent);
-    }
-    
-    .platform-card.connected {
-        border-left: 3px solid #22c55e;
-        border-left-width: 3px;
-        border-left-style: solid;
-        border-left-color: #22c55e;
-    }
-    
-    .platform-icon {
+    .connections-header .icon-circle {
         width: 64px;
         height: 64px;
-        border-radius: 16px;
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 32px;
-        flex-shrink: 0;
+        margin: 0 auto 16px;
     }
     
-    .platform-icon.tiktok {
-        background: linear-gradient(135deg, #000000, #1a1a1a);
-        color: #fff;
-        border: 1px solid var(--border-color);
-    }
-    
-    .platform-icon.instagram {
-        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-        color: #fff;
-    }
-    
-    .platform-icon.youtube {
-        background: #ff0000;
-        color: #fff;
-    }
-    
-    .platform-info {
-        flex: 1;
-        min-width: 180px;
-    }
-    
-    .platform-name {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        color: var(--text-primary);
-    }
-    
-    .platform-username {
-        color: var(--text-secondary);
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-    
-    .connection-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-    
-    .status-connected {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.3);
-    }
-    
-    .status-disconnected {
-        background: rgba(102, 102, 102, 0.1);
-        color: var(--text-muted);
-        border: 1px solid rgba(102, 102, 102, 0.3);
-    }
-    
-    .platform-actions {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-    }
-    
-    /* Settings Panel */
-    .settings-panel {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        margin-top: 16px;
-        padding: 20px;
-        display: none;
-    }
-    
-    .settings-panel.active {
-        display: block;
-        animation: slideDown 0.3s ease;
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .settings-group {
-        margin-bottom: 20px;
-    }
-    
-    .settings-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 8px;
-        color: var(--text-secondary);
-    }
-    
-    .settings-group input {
-        width: 100%;
-        padding: 12px 16px;
-        background: var(--bg-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        color: var(--text-primary);
-        font-size: 14px;
-        transition: border-color 0.2s;
-    }
-    
-    .settings-group input:focus {
-        outline: none;
-        border-color: var(--accent);
-    }
-    
-    .settings-group input::placeholder {
-        color: var(--text-muted);
-    }
-    
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 0;
-    }
-    
-    .checkbox-group input {
-        width: 20px;
-        height: 20px;
-        accent-color: var(--accent);
-        cursor: pointer;
-    }
-    
-    .checkbox-group label {
-        margin-bottom: 0;
-        color: var(--text-primary);
-        cursor: pointer;
-    }
-    
-    .settings-hint {
-        color: var(--text-muted);
-        font-size: 12px;
-        margin-top: 6px;
-    }
-    
-    /* Info Box */
-    .info-box {
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 16px;
-        padding: 20px;
-        margin-top: 30px;
-    }
-    
-    .info-box h4 {
-        font-size: 16px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--text-primary);
-    }
-    
-    .info-box h4 i {
+    .connections-header .icon-circle i {
+        font-size: 28px;
         color: var(--accent);
     }
     
-    .info-box p {
-        color: var(--text-secondary);
-        font-size: 14px;
-        line-height: 1.6;
-        margin-bottom: 8px;
-    }
-    
-    .info-box ul {
-        color: var(--text-secondary);
-        font-size: 14px;
-        padding-left: 20px;
-        line-height: 1.8;
-        margin: 0;
-    }
-    
-    .info-box li {
+    .connections-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
         margin-bottom: 4px;
     }
     
-    .info-box li:last-child {
-        margin-bottom: 0;
+    .connections-header p {
+        font-size: 14px;
+        color: var(--text-secondary);
     }
     
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .modal-overlay.active {
+    .connections-grid {
         display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
     }
     
-    .modal-card {
+    .connection-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 20px;
-        padding: 32px;
-        max-width: 400px;
-        width: 90%;
-        text-align: center;
-        animation: modalSlideIn 0.3s ease;
-    }
-    
-    @keyframes modalSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .modal-card i {
-        font-size: 48px;
-        color: #ef4444;
-        margin-bottom: 16px;
-    }
-    
-    .modal-card h3 {
-        font-size: 20px;
-        margin-bottom: 12px;
-        color: var(--text-primary);
-    }
-    
-    .modal-card p {
-        color: var(--text-secondary);
-        margin-bottom: 24px;
-        line-height: 1.5;
-    }
-    
-    .modal-actions {
+        border-radius: 16px;
+        padding: 16px 20px;
         display: flex;
-        gap: 12px;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .connection-card:hover {
+        border-color: var(--accent);
+        transform: translateX(4px);
+    }
+    
+    .connection-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
         justify-content: center;
+        flex-shrink: 0;
+        font-size: 22px;
+    }
+    
+    .connection-icon.tiktok { background: rgba(0, 242, 234, 0.1); color: #00f2ea; }
+    .connection-icon.instagram { background: rgba(220, 39, 67, 0.1); color: #dc2743; }
+    .connection-icon.youtube { background: rgba(255, 0, 0, 0.1); color: #ff0000; }
+    .connection-icon.facebook { background: rgba(24, 119, 242, 0.1); color: #1877f2; }
+    .connection-icon.twitter { background: rgba(29, 161, 242, 0.1); color: #1DA1F2; }
+    .connection-icon.linkedin { background: rgba(10, 102, 194, 0.1); color: #0a66c2; }
+    .connection-icon.disabled { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+    
+    .connection-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .connection-info .platform-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
         flex-wrap: wrap;
     }
     
-    /* Coming Soon Card */
-    .platform-card.coming-soon {
-        opacity: 0.7;
-        cursor: not-allowed;
+    .connection-info .platform-name .status-badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
-    .platform-card.coming-soon:hover {
-        transform: none;
-        border-color: var(--border-color);
-    }
-    
-    /* Success message */
-    .success-message {
+    .connection-info .platform-name .status-badge.connected {
         background: rgba(34, 197, 94, 0.1);
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        border-radius: 12px;
-        padding: 14px 16px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
         color: #22c55e;
-        animation: slideIn 0.3s ease;
     }
     
-    .success-message i {
-        font-size: 18px;
+    .connection-info .platform-name .status-badge.disconnected {
+        background: rgba(100, 116, 139, 0.1);
+        color: #64748b;
     }
     
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .connection-info .platform-username {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 2px;
     }
     
-    .btn-icon {
-        width: 40px;
-        height: 40px;
-        background: var(--bg-secondary);
-        border-radius: 10px;
+    .connection-info .platform-username strong {
+        color: var(--text-primary);
+    }
+    
+    .connection-info .platform-meta {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .connection-info .platform-meta span {
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: var(--text-secondary);
+        gap: 4px;
+    }
+    
+    .connection-actions {
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+    
+    .connection-actions .btn {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
         transition: all 0.2s;
         border: none;
-        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        white-space: nowrap;
     }
     
-    .btn-icon:hover {
+    .btn-connect {
+        background: var(--accent);
+        color: #fff;
+    }
+    
+    .btn-connect:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+    }
+    
+    .btn-disconnect {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
+    .btn-disconnect:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    
+    .btn-settings {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+    }
+    
+    .btn-settings:hover {
         background: var(--bg-tertiary);
         color: var(--text-primary);
-        transform: scale(1.05);
     }
     
-    @media (max-width: 768px) {
-        .connections-container {
-            padding: 20px 16px;
+    .btn-import {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+    
+    .btn-import:hover {
+        background: rgba(59, 130, 246, 0.2);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        background: var(--card-bg);
+        border: 1px dashed var(--border-color);
+        border-radius: 16px;
+        margin-top: 16px;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: var(--text-muted);
+        opacity: 0.5;
+        margin-bottom: 16px;
+        display: block;
+    }
+    
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .empty-state .platform-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .empty-state .platform-grid .platform-option {
+        padding: 16px 12px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .empty-state .platform-grid .platform-option:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+    
+    .empty-state .platform-grid .platform-option i {
+        font-size: 24px;
+        margin-bottom: 4px;
+    }
+    
+    .empty-state .platform-grid .platform-option span {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .empty-state .platform-grid .platform-option .coming-soon {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+    }
+    
+    .import-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 20px 0;
+    }
+    
+    .import-stat {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+    }
+    
+    .import-stat .value {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .import-stat .label {
+        font-size: 11px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+    
+    @media (max-width: 600px) {
+        .connection-card {
+            flex-wrap: wrap;
+            padding: 14px 16px;
         }
         
-        .connections-title {
-            font-size: 24px;
-        }
-        
-        .platform-card {
-            padding: 20px;
-            gap: 16px;
-        }
-        
-        .platform-icon {
-            width: 48px;
-            height: 48px;
-            font-size: 24px;
-        }
-        
-        .platform-name {
-            font-size: 18px;
-        }
-        
-        .info-box {
-            padding: 16px;
-        }
-        
-        .modal-card {
-            padding: 24px 20px;
-        }
-        
-        .modal-actions {
-            flex-direction: column;
-        }
-        
-        .modal-actions .btn {
+        .connection-actions {
             width: 100%;
+            justify-content: flex-start;
+            margin-top: 4px;
+        }
+        
+        .connection-actions .btn {
+            flex: 1;
+            justify-content: center;
+            font-size: 11px;
+            padding: 8px 12px;
+        }
+        
+        .import-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .import-stat {
+            padding: 10px;
+        }
+        
+        .import-stat .value {
+            font-size: 16px;
+        }
+    }
+    
+    @media (max-width: 420px) {
+        .connections-header h1 {
+            font-size: 20px;
+        }
+        
+        .connection-info .platform-name {
+            font-size: 13px;
+        }
+        
+        .empty-state .platform-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 </style>
@@ -439,311 +366,235 @@
 
 <div class="connections-container">
     
-    {# Header #}
     <div class="connections-header">
-        <h1 class="connections-title">
-            <i class="fas fa-share-alt"></i> Social Connections
-        </h1>
-        <p class="connections-subtitle">Connect your social accounts to auto-import content into your journeys</p>
+        <div class="icon-circle">
+            <i class="fas fa-share-alt"></i>
+        </div>
+        <h1>🔗 Social Connections</h1>
+        <p>Connect your social accounts to auto-import content into your journeys</p>
     </div>
     
     {% if messages %}
         {% for message in messages %}
-            <div class="success-message">
-                <i class="fas fa-check-circle"></i>
-                <span>{{ message }}</span>
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
             </div>
         {% endfor %}
     {% endif %}
     
-    {# Platform List #}
-    <div class="platform-list">
-        
-        {# TikTok #}
-        <div class="platform-card {% if tiktok_connection %}connected{% endif %}" id="tiktokCard">
-            <div class="platform-icon tiktok">
-                <i class="fab fa-tiktok"></i>
-            </div>
-            <div class="platform-info">
-                <div class="platform-name">
-                    TikTok
-                    {% if tiktok_connection %}
-                    <span class="connection-status status-connected">
-                        <i class="fas fa-check-circle"></i> Connected
-                    </span>
-                    {% else %}
-                    <span class="connection-status status-disconnected">
-                        <i class="fas fa-plug"></i> Not Connected
-                    </span>
-                    {% endif %}
-                </div>
-                {% if tiktok_connection %}
-                <p class="platform-username">
-                    <i class="fas fa-user-circle"></i> @{{ tiktok_connection.platform_username }}
-                </p>
-                {% else %}
-                <p class="platform-username">Connect to auto-import your TikToks into your journeys</p>
-                {% endif %}
-            </div>
-            <div class="platform-actions">
-                {% if tiktok_connection %}
-                <button class="btn-icon" onclick="toggleSettings('tiktok')" title="Settings">
-                    <i class="fas fa-cog"></i>
-                </button>
-                <button class="btn-icon" onclick="showDisconnectModal('tiktok', {{ tiktok_connection.id }})" title="Disconnect">
-                    <i class="fas fa-unlink"></i>
-                </button>
-                {% else %}
-                <a href="{% url 'connect_social' platform='tiktok' %}" class="btn btn-primary">
-                    <i class="fab fa-tiktok"></i> Connect
-                </a>
-                {% endif %}
-            </div>
+    <!-- Import Stats -->
+    <div class="import-stats">
+        <div class="import-stat">
+            <div class="value">{{ connections.count }}</div>
+            <div class="label">Connected Accounts</div>
         </div>
-        
-        {# TikTok Settings Panel #}
-        {% if tiktok_connection %}
-        <div class="settings-panel" id="tiktokSettings">
-            <form method="post" action="{% url 'social_connections' %}">
-                {% csrf_token %}
-                <input type="hidden" name="connection_id" value="{{ tiktok_connection.id }}">
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" name="auto_import" id="tiktok_auto_import" 
-                           {% if tiktok_connection.auto_import %}checked{% endif %}>
-                    <label for="tiktok_auto_import">
-                        <i class="fas fa-magic"></i> Enable auto-import from TikTok
-                    </label>
-                </div>
-                
-                <div class="settings-group">
-                    <label for="tiktok_hashtag">
-                        <i class="fas fa-hashtag"></i> Import Hashtag
-                    </label>
-                    <input type="text" name="import_hashtag" id="tiktok_hashtag" 
-                           value="{{ tiktok_connection.import_hashtag }}"
-                           placeholder="#MyJourney">
-                    <div class="settings-hint">
-                        <i class="fas fa-info-circle"></i> We'll import TikTok posts that contain this hashtag
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Settings
-                </button>
-            </form>
+        <div class="import-stat">
+            <div class="value">{{ total_imported|default:0 }}</div>
+            <div class="label">Total Imported</div>
         </div>
-        {% endif %}
-        
-        {# Instagram #}
-        <div class="platform-card {% if instagram_connection %}connected{% endif %}" id="instagramCard">
-            <div class="platform-icon instagram">
-                <i class="fab fa-instagram"></i>
-            </div>
-            <div class="platform-info">
-                <div class="platform-name">
-                    Instagram
-                    {% if instagram_connection %}
-                    <span class="connection-status status-connected">
-                        <i class="fas fa-check-circle"></i> Connected
-                    </span>
-                    {% else %}
-                    <span class="connection-status status-disconnected">
-                        <i class="fas fa-plug"></i> Not Connected
-                    </span>
-                    {% endif %}
-                </div>
-                {% if instagram_connection %}
-                <p class="platform-username">
-                    <i class="fas fa-user-circle"></i> @{{ instagram_connection.platform_username }}
-                </p>
-                {% else %}
-                <p class="platform-username">Connect to auto-import your Instagram posts</p>
-                {% endif %}
-            </div>
-            <div class="platform-actions">
-                {% if instagram_connection %}
-                <button class="btn-icon" onclick="toggleSettings('instagram')" title="Settings">
-                    <i class="fas fa-cog"></i>
-                </button>
-                <button class="btn-icon" onclick="showDisconnectModal('instagram', {{ instagram_connection.id }})" title="Disconnect">
-                    <i class="fas fa-unlink"></i>
-                </button>
-                {% else %}
-                <a href="{% url 'connect_social' platform='instagram' %}" class="btn btn-primary">
-                    <i class="fab fa-instagram"></i> Connect
-                </a>
-                {% endif %}
-            </div>
+        <div class="import-stat">
+            <div class="value">{{ pending_imports|default:0 }}</div>
+            <div class="label">Pending Review</div>
         </div>
-        
-        {# Instagram Settings Panel #}
-        {% if instagram_connection %}
-        <div class="settings-panel" id="instagramSettings">
-            <form method="post" action="{% url 'social_connections' %}">
-                {% csrf_token %}
-                <input type="hidden" name="connection_id" value="{{ instagram_connection.id }}">
-                
-                <div class="checkbox-group">
-                    <input type="checkbox" name="auto_import" id="instagram_auto_import" 
-                           {% if instagram_connection.auto_import %}checked{% endif %}>
-                    <label for="instagram_auto_import">
-                        <i class="fas fa-magic"></i> Enable auto-import from Instagram
-                    </label>
-                </div>
-                
-                <div class="settings-group">
-                    <label for="instagram_hashtag">
-                        <i class="fas fa-hashtag"></i> Import Hashtag
-                    </label>
-                    <input type="text" name="import_hashtag" id="instagram_hashtag" 
-                           value="{{ instagram_connection.import_hashtag }}"
-                           placeholder="#MyJourney">
-                    <div class="settings-hint">
-                        <i class="fas fa-info-circle"></i> We'll import Instagram posts that contain this hashtag
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Settings
-                </button>
-            </form>
-        </div>
-        {% endif %}
-        
-        {# YouTube (Coming Soon) #}
-        <div class="platform-card coming-soon" style="opacity: 0.6; cursor: not-allowed;">
-            <div class="platform-icon youtube">
-                <i class="fab fa-youtube"></i>
-            </div>
-            <div class="platform-info">
-                <div class="platform-name">
-                    YouTube
-                    <span class="connection-status status-disconnected">
-                        <i class="fas fa-clock"></i> Coming Soon
-                    </span>
-                </div>
-                <p class="platform-username">Connect your YouTube channel - Coming in a future update</p>
-            </div>
-            <div class="platform-actions">
-                <button class="btn btn-outline" disabled>
-                    <i class="fab fa-youtube"></i> Soon
-                </button>
-            </div>
-        </div>
-        
     </div>
     
-    {# Info Box #}
-    <div class="info-box">
-        <h4>
-            <i class="fas fa-lightbulb"></i>
-            How Auto-Import Works
+    {% if connections %}
+    <div class="connections-grid">
+        {% for connection in connections %}
+        <div class="connection-card">
+            <div class="connection-icon {{ connection.platform }}">
+                <i class="fab fa-{% if connection.platform == 'twitter' %}x-twitter{% else %}{{ connection.platform }}{% endif %}"></i>
+            </div>
+            <div class="connection-info">
+                <div class="platform-name">
+                    {{ connection.get_platform_display }}
+                    <span class="status-badge connected">
+                        <i class="fas fa-check-circle"></i> Connected
+                    </span>
+                </div>
+                <div class="platform-username">
+                    <i class="fas fa-at"></i> <strong>{{ connection.platform_username }}</strong>
+                </div>
+                <div class="platform-meta">
+                    <span><i class="fas fa-clock"></i> Connected {{ connection.connected_at|timesince }} ago</span>
+                    {% if connection.auto_import %}
+                    <span><i class="fas fa-sync-alt"></i> Auto-import: On</span>
+                    {% else %}
+                    <span><i class="fas fa-pause"></i> Auto-import: Off</span>
+                    {% endif %}
+                    {% if connection.import_hashtag %}
+                    <span><i class="fas fa-hashtag"></i> #{{ connection.import_hashtag }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="connection-actions">
+                <a href="{% url 'quick_import' %}?platform={{ connection.platform }}" class="btn btn-import">
+                    <i class="fas fa-cloud-upload-alt"></i> Import
+                </a>
+                <button class="btn btn-settings" onclick="showSettings({{ connection.id }})">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <form method="post" action="{% url 'disconnect_social' connection.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-disconnect" onclick="return confirm('Disconnect {{ connection.get_platform_display }}? Your imported content will remain.')">
+                        <i class="fas fa-unlink"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Quick Import from Connected Accounts -->
+    <div style="margin-top: 20px; padding: 16px 20px; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h4 style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">
+                    <i class="fas fa-bolt" style="color: var(--accent);"></i> Quick Import
+                </h4>
+                <p style="font-size: 12px; color: var(--text-secondary);">
+                    Paste any social link to import instantly
+                </p>
+            </div>
+            <a href="{% url 'quick_import' %}" class="btn btn-connect" style="padding: 10px 24px; border-radius: 30px; text-decoration: none;">
+                <i class="fas fa-arrow-right"></i> Import Now
+            </a>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-plug"></i>
+        <h3>No Social Accounts Connected</h3>
+        <p>Connect your social media accounts to automatically import your content into your journeys.</p>
+        
+        <div class="platform-grid">
+            <a href="{% url 'connect_social' 'tiktok' %}" class="platform-option">
+                <i class="fab fa-tiktok" style="color: #00f2ea;"></i>
+                <span>TikTok</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+            <a href="{% url 'connect_social' 'instagram' %}" class="platform-option">
+                <i class="fab fa-instagram" style="color: #dc2743;"></i>
+                <span>Instagram</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+            <a href="{% url 'connect_social' 'youtube' %}" class="platform-option">
+                <i class="fab fa-youtube" style="color: #ff0000;"></i>
+                <span>YouTube</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+            <a href="{% url 'connect_social' 'twitter' %}" class="platform-option">
+                <i class="fab fa-x-twitter" style="color: #1DA1F2;"></i>
+                <span>X/Twitter</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+            <a href="{% url 'connect_social' 'facebook' %}" class="platform-option">
+                <i class="fab fa-facebook" style="color: #1877f2;"></i>
+                <span>Facebook</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+            <a href="{% url 'connect_social' 'linkedin' %}" class="platform-option">
+                <i class="fab fa-linkedin" style="color: #0a66c2;"></i>
+                <span>LinkedIn</span>
+                <span class="coming-soon">Connect</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Info Section -->
+    <div style="margin-top: 24px; padding: 16px 20px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 12px;">
+        <h4 style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">
+            <i class="fas fa-lightbulb" style="color: var(--accent);"></i> How It Works
         </h4>
-        <p>Once connected, Rallynex will automatically detect new posts from your social accounts and bring them to your Import Queue.</p>
-        <ul>
-            <li>📱 Posts with your journey hashtag appear in the Import Queue</li>
-            <li>🤖 We'll try to detect the day number from your caption</li>
-            <li>✅ You can review and assign content before it goes live</li>
-            <li>🔒 Your data is secure and we never post on your behalf</li>
+        <ul style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px; margin: 0;">
+            <li>Connect your social accounts with one click</li>
+            <li>Auto-import posts into your chosen journey</li>
+            <li>Rallynex organizes them by day/milestone</li>
+            <li>Share your organized journey with followers</li>
         </ul>
     </div>
     
 </div>
 
-{# Disconnect Modal #}
-<div class="modal-overlay" id="disconnectModal">
-    <div class="modal-card">
-        <i class="fas fa-triangle-exclamation"></i>
-        <h3>Disconnect Account?</h3>
-        <p>Your previously imported content will remain, but new posts won't be imported until you reconnect.</p>
-        <div class="modal-actions">
-            <button class="btn-secondary" onclick="hideModal()">
-                <i class="fas fa-times"></i> Cancel
-            </button>
-            <form method="post" id="disconnectForm" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn-danger">
-                    <i class="fas fa-unlink"></i> Disconnect
-                </button>
-            </form>
-        </div>
+<!-- Settings Modal -->
+<div id="settingsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--card-bg); border-radius:20px; padding:32px; max-width:440px; width:90%; max-height:90vh; overflow-y:auto; position:relative;">
+        <button onclick="closeSettings()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:24px; color:var(--text-muted); cursor:pointer;">&times;</button>
+        <h3 style="font-size:18px; font-weight:700; color:var(--text-primary); margin-bottom:16px;">⚙️ Connection Settings</h3>
+        <form method="post" id="settingsForm">
+            {% csrf_token %}
+            <input type="hidden" name="connection_id" id="settingsConnectionId">
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                    <input type="checkbox" name="auto_import" id="settingsAutoImport" class="form-checkbox">
+                    <span style="font-size:14px; font-weight:500;">Auto-import new posts</span>
+                </label>
+                <p style="font-size:11px; color:var(--text-muted); margin-top:4px; margin-left:28px;">Automatically import new posts from this account</p>
+            </div>
+            <div class="form-group">
+                <label style="font-size:13px; font-weight:600; color:var(--text-secondary);">Filter by Hashtag</label>
+                <input type="text" name="import_hashtag" id="settingsHashtag" placeholder="#MyJourney" style="width:100%; padding:10px 14px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:10px; color:var(--text-primary); font-size:14px; outline:none; box-sizing:border-box; margin-top:4px;">
+                <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">Only import posts with this hashtag (optional)</p>
+            </div>
+            <button type="submit" style="width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:12px; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s;">Save Settings</button>
+        </form>
     </div>
 </div>
 
 <script>
-    function toggleSettings(platform) {
-        const panel = document.getElementById(platform + 'Settings');
-        if (panel) {
-            panel.classList.toggle('active');
-            
-            // Scroll to panel if becoming active
-            if (panel.classList.contains('active')) {
-                setTimeout(() => {
-                    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
-            }
-        }
-    }
-    
-    let currentConnectionId = null;
-    let currentPlatform = null;
-    
-    function showDisconnectModal(platform, connectionId) {
-        const modal = document.getElementById('disconnectModal');
-        const form = document.getElementById('disconnectForm');
+    function showSettings(connectionId) {
+        const modal = document.getElementById('settingsModal');
+        document.getElementById('settingsConnectionId').value = connectionId;
         
-        currentConnectionId = connectionId;
-        currentPlatform = platform;
+        // Fetch current settings via AJAX
+        fetch(`/api/social-settings/${connectionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('settingsAutoImport').checked = data.auto_import;
+                document.getElementById('settingsHashtag').value = data.import_hashtag || '';
+            })
+            .catch(() => {});
         
-        form.action = `/dashboard/social/${connectionId}/disconnect/`;
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        modal.style.display = 'flex';
     }
     
-    function hideModal() {
-        const modal = document.getElementById('disconnectModal');
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-        currentConnectionId = null;
-        currentPlatform = null;
+    function closeSettings() {
+        document.getElementById('settingsModal').style.display = 'none';
     }
     
-    // Close modal on background click
-    const modal = document.getElementById('disconnectModal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) hideModal();
-        });
-    }
-    
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            hideModal();
-        }
+    // Close modal on outside click
+    document.getElementById('settingsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSettings();
     });
     
-    // Auto-dismiss success messages
-    const successMessages = document.querySelectorAll('.success-message');
-    successMessages.forEach(message => {
-        setTimeout(() => {
-            message.style.opacity = '0';
-            setTimeout(() => {
-                if (message.parentNode) message.remove();
-            }, 300);
-        }, 3000);
-    });
-    
-    // Form submission loading state for settings forms
-    const settingsForms = document.querySelectorAll('.settings-panel form');
-    settingsForms.forEach(form => {
-        form.addEventListener('submit', function() {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    // Settings form submission
+    document.getElementById('settingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const connectionId = document.getElementById('settingsConnectionId').value;
+        const formData = new FormData(this);
+        
+        fetch(`/api/social-settings/${connectionId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeSettings();
+                location.reload();
+            } else {
+                alert('Error saving settings: ' + data.error);
+            }
+        })
+        .catch(() => {
+            alert('Error saving settings');
         });
     });
 </script>

@@ -579,6 +579,106 @@
     .stat-card .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
     .stat-card .label { font-size: 9px; color: var(--text-muted); }
     
+    /* ===== SOCIAL-FIRST ADDITIONS ===== */
+
+    /* Social source badge on thumbnails */
+    .social-source-badge {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: #fff;
+        z-index: 5;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .social-source-badge.tiktok { color: #00f2ea; }
+    .social-source-badge.instagram { color: #dc2743; }
+    .social-source-badge.youtube { color: #ff0000; }
+    .social-source-badge.twitter { color: #1DA1F2; }
+    .social-source-badge.facebook { color: #1877f2; }
+
+    /* Social share stats bar */
+    .social-share-bar {
+        display: flex;
+        gap: 16px;
+        padding: 12px 20px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .social-share-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    .social-share-item i { font-size: 14px; }
+    .social-share-item .count { font-weight: 700; color: var(--text-primary); }
+
+    /* "Imported from" badge on content */
+    .imported-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: var(--text-muted);
+        background: var(--bg-tertiary);
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+    .imported-badge i { font-size: 9px; }
+
+    /* Social CTA banner */
+    .social-cta-banner {
+        margin: 0 16px 16px;
+        padding: 14px 18px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .social-cta-banner .cta-text {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .social-cta-banner .cta-text strong {
+        color: var(--text-primary);
+    }
+    .social-cta-btn {
+        padding: 8px 20px;
+        border-radius: 30px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+    .social-cta-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+    }
+    
     .creator-prompt {
         display: inline-block;
         background: rgba(245, 158, 11, 0.15);
@@ -1257,6 +1357,24 @@
         background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
         z-index: 10;
     }
+    
+    /* Social engagement stats in modal */
+    .modal-social-stats {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 12px;
+        color: #aaa;
+        font-size: 12px;
+    }
+    .modal-social-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .modal-social-stats i {
+        font-size: 12px;
+    }
+    
     .modal-caption {
         color: #fff;
         font-size: 13px;
@@ -1401,6 +1519,53 @@
         </div>
     </div>
     
+    <!-- ===== SOCIAL SHARE STATS BAR ===== -->
+    <div class="social-share-bar">
+        <div class="social-share-item">
+            <i class="fab fa-twitter" style="color:#1DA1F2;"></i>
+            <span class="count">{{ journey.shares.filter.platform.twitter.count|default:0 }}</span>
+        </div>
+        <div class="social-share-item">
+            <i class="fab fa-instagram" style="color:#dc2743;"></i>
+            <span class="count">{{ journey.shares.filter.platform.instagram.count|default:0 }}</span>
+        </div>
+        <div class="social-share-item">
+            <i class="fab fa-facebook" style="color:#1877f2;"></i>
+            <span class="count">{{ journey.shares.filter.platform.facebook.count|default:0 }}</span>
+        </div>
+        <div class="social-share-item">
+            <i class="fab fa-tiktok" style="color:#00f2ea;"></i>
+            <span class="count">{{ journey.shares.filter.platform.tiktok.count|default:0 }}</span>
+        </div>
+        <div class="social-share-item">
+            <i class="fas fa-link" style="color:var(--text-muted);"></i>
+            <span class="count">{{ journey.shares.filter.platform.copy.count|default:0 }}</span>
+        </div>
+    </div>
+    
+    <!-- ===== SOCIAL CTA BANNER ===== -->
+    <div class="social-cta-banner">
+        <div class="cta-text">
+            <strong>📱 Post your journey on social media</strong>
+            <span style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px;">
+                Share your progress and inspire others to start their own journey
+            </span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="https://twitter.com/intent/tweet?text={{ journey.get_social_share_text|urlencode }}&url={{ request.build_absolute_uri|urlencode }}" 
+               target="_blank" class="social-cta-btn" style="background:#1DA1F2;" onclick="trackShare('twitter')">
+                <i class="fab fa-twitter"></i> Post
+            </a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}" 
+               target="_blank" class="social-cta-btn" style="background:#0a66c2;" onclick="trackShare('linkedin')">
+                <i class="fab fa-linkedin"></i> Share
+            </a>
+            <button class="social-cta-btn" onclick="shareJourney()" style="background:var(--accent);">
+                <i class="fas fa-link"></i> Copy Link
+            </button>
+        </div>
+    </div>
+    
     <!-- TEMPLATE BANNERS -->
     {% if journey.template_style == 'fitness' %}
     <div style="padding:0 20px 16px;">
@@ -1493,6 +1658,14 @@
                                 <span style="font-size:8px;color:var(--text-muted);">{% if journey.journey_type == 'milestone' %}MILESTONE{% else %}DAY{% endif %}</span>
                             </div>
                         {% endif %}
+                        
+                        <!-- SOCIAL SOURCE BADGE - SOCIAL-FIRST ADDITION -->
+                        {% if activity and activity.source_platform %}
+                        <div class="social-source-badge {{ activity.source_platform }}">
+                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
+                        </div>
+                        {% endif %}
+                        
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
                         {% if activity and activity.file %}<div class="play-icon-strip"><i class="fas fa-play"></i></div>{% endif %}
                         <div class="strip-overlay">
@@ -1731,6 +1904,14 @@
     <div class="current-day-info" id="dynamicInfoContainer" onclick="goToCurrentDisplayedDay()">
         <div class="info-badge" id="dynamicBadge">
             <span class="badge" id="dynamicDayBadge">DAY 1</span>
+            
+            <!-- IMPORTED FROM BADGE - SOCIAL-FIRST ADDITION -->
+            {% if current_activity and current_activity.source_platform %}
+            <span class="badge" style="background:rgba(59,130,246,0.1);color:var(--accent);">
+                <i class="fab fa-{% if current_activity.source_platform == 'twitter' %}x-twitter{% elif current_activity.source_platform == 'tiktok' %}tiktok{% elif current_activity.source_platform == 'youtube' %}youtube{% elif current_activity.source_platform == 'instagram' %}instagram{% elif current_activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
+                Imported from {{ current_activity.source_platform|title }}
+            </span>
+            {% endif %}
         </div>
         <h3 class="info-title" id="dynamicTitle">Loading...</h3>
         <div id="dynamicSourceLink"></div>
@@ -1826,6 +2007,12 @@
             </div>
         </div>
         <div class="modal-footer">
+            <!-- SOCIAL ENGAGEMENT STATS - SOCIAL-FIRST ADDITION -->
+            <div class="modal-social-stats" id="modalSocialStats" style="display:none;">
+                <span><i class="fas fa-heart"></i> <span id="modalSocialLikes">0</span></span>
+                <span><i class="fas fa-comment"></i> <span id="modalSocialComments">0</span></span>
+                <span><i class="fas fa-clock"></i> <span id="modalSocialDate"></span></span>
+            </div>
             <p class="modal-caption" id="modalCaption"></p>
             <div class="modal-actions">
                 <button class="modal-action" onclick="toggleLoveFromModal()"><i class="far fa-heart"></i> <span id="modalLoveCount">0</span></button>
@@ -1866,7 +2053,8 @@
                 sourceUrl: "{% if activity.source_url %}{{ activity.source_url|escapejs }}{% endif %}",
                 sourcePlatform: "{% if activity.source_platform %}{{ activity.source_platform|escapejs }}{% endif %}",
                 loveCount: {{ activity.get_love_count }},
-                commentCount: {{ activity.get_comment_count }}
+                commentCount: {{ activity.get_comment_count }},
+                socialEngagement: {{ activity.social_engagement|default:'{}'|safe }}
             },
         {% endfor %}
     };
@@ -2106,6 +2294,23 @@
         document.getElementById('modalLoveCount').textContent = a.loveCount;
         document.getElementById('commentActivityId').value = a.id;
         
+        // Update social engagement stats in modal
+        const socialStats = a.socialEngagement || {};
+        const socialStatsContainer = document.getElementById('modalSocialStats');
+        if (socialStats && (socialStats.likes || socialStats.comments || socialStats.posted_at)) {
+            socialStatsContainer.style.display = 'flex';
+            document.getElementById('modalSocialLikes').textContent = socialStats.likes || 0;
+            document.getElementById('modalSocialComments').textContent = socialStats.comments || 0;
+            if (socialStats.posted_at) {
+                const date = new Date(socialStats.posted_at);
+                document.getElementById('modalSocialDate').textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } else {
+                document.getElementById('modalSocialDate').textContent = '';
+            }
+        } else {
+            socialStatsContainer.style.display = 'none';
+        }
+        
         const mediaContainer = document.getElementById('modalMedia');
         const spinner = document.getElementById('modalSpinner');
         
@@ -2295,7 +2500,28 @@
         scrollToComments();
     }
     
-    function shareJourney() { navigator.clipboard?.writeText(window.location.href).then(() => alert('Link copied!')); }
+    function shareJourney() { 
+        navigator.clipboard?.writeText(window.location.href).then(() => {
+            alert('📋 Link copied to clipboard!');
+            trackShare('copy');
+        }); 
+    }
+    
+    function trackShare(platform) {
+        fetch('/api/journey/' + journeySlug + '/share/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'platform=' + encodeURIComponent(platform)
+        }).then(r => r.json()).then(d => {
+            console.log('✅ Share tracked:', platform);
+        }).catch(err => {
+            console.log('Share tracking error:', err);
+        });
+    }
+    
     function scrollToComments() { document.getElementById('comments').scrollIntoView({behavior: 'smooth'}); }
     function toggleMenu() { if (confirm('Share this journey?')) shareJourney(); }
     

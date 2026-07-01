@@ -7,10 +7,10 @@ from .models import (
     Profile, SocialConnection, ImportedContent,
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
-    Donation, Notification, PostJourneyProduct,
-    Report, FAQ, JourneyTemplate
+    Notification, Report, FAQ, ContactMessage, Subscriber,
+    SocialPostTemplate, ReferralTracking, QuickAddTracker
 )
-
+from django.contrib.auth import get_user_model
 
 # ============================================================================
 # MIXINS
@@ -52,8 +52,8 @@ class ProfileAdmin(admin.ModelAdmin):
         ('Social Connections', {
             'fields': ('tiktok_username', 'instagram_username', 'youtube_channel')
         }),
-        ('Verification & Payments', {
-            'fields': ('profile_verified', 'paypal_email')
+        ('Verification', {
+            'fields': ('profile_verified',)
         }),
         ('Activity', {
             'fields': ('created_at', 'last_activity', 'get_journey_count')
@@ -77,7 +77,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# SOCIAL CONNECTION ADMIN
+# SOCIAL CONNECTION ADMIN - KEPT (Critical)
 # ============================================================================
 
 @admin.register(SocialConnection)
@@ -113,7 +113,7 @@ class SocialConnectionAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# IMPORTED CONTENT ADMIN
+# IMPORTED CONTENT ADMIN - KEPT (Critical for Social-First)
 # ============================================================================
 
 @admin.register(ImportedContent)
@@ -122,7 +122,7 @@ class ImportedContentAdmin(admin.ModelAdmin):
     list_filter = ['platform', 'status', 'media_type', 'imported_at']
     search_fields = ['caption', 'platform_post_id', 'assigned_journey__title']
     readonly_fields = ['imported_at', 'processed_at', 'get_media_preview']
-    actions = ['approve_selected', 'ignore_selected']
+    actions = ['approve_selected', 'ignore_selected', 'assign_to_journey']
     
     fieldsets = (
         ('Source', {
@@ -134,7 +134,7 @@ class ImportedContentAdmin(admin.ModelAdmin):
         ('Platform Metadata', {
             'fields': ('posted_at', 'like_count', 'comment_count')
         }),
-        ('Assignment', {
+        ('Assignment - SOCIAL FIRST', {
             'fields': ('detected_day', 'assigned_journey', 'assigned_day', 'status')
         }),
         ('Result', {
@@ -181,6 +181,12 @@ class ImportedContentAdmin(admin.ModelAdmin):
         updated = queryset.update(status='ignored', processed_at=timezone.now())
         self.message_user(request, f'{updated} items ignored.')
     ignore_selected.short_description = 'Ignore selected items'
+    
+    def assign_to_journey(self, request, queryset):
+        """Bulk assign imported content to a journey"""
+        # This would open a custom action form in a full implementation
+        self.message_user(request, 'Use the detail view to assign to a journey.')
+    assign_to_journey.short_description = 'Assign to journey (via detail view)'
 
 
 # ============================================================================
@@ -190,7 +196,7 @@ class ImportedContentAdmin(admin.ModelAdmin):
 class ActivityInline(admin.TabularInline):
     model = Activity
     extra = 0
-    fields = ['day_number_field', 'content', 'is_video', 'get_love_count', 'created_at']
+    fields = ['day_number_field', 'content', 'is_video', 'source_platform', 'get_love_count', 'created_at']
     readonly_fields = ['day_number_field', 'get_love_count', 'created_at']
     show_change_link = True
     
@@ -206,13 +212,6 @@ class JourneyFollowInline(admin.TabularInline):
     readonly_fields = ['followed_at']
 
 
-class DonationInline(admin.TabularInline):
-    model = Donation
-    extra = 0
-    fields = ['donor_name', 'amount', 'status', 'created_at']
-    readonly_fields = ['created_at']
-
-
 class JourneyTagInline(admin.TabularInline):
     model = JourneyTag
     extra = 1
@@ -220,18 +219,29 @@ class JourneyTagInline(admin.TabularInline):
 
 
 # ============================================================================
-# JOURNEY ADMIN
+# SOCIAL POST TEMPLATE INLINE - NEW (Social-First)
+# ============================================================================
+
+class SocialPostTemplateInline(admin.TabularInline):
+    model = SocialPostTemplate
+    extra = 0
+    fields = ['platform', 'template_text', 'auto_post']
+    show_change_link = True
+
+
+# ============================================================================
+# JOURNEY ADMIN - KEPT & ENHANCED
 # ============================================================================
 
 @admin.register(Journey)
 class JourneyAdmin(admin.ModelAdmin):
-    list_display = ['get_cover', 'title', 'creator', 'category', 'journey_type', 'get_progress', 'get_stats', 'is_public', 'created_at']
-    list_filter = ['category', 'journey_type', 'is_public', 'is_active', 'is_featured', 'funding_enabled', 'created_at']
+    list_display = ['get_cover', 'title', 'creator', 'category', 'journey_type', 'get_progress', 'get_social_stats', 'is_public', 'created_at']
+    list_filter = ['category', 'journey_type', 'is_public', 'is_active', 'is_featured', 'auto_import_enabled', 'created_at']
     search_fields = ['title', 'description', 'creator__user__username', 'slug']
-    readonly_fields = ['slug', 'view_count', 'unique_viewers', 'total_watch_time', 'created_at', 'updated_at', 'get_absolute_url']
+    readonly_fields = ['slug', 'view_count', 'unique_viewers', 'total_watch_time', 'created_at', 'updated_at', 'get_share_url']
     autocomplete_fields = ['creator']
     
-    inlines = [ActivityInline, JourneyFollowInline, DonationInline, JourneyTagInline]
+    inlines = [ActivityInline, JourneyFollowInline, JourneyTagInline, SocialPostTemplateInline]
     
     fieldsets = (
         ('Basic Info', {
@@ -241,13 +251,17 @@ class JourneyAdmin(admin.ModelAdmin):
             'fields': ('cover_image', 'cover_video')
         }),
         ('Structure', {
-            'fields': ('duration', 'duration_unit', 'start_date', 'end_date', 'milestones')
+            'fields': ('duration', 'duration_unit', 'start_date', 'end_date', 'milestones', 'current_day_override')
         }),
-        ('Settings', {
-            'fields': ('is_public', 'is_active', 'is_featured', 'allow_comments', 'auto_import_enabled', 'import_hashtag')
+        ('SOCIAL-FIRST SETTINGS', {
+            'fields': ('auto_import_enabled', 'import_hashtag', 'social_share_url', 'auto_post_to_social', 'social_share_text'),
+            'classes': ('wide',)
         }),
-        ('Funding', {
-            'fields': ('funding_enabled', 'funding_goal', 'funding_description'),
+        ('Visibility', {
+            'fields': ('is_public', 'is_active', 'is_featured', 'allow_comments')
+        }),
+        ('Social Analytics', {
+            'fields': ('traffic_sources', 'social_engagement_stats'),
             'classes': ('collapse',)
         }),
         ('Analytics', {
@@ -257,7 +271,7 @@ class JourneyAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at', 'published_at')
         }),
         ('Links', {
-            'fields': ('get_absolute_url',)
+            'fields': ('get_share_url',)
         }),
     )
     
@@ -276,20 +290,35 @@ class JourneyAdmin(admin.ModelAdmin):
         return f"{current}/{obj.duration} ({percentage}%)"
     get_progress.short_description = 'Progress'
     
-    def get_stats(self, obj):
+    def get_social_stats(self, obj):
+        """Social-first stats display"""
         followers = obj.get_follower_count()
-        loves = obj.get_love_count()
-        return format_html('👥 {} · ❤️ {}', followers, loves)
-    get_stats.short_description = 'Stats'
+        shares = obj.get_share_count()
+        traffic = obj.traffic_sources
+        
+        # Show top traffic source
+        top_source = max(traffic.items(), key=lambda x: x[1])[0] if traffic else 'None'
+        
+        return format_html(
+            '👥 {} · 🔄 {} · 📊 {}',
+            followers,
+            shares,
+            top_source
+        )
+    get_social_stats.short_description = 'Social Stats'
     
-    def get_absolute_url(self, obj):
+    def get_share_url(self, obj):
         if obj.slug:
-            url = reverse('journey_detail', kwargs={'slug': obj.slug})
-            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+            url = obj.get_share_url()
+            return format_html(
+                '<a href="{}" target="_blank">{}</a> 🚀',
+                url,
+                url
+            )
         return '-'
-    get_absolute_url.short_description = 'Public URL'
+    get_share_url.short_description = 'Share URL'
     
-    actions = ['make_featured', 'remove_featured', 'make_public', 'make_private']
+    actions = ['make_featured', 'remove_featured', 'make_public', 'make_private', 'enable_auto_import']
     
     def make_featured(self, request, queryset):
         updated = queryset.update(is_featured=True)
@@ -310,40 +339,39 @@ class JourneyAdmin(admin.ModelAdmin):
         updated = queryset.update(is_public=False)
         self.message_user(request, f'{updated} journeys made private.')
     make_private.short_description = 'Make private'
+    
+    def enable_auto_import(self, request, queryset):
+        updated = queryset.update(auto_import_enabled=True)
+        self.message_user(request, f'{updated} journeys have auto-import enabled.')
+    enable_auto_import.short_description = 'Enable auto-import'
 
 
 # ============================================================================
-# JOURNEY TEMPLATE ADMIN
-# ============================================================================
-
-@admin.register(JourneyTemplate)
-class JourneyTemplateAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'template_style', 'price', 'is_free', 'usage_count', 'is_active')
-    list_filter = ('category', 'template_style', 'is_free', 'is_active')
-    search_fields = ('title', 'description')
-
-
-# ============================================================================
-# ACTIVITY ADMIN
+# ACTIVITY ADMIN - KEPT & ENHANCED
 # ============================================================================
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    list_display = ['get_thumbnail', 'journey', 'day_number_field', 'get_content_preview', 'is_video', 'get_engagement', 'created_at']
-    list_filter = ['is_video', 'created_at', 'journey__category']
-    search_fields = ['content', 'journey__title']
+    list_display = ['get_thumbnail', 'journey', 'day_number_field', 'get_content_preview', 'source_platform', 'is_video', 'get_social_engagement', 'created_at']
+    list_filter = ['is_video', 'source_platform', 'created_at', 'journey__category']
+    search_fields = ['content', 'journey__title', 'source_url']
     readonly_fields = ['day_number_field', 'view_count', 'created_at', 'published_at', 'get_media_preview']
-    autocomplete_fields = ['journey']
+    autocomplete_fields = ['journey', 'imported_from']
     
     fieldsets = (
         ('Journey', {
-            'fields': ('journey', 'day_number_field')
+            'fields': ('journey', 'day_number_field', 'actual_date')
         }),
         ('Content', {
             'fields': ('content', 'file', 'is_video', 'thumbnail', 'get_media_preview')
         }),
-        ('Source', {
-            'fields': ('imported_from', 'source_url')
+        ('SOCIAL SOURCE', {
+            'fields': ('imported_from', 'source_url', 'source_platform', 'social_post_id', 'embed_html'),
+            'classes': ('wide',)
+        }),
+        ('Social Engagement', {
+            'fields': ('social_engagement', 'is_cross_posted', 'cross_posted_at'),
+            'classes': ('collapse',)
         }),
         ('Stats', {
             'fields': ('view_count',)
@@ -364,6 +392,12 @@ class ActivityAdmin(admin.ModelAdmin):
                 '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
                 obj.file.url
             )
+        # Social source thumbnail
+        elif obj.imported_from and obj.imported_from.thumbnail_url:
+            return format_html(
+                '<img src="{}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" />',
+                obj.imported_from.thumbnail_url
+            )
         return '-'
     get_thumbnail.short_description = 'Media'
     
@@ -371,11 +405,18 @@ class ActivityAdmin(admin.ModelAdmin):
         return obj.content[:40] + '...' if len(obj.content) > 40 else obj.content
     get_content_preview.short_description = 'Content'
     
-    def get_engagement(self, obj):
+    def get_social_engagement(self, obj):
+        """Display social engagement stats"""
+        if obj.social_engagement:
+            likes = obj.social_engagement.get('likes', 0)
+            comments = obj.social_engagement.get('comments', 0)
+            return format_html('❤️ {} · 💬 {}', likes, comments)
+        
+        # Fallback to local engagement
         loves = obj.get_love_count()
         comments = obj.get_comment_count()
         return f'❤️ {loves} · 💬 {comments}'
-    get_engagement.short_description = 'Engagement'
+    get_social_engagement.short_description = 'Engagement'
     
     def get_media_preview(self, obj):
         if obj.file:
@@ -389,12 +430,66 @@ class ActivityAdmin(admin.ModelAdmin):
                     '<img src="{}" style="max-width: 400px; max-height: 400px; border-radius: 12px;" />',
                     obj.file.url
                 )
+        elif obj.imported_from and obj.imported_from.media_url:
+            if obj.imported_from.media_type == 'video':
+                return format_html(
+                    '<video src="{}" controls style="max-width: 400px; max-height: 400px; border-radius: 12px;"></video>',
+                    obj.imported_from.media_url
+                )
+            else:
+                return format_html(
+                    '<img src="{}" style="max-width: 400px; max-height: 400px; border-radius: 12px;" />',
+                    obj.imported_from.media_url
+                )
         return '-'
     get_media_preview.short_description = 'Media Preview'
 
 
 # ============================================================================
-# TAG ADMIN
+# SOCIAL POST TEMPLATE ADMIN - NEW
+# ============================================================================
+
+@admin.register(SocialPostTemplate)
+class SocialPostTemplateAdmin(admin.ModelAdmin):
+    list_display = ['journey', 'platform', 'template_preview', 'auto_post', 'created_at']
+    list_filter = ['platform', 'auto_post']
+    search_fields = ['journey__title', 'template_text']
+    autocomplete_fields = ['journey']
+    
+    def template_preview(self, obj):
+        preview = obj.template_text[:60] + '...' if len(obj.template_text) > 60 else obj.template_text
+        return preview
+    template_preview.short_description = 'Template'
+
+
+# ============================================================================
+# REFERRAL TRACKING ADMIN - NEW
+# ============================================================================
+
+@admin.register(ReferralTracking)
+class ReferralTrackingAdmin(admin.ModelAdmin):
+    list_display = ['journey', 'source', 'session_id', 'created_at']
+    list_filter = ['source', 'created_at']
+    search_fields = ['journey__title', 'session_id', 'ip_address']
+    readonly_fields = ['created_at']
+    autocomplete_fields = ['journey']
+
+
+# ============================================================================
+# QUICK ADD TRACKER ADMIN - NEW
+# ============================================================================
+
+@admin.register(QuickAddTracker)
+class QuickAddTrackerAdmin(admin.ModelAdmin):
+    list_display = ['journey', 'user', 'source_platform', 'detected_day', 'added_at']
+    list_filter = ['source_platform', 'added_at']
+    search_fields = ['journey__title', 'user__username']
+    readonly_fields = ['added_at']
+    autocomplete_fields = ['journey', 'user', 'created_activity']
+
+
+# ============================================================================
+# TAG ADMIN - KEPT
 # ============================================================================
 
 @admin.register(Tag)
@@ -412,7 +507,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# ENGAGEMENT ADMINS
+# ENGAGEMENT ADMINS - KEPT
 # ============================================================================
 
 @admin.register(JourneyFollow)
@@ -465,53 +560,7 @@ class ShareAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# DONATION ADMIN
-# ============================================================================
-
-@admin.register(Donation)
-class DonationAdmin(admin.ModelAdmin):
-    list_display = ['journey', 'get_donor', 'amount', 'status', 'created_at']
-    list_filter = ['status', 'created_at']
-    search_fields = ['journey__title', 'donor__username', 'donor_name', 'donor_email', 'paypal_order_id']
-    readonly_fields = ['created_at', 'completed_at']
-    autocomplete_fields = ['journey', 'donor']
-    actions = ['mark_completed', 'mark_failed']
-    
-    fieldsets = (
-        ('Donation Info', {
-            'fields': ('journey', 'amount', 'message')
-        }),
-        ('Donor Info', {
-            'fields': ('donor', 'donor_name', 'donor_email')
-        }),
-        ('Status', {
-            'fields': ('status', 'paypal_order_id')
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'completed_at')
-        }),
-    )
-    
-    def get_donor(self, obj):
-        if obj.donor:
-            return obj.donor.username
-        return obj.donor_name or 'Anonymous'
-    get_donor.short_description = 'Donor'
-    get_donor.admin_order_field = 'donor__username'
-    
-    def mark_completed(self, request, queryset):
-        updated = queryset.update(status='completed', completed_at=timezone.now())
-        self.message_user(request, f'{updated} donations marked as completed.')
-    mark_completed.short_description = 'Mark as completed'
-    
-    def mark_failed(self, request, queryset):
-        updated = queryset.update(status='failed')
-        self.message_user(request, f'{updated} donations marked as failed.')
-    mark_failed.short_description = 'Mark as failed'
-
-
-# ============================================================================
-# NOTIFICATION ADMIN
+# NOTIFICATION ADMIN - KEPT
 # ============================================================================
 
 @admin.register(Notification)
@@ -539,35 +588,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# POST-JOURNEY PRODUCT ADMIN
-# ============================================================================
-
-@admin.register(PostJourneyProduct)
-class PostJourneyProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'journey', 'product_type', 'price', 'is_active', 'created_at']
-    list_filter = ['product_type', 'is_active', 'created_at']
-    search_fields = ['title', 'description', 'journey__title']
-    readonly_fields = ['created_at']
-    autocomplete_fields = ['journey']
-    
-    fieldsets = (
-        ('Basic Info', {
-            'fields': ('journey', 'product_type', 'title', 'description', 'price')
-        }),
-        ('Files', {
-            'fields': ('pdf_file', 'video_file')
-        }),
-        ('Coaching', {
-            'fields': ('coaching_calendar_link', 'coaching_duration')
-        }),
-        ('Status', {
-            'fields': ('is_active', 'created_at')
-        }),
-    )
-
-
-# ============================================================================
-# REPORT ADMIN
+# REPORT ADMIN - KEPT
 # ============================================================================
 
 @admin.register(Report)
@@ -610,7 +631,7 @@ class ReportAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# FAQ ADMIN
+# FAQ ADMIN - KEPT
 # ============================================================================
 
 @admin.register(FAQ)
@@ -631,7 +652,7 @@ class FAQAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# JOURNEY TAG ADMIN (THROUGH MODEL)
+# JOURNEY TAG ADMIN (THROUGH MODEL) - KEPT
 # ============================================================================
 
 @admin.register(JourneyTag)
@@ -644,17 +665,59 @@ class JourneyTagAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
+# CONTACT MESSAGE ADMIN - KEPT
+# ============================================================================
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'subject', 'created_at']
+    list_filter = ['subject', 'created_at']
+    search_fields = ['name', 'email', 'message']
+    readonly_fields = ['created_at', 'ip_address']
+    ordering = ['-created_at']
+
+
+# ============================================================================
+# SUBSCRIBER ADMIN - KEPT
+# ============================================================================
+
+@admin.register(Subscriber)
+class SubscriberAdmin(admin.ModelAdmin):
+    list_display = ['email', 'subscribed_at', 'ip_address']
+    search_fields = ['email']
+    readonly_fields = ['subscribed_at', 'ip_address', 'user_agent']
+    ordering = ['-subscribed_at']
+
+
+# ============================================================================
 # DASHBOARD CUSTOMIZATION
 # ============================================================================
 
 admin.site.site_header = 'Rallynex Administration'
 admin.site.site_title = 'Rallynex Admin'
-admin.site.index_title = 'Journey Organizer Dashboard'
+admin.site.index_title = 'Journey Organizer Dashboard - Social First'
 
-from .models import Subscriber
 
-@admin.register(Subscriber)
-class SubscriberAdmin(admin.ModelAdmin):
-    list_display = ('email', 'subscribed_at', 'ip_address')
-    search_fields = ('email',)
-    ordering = ('-subscribed_at',)
+# ============================================================================
+# COMMENTED OUT / REMOVED (Not Social-First Focused)
+# ============================================================================
+
+"""
+# REMOVED: Donation - Not core to social-first
+@admin.register(Donation)
+class DonationAdmin(admin.ModelAdmin):
+    ...
+
+# REMOVED: PostJourneyProduct - Not core to social-first
+@admin.register(PostJourneyProduct)
+class PostJourneyProductAdmin(admin.ModelAdmin):
+    ...
+
+# REMOVED: JourneyTemplate - Not core to social-first
+@admin.register(JourneyTemplate)
+class JourneyTemplateAdmin(admin.ModelAdmin):
+    ...
+
+# REMOVED: Funding-related fields from JourneyAdmin
+# 'funding_enabled', 'funding_goal', 'funding_description' removed from fieldsets
+"""

@@ -125,7 +125,7 @@
         width: 100%;
         padding: 12px 14px;
         background: #ffffff;
-        border: 2px solid #adb5bd;  /* ALWAYS VISIBLE - no hover needed */
+        border: 2px solid #adb5bd;
         border-radius: 10px;
         color: var(--silver-900);
         font-size: 14px;
@@ -418,6 +418,61 @@
         font-weight: 500;
     }
     
+    /* ===== SOCIAL-FIRST: Social Connection Status ===== */
+    .social-connection-status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    
+    .social-conn-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid var(--silver-200);
+        background: var(--silver-50);
+    }
+    
+    .social-conn-item.connected {
+        border-color: rgba(40, 167, 69, 0.3);
+        background: rgba(40, 167, 69, 0.05);
+    }
+    
+    .social-conn-item .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .social-conn-item .dot.connected {
+        background: #28a745;
+    }
+    
+    .social-conn-item .dot.disconnected {
+        background: var(--silver-400);
+    }
+    
+    .social-conn-item i {
+        font-size: 14px;
+    }
+    
+    .social-conn-item .connect-link {
+        font-size: 11px;
+        color: var(--accent);
+        text-decoration: none;
+        margin-left: 4px;
+    }
+    
+    .social-conn-item .connect-link:hover {
+        text-decoration: underline;
+    }
+    
     /* ===== BUTTONS ===== */
     .form-actions {
         display: flex;
@@ -448,7 +503,6 @@
         border-color: var(--silver-400);
     }
     
-    /* ===== BLUE PRIMARY BUTTON ===== */
     .btn-primary {
         background: #0d6efd;
         color: #fff;
@@ -540,7 +594,8 @@
     /* ===== NOTES ===== */
     .milestone-note,
     .daily-note,
-    .override-note {
+    .override-note,
+    .social-note {
         background: rgba(108, 117, 125, 0.04);
         border: 1px solid rgba(108, 117, 125, 0.1);
         border-radius: 8px;
@@ -555,7 +610,8 @@
     
     .milestone-note i,
     .daily-note i,
-    .override-note i {
+    .override-note i,
+    .social-note i {
         color: var(--silver-500);
         margin-top: 2px;
         flex-shrink: 0;
@@ -568,6 +624,15 @@
     
     .override-note i {
         color: #28a745;
+    }
+    
+    .social-note {
+        background: rgba(59, 130, 246, 0.04);
+        border-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .social-note i {
+        color: var(--accent);
     }
     
     /* ===== MILESTONE INPUT ===== */
@@ -672,6 +737,15 @@
         
         .btn-danger {
             margin-right: 0;
+        }
+        
+        .social-connection-status {
+            gap: 6px;
+        }
+        
+        .social-conn-item {
+            font-size: 11px;
+            padding: 4px 10px;
         }
     }
     
@@ -976,6 +1050,104 @@
             </div>
         </div>
         
+        {# ===== SOCIAL-FIRST: SOCIAL IMPORT SETTINGS ===== #}
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-cloud-upload-alt"></i>
+                Social Import Settings
+            </h3>
+            
+            <div class="social-note">
+                <i class="fas fa-info-circle"></i>
+                <span>Connect your social accounts to automatically import content into this journey.</span>
+            </div>
+            
+            {# Show connected social accounts #}
+            <div class="form-group">
+                <label>Connected Accounts</label>
+                <div class="social-connection-status">
+                    {% if social_connections %}
+                        {% for conn in social_connections %}
+                        <span class="social-conn-item connected">
+                            <span class="dot connected"></span>
+                            <i class="fab fa-{% if conn.platform == 'twitter' %}x-twitter{% elif conn.platform == 'tiktok' %}tiktok{% elif conn.platform == 'youtube' %}youtube{% elif conn.platform == 'instagram' %}instagram{% elif conn.platform == 'facebook' %}facebook{% elif conn.platform == 'linkedin' %}linkedin{% else %}link{% endif %}"></i>
+                            {{ conn.get_platform_display }} (@{{ conn.platform_username }})
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="social-conn-item">
+                            <span class="dot disconnected"></span>
+                            <span>No accounts connected</span>
+                            <a href="{% url 'social_connections' %}" class="connect-link">Connect →</a>
+                        </span>
+                    {% endif %}
+                </div>
+                <p class="form-hint">
+                    <a href="{% url 'social_connections' %}" style="color: var(--accent); text-decoration: none;">
+                        <i class="fas fa-external-link-alt"></i> Manage social connections
+                    </a>
+                </p>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" name="auto_import_enabled" id="id_auto_import_enabled" 
+                       {% if form.auto_import_enabled.value %}checked{% endif %}>
+                <label for="id_auto_import_enabled">🔄 Auto-import from connected accounts</label>
+            </div>
+            <p class="form-hint" style="margin-top: -4px; margin-bottom: 12px;">
+                New posts from connected accounts will be automatically imported
+            </p>
+            
+            <div class="form-group">
+                <label for="id_import_hashtag">Filter by Hashtag</label>
+                <input type="text" name="import_hashtag" id="id_import_hashtag"
+                       value="{{ form.import_hashtag.value|default:'' }}"
+                       placeholder="#MyJourney">
+                <p class="form-hint">Only import posts with this hashtag (optional)</p>
+            </div>
+        </div>
+        
+        {# ===== SOCIAL-FIRST: SOCIAL SHARE SETTINGS ===== #}
+        <div class="form-section">
+            <div class="optional-section">
+                <button type="button" class="optional-toggle" onclick="toggleOptional(this)">
+                    <i class="fas fa-chevron-down"></i> Social Sharing Settings (optional)
+                </button>
+                <div class="optional-content">
+                    <div class="social-note">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Customize how this journey appears when shared on social media.</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_social_share_text">Default Share Text</label>
+                        <input type="text" name="social_share_text" id="id_social_share_text"
+                               value="{{ form.social_share_text.value|default:'' }}"
+                               placeholder="Follow my journey on Rallynex! 🚀"
+                               maxlength="280">
+                        <p class="form-hint">This text will be pre-filled when someone shares your journey</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_social_share_url">Custom Share URL</label>
+                        <input type="url" name="social_share_url" id="id_social_share_url"
+                               value="{{ form.social_share_url.value|default:'' }}"
+                               placeholder="https://yourdomain.com/journey">
+                        <p class="form-hint">Custom URL for sharing (optional — leave blank to use auto-generated)</p>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" name="auto_post_to_social" id="id_auto_post_to_social" 
+                               {% if form.auto_post_to_social.value %}checked{% endif %}>
+                        <label for="id_auto_post_to_social">📤 Auto-post updates to social media</label>
+                    </div>
+                    <p class="form-hint" style="margin-top: -4px;">
+                        New activities will be automatically posted to your connected social accounts
+                    </p>
+                </div>
+            </div>
+        </div>
+        
         {# ===== SETTINGS ===== #}
         <div class="form-section">
             <div class="optional-section">
@@ -1000,38 +1172,6 @@
                     <p class="form-hint" style="margin-top: -4px;">
                         Let followers leave comments on your journey
                     </p>
-                </div>
-            </div>
-        </div>
-        
-        {# ===== FUNDRAISING (Optional) ===== #}
-        <div class="form-section">
-            <div class="optional-section">
-                <button type="button" class="optional-toggle" onclick="toggleOptional(this)">
-                    <i class="fas fa-chevron-down"></i> Fundraising (optional)
-                </button>
-                <div class="optional-content">
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="funding_enabled" id="id_funding_enabled"
-                               {% if form.funding_enabled.value %}checked{% endif %}>
-                        <label for="id_funding_enabled">💰 Enable Fundraising</label>
-                    </div>
-                    
-                    <div id="fundingFields" style="display: none;">
-                        <div class="form-group">
-                            <label for="id_funding_goal">Funding Goal ($)</label>
-                            <input type="number" name="funding_goal" id="id_funding_goal"
-                                   value="{{ form.funding_goal.value|default:'' }}"
-                                   min="1" step="0.01" placeholder="1000.00">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="id_funding_description">Funding Description</label>
-                            <textarea name="funding_description" id="id_funding_description"
-                                      placeholder="What will the funds be used for?"
-                                      maxlength="500">{{ form.funding_description.value|default:'' }}</textarea>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1297,23 +1437,6 @@
                 currentDayOverride.setCustomValidity('');
             }
         });
-    }
-    
-    // ===== FUNDING TOGGLE =====
-    const fundingCheckbox = document.getElementById('id_funding_enabled');
-    const fundingFieldsDiv = document.getElementById('fundingFields');
-    
-    function toggleFundingFields() {
-        if (fundingCheckbox && fundingCheckbox.checked) {
-            fundingFieldsDiv.style.display = 'block';
-        } else if (fundingFieldsDiv) {
-            fundingFieldsDiv.style.display = 'none';
-        }
-    }
-    
-    if (fundingCheckbox) {
-        fundingCheckbox.addEventListener('change', toggleFundingFields);
-        toggleFundingFields();
     }
     
     // ===== MILESTONE MANAGEMENT =====

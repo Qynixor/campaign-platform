@@ -6,16 +6,10 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 # ============================================================================
-# URL PATTERNS
+# URL PATTERNS - SOCIAL-FIRST FOCUSED
 # ============================================================================
 
 urlpatterns = [
-    # Welcome/Onboarding
-    path('welcome/', views.welcome_view, name='welcome'),
-
-    # Onboarding
-    path('onboarding/', views.onboarding_wizard_view, name='onboarding'),
-    path('api/journey/quick-create/', views.api_quick_create_journey, name='api_quick_create_journey'),    
     # ============================================================================
     # AUTHENTICATION
     # ============================================================================
@@ -23,44 +17,29 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     
-    # Password reset (using Django built-in views)
-# Password reset (using custom views)
-path('password-reset/', 
-     views.CustomPasswordResetView.as_view(),
-     name='password_reset'),
-path('password-reset/done/',
-     views.CustomPasswordResetDoneView.as_view(),
-     name='password_reset_done'),
-path('password-reset/<uidb64>/<token>/',
-     auth_views.PasswordResetConfirmView.as_view(template_name='auth/password_reset_confirm.html'),
-     name='password_reset_confirm'),
-path('password-reset/complete/',
-     auth_views.PasswordResetCompleteView.as_view(template_name='auth/password_reset_complete.html'),
-     name='password_reset_complete'),
+    # Password reset
+    path('password-reset/', 
+         auth_views.PasswordResetView.as_view(template_name='auth/password_reset.html'),
+         name='password_reset'),
+    path('password-reset/done/',
+         auth_views.PasswordResetDoneView.as_view(template_name='auth/password_reset_done.html'),
+         name='password_reset_done'),
+    path('password-reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(template_name='auth/password_reset_confirm.html'),
+         name='password_reset_confirm'),
+    path('password-reset/complete/',
+         auth_views.PasswordResetCompleteView.as_view(template_name='auth/password_reset_complete.html'),
+         name='password_reset_complete'),
 
-# Add this to the NOTIFICATIONS section in urls.py
-path('api/notifications/unread-count/', views.unread_notification_count, name='unread_notification_count'),
-   
     # ============================================================================
     # PUBLIC PAGES
     # ============================================================================
-    # In urls.py - add this before your landing path
-    # ====== 🏠 HOME FEED ======
-    path('', views.home_feed_view, name='home_feed'),
-    
-    # ====== 📄 LANDING (moved) ======
-    path('landing/', views.landing_view, name='landing'),
-    
-    # ====== 📡 API FOR INFINITE SCROLL ======
-    path('api/feed/load-more/', views.api_feed_load_more, name='api_feed_load_more'),
-    
-    # ====== 🔔 NOTIFICATIONS API ======
-    path('api/notifications/unread-count/', views.unread_notification_count, name='unread_notification_count'),
-    
+    # Landing page is the root URL - also aliased as home_feed for navbar
+    path('', views.landing_view, name='landing'),
+    path('home/', views.landing_view, name='home_feed'),  # ← ADD THIS ALIAS
     path('discover/', views.discover_view, name='discover'),
     path('j/<slug:slug>/', views.journey_detail_view, name='journey_detail'),
     path('@<str:username>/', views.creator_profile_view, name='creator_profile'),
-    
 
     # ============================================================================
     # STATIC PAGES
@@ -68,10 +47,14 @@ path('api/notifications/unread-count/', views.unread_notification_count, name='u
     path('about/', views.about_view, name='about'),
     path('privacy/', views.privacy_view, name='privacy'),
     path('terms/', views.terms_view, name='terms'),
-    
     path('faq/', views.faq_view, name='faq'),
-   path('contact/', views.contact_view, name='contact'),
+    path('contact/', views.contact_view, name='contact'),
     
+    # ============================================================================
+    # CONVERSION / NEWSLETTER
+    # ============================================================================
+    path('start/', views.conversion_start_view, name='conversion_start'),
+
     # ============================================================================
     # DASHBOARD
     # ============================================================================
@@ -98,30 +81,36 @@ path('api/notifications/unread-count/', views.unread_notification_count, name='u
     path('dashboard/activities/<int:activity_id>/delete/', views.delete_activity_view, name='delete_activity'),
     
     # ============================================================================
-    # SOCIAL IMPORT
+    # SOCIAL IMPORT - CRITICAL (Social-First)
     # ============================================================================
+    # Social connections
     path('dashboard/social/', views.social_connections_view, name='social_connections'),
     path('dashboard/social/connect/<str:platform>/', views.connect_social_view, name='connect_social'),
     path('dashboard/social/callback/', views.social_callback_view, name='social_callback'),
     path('dashboard/social/<int:connection_id>/disconnect/', views.disconnect_social_view, name='disconnect_social'),
     
+    # Import content
     path('dashboard/import/', views.import_queue_view, name='import_queue'),
     path('dashboard/import/quick/', views.quick_import_view, name='quick_import'),
     path('dashboard/import/<int:import_id>/process/', views.process_import_view, name='process_import'),
     
-    # ============================================================================
-    # PRODUCTS (POST-JOURNEY)
-    # ============================================================================
-    path('dashboard/journeys/<slug:slug>/products/new/', views.create_product_view, name='create_product'),
-    path('dashboard/products/<int:product_id>/edit/', views.edit_product_view, name='edit_product'),
+    # Social templates
+    path('dashboard/journeys/<slug:slug>/social-templates/', views.social_template_view, name='social_template'),
+    path('dashboard/social-templates/<int:template_id>/delete/', views.delete_social_template_view, name='delete_social_template'),
+    
+    # API preview
+    path('api/preview/', views.api_preview_url, name='api_preview_url'),
     
     # ============================================================================
-    # DONATIONS
-    # ===========================a=================================================
-    path('j/<slug:slug>/donate/', views.donation_view, name='donate'),
-    path('donation/<int:donation_id>/process/', views.process_donation_view, name='process_donation'),
-    path('donation/success/', views.donation_success_view, name='donation_success'),
-    path('donation/cancel/', views.donation_cancel_view, name='donation_cancel'),
+    # API ENDPOINTS - SOCIAL-FIRST
+    # ============================================================================
+    path('api/social-settings/<int:connection_id>/', views.api_social_settings, name='api_social_settings'),
+    path('api/social-template/<int:template_id>/', views.api_social_template, name='api_social_template'),
+    
+    # ============================================================================
+    # TEMPLATE STORE - ADD THIS
+    # ============================================================================
+    path('templates/', views.template_store_view, name='template_store'),
     
     # ============================================================================
     # ENGAGEMENT (AJAX/API)
@@ -133,41 +122,23 @@ path('api/notifications/unread-count/', views.unread_notification_count, name='u
     path('api/activity/<int:activity_id>/comment/', views.comment_activity_view, name='comment_activity'),
     
     # ============================================================================
+    # NOTIFICATIONS (AJAX)
+    # ============================================================================
+    path('api/notifications/unread-count/', views.unread_notification_count, name='unread_notification_count'),
+    path('api/notifications/<int:notification_id>/read/', views.mark_notification_read_view, name='mark_notification_read'),
+    path('api/notifications/read-all/', views.mark_all_notifications_read_view, name='mark_all_read'),
+    
+    # ============================================================================
     # REPORTS
     # ============================================================================
     path('api/journey/<slug:slug>/report/', views.report_journey_view, name='report_journey'),
     path('api/activity/<int:activity_id>/report/', views.report_activity_view, name='report_activity'),
     
     # ============================================================================
-    # NOTIFICATIONS (AJAX)
+    # THEME TOGGLE
     # ============================================================================
-    path('api/notifications/<int:notification_id>/read/', views.mark_notification_read_view, name='mark_notification_read'),
-    path('api/notifications/read-all/', views.mark_all_notifications_read_view, name='mark_all_read'),
+    path('api/toggle-theme/', views.toggle_theme, name='toggle_theme'),
     
-    # ============================================================================
-    # ANALYTICS API
-    # ============================================================================
-    path('api/journey/<slug:slug>/stats/', views.api_journey_stats_view, name='api_journey_stats'),
-    path('api/activity/<int:activity_id>/stats/', views.api_activity_stats_view, name='api_activity_stats'),
-    
-    # ============================================================================
-    # TINYMCE (for blog)
-    # ============================================================================
-    path('tinymce/', include('tinymce.urls')),
-
-
-   # preview api
-    path('api/preview/', views.api_preview_url, name='api_preview_url'),
-
-    # Preview & Claim
-    path('preview/<slug:slug>/', views.preview_journey_view, name='preview_journey'),
-    path('claim/<slug:slug>/', views.claim_journey_view, name='claim_journey'),
-    path('templates/', views.template_store_view, name='template_store'),
-path('templates/<int:template_id>/', views.purchase_template_view, name='purchase_template'),
-path('templates/<int:template_id>/apply/', views.apply_template_to_journey, name='apply_template'),
-path('templates/<int:template_id>/complete/', views.complete_template_purchase_view, name='complete_template_purchase'),
-
-path('templates/<int:template_id>/admin-create/', views.admin_create_journey_from_template, name='admin_create_journey'),
     # ============================================================================
     # BLOG
     # ============================================================================
@@ -177,15 +148,18 @@ path('templates/<int:template_id>/admin-create/', views.admin_create_journey_fro
     path('blog/challenge-to-product/', views.blog_challenge_product, name='blog_challenge_product'),
     path('blog/journey-50-pieces/', views.blog_journey_content, name='blog_journey_content'),
     path('blog/scattered-to-structured/', views.blog_scattered_posts, name='blog_scattered_posts'),
-    path('blog/buried-asset/', views.blog_buried_asset, name='blog_buried_asset'),  # NEW
-    path('blog/blind-spot/', views.blog_blind_spot, name='blog_blind_spot'),  # NEW
+    path('blog/buried-asset/', views.blog_buried_asset, name='blog_buried_asset'),
+    path('blog/blind-spot/', views.blog_blind_spot, name='blog_blind_spot'),
     path('blog/30-day-challenge-fails/', views.blog_challenge_fails, name='blog_challenge_fails'),
     path('blog/journey-page-for-coaches/', views.blog_journey_page, name='blog_journey_page'), 
     path('blog/challenge-lost-after-day-7/', views.blog_challenge_lost, name='blog_challenge_lost'),
-    path('tools/youtube-playlist-import/', views.youtube_playlist_import_view, name='youtube_playlist_import'),
-    path('start/', views.conversion_start_view, name='conversion_start'),
 
+    # In main/urls.py, add this to the urlpatterns:
 
+# ============================================================================
+# TOOLBOX
+# ============================================================================
+path('toolbox/', views.toolbox_view, name='toolbox'),
 ]
 
 # ============================================================================

@@ -15,132 +15,25 @@ from django.utils.text import slugify
 import json
 import requests
 import re
-
+from datetime import timedelta
+from django.contrib.auth import get_user_model
 from .models import (
     Profile, SocialConnection, ImportedContent,
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
     ActivityLove, ActivityComment, JourneySave, Share,
-    Donation, Notification, PostJourneyProduct,
-    Report,  FAQ, JourneyTemplate  
+    Notification, Report, FAQ, ContactMessage, Subscriber,
+    SocialPostTemplate, ReferralTracking, QuickAddTracker
 )
 from .forms import (
     SignUpForm, LoginForm, ProfileForm,
     JourneyForm, JourneySettingsForm, ActivityForm, QuickImportForm,
-    SocialConnectForm, SocialSettingsForm,
-    CommentForm, DonationForm, JourneySearchForm,
-    ReportForm, PostJourneyProductForm
+    SocialConnectForm, SocialSettingsForm, SocialPostTemplateForm,
+    CommentForm, JourneySearchForm,
+    ReportForm
 )
 
+User = get_user_model()
 
-from django.http import Http404
-
-def welcome_view(request):
-    """Welcome page for creators coming from DMs"""
-    return render(request, 'welcome.html')
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.utils.text import slugify
-import json
-
-@login_required
-@require_POST
-def api_quick_create_journey(request):
-    """API endpoint to quickly create a journey during onboarding"""
-    try:
-        data = json.loads(request.body)
-        
-        profile = request.user.profile
-        
-        # Create journey
-        journey = Journey.objects.create(
-            creator=profile,
-            title=data.get('title', 'My Journey'),
-            description=f"Documenting my {data.get('title', 'journey')} day by day.",
-            category=data.get('category', 'personal'),
-            journey_type='daily',
-            duration=int(data.get('duration', 30)),
-            is_public=True,
-            is_active=True,
-            published_at=timezone.now(),
-        )
-        
-        # Generate slug
-        journey.slug = slugify(journey.title)
-        journey.save()
-        
-        # If they provided current_day > 1, create placeholder activities
-        current_day = int(data.get('current_day', 1))
-        if current_day > 1:
-            for day in range(1, current_day):
-                Activity.objects.get_or_create(
-                    journey=journey,
-                    day_number_field=day,
-                    defaults={
-                        'content': f'Day {day} of {journey.title}',
-                        'published_at': timezone.now() - timezone.timedelta(days=current_day-day),
-                    }
-                )
-        
-        return JsonResponse({
-            'success': True,
-            'slug': journey.slug,
-            'journey_url': request.build_absolute_uri(f'/j/{journey.slug}/'),
-            'post_update_url': f'/dashboard/journeys/{journey.slug}/post/{current_day}/',
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-
-
-from django.core.serializers import json
-from django.core.serializers.json import DjangoJSONEncoder
-
-def onboarding_wizard_view(request):
-    """Onboarding wizard for new users with template recommendations"""
-    
-    # Get all active templates for recommendations
-    templates = JourneyTemplate.objects.filter(is_active=True)
-    
-    # Prepare template data for JavaScript
-    template_data = []
-    for t in templates:
-        template_data.append({
-            'id': t.id,
-            'title': t.title,
-            'description': t.description,
-            'category': t.category,
-            'duration': t.duration,
-            'price': 'FREE' if t.is_free else f'${t.price:.2f}' if hasattr(t, 'price') and t.price else '$9.99',
-            'difficulty': getattr(t, 'difficulty', 'medium'),
-            'icon': get_template_icon(t.category),
-        })
-    
-    context = {
-        'template_data': json.dumps(template_data, cls=DjangoJSONEncoder),
-    }
-    
-    return render(request, 'onboarding/wizard.html', context)
-
-def get_template_icon(category):
-    """Get emoji icon for template category"""
-    icons = {
-        'fitness': '💪',
-        'health': '🧘',
-        'learning': '📚',
-        'creative': '🎨',
-        'business': '📈',
-        'mindfulness': '🧘',
-        'money': '💰',
-        'relationships': '💕',
-        'career': '💼',
-    }
-    return icons.get(category, '🎯')
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -164,7 +57,6 @@ def get_user_profile(user):
 def track_journey_view(request, journey):
     """Track journey view for analytics"""
     session_key = get_or_create_session_key(request)
-    user = request.user if request.user.is_authenticated else None
     
     # Update view counts
     journey.view_count += 1
@@ -195,6 +87,7 @@ def parse_day_from_caption(caption):
                 return day
     return None
 
+
 def detect_platform_from_url(url):
     """Detect social platform from URL"""
     if not url:
@@ -208,9 +101,23 @@ def detect_platform_from_url(url):
         return 'youtube'
     elif 'facebook.com' in url or 'fb.com' in url:
         return 'facebook'
-    elif 'twitter.com' in url or 'x.com' in url: 
+    elif 'twitter.com' in url or 'x.com' in url:
         return 'twitter'
+    elif 'linkedin.com' in url:
+        return 'linkedin'
     return None
+
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
 # ============================================================================
 # AUTHENTICATION VIEWS
 # ============================================================================
@@ -220,7 +127,6 @@ def signup_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     
-    # Get the next URL from query parameters
     next_url = request.GET.get('next', '')
     
     if request.method == 'POST':
@@ -230,14 +136,12 @@ def signup_view(request):
             login(request, user)
             messages.success(request, f'Welcome to Rallynex, {user.username}!')
             
-            # Redirect to next URL if provided, otherwise onboarding
             if next_url:
                 return redirect(next_url)
-            return redirect('onboarding')
+            return redirect('dashboard')
     else:
         form = SignUpForm()
     
-    # Pass next_url to template to preserve it in the form
     return render(request, 'auth/signup.html', {
         'form': form,
         'next_url': next_url
@@ -255,7 +159,6 @@ def login_view(request):
             user = form.get_user()
             login(request, user)
             
-            # Handle remember me
             if not form.cleaned_data.get('remember_me'):
                 request.session.set_expiry(0)
             
@@ -281,16 +184,15 @@ def logout_view(request):
 # ============================================================================
 # PUBLIC VIEWS
 # ============================================================================
+
 def landing_view(request):
     """Landing page with dynamic journeys from database"""
-    # Get featured journeys
     featured_journeys = Journey.objects.filter(
         is_public=True,
         is_active=True,
         is_featured=True
     ).select_related('creator__user').prefetch_related('activities', 'followers')[:6]
     
-    # Get trending journeys (most viewed)
     trending_journeys = Journey.objects.filter(
         is_public=True,
         is_active=True
@@ -308,14 +210,13 @@ def landing_view(request):
             user_journeys = Journey.objects.filter(creator=profile, is_active=True)
             
             context.update({
-                'user_journeys': user_journeys[:3],  # Recent 3 journeys
+                'user_journeys': user_journeys[:3],
                 'user_journey_count': user_journeys.count(),
-                'user_completed_journeys': user_journeys.filter(status='completed').count() if hasattr(Journey, 'status') else 0,
+                'user_completed_journeys': user_journeys.filter(is_completed=True).count() if hasattr(Journey, 'is_completed') else 0,
                 'user_following': JourneyFollow.objects.filter(user=request.user).count(),
-                'user_notifications': Notification.objects.filter(user=request.user, viewed=False).count() if hasattr(request.user, 'notifications') else 0,
+                'user_notifications': Notification.objects.filter(user=request.user, viewed=False).count(),
             })
         except Profile.DoesNotExist:
-            # User doesn't have a profile yet
             context.update({
                 'user_journeys': [],
                 'user_journey_count': 0,
@@ -327,31 +228,12 @@ def landing_view(request):
     return render(request, 'landing.html', context)
 
 
-
-# Add this to your views.py (somewhere near the other notification views)
-
-@login_required
-def unread_notification_count(request):
-    """API endpoint for unread notification count"""
-    try:
-        from .models import Notification
-        unread_count = Notification.objects.filter(
-            user=request.user, 
-            viewed=False
-        ).count()
-        return JsonResponse({'unread_count': unread_count})
-    except Exception as e:
-        return JsonResponse({'unread_count': 0})
-
-
-
 def discover_view(request):
     """Browse and discover journeys"""
     form = JourneySearchForm(request.GET)
     journeys = Journey.objects.filter(is_public=True, is_active=True)
     
     if form.is_valid():
-        # Search query
         q = form.cleaned_data.get('q')
         if q:
             journeys = journeys.filter(
@@ -360,24 +242,16 @@ def discover_view(request):
                 Q(creator__user__username__icontains=q)
             )
         
-        # Category filter
         category = form.cleaned_data.get('category')
         if category:
             journeys = journeys.filter(category=category)
         
-        # Journey type filter
         journey_type = form.cleaned_data.get('journey_type')
         if journey_type:
             journeys = journeys.filter(journey_type=journey_type)
         
-        # Funding filter
-        if form.cleaned_data.get('funding_enabled'):
-            journeys = journeys.filter(funding_enabled=True)
-        
-        # Sort
         sort = form.cleaned_data.get('sort')
         allowed_sorts = ['-created_at', 'created_at', '-view_count', 'view_count', 'title', '-title']
-        
         if sort and sort in allowed_sorts:
             journeys = journeys.order_by(sort)
         else:
@@ -385,18 +259,9 @@ def discover_view(request):
     else:
         journeys = journeys.order_by('-created_at')
     
-    # Handle sort from GET parameter directly
-    sort_param = request.GET.get('sort')
-    if sort_param:
-        allowed_sorts = ['-created_at', 'created_at', '-view_count', 'view_count', 'title', '-title']
-        if sort_param in allowed_sorts:
-            journeys = journeys.order_by(sort_param)
-    
-    # Get total count before pagination
     total_count = journeys.count()
     
-    # Pagination - 10 items per page
-    paginator = Paginator(journeys, 10)  # ← CHANGED TO 10
+    paginator = Paginator(journeys, 10)
     page = request.GET.get('page')
     
     try:
@@ -406,22 +271,15 @@ def discover_view(request):
     except EmptyPage:
         journeys_page = paginator.page(paginator.num_pages)
     
-    # Get categories
-    categories = Journey.CATEGORY_CHOICES
-    
     context = {
         'form': form,
-        'journeys': journeys_page,  # Paginated page
-        'categories': categories,
+        'journeys': journeys_page,
+        'categories': Journey.CATEGORY_CHOICES,
         'total_count': total_count,
     }
     
     return render(request, 'discover.html', context)
 
-
-
-import json
-from django.core.serializers.json import DjangoJSONEncoder
 
 def journey_detail_view(request, slug):
     """View a single journey"""
@@ -434,24 +292,18 @@ def journey_detail_view(request, slug):
     
     journey = get_object_or_404(journey_qs)
     
-    # Allow viewing if public OR if user is the creator OR if user is superuser
     if not journey.is_public:
         if not request.user.is_authenticated or (
             request.user != journey.creator.user and not request.user.is_superuser
         ):
             raise Http404("Journey not found")
     
-    # Track view
     track_journey_view(request, journey)
     
-    # Get activities organized by day
     activities_by_day = journey.get_all_activities_by_day()
-    
-    # Get current day and activity
     current_day = journey.get_current_day()
     current_activity = activities_by_day.get(current_day)
     
-    # Check if user is following
     is_following = False
     if request.user.is_authenticated:
         is_following = JourneyFollow.objects.filter(
@@ -459,7 +311,6 @@ def journey_detail_view(request, slug):
             journey=journey
         ).exists()
     
-    # Check if user has saved
     is_saved = False
     if request.user.is_authenticated:
         is_saved = JourneySave.objects.filter(
@@ -467,40 +318,19 @@ def journey_detail_view(request, slug):
             journey=journey
         ).exists()
     
-    # Get recent comments
     recent_comments = ActivityComment.objects.filter(
         activity__journey=journey
     ).select_related('user', 'activity').order_by('-created_at')[:10]
     
-    # Get related journeys
     related_journeys = Journey.objects.filter(
         category=journey.category,
         is_public=True,
         is_active=True
     ).exclude(id=journey.id).order_by('-view_count')[:4]
     
-    # Prepare activities JSON for JavaScript
-    activities_json = {}
-    for day, activity in activities_by_day.items():
-        activities_json[str(day)] = {
-            'id': activity.id,
-            'content': activity.content or '',
-            'fileUrl': activity.file.url if activity.file else None,
-            'isVideo': activity.is_video,
-            'thumbnailUrl': activity.thumbnail.url if hasattr(activity.thumbnail, 'url') and activity.thumbnail else None,
-            'sourceUrl': activity.source_url or '',
-            'sourcePlatform': activity.source_platform or '',
-            'embedHtml': activity.embed_html or '',
-            'loveCount': activity.get_love_count(),
-            'commentCount': activity.get_comment_count(),
-        }
-    
-    activities_json_str = json.dumps(activities_json, cls=DjangoJSONEncoder)
-    
     context = {
         'journey': journey,
         'activities_by_day': activities_by_day,
-        'activities_json': activities_json_str,
         'current_day': current_day,
         'current_activity': current_activity,
         'is_following': is_following,
@@ -508,9 +338,12 @@ def journey_detail_view(request, slug):
         'recent_comments': recent_comments,
         'related_journeys': related_journeys,
         'total_days_range': range(1, journey.duration + 1),
+        'social_share_text': journey.get_social_share_text(),
+        'share_url': journey.get_share_url(),
     }
     
     return render(request, 'journey/detail.html', context)
+
 
 def creator_profile_view(request, username):
     """View a creator's profile and their journeys"""
@@ -525,7 +358,6 @@ def creator_profile_view(request, username):
         is_active=True
     ).order_by('-created_at')
     
-    # Pagination
     paginator = Paginator(journeys, 9)
     page = request.GET.get('page')
     
@@ -542,6 +374,8 @@ def creator_profile_view(request, username):
     }
     
     return render(request, 'creator/profile.html', context)
+
+
 # ============================================================================
 # DASHBOARD VIEWS
 # ============================================================================
@@ -551,35 +385,30 @@ def dashboard_view(request):
     """Creator dashboard home"""
     profile = get_user_profile(request.user)
     
-    # Get user's journeys
     journeys = Journey.objects.filter(creator=profile).order_by('-created_at')
     
-    # Stats
     total_journeys = journeys.count()
     active_journeys = journeys.filter(is_active=True).count()
     total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     total_followers = JourneyFollow.objects.filter(journey__creator=profile).count()
     
-    # Recent activity
     recent_activities = Activity.objects.filter(
         journey__creator=profile
     ).select_related('journey').order_by('-created_at')[:10]
     
-    # Recent comments
     recent_comments = ActivityComment.objects.filter(
         activity__journey__creator=profile
     ).select_related('user', 'activity__journey').order_by('-created_at')[:5]
     
-    # Recent donations
-    recent_donations = Donation.objects.filter(
-        journey__creator=profile,
-        status='completed'
-    ).order_by('-created_at')[:5]
-    
-    # Pending imports
     pending_imports = ImportedContent.objects.filter(
         social_connection__user=request.user,
         status='pending'
+    ).count()
+    
+    # NEW: Social stats
+    social_connections = SocialConnection.objects.filter(user=request.user)
+    total_social_posts = ImportedContent.objects.filter(
+        social_connection__user=request.user
     ).count()
     
     context = {
@@ -591,8 +420,9 @@ def dashboard_view(request):
         'total_followers': total_followers,
         'recent_activities': recent_activities,
         'recent_comments': recent_comments,
-        'recent_donations': recent_donations,
         'pending_imports': pending_imports,
+        'social_connections': social_connections,
+        'total_social_posts': total_social_posts,
     }
     
     return render(request, 'dashboard/home.html', context)
@@ -605,16 +435,13 @@ def my_journeys_view(request):
     
     journeys = Journey.objects.filter(creator=profile).order_by('-created_at')
     
-    # Calculate stats
     active_count = journeys.filter(is_active=True).count()
     total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     total_followers = JourneyFollow.objects.filter(journey__creator=profile).count()
     
-    # Add stats to each journey
     for journey in journeys:
         journey.activity_count = journey.activities.count()
         journey.follower_count = journey.get_follower_count()
-        journey.donation_total = journey.get_total_donations()
     
     context = {
         'journeys': journeys,
@@ -629,50 +456,27 @@ def my_journeys_view(request):
 # ============================================================================
 # JOURNEY CREATION & EDITING
 # ============================================================================
+
 @login_required
 def create_journey_view(request):
-    """Create a new journey - DEBUG VERSION"""
+    """Create a new journey"""
     profile = get_user_profile(request.user)
     
-    print("=" * 50)
-    print("CREATE JOURNEY VIEW CALLED")
-    print(f"Request method: {request.method}")
-    print(f"User: {request.user}")
-    print(f"Profile: {profile}")
-    print("=" * 50)
-    
     if request.method == 'POST':
-        print("POST data received:")
-        for key, value in request.POST.items():
-            if key != 'csrfmiddlewaretoken':
-                print(f"  {key}: {value[:100] if value else 'EMPTY'}")
-        
         form = JourneyForm(request.POST, request.FILES)
         
-        print(f"Form is valid? {form.is_valid()}")
-        
         if form.is_valid():
-            print("Form is VALID. Creating journey...")
-            
             try:
                 journey = form.save(commit=False)
                 journey.creator = profile
                 
-                # Handle Cloudinary cover image
                 cover_image_url = request.POST.get('cover_image_url')
                 cover_image_public_id = request.POST.get('cover_image_public_id')
                 
-                print(f"Cover image URL: {cover_image_url}")
-                print(f"Cover image public ID: {cover_image_public_id}")
-                
                 if cover_image_url and cover_image_public_id:
-                    journey.cover_image_url = cover_image_url
-                    journey.cover_image_public_id = cover_image_public_id
                     journey.cover_image = cover_image_public_id
                 
-                print(f"About to save journey with title: {journey.title}")
                 journey.save()
-                print(f"Journey saved! ID: {journey.id}")
                 
                 # Save tags
                 tags_input = form.cleaned_data.get('tags_input', '')
@@ -681,48 +485,29 @@ def create_journey_view(request):
                     for tag_name in tag_names[:10]:
                         tag, _ = Tag.objects.get_or_create(name=tag_name)
                         journey.tags.add(tag)
-                    print(f"Added {len(tag_names)} tags")
-                
-                # Save milestones
-                milestones_input = request.POST.get('milestones_input', '')
-                if milestones_input:
-                    try:
-                        import json
-                        milestones_list = json.loads(milestones_input)
-                        if milestones_list:
-                            journey.milestones = milestones_list
-                            journey.save(update_fields=['milestones'])
-                            print(f"Added {len(milestones_list)} milestones")
-                    except json.JSONDecodeError:
-                        print(f"Milestones not JSON: {milestones_input[:100]}")
                 
                 messages.success(request, f'Journey "{journey.title}" created successfully!')
-                print(f"SUCCESS! Redirecting to journey_content with slug: {journey.slug}")
                 return redirect('journey_content', slug=journey.slug)
                 
             except Exception as e:
-                print(f"EXCEPTION: {type(e).__name__}: {str(e)}")
-                import traceback
-                traceback.print_exc()
                 messages.error(request, f'Error creating journey: {str(e)}')
         else:
-            print("Form INVALID. Errors:")
             for field, errors in form.errors.items():
                 for error in errors:
-                    print(f"  {field}: {error}")
                     messages.error(request, f'{field}: {error}')
     
     else:
-        print("GET request - showing empty form")
         form = JourneyForm()
     
     context = {
         'form': form,
         'is_editing': False,
         'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
+        'social_connections': SocialConnection.objects.filter(user=request.user),
     }
     
     return render(request, 'dashboard/journey_form.html', context)
+
 
 @login_required
 def edit_journey_view(request, slug):
@@ -735,14 +520,11 @@ def edit_journey_view(request, slug):
         if form.is_valid():
             journey = form.save(commit=False)
             
-            # Handle Cloudinary cover image
             cover_image_url = request.POST.get('cover_image_url')
             cover_image_public_id = request.POST.get('cover_image_public_id')
             
             if cover_image_url and cover_image_public_id:
-                journey.cover_image_url = cover_image_url
-                journey.cover_image_public_id = cover_image_public_id
-                journey.cover_image = cover_image_public_id  # ← QUICK FIX
+                journey.cover_image = cover_image_public_id
             
             journey.save()
             form.save()
@@ -757,6 +539,7 @@ def edit_journey_view(request, slug):
         'journey': journey,
         'is_editing': True,
         'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
+        'social_connections': SocialConnection.objects.filter(user=request.user),
     }
     
     return render(request, 'dashboard/journey_form.html', context)
@@ -769,11 +552,13 @@ def journey_settings_view(request, slug):
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
     if request.method == 'POST':
-        # Update settings directly from POST data
         journey.is_public = request.POST.get('is_public') == 'on'
         journey.allow_comments = request.POST.get('allow_comments') == 'on'
         journey.auto_import_enabled = request.POST.get('auto_import_enabled') == 'on'
         journey.import_hashtag = request.POST.get('import_hashtag', '')
+        journey.social_share_url = request.POST.get('social_share_url', '')
+        journey.social_share_text = request.POST.get('social_share_text', '')
+        journey.auto_post_to_social = request.POST.get('auto_post_to_social') == 'on'
         journey.save()
         
         messages.success(request, 'Settings updated!')
@@ -802,6 +587,7 @@ def delete_journey_view(request, slug):
         'journey': journey,
     })
 
+
 # ============================================================================
 # ACTIVITY / CONTENT VIEWS
 # ============================================================================
@@ -815,17 +601,36 @@ def journey_content_view(request, slug):
     activities = journey.get_all_activities_by_day()
     current_day = journey.get_current_day()
     
+    # ===== SOCIAL-FIRST: Context =====
+    imported_count = 0
+    manual_count = 0
+    platform_counts = {}
+    
+    for activity in activities.values():
+        if activity and activity.imported_from:
+            imported_count += 1
+            platform = activity.source_platform
+            if platform:
+                platform_counts[platform] = platform_counts.get(platform, 0) + 1
+        elif activity:
+            manual_count += 1
+    
     context = {
         'journey': journey,
         'activities': activities,
         'current_day': current_day,
         'day_range': range(1, journey.duration + 1),
+        'imported_count': imported_count,
+        'manual_count': manual_count,
+        'platform_counts': platform_counts,
     }
     
     return render(request, 'dashboard/content_manager.html', context)
 
+
 @login_required
 def post_activity_view(request, slug, day_number=None):
+    """Post or edit an activity for a specific day"""
     journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
     
     if day_number is None:
@@ -838,30 +643,47 @@ def post_activity_view(request, slug, day_number=None):
         file_url = request.POST.get('file_url')
         is_video = request.POST.get('is_video') == 'true'
         actual_date = request.POST.get('actual_date')
+        source_url = request.POST.get('source_url', '')
+        source_platform = request.POST.get('source_platform', '')
+        embed_html = request.POST.get('embed_html', '')
+        social_post_id = request.POST.get('social_post_id', '')
+        social_likes = request.POST.get('social_likes', 0)
+        social_comments = request.POST.get('social_comments', 0)
         day = request.POST.get('day_number_field') or day_number
-        clear_existing = request.POST.get('clear_existing') == 'true'
         
-        if content and file_url:
-            # Use update_or_create to avoid duplicate key errors
+        if content:
+            # Build social engagement dict
+            social_engagement = {}
+            if social_likes or social_comments:
+                social_engagement = {
+                    'likes': int(social_likes) if social_likes else 0,
+                    'comments': int(social_comments) if social_comments else 0,
+                }
+            
             activity, created = Activity.objects.update_or_create(
                 journey=journey,
                 day_number_field=day or day_number,
                 defaults={
                     'content': content,
-                    'file': file_url,
+                    'file': file_url if file_url else None,
                     'is_video': is_video,
                     'actual_date': actual_date if actual_date else None,
+                    'source_url': source_url,
+                    'source_platform': source_platform,
+                    'embed_html': embed_html,
+                    'social_post_id': social_post_id,
+                    'social_engagement': social_engagement,
                 }
             )
             
             if created:
-                messages.success(request, 'Activity posted!')
+                messages.success(request, '✅ Activity posted!')
             else:
-                messages.success(request, 'Activity updated!')
+                messages.success(request, '✅ Activity updated!')
             
             return redirect('journey_content', slug=slug)
         else:
-            messages.error(request, 'Please provide content and media.')
+            messages.error(request, 'Please provide content for your update.')
     
     context = {
         'journey': journey,
@@ -894,16 +716,28 @@ def delete_activity_view(request, activity_id):
 
 
 # ============================================================================
-# SOCIAL IMPORT VIEWS
+# SOCIAL IMPORT VIEWS - CRITICAL FOR SOCIAL-FIRST
 # ============================================================================
 
 @login_required
 def social_connections_view(request):
-    """Manage social media connections"""
+    """Manage social connections"""
     connections = SocialConnection.objects.filter(user=request.user)
+    
+    # Get import stats
+    total_imported = ImportedContent.objects.filter(
+        social_connection__user=request.user
+    ).count()
+    
+    pending_imports = ImportedContent.objects.filter(
+        social_connection__user=request.user,
+        status='pending'
+    ).count()
     
     context = {
         'connections': connections,
+        'total_imported': total_imported,
+        'pending_imports': pending_imports,
         'platforms': SocialConnection.PLATFORMS,
     }
     
@@ -913,11 +747,9 @@ def social_connections_view(request):
 @login_required
 def connect_social_view(request, platform):
     """Initiate OAuth connection to social platform"""
-    # Store platform in session for callback
     request.session['connecting_platform'] = platform
     
     if platform == 'tiktok':
-        # TikTok OAuth URL
         auth_url = (
             f"https://www.tiktok.com/auth/authorize/"
             f"?client_key={settings.TIKTOK_CLIENT_KEY}"
@@ -929,7 +761,6 @@ def connect_social_view(request, platform):
         return redirect(auth_url)
     
     elif platform == 'instagram':
-        # Instagram OAuth URL
         auth_url = (
             f"https://api.instagram.com/oauth/authorize"
             f"?client_id={settings.INSTAGRAM_CLIENT_ID}"
@@ -953,11 +784,7 @@ def social_callback_view(request):
         messages.error(request, 'Authorization failed.')
         return redirect('social_connections')
     
-    # Exchange code for token (implementation depends on platform)
-    # This is a simplified example - you'll need platform-specific logic
-    
     if platform == 'tiktok':
-        # Exchange code for token
         token_data = exchange_tiktok_code(code)
         if token_data:
             SocialConnection.objects.update_or_create(
@@ -971,7 +798,7 @@ def social_callback_view(request):
                     'token_expires': timezone.now() + timezone.timedelta(seconds=token_data.get('expires_in', 86400)),
                 }
             )
-            messages.success(request, 'TikTok connected successfully!')
+            messages.success(request, '✅ TikTok connected successfully!')
     
     request.session.pop('connecting_platform', None)
     return redirect('social_connections')
@@ -989,8 +816,10 @@ def disconnect_social_view(request, connection_id):
     
     return redirect('social_connections')
 
+
 @login_required
 def quick_import_view(request):
+    """Quick import from social media - CRITICAL FOR SOCIAL-FIRST"""
     profile = get_user_profile(request.user)
     
     if request.method == 'POST':
@@ -1003,10 +832,34 @@ def quick_import_view(request):
             caption = request.POST.get('caption', '').strip()
             embed_html = request.POST.get('embed_html', '').strip()
             thumbnail_url = request.POST.get('thumbnail_url', '').strip()
+            media_url = request.POST.get('media_url', '').strip()
+            media_type = request.POST.get('media_type', '').strip()
+            platform_post_id = request.POST.get('platform_post_id', '').strip()
+            posted_at_str = request.POST.get('posted_at', '')
+            like_count = request.POST.get('like_count', 0)
+            comment_count = request.POST.get('comment_count', 0)
             
             if not caption:
                 caption = f"Imported from {platform.title() if platform else 'Social Media'}"
             
+            # Parse posted_at
+            posted_at = timezone.now()
+            if posted_at_str:
+                try:
+                    posted_at = timezone.datetime.fromisoformat(posted_at_str.replace('Z', '+00:00'))
+                except:
+                    pass
+            
+            # Build social engagement
+            social_engagement = {}
+            if like_count or comment_count:
+                social_engagement = {
+                    'likes': int(like_count) if like_count else 0,
+                    'comments': int(comment_count) if comment_count else 0,
+                    'posted_at': posted_at.isoformat(),
+                }
+            
+            # Create or update activity
             activity, created = Activity.objects.update_or_create(
                 journey=journey,
                 day_number_field=day_number,
@@ -1015,8 +868,43 @@ def quick_import_view(request):
                     'source_url': url,
                     'source_platform': platform or '',
                     'embed_html': embed_html,
-                    'is_video': False,
+                    'social_engagement': social_engagement,
+                    'social_post_id': platform_post_id,
+                    'published_at': posted_at,
                 }
+            )
+            
+            # Also save as imported content for tracking
+            ImportedContent.objects.get_or_create(
+                platform=platform or 'other',
+                platform_post_id=platform_post_id or url,
+                defaults={
+                    'social_connection': SocialConnection.objects.filter(user=request.user, platform=platform).first(),
+                    'platform_url': url,
+                    'caption': caption,
+                    'media_url': media_url,
+                    'media_type': media_type,
+                    'thumbnail_url': thumbnail_url,
+                    'posted_at': posted_at,
+                    'like_count': int(like_count) if like_count else 0,
+                    'comment_count': int(comment_count) if comment_count else 0,
+                    'detected_day': day_number,
+                    'assigned_journey': journey,
+                    'assigned_day': day_number,
+                    'status': 'assigned',
+                    'created_activity': activity,
+                    'processed_at': timezone.now(),
+                }
+            )
+            
+            # Track quick add
+            QuickAddTracker.objects.create(
+                journey=journey,
+                user=request.user,
+                source_url=url,
+                source_platform=platform or 'other',
+                detected_day=day_number,
+                created_activity=activity,
             )
             
             if created:
@@ -1025,188 +913,49 @@ def quick_import_view(request):
                 messages.success(request, f'✅ Day {day_number} updated!')
             
             return redirect('journey_detail', slug=journey.slug)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = QuickImportForm(user=request.user)
     
-    return render(request, 'dashboard/quick_import.html', {'form': form})
-
-def generate_embed_html(url, platform):
-    """Generate embed HTML when oEmbed fails"""
-    if platform == 'youtube':
-        video_id = extract_youtube_id(url)
-        if video_id:
-            return f'<iframe width="100%" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
+    # Get user's journeys for the form
+    journeys = Journey.objects.filter(creator=profile, is_active=True)
     
-    elif platform == 'tiktok':
-        return f'<blockquote class="tiktok-embed" cite="{url}"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>'
-    
-    elif platform == 'instagram':
-        return f'<blockquote class="instagram-media" data-instgrm-permalink="{url}"></blockquote><script async src="//www.instagram.com/embed.js"></script>'
-    
-    elif platform == 'facebook':
-        return f'<iframe src="https://www.facebook.com/plugins/post.php?href={requests.utils.quote(url)}&width=350" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>'
-    
-    return ''
-
-
-def extract_youtube_id(url):
-    """Extract YouTube video ID from URL"""
-    import re
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
-        r'youtu\.be\/([0-9A-Za-z_-]{11})',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
-
-def get_embed_html_from_url(url, platform):
-    """Generate embed HTML for platforms"""
-    if platform == 'tiktok':
-        return f'<blockquote class="tiktok-embed" cite="{url}"><section></section></blockquote><script async src="https://www.tiktok.com/embed.js"></script>'
-    
-    elif platform == 'instagram':
-        return f'<blockquote class="instagram-media" data-instgrm-permalink="{url}"></blockquote><script async src="//www.instagram.com/embed.js"></script>'
-    
-    elif platform == 'youtube':
-        video_id = extract_youtube_video_id(url)
-        if video_id:
-            return f'<iframe width="100%" height="315" src="https://www.youtube.com/embed/{video_id}" frameborder="0" allowfullscreen></iframe>'
-    
-    elif platform == 'facebook':
-        return f'<iframe src="https://www.facebook.com/plugins/post.php?href={requests.utils.quote(url)}&width=350" width="100%" height="400" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>'
-    
-    return None
-
-
-def extract_youtube_video_id(url):
-    """Extract video ID from YouTube URL"""
-    import re
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
-        r'youtu\.be\/([0-9A-Za-z_-]{11})',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
-def fetch_oembed_data(url, platform):
-    import requests
-    
-    oembed_endpoints = {
-        'tiktok': 'https://www.tiktok.com/oembed',
-        'youtube': 'https://www.youtube.com/oembed',
-        'instagram': 'https://graph.facebook.com/v18.0/instagram_oembed',
-        'facebook': 'https://graph.facebook.com/v18.0/oembed_post',
-        'twitter': 'https://publish.twitter.com/oembed',
+    context = {
+        'form': form,
+        'journeys': journeys,
     }
     
-    endpoint = oembed_endpoints.get(platform)
-    if not endpoint:
-        return None
-    
-    # Convert x.com to twitter.com for oEmbed compatibility
-    request_url = url
-    if platform == 'twitter':
-        request_url = url.replace('x.com', 'twitter.com')
-    
+    return render(request, 'dashboard/quick_import.html', context)
+
+
+def exchange_tiktok_code(code):
+    """Exchange TikTok authorization code for access token"""
     try:
-        params = {'url': request_url, 'omit_script': '1'}
-        
-        # Twitter needs these params for richer data
-        if platform == 'twitter':
-            params['dnt'] = '1'
-            params['hide_thread'] = '1'
-            params['theme'] = 'dark'
-        
-        response = requests.get(endpoint, params=params, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
+        response = requests.post(
+            'https://open-api.tiktok.com/oauth/access_token/',
+            data={
+                'client_key': settings.TIKTOK_CLIENT_KEY,
+                'client_secret': settings.TIKTOK_CLIENT_SECRET,
+                'code': code,
+                'grant_type': 'authorization_code',
+                'redirect_uri': settings.TIKTOK_REDIRECT_URI,
+            }
+        )
+        data = response.json()
+        if data.get('data'):
             return {
-                'title': data.get('title', ''),
-                'thumbnail_url': data.get('thumbnail_url', ''),
-                'author_name': data.get('author_name', ''),
-                'html': data.get('html', ''),
+                'access_token': data['data']['access_token'],
+                'refresh_token': data['data'].get('refresh_token'),
+                'open_id': data['data']['open_id'],
+                'username': data['data'].get('username', ''),
+                'expires_in': data['data'].get('expires_in', 86400),
             }
     except Exception as e:
-        print(f"oEmbed fetch error for {platform}: {e}")
-    
+        print(f"TikTok token exchange error: {e}")
     return None
-
-
-@login_required
-def api_preview_url(request):
-    url = request.GET.get('url', '').strip()
-    if not url:
-        return JsonResponse({'success': False, 'error': 'No URL provided'})
-    
-    platform = detect_platform_from_url(url)
-    if not platform:
-        return JsonResponse({'success': False, 'error': 'Unsupported platform'})
-    
-    # Try oEmbed first
-    oembed_data = fetch_oembed_data(url, platform)
-    
-    if oembed_data and (oembed_data.get('thumbnail_url') or oembed_data.get('html')):
-        # For all platforms, sanitize the embed HTML to prevent script loading issues
-        embed_html = oembed_data.get('html', '')
-        
-        # Remove problematic scripts from the embed temporarily (they'll load async)
-        import re
-        # Remove inline scripts that might cause errors
-        embed_html = re.sub(r'<script[^>]*>.*?</script>', '', embed_html, flags=re.DOTALL)
-        
-        # For Instagram, add a placeholder div that will be replaced by Instagram's embed script
-        if platform == 'instagram':
-            embed_html = f'<div class="instagram-placeholder" data-instgrm-permalink="{url}"><div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-instagram" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Instagram Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Instagram →</a></div></div>'
-        
-        # For TikTok, use a simpler embed that loads reliably
-        elif platform == 'tiktok':
-            embed_html = f'<div class="tiktok-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-tiktok" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>TikTok Video</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">Watch on TikTok →</a></div>'
-        
-        # For Twitter, use a simpler embed
-        elif platform == 'twitter':
-            embed_html = f'<div class="twitter-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-twitter" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Tweet</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on X →</a></div>'
-        
-        # For Facebook, use simpler embed
-        elif platform == 'facebook':
-            embed_html = f'<div class="facebook-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-facebook" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Facebook Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Facebook →</a></div>'
-        
-        return JsonResponse({
-            'success': True,
-            'platform': platform,
-            'title': oembed_data.get('title', f'{platform.title()} Post'),
-            'thumbnail_url': oembed_data.get('thumbnail_url', ''),
-            'author_name': oembed_data.get('author_name', ''),
-            'html': embed_html,
-        })
-    
-    # Fallback: use safe placeholders for all platforms
-    safe_placeholders = {
-        'tiktok': ('fa-tiktok', 'TikTok Video', 'Watch on TikTok'),
-        'instagram': ('fa-instagram', 'Instagram Post', 'View on Instagram'),
-        'youtube': ('fa-youtube', 'YouTube Video', 'Watch on YouTube'),
-        'facebook': ('fa-facebook', 'Facebook Post', 'View on Facebook'),
-        'twitter': ('fa-twitter', 'Tweet', 'View on X'),
-    }
-    
-    icon, label, action = safe_placeholders.get(platform, ('fa-link', 'Content', 'View Original'))
-    
-    embed_html = f'<div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab {icon}" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>{label}</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">{action} →</a></div>'
-    
-    return JsonResponse({
-        'success': True,
-        'platform': platform,
-        'title': f'{platform.title()} Post',
-        'thumbnail_url': '',
-        'author_name': '',
-        'html': embed_html,
-    })
-
 
 
 @login_required
@@ -1216,7 +965,6 @@ def import_queue_view(request):
     
     journeys = Journey.objects.filter(creator=profile)
     
-    # Include both connected and manual imports
     imports = ImportedContent.objects.filter(
         Q(social_connection__user=request.user) | Q(social_connection__isnull=True),
         status='pending'
@@ -1226,10 +974,20 @@ def import_queue_view(request):
     if journey_id:
         imports = imports.filter(assigned_journey_id=journey_id)
     
+    # Stats
+    total_imports = ImportedContent.objects.filter(social_connection__user=request.user).count()
+    pending_count = ImportedContent.objects.filter(social_connection__user=request.user, status='pending').count()
+    approved_count = ImportedContent.objects.filter(social_connection__user=request.user, status='approved').count()
+    assigned_count = ImportedContent.objects.filter(social_connection__user=request.user, status='assigned').count()
+    
     context = {
         'imports': imports,
         'journeys': journeys,
         'selected_journey': journey_id,
+        'total_imports': total_imports,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'assigned_count': assigned_count,
     }
     
     return render(request, 'dashboard/import_queue.html', context)
@@ -1269,33 +1027,219 @@ def process_import_view(request, import_id):
     return redirect('import_queue')
 
 
-def exchange_tiktok_code(code):
-    """Exchange TikTok authorization code for access token"""
-    # This is a placeholder - implement actual TikTok API call
-    # TikTok OAuth documentation: https://developers.tiktok.com/doc/oauth-user-access-token-management/
+# ============================================================================
+# API VIEWS FOR SOCIAL IMPORT - CRITICAL
+# ============================================================================
+
+@login_required
+def api_preview_url(request):
+    """Preview social media content from URL - CRITICAL FOR SOCIAL-FIRST"""
+    url = request.GET.get('url', '').strip()
+    if not url:
+        return JsonResponse({'success': False, 'error': 'No URL provided'})
+    
+    platform = detect_platform_from_url(url)
+    if not platform:
+        return JsonResponse({'success': False, 'error': 'Unsupported platform'})
+    
+    # Try oEmbed first
+    oembed_data = fetch_oembed_data(url, platform)
+    
+    if oembed_data and (oembed_data.get('thumbnail_url') or oembed_data.get('html')):
+        embed_html = oembed_data.get('html', '')
+        
+        # Sanitize embed
+        import re
+        embed_html = re.sub(r'<script[^>]*>.*?</script>', '', embed_html, flags=re.DOTALL)
+        
+        # For Instagram, use placeholder
+        if platform == 'instagram':
+            embed_html = f'<div class="instagram-placeholder" data-instgrm-permalink="{url}"><div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-instagram" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Instagram Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Instagram →</a></div></div>'
+        
+        # For TikTok
+        elif platform == 'tiktok':
+            embed_html = f'<div class="tiktok-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-tiktok" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>TikTok Video</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">Watch on TikTok →</a></div>'
+        
+        # For Twitter
+        elif platform == 'twitter':
+            embed_html = f'<div class="twitter-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-twitter" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Tweet</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on X →</a></div>'
+        
+        # For Facebook
+        elif platform == 'facebook':
+            embed_html = f'<div class="facebook-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-facebook" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Facebook Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Facebook →</a></div>'
+        
+        # For YouTube
+        elif platform == 'youtube':
+            video_id = extract_youtube_video_id(url)
+            if video_id:
+                embed_html = f'<div class="youtube-embed-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1&playsinline=1" frameborder="0" allowfullscreen></iframe></div>'
+        
+        return JsonResponse({
+            'success': True,
+            'platform': platform,
+            'title': oembed_data.get('title', f'{platform.title()} Post'),
+            'thumbnail_url': oembed_data.get('thumbnail_url', ''),
+            'author_name': oembed_data.get('author_name', ''),
+            'html': embed_html,
+        })
+    
+    # Fallback: use safe placeholders
+    safe_placeholders = {
+        'tiktok': ('fa-tiktok', 'TikTok Video', 'Watch on TikTok'),
+        'instagram': ('fa-instagram', 'Instagram Post', 'View on Instagram'),
+        'youtube': ('fa-youtube', 'YouTube Video', 'Watch on YouTube'),
+        'facebook': ('fa-facebook', 'Facebook Post', 'View on Facebook'),
+        'twitter': ('fa-twitter', 'Tweet', 'View on X'),
+        'linkedin': ('fa-linkedin', 'LinkedIn Post', 'View on LinkedIn'),
+    }
+    
+    icon, label, action = safe_placeholders.get(platform, ('fa-link', 'Content', 'View Original'))
+    
+    embed_html = f'<div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab {icon}" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>{label}</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">{action} →</a></div>'
+    
+    return JsonResponse({
+        'success': True,
+        'platform': platform,
+        'title': f'{platform.title()} Post',
+        'thumbnail_url': '',
+        'author_name': '',
+        'html': embed_html,
+    })
+
+
+def fetch_oembed_data(url, platform):
+    """Fetch oEmbed data for a URL"""
+    import requests
+    
+    oembed_endpoints = {
+        'tiktok': 'https://www.tiktok.com/oembed',
+        'youtube': 'https://www.youtube.com/oembed',
+        'instagram': 'https://graph.facebook.com/v18.0/instagram_oembed',
+        'facebook': 'https://graph.facebook.com/v18.0/oembed_post',
+        'twitter': 'https://publish.twitter.com/oembed',
+    }
+    
+    endpoint = oembed_endpoints.get(platform)
+    if not endpoint:
+        return None
+    
+    request_url = url
+    if platform == 'twitter':
+        request_url = url.replace('x.com', 'twitter.com')
+    
     try:
-        response = requests.post(
-            'https://open-api.tiktok.com/oauth/access_token/',
-            data={
-                'client_key': settings.TIKTOK_CLIENT_KEY,
-                'client_secret': settings.TIKTOK_CLIENT_SECRET,
-                'code': code,
-                'grant_type': 'authorization_code',
-                'redirect_uri': settings.TIKTOK_REDIRECT_URI,
-            }
-        )
-        data = response.json()
-        if data.get('data'):
+        params = {'url': request_url, 'omit_script': '1'}
+        
+        if platform == 'twitter':
+            params['dnt'] = '1'
+            params['hide_thread'] = '1'
+            params['theme'] = 'dark'
+        
+        response = requests.get(endpoint, params=params, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
             return {
-                'access_token': data['data']['access_token'],
-                'refresh_token': data['data'].get('refresh_token'),
-                'open_id': data['data']['open_id'],
-                'username': data['data'].get('username', ''),
-                'expires_in': data['data'].get('expires_in', 86400),
+                'title': data.get('title', ''),
+                'thumbnail_url': data.get('thumbnail_url', ''),
+                'author_name': data.get('author_name', ''),
+                'html': data.get('html', ''),
             }
     except Exception as e:
-        print(f"TikTok token exchange error: {e}")
+        print(f"oEmbed fetch error for {platform}: {e}")
+    
     return None
+
+
+def extract_youtube_video_id(url):
+    """Extract video ID from YouTube URL"""
+    import re
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
+        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
+# ============================================================================
+# SOCIAL POST TEMPLATES - NEW (Social-First)
+# ============================================================================
+
+@login_required
+def social_template_view(request, slug):
+    """Manage social post templates for a journey"""
+    journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
+    templates = SocialPostTemplate.objects.filter(journey=journey)
+    
+    if request.method == 'POST':
+        form = SocialPostTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.journey = journey
+            template.save()
+            messages.success(request, f'Template for {template.get_platform_display()} created!')
+            return redirect('social_template', slug=slug)
+    else:
+        form = SocialPostTemplateForm()
+    
+    context = {
+        'journey': journey,
+        'templates': templates,
+        'form': form,
+    }
+    
+    return render(request, 'dashboard/social_templates.html', context)
+
+
+@login_required
+@require_POST
+def delete_social_template_view(request, template_id):
+    """Delete a social post template"""
+    template = get_object_or_404(SocialPostTemplate, id=template_id, journey__creator__user=request.user)
+    journey_slug = template.journey.slug
+    template.delete()
+    messages.success(request, 'Template deleted.')
+    return redirect('social_template', slug=journey_slug)
+
+
+@login_required
+def api_social_template(request, template_id):
+    """Get a single social template for editing"""
+    template = get_object_or_404(SocialPostTemplate, id=template_id, journey__creator__user=request.user)
+    
+    return JsonResponse({
+        'success': True,
+        'id': template.id,
+        'platform': template.platform,
+        'template_text': template.template_text,
+        'auto_post': template.auto_post,
+    })
+
+
+# ============================================================================
+# API SOCIAL SETTINGS - FIXED (Moved to proper location)
+# ============================================================================
+
+@login_required
+def api_social_settings(request, connection_id):
+    """Get or update social connection settings"""
+    connection = get_object_or_404(SocialConnection, id=connection_id, user=request.user)
+    
+    if request.method == 'GET':
+        return JsonResponse({
+            'auto_import': connection.auto_import,
+            'import_hashtag': connection.import_hashtag,
+        })
+    
+    elif request.method == 'POST':
+        connection.auto_import = request.POST.get('auto_import') == 'on'
+        connection.import_hashtag = request.POST.get('import_hashtag', '')
+        connection.save()
+        return JsonResponse({'success': True})
 
 
 # ============================================================================
@@ -1400,6 +1344,7 @@ def comment_activity_view(request, activity_id):
         'comment_count': activity.get_comment_count(),
     })
 
+
 @login_required
 @require_POST
 def share_journey_view(request, slug):
@@ -1409,88 +1354,18 @@ def share_journey_view(request, slug):
     
     Share.objects.create(
         journey=journey,
-        user=request.user if request.user.is_authenticated else None,
+        user=request.user,
         platform=platform
     )
+    
+    # Update traffic sources
+    if platform in ['twitter', 'instagram', 'facebook', 'linkedin', 'tiktok']:
+        journey.record_traffic_source(platform)
     
     return JsonResponse({
         'success': True,
         'share_count': journey.get_share_count(),
     })
-
-
-# ============================================================================
-# DONATION VIEWS
-# ============================================================================
-
-def donation_view(request, slug):
-    """Make a donation to a journey"""
-    journey = get_object_or_404(Journey, slug=slug, funding_enabled=True)
-    
-    if request.method == 'POST':
-        form = DonationForm(request.POST)
-        if form.is_valid():
-            donation = form.save(commit=False)
-            donation.journey = journey
-            donation.donor = request.user if request.user.is_authenticated else None
-            donation.save()
-            
-            # Redirect to payment processor
-            request.session['donation_id'] = donation.id
-            return redirect('process_donation', donation_id=donation.id)
-    else:
-        form = DonationForm()
-    
-    context = {
-        'journey': journey,
-        'form': form,
-        'total_raised': journey.get_total_donations(),
-        'donation_percentage': journey.get_donation_percentage(),
-        'donor_count': journey.donations.filter(status='completed').values('donor').distinct().count(),
-    }
-    
-    return render(request, 'donation/donate.html', context)
-
-
-def process_donation_view(request, donation_id):
-    """Process donation payment"""
-    donation = get_object_or_404(Donation, id=donation_id)
-    
-    # This would integrate with PayPal/Stripe
-    # For now, we'll simulate a successful payment
-    
-    context = {
-        'donation': donation,
-        'journey': donation.journey,
-        'paypal_client_id': settings.PAYPAL_CLIENT_ID,
-    }
-    
-    return render(request, 'donation/process.html', context)
-
-
-@csrf_exempt
-def donation_success_view(request):
-    """Donation success callback"""
-    donation_id = request.session.get('donation_id')
-    
-    if donation_id:
-        donation = Donation.objects.get(id=donation_id)
-        donation.status = 'completed'
-        donation.completed_at = timezone.now()
-        donation.save()
-        
-        request.session.pop('donation_id', None)
-        
-        messages.success(request, 'Thank you for your donation!')
-        return redirect('journey_detail', slug=donation.journey.slug)
-    
-    return redirect('landing')
-
-
-def donation_cancel_view(request):
-    """Donation cancelled"""
-    messages.info(request, 'Donation cancelled.')
-    return redirect('landing')
 
 
 # ============================================================================
@@ -1544,7 +1419,6 @@ def notifications_view(request):
         user=request.user
     ).order_by('-created_at')
     
-    # Pagination
     paginator = Paginator(notifications, 20)
     page = request.GET.get('page')
     
@@ -1581,6 +1455,22 @@ def mark_all_notifications_read_view(request):
     Notification.objects.filter(user=request.user, viewed=False).update(viewed=True)
     
     return JsonResponse({'success': True})
+
+
+@login_required
+def unread_notification_count(request):
+    """API endpoint for unread notification count"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'unread_count': 0})
+    
+    try:
+        unread_count = Notification.objects.filter(
+            user=request.user, 
+            viewed=False
+        ).count()
+        return JsonResponse({'unread_count': unread_count})
+    except Exception:
+        return JsonResponse({'unread_count': 0})
 
 
 # ============================================================================
@@ -1628,96 +1518,6 @@ def report_activity_view(request, activity_id):
 
 
 # ============================================================================
-# POST-JOURNEY PRODUCT VIEWS
-# ============================================================================
-
-@login_required
-def create_product_view(request, slug):
-    """Create a post-journey product"""
-    journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
-    
-    if request.method == 'POST':
-        form = PostJourneyProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            product = form.save(commit=False)
-            product.journey = journey
-            product.save()
-            
-            messages.success(request, f'Product "{product.title}" created!')
-            return redirect('journey_detail', slug=journey.slug)
-    else:
-        form = PostJourneyProductForm()
-    
-    context = {
-        'form': form,
-        'journey': journey,
-    }
-    
-    return render(request, 'dashboard/product_form.html', context)
-
-
-@login_required
-def edit_product_view(request, product_id):
-    """Edit a post-journey product"""
-    product = get_object_or_404(
-        PostJourneyProduct,
-        id=product_id,
-        journey__creator__user=request.user
-    )
-    
-    if request.method == 'POST':
-        form = PostJourneyProductForm(request.POST, request.FILES, instance=product)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Product "{product.title}" updated!')
-            return redirect('journey_detail', slug=product.journey.slug)
-    else:
-        form = PostJourneyProductForm(instance=product)
-    
-    context = {
-        'form': form,
-        'product': product,
-        'journey': product.journey,
-    }
-    
-    return render(request, 'dashboard/product_form.html', context)
-
-from django.shortcuts import render
-
-def blog_index(request):
-    return render(request, 'blog/index.html')
-
-def blog_instagram(request):
-    return render(request, 'blog/why-instagram.html')
-
-def blog_posts_not_journeys(request):
-    return render(request, 'blog/posts-not-journeys.html')
-
-def blog_challenge_product(request):
-    return render(request, 'blog/challenge-to-product.html')
-
-def blog_journey_content(request):
-    return render(request, 'blog/journey-50-pieces.html')
-
-def blog_scattered_posts(request):
-    return render(request, 'blog/scattered-to-structured.html')
-
-def blog_buried_asset(request):
-    return render(request, 'blog/buried-asset.html')
-
-def blog_blind_spot(request):
-    return render(request, 'blog/blind-spot.html')
-
-def blog_challenge_fails(request):
-    return render(request, 'blog/30-day-challenge-fails.html')
-
-def blog_journey_page(request):
-    return render(request, 'blog/journey-page-for-coaches.html')
-
-def blog_challenge_lost(request):
-    return render(request, 'blog/challenge-lost-after-day-7.html')
-
-# ============================================================================
 # FAQ VIEWS
 # ============================================================================
 
@@ -1725,7 +1525,6 @@ def faq_view(request):
     """FAQ page"""
     faqs = FAQ.objects.filter(is_active=True).order_by('category', 'order')
     
-    # Group by category
     faqs_by_category = {}
     for faq in faqs:
         if faq.category not in faqs_by_category:
@@ -1741,97 +1540,17 @@ def faq_view(request):
 
 
 # ============================================================================
-# API VIEWS (for AJAX)
+# CONTACT VIEWS
 # ============================================================================
-
-@login_required
-def api_journey_stats_view(request, slug):
-    """API endpoint for journey stats"""
-    journey = get_object_or_404(Journey, slug=slug, creator__user=request.user)
-    
-    # Daily stats for last 30 days
-    from django.db.models.functions import TruncDate
-    
-    daily_views = Activity.objects.filter(
-        journey=journey
-    ).annotate(
-        date=TruncDate('created_at')
-    ).values('date').annotate(
-        count=Count('id')
-    ).order_by('-date')[:30]
-    
-    return JsonResponse({
-        'total_views': journey.view_count,
-        'unique_viewers': journey.unique_viewers,
-        'follower_count': journey.get_follower_count(),
-        'love_count': journey.get_love_count(),
-        'comment_count': journey.get_comment_count(),
-        'share_count': journey.get_share_count(),
-        'save_count': journey.get_save_count(),
-        'daily_views': list(daily_views),
-    })
-
-
-@login_required
-def api_activity_stats_view(request, activity_id):
-    """API endpoint for activity stats"""
-    activity = get_object_or_404(
-        Activity,
-        id=activity_id,
-        journey__creator__user=request.user
-    )
-    
-    return JsonResponse({
-        'view_count': activity.view_count,
-        'love_count': activity.get_love_count(),
-        'comment_count': activity.get_comment_count(),
-    })
-
-
-# ============================================================================
-# STATIC PAGES
-# ============================================================================
-
-def about_view(request):
-    """About page"""
-    return render(request, 'about.html')
-
-
-def privacy_view(request):
-    """Privacy policy"""
-    return render(request, 'privacy.html')
-
-
-def terms_view(request):
-    """Terms of service"""
-    return render(request, 'terms.html')
-
-
-import logging
-from django.shortcuts import render
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
-from .models import ContactMessage
-from .utils.contact_bot import contact_bot
-
-logger = logging.getLogger(__name__)
-
-def get_client_ip(request):
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
 
 def contact_view(request):
+    """Contact form with AI response"""
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         email = request.POST.get('email', '').strip()
         subject = request.POST.get('subject', 'general')
         message = request.POST.get('message', '').strip()
         
-        # Simple validation
         errors = {}
         if not name:
             errors['name'] = 'Name is required'
@@ -1849,12 +1568,8 @@ def contact_view(request):
                 'submitted': False
             })
         
-        # Generate AI response
-        try:
-            ai_response = contact_bot.generate_response(name, message)
-        except Exception as e:
-            logger.error(f"AI error: {e}")
-            ai_response = f"Thanks {name}! For personal help, email rallynex1@gmail.com"
+        # Generate AI response (simplified)
+        ai_response = f"Thanks {name}! We'll get back to you soon about your question."
         
         # Save to database
         try:
@@ -1869,7 +1584,7 @@ def contact_view(request):
             )
             contact.save()
         except Exception as e:
-            logger.error(f"DB error: {e}")
+            print(f"Contact save error: {e}")
         
         return render(request, 'contact.html', {
             'submitted': True,
@@ -1879,23 +1594,187 @@ def contact_view(request):
     
     return render(request, 'contact.html', {'submitted': False})
 
+
+# ============================================================================
+# CONVERSION / NEWSLETTER VIEWS
+# ============================================================================
+
+def conversion_start_view(request):
+    """Conversion page for email capture"""
+    if request.session.get('subscribed', False):
+        show_form = False
+        show_downloads = True
+    else:
+        show_form = True
+        show_downloads = False
+    
+    if request.method == 'POST' and show_form:
+        email = request.POST.get('email', '').strip().lower()
+        
+        if not email:
+            return render(request, 'conversion/start.html', {
+                'errors': {'email': 'Email is required'},
+                'show_form': True,
+                'show_downloads': False,
+            })
+        
+        subscriber, created = Subscriber.objects.get_or_create(
+            email=email,
+            defaults={
+                'ip_address': get_client_ip(request),
+                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:200],
+            }
+        )
+        
+        request.session['subscribed'] = True
+        request.session['subscriber_email'] = email
+        
+        return render(request, 'conversion/start.html', {
+            'show_form': False,
+            'show_downloads': True,
+            'just_subscribed': True,
+            'subscriber_email': email,
+        })
+    
+    return render(request, 'conversion/start.html', {
+        'show_form': show_form,
+        'show_downloads': show_downloads,
+        'just_subscribed': False,
+    })
+
+
+# ============================================================================
+# STATIC PAGES
+# ============================================================================
+
+def about_view(request):
+    return render(request, 'about.html')
+
+
+def privacy_view(request):
+    return render(request, 'privacy.html')
+
+
+def terms_view(request):
+    return render(request, 'terms.html')
+
+
+# ============================================================================
+# BLOG VIEWS
+# ============================================================================
+
+def blog_index(request):
+    return render(request, 'blog/index.html')
+
+
+def blog_instagram(request):
+    return render(request, 'blog/why-instagram.html')
+
+
+def blog_posts_not_journeys(request):
+    return render(request, 'blog/posts-not-journeys.html')
+
+
+def blog_challenge_product(request):
+    return render(request, 'blog/challenge-to-product.html')
+
+
+def blog_journey_content(request):
+    return render(request, 'blog/journey-50-pieces.html')
+
+
+def blog_scattered_posts(request):
+    return render(request, 'blog/scattered-to-structured.html')
+
+
+def blog_buried_asset(request):
+    return render(request, 'blog/buried-asset.html')
+
+
+def blog_blind_spot(request):
+    return render(request, 'blog/blind-spot.html')
+
+
+def blog_challenge_fails(request):
+    return render(request, 'blog/30-day-challenge-fails.html')
+
+
+def blog_journey_page(request):
+    return render(request, 'blog/journey-page-for-coaches.html')
+
+
+def blog_challenge_lost(request):
+    return render(request, 'blog/challenge-lost-after-day-7.html')
+
+
+# ============================================================================
+# THEME TOGGLE
+# ============================================================================
+
+@require_POST
+def toggle_theme(request):
+    """Single endpoint for all templates to toggle theme"""
+    try:
+        data = json.loads(request.body)
+        theme = data.get('theme', 'light')
+        
+        response = JsonResponse({'success': True, 'theme': theme})
+        response.set_cookie('theme', theme, max_age=365*24*60*60, httponly=True, samesite='Lax')
+        return response
+    except:
+        return JsonResponse({'success': False}, status=400)
+
+
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================
 
 def handler404(request, exception):
-    """Custom 404 page"""
     return render(request, 'errors/404.html', status=404)
 
 
 def handler500(request):
-    """Custom 500 page"""
     return render(request, 'errors/500.html', status=500)
 
 
 def handler403(request, exception):
-    """Custom 403 page"""
     return render(request, 'errors/403.html', status=403)
+
+
+# ============================================================================
+# TEMPLATE STORE VIEW - ADD THIS
+# ============================================================================
+
+def template_store_view(request):
+    """Template store page - placeholder for now"""
+    # This is a placeholder view. Later you can add actual template logic.
+    return render(request, 'templates/store.html', {
+        'templates': [],  # Empty for now
+        'user_journeys': Journey.objects.filter(creator__user=request.user, is_active=True) if request.user.is_authenticated else [],
+    })
+
+
+# ============================================================================
+# ONBOARDING WIZARD - ADD THIS
+# ============================================================================
+
+def onboarding_wizard_view(request):
+    """Onboarding wizard for new users"""
+    return render(request, 'onboarding/wizard.html', {})
+
+
+# ============================================================================
+# WELCOME VIEW - ADD THIS
+# ============================================================================
+
+def welcome_view(request):
+    """Welcome page for creators coming from DMs"""
+    return render(request, 'welcome.html', {})
+
+
+# ============================================================================
+# PREVIEW & CLAIM VIEWS - ADD THESE
+# ============================================================================
 
 def preview_journey_view(request, slug):
     """Public preview page - no login required"""
@@ -1905,15 +1784,11 @@ def preview_journey_view(request, slug):
         is_active=True
     )
     
-    # Only show public journeys in preview, or allow superuser
     if not journey.is_public:
         if not request.user.is_authenticated or not request.user.is_superuser:
             raise Http404("Journey not found")
     
-    # Check if journey is already claimed by a real user
     is_claimed = not journey.creator.user.username.startswith('rallynex')
-    
-    # Get activities organized by day
     activities_by_day = journey.get_all_activities_by_day()
     current_day = journey.get_current_day()
     current_activity = activities_by_day.get(current_day)
@@ -1935,15 +1810,13 @@ def claim_journey_view(request, slug):
     """Claim a preview journey after signup"""
     journey = get_object_or_404(Journey, slug=slug)
     
-    # Check if already claimed
     if not journey.creator.user.username.startswith('rallynex'):
         messages.warning(request, 'This journey has already been claimed.')
         return redirect('journey_detail', slug=slug)
     
-    # Transfer ownership to the logged-in user
     profile = get_user_profile(request.user)
     journey.creator = profile
-    journey.is_public = True  # Make it public when claimed
+    journey.is_public = True
     journey.save()
     
     messages.success(request, f'🎉 You now own "{journey.title}"! Start adding more content.')
@@ -1951,850 +1824,44 @@ def claim_journey_view(request, slug):
 
 
 
-def template_store_view(request):
-    """Template marketplace — browse and purchase"""
-    templates = JourneyTemplate.objects.filter(is_active=True)
-    
-    categories = {}
-    for cat_key, cat_name in Journey.CATEGORY_CHOICES:
-        cat_templates = templates.filter(category=cat_key)
-        if cat_templates.exists():
-            categories[cat_name] = {
-                'key': cat_key,
-                'templates': cat_templates,
-            }
-    
-    user_journeys = []
-    if request.user.is_authenticated:
-        profile = get_user_profile(request.user)
-        user_journeys = Journey.objects.filter(creator=profile, is_active=True)
-    
-    context = {
-        'categories': categories,
-        'user_journeys': user_journeys,
-    }
-    
-    return render(request, 'templates/store.html', context)
-
-
 @login_required
-def purchase_template_view(request, template_id):
-    """Buy a template — apply to new or existing journey"""
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
-    profile = get_user_profile(request.user)
-    user_journeys = Journey.objects.filter(creator=profile, is_active=True)
-    
-    context = {
-        'template': template,
-        'user_journeys': user_journeys,
-        'paypal_client_id': getattr(settings, 'PAYPAL_CLIENT_ID', ''),
-    }
-    
-    return render(request, 'templates/purchase.html', context)
-
-
-@login_required
-@require_POST
-def apply_template_to_journey(request, template_id):
-    """Apply purchased template style to an existing journey"""
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
-    journey_id = request.POST.get('journey_id')
-    
-    journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
-    
-    # Update journey with template style
-    journey.template_style = template.template_style
-    journey.save(update_fields=['template_style', 'updated_at'])
-    
-    template.usage_count += 1
-    template.save(update_fields=['usage_count'])
-    
-    messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
-    return redirect('journey_detail', slug=journey.slug)
-
-@login_required
-@require_POST
-def complete_template_purchase_view(request, template_id):
-    """Complete purchase — create new journey with ALL activities pre-filled"""
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
+def toolbox_view(request):
+    """Creator Toolbox - Central hub for all tools"""
     profile = get_user_profile(request.user)
     
-    paypal_order_id = request.POST.get('paypal_order_id')
-    current_day = request.POST.get('current_day', '1').strip()
+    # Get stats
+    journeys = Journey.objects.filter(creator=profile)
+    total_journeys = journeys.count()
+    total_followers = JourneyFollow.objects.filter(journey__creator=profile).count()
+    total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     
-    if not paypal_order_id and not template.is_free:
-        messages.error(request, 'Payment verification failed.')
-        return redirect('purchase_template', template_id=template.id)
+    # Import stats
+    total_imported = ImportedContent.objects.filter(
+        social_connection__user=request.user
+    ).count()
     
-    try:
-        day_override = int(current_day)
-        day_override = max(1, min(day_override, template.duration))
-    except (ValueError, TypeError):
-        day_override = 1
+    pending_imports = ImportedContent.objects.filter(
+        social_connection__user=request.user,
+        status='pending'
+    ).count()
     
-    adjusted_start = timezone.now() - datetime.timedelta(days=day_override - 1)
-    
-    journey = Journey.objects.create(
-        creator=profile,
-        title=template.title,
-        description=template.description,
-        category=template.category,
-        journey_type=template.journey_type,
-        duration=template.duration,
-        milestones=template.milestones,
-        template_style=template.template_style,
-        cover_image=template.cover_image if template.cover_image else None,
-        current_day_override=day_override,
-        start_date=adjusted_start,
-        is_public=True,
-        is_active=True,
-        published_at=timezone.now(),
-    )
-    
-    activities_created = 0
-    if template.milestones:
-        for milestone in template.milestones:
-            day_num = milestone.get('day', 1)
-            title_text = milestone.get('title', f'Day {day_num}')
-            description = milestone.get('description', '')
-            content = f"{title_text}\n\n{description}" if description else title_text
-            
-            activity, created = Activity.objects.update_or_create(
-                journey=journey,
-                day_number_field=day_num,
-                defaults={
-                    'content': content,
-                    'published_at': timezone.now(),
-                }
-            )
-            if created:
-                activities_created += 1
-    
-    template.usage_count += 1
-    template.save(update_fields=['usage_count'])
-    
-    if activities_created > 0:
-        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! You are on Day {day_override}.')
-    else:
-        messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
-    
-    return redirect('journey_detail', slug=journey.slug)
-@login_required
-@require_POST
-def admin_create_journey_from_template(request, template_id):
-    """Admin-only: create a journey from template without payment"""
-    if not request.user.is_superuser:
-        messages.error(request, 'Unauthorized.')
-        return redirect('template_store')
-    
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
-    profile = get_user_profile(request.user)
-    
-    custom_title = request.POST.get('title', '').strip()
-    current_day = request.POST.get('current_day', '1').strip()
-    
-    journey_title = custom_title if custom_title else template.title
-    
-    try:
-        day_override = int(current_day)
-        day_override = max(1, min(day_override, template.duration))
-    except (ValueError, TypeError):
-        day_override = 1
-    
-    from datetime import timedelta
-    adjusted_start = timezone.now() - timedelta(days=day_override - 1)
-    
-    journey = Journey.objects.create(
-        creator=profile,
-        title=journey_title,
-        description=template.description,
-        category=template.category,
-        journey_type=template.journey_type,
-        duration=template.duration,
-        milestones=template.milestones,
-        template_style=template.template_style,
-        cover_image=template.cover_image if template.cover_image else None,
-        current_day_override=day_override,
-        start_date=adjusted_start,
-        is_public=False,
-        is_active=True,
-        published_at=timezone.now(),
-    )
-    
-    if template.milestones:
-        for milestone in template.milestones:
-            day_num = milestone.get('day', 1)
-            title_text = milestone.get('title', f'Day {day_num}')
-            description = milestone.get('description', '')
-            content = f"{title_text}\n\n{description}" if description else title_text
-            
-            Activity.objects.update_or_create(
-                journey=journey,
-                day_number_field=day_num,
-                defaults={
-                    'content': content,
-                    'published_at': timezone.now(),
-                }
-            )
-    
-    template.usage_count += 1
-    template.save(update_fields=['usage_count'])
-    
-    messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
-    return redirect('journey_detail', slug=journey.slug)
-
-@login_required
-@require_POST
-def complete_template_purchase_view(request, template_id):
-    """Complete purchase — create new journey with ALL activities pre-filled"""
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
-    profile = get_user_profile(request.user)
-    
-    paypal_order_id = request.POST.get('paypal_order_id')
-    custom_title = request.POST.get('custom_title', '').strip()
-    current_day = request.POST.get('current_day', '1').strip()
-    
-    journey_title = custom_title if custom_title else template.title
-    
-    if not paypal_order_id and not template.is_free:
-        messages.error(request, 'Payment verification failed.')
-        return redirect('purchase_template', template_id=template.id)
-    
-    try:
-        day_override = int(current_day)
-        day_override = max(1, min(day_override, template.duration))
-    except (ValueError, TypeError):
-        day_override = 1
-    
-    from datetime import timedelta
-    adjusted_start = timezone.now() - timedelta(days=day_override - 1)
-    
-    journey = Journey.objects.create(
-        creator=profile,
-        title=journey_title,
-        description=template.description,
-        category=template.category,
-        journey_type=template.journey_type,
-        duration=template.duration,
-        milestones=template.milestones,
-        template_style=template.template_style,
-        cover_image=template.cover_image if template.cover_image else None,
-        current_day_override=day_override,
-        start_date=adjusted_start,
-        is_public=True,
-        is_active=True,
-        published_at=timezone.now(),
-    )
-    
-    activities_created = 0
-    if template.milestones:
-        for milestone in template.milestones:
-            day_num = milestone.get('day', 1)
-            title_text = milestone.get('title', f'Day {day_num}')
-            description = milestone.get('description', '')
-            content = f"{title_text}\n\n{description}" if description else title_text
-            
-            activity, created = Activity.objects.update_or_create(
-                journey=journey,
-                day_number_field=day_num,
-                defaults={
-                    'content': content,
-                    'published_at': timezone.now(),
-                }
-            )
-            if created:
-                activities_created += 1
-    
-    template.usage_count += 1
-    template.save(update_fields=['usage_count'])
-    
-    if activities_created > 0:
-        messages.success(request, f'Journey "{journey.title}" created with all {activities_created} days pre-filled! You are on Day {day_override}.')
-    else:
-        messages.success(request, f'Journey "{journey.title}" created! You are on Day {day_override}.')
-    
-    return redirect('journey_detail', slug=journey.slug)
-
-
-@login_required
-@require_POST
-def apply_template_to_journey(request, template_id):
-    """Apply purchased template style to an existing journey"""
-    template = get_object_or_404(JourneyTemplate, id=template_id, is_active=True)
-    journey_id = request.POST.get('journey_id')
-    current_day = request.POST.get('current_day', '1').strip()
-    
-    journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
-    
-    # Update journey with template style
-    journey.template_style = template.template_style
-    
-    # Update current day if provided
-    try:
-        day_override = int(current_day)
-        day_override = max(1, min(day_override, journey.duration))
-        journey.current_day_override = day_override
-    except (ValueError, TypeError):
-        pass
-    
-    journey.save(update_fields=['template_style', 'current_day_override', 'updated_at'])
-    
-    template.usage_count += 1
-    template.save(update_fields=['usage_count'])
-    
-    messages.success(request, f'"{template.title}" style applied to "{journey.title}"!')
-    return redirect('journey_detail', slug=journey.slug)
-
-
-from django.contrib.auth.views import PasswordResetView
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.models import User
-
-class CustomPasswordResetView(PasswordResetView):
-    template_name = 'auth/password_reset.html'
-    email_template_name = 'auth/password_reset_email.html'
-    subject_template_name = 'auth/password_reset_subject.txt'
-    success_url = '/password-reset/done/'
-    
-    def form_valid(self, form):
-        email = form.cleaned_data['email']
-        try:
-            user = User.objects.get(email=email)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            reset_link = f"/password-reset/{uid}/{token}/"
-            self.request.session['reset_link'] = reset_link
-            self.request.session['reset_email'] = email
-        except User.DoesNotExist:
-            self.request.session['reset_link'] = None
-            self.request.session['reset_email'] = email
-        
-        return super().form_valid(form)
-
-from django.contrib.auth.views import PasswordResetDoneView
-
-class CustomPasswordResetDoneView(PasswordResetDoneView):
-    template_name = 'auth/password_reset_done.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['reset_link'] = self.request.session.get('reset_link', None)
-        context['reset_email'] = self.request.session.get('reset_email', None)
-        return context
-
-
-# your_app/views.py
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-import json
-
-@require_POST
-def toggle_theme(request):
-    """Single endpoint for all templates to toggle theme"""
-    try:
-        data = json.loads(request.body)
-        theme = data.get('theme', 'light')
-        
-        response = JsonResponse({'success': True, 'theme': theme})
-        response.set_cookie('theme', theme, max_age=365*24*60*60, httponly=True, samesite='Lax')
-        return response
-    except:
-        return JsonResponse({'success': False}, status=400)
-
-
-import requests
-from django.conf import settings
-
-# ============================================================================
-# YOUTUBE PLAYLIST BULK IMPORT
-# ============================================================================
-
-def get_youtube_embed_html(video_id):
-    """Generate proper YouTube embed HTML with responsive wrapper"""
-    return f'<div class="youtube-embed-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1&playsinline=1&autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>'
-
-
-def extract_playlist_id(url):
-    """Extract playlist ID from YouTube URL"""
-    import re
-    patterns = [
-        r'[?&]list=([a-zA-Z0-9_-]+)',
-        r'youtube\.com/playlist/([a-zA-Z0-9_-]+)',
-        r'youtu\.be/.*[?&]list=([a-zA-Z0-9_-]+)',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return None
-
-
-def fetch_youtube_playlist_items(playlist_id, api_key):
-    """Fetch all videos from a YouTube playlist (max 50)"""
-    import requests
-    videos = []
-    next_page_token = None
-    
-    while True:
-        url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId={playlist_id}&key={api_key}"
-        if next_page_token:
-            url += f"&pageToken={next_page_token}"
-        
-        try:
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-        except Exception as e:
-            print(f"YouTube API error: {e}")
-            break
-        
-        for item in data.get('items', []):
-            snippet = item['snippet']
-            video_id = snippet['resourceId']['videoId']
-            
-            # Get better thumbnail quality
-            thumbnail = snippet['thumbnails'].get('maxres', {}).get('url') or \
-                       snippet['thumbnails'].get('standard', {}).get('url') or \
-                       snippet['thumbnails'].get('high', {}).get('url') or \
-                       snippet['thumbnails'].get('medium', {}).get('url')
-            
-            videos.append({
-                'title': snippet['title'],
-                'video_id': video_id,
-                'thumbnail': thumbnail,
-                'description': snippet.get('description', '')[:300],
-                'position': item.get('position', len(videos)),
-                'url': f"https://www.youtube.com/watch?v={video_id}",
-                'embed_html': get_youtube_embed_html(video_id),
-            })
-        
-        next_page_token = data.get('nextPageToken')
-        if not next_page_token:
-            break
-    
-    return sorted(videos, key=lambda x: x['position'])
-
-
-def fetch_youtube_playlist_metadata(playlist_id, api_key):
-    """Fetch playlist title and description"""
-    import requests
-    url = f"https://www.googleapis.com/youtube/v3/playlists?part=snippet&id={playlist_id}&key={api_key}"
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if data.get('items'):
-            snippet = data['items'][0]['snippet']
-            return {
-                'title': snippet['title'],
-                'description': snippet.get('description', ''),
-                'channel': snippet['channelTitle'],
-            }
-    except Exception as e:
-        print(f"Error fetching playlist metadata: {e}")
-    return None
-
-@login_required
-def youtube_playlist_import_view(request):
-    """Bulk import an entire YouTube playlist as a journey"""
-    from django.contrib import messages
-    from django.shortcuts import redirect, get_object_or_404
-    from django.conf import settings
-    from django.utils import timezone
-    from .models import Journey, Activity, User, Profile
-    
-    if request.method == 'POST':
-        playlist_url = request.POST.get('playlist_url', '').strip()
-        journey_id = request.POST.get('journey_id')
-        template_style = request.POST.get('template_style', 'default')
-        journey_type = request.POST.get('journey_type', 'daily')  # NEW: Get journey type
-        current_day_input = request.POST.get('current_day', '1')
-        
-        # Validate current day
-        try:
-            current_day = int(current_day_input)
-            if current_day < 1:
-                current_day = 1
-        except (ValueError, TypeError):
-            current_day = 1
-        
-        if not playlist_url:
-            messages.error(request, 'Please enter a YouTube playlist URL.')
-            return redirect('youtube_playlist_import')
-        
-        playlist_id = extract_playlist_id(playlist_url)
-        if not playlist_id:
-            messages.error(request, 'Invalid YouTube playlist URL.')
-            return redirect('youtube_playlist_import')
-        
-        # Check API key
-        api_key = getattr(settings, 'YOUTUBE_API_KEY', None)
-        if not api_key:
-            messages.error(request, 'YouTube API key not configured.')
-            return redirect('youtube_playlist_import')
-        
-        # Fetch videos
-        videos = fetch_youtube_playlist_items(playlist_id, api_key)
-        if not videos:
-            messages.error(request, 'Could not fetch playlist. Make sure it is public.')
-            return redirect('youtube_playlist_import')
-        
-        # Determine category based on template style
-        category_map = {
-            'fitness': 'fitness',
-            'portfolio': 'creative',
-            'startup': 'business',
-            'default': 'other',
-        }
-        
-        # Get or create journey
-        if journey_id:
-            journey = get_object_or_404(Journey, id=journey_id, creator__user=request.user)
-            # Update duration to match video count
-            journey.duration = len(videos)
-            # Update template style if changed
-            journey.template_style = template_style
-            # Update journey type if changed (NEW)
-            journey.journey_type = journey_type
-            # Update current day override if provided (only for daily journeys)
-            if journey_type == 'daily':
-                journey.current_day_override = current_day
-            else:
-                journey.current_day_override = None  # Milestone journeys don't use current_day_override
-            journey.save(update_fields=['duration', 'template_style', 'journey_type', 'current_day_override'])
-            created_count = 0
-            updated_count = 0
-            
-            for idx, video in enumerate(videos, start=1):
-                activity, created = Activity.objects.update_or_create(
-                    journey=journey,
-                    day_number_field=idx,
-                    defaults={
-                        'content': video['title'],
-                        'embed_html': video['embed_html'],
-                        'source_url': video['url'],
-                        'source_platform': 'youtube',
-                        'thumbnail': video['thumbnail'],
-                        'is_video': True,
-                        'published_at': timezone.now(),
-                    }
-                )
-                if created:
-                    created_count += 1
-                else:
-                    updated_count += 1
-            
-            messages.success(
-                request, 
-                f'✅ Imported {len(videos)} videos to "{journey.title}"! '
-                f'({created_count} new, {updated_count} updated) Journey type: {journey_type}.'
-            )
-            return redirect('journey_content', slug=journey.slug)
-        
-        else:
-            # Create a new journey (unclaimed, via rallynex user)
-            rallynex_user = User.objects.filter(username='rallynex').first()
-            if not rallynex_user:
-                rallynex_user = User.objects.create_user(
-                    username='rallynex',
-                    email='system@rallynex.com',
-                    password=None,
-                    is_active=False
-                )
-                Profile.objects.get_or_create(user=rallynex_user)
-            
-            metadata = fetch_youtube_playlist_metadata(playlist_id, api_key)
-            journey_title = metadata['title'] if metadata else f"YouTube Playlist: {playlist_id[:10]}"
-            
-            profile = rallynex_user.profile
-            
-            # Calculate adjusted start date based on current day (only for daily journeys)
-            from datetime import timedelta
-            adjusted_start_date = timezone.now() - timedelta(days=current_day - 1) if journey_type == 'daily' else timezone.now()
-            
-            journey = Journey.objects.create(
-                creator=profile,
-                title=journey_title[:100],
-                description=metadata.get('description', '')[:500] if metadata else '',
-                category=category_map.get(template_style, 'other'),
-                journey_type=journey_type,  # NEW: Use the selected journey type
-                duration=len(videos),
-                template_style=template_style,
-                current_day_override=current_day if journey_type == 'daily' else None,
-                start_date=adjusted_start_date,
-                is_public=False,
-                is_active=True,
-                published_at=timezone.now(),
-            )
-            
-            # Create activities
-            for idx, video in enumerate(videos, start=1):
-                Activity.objects.create(
-                    journey=journey,
-                    day_number_field=idx,
-                    content=video['title'][:500],
-                    embed_html=video['embed_html'],
-                    source_url=video['url'],
-                    source_platform='youtube',
-                    thumbnail=video['thumbnail'],
-                    is_video=True,
-                    published_at=timezone.now() - timedelta(days=current_day - idx) if journey_type == 'daily' and idx < current_day else timezone.now(),
-                )
-            
-            # Redirect to preview page so user can claim it
-            journey_type_display = "Milestone Journey" if journey_type == 'milestone' else "Daily Challenge"
-            messages.success(
-                request,
-                f'🎬 Created {journey_type_display} "{journey.title}" with {len(videos)} days! '
-                f'Click "Claim" below to take ownership.'
-            )
-            return redirect('preview_journey', slug=journey.slug)
-    
-    # GET request - show form
-    user_journeys = Journey.objects.filter(creator__user=request.user, is_active=True).order_by('-created_at')
-    
-    context = {
-        'journeys': user_journeys,
-        'template_styles': [
-            {'value': 'default', 'name': 'Classic', 'icon': '📱', 'desc': 'Simple day-by-day strip'},
-            {'value': 'fitness', 'name': 'Fitness', 'icon': '🏋️', 'desc': 'Progress gallery, workout counter'},
-            {'value': 'portfolio', 'name': 'Portfolio', 'icon': '💼', 'desc': 'Professional milestone cards'},
-            {'value': 'startup', 'name': 'Startup', 'icon': '🚀', 'desc': 'Build-in-public roadmap'},
-        ],
-    }
-    return render(request, 'tools/youtube_playlist_import.html', context)
-
-
-
-
-from .models import Subscriber
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
-from django.views.decorators.csrf import csrf_protect
-
-@csrf_protect
-def conversion_start_view(request):
-    """Conversion page for email capture and free product delivery"""
-    
-    # Check if already subscribed via session
-    if request.session.get('subscribed', False):
-        show_form = False
-        show_downloads = True
-    else:
-        show_form = True
-        show_downloads = False
-    
-    # Handle form submission
-    if request.method == 'POST' and show_form:
-        email = request.POST.get('email', '').strip().lower()
-        
-        errors = {}
-        
-        # Validate email
-        if not email:
-            errors['email'] = 'Email is required'
-        else:
-            try:
-                validate_email(email)
-            except ValidationError:
-                errors['email'] = 'Enter a valid email address'
-        
-        if errors:
-            return render(request, 'conversion/start.html', {
-                'errors': errors,
-                'show_form': True,
-                'show_downloads': False,
-                'email_value': email,
-            })
-        
-        # Save to database
-        subscriber, created = Subscriber.objects.get_or_create(
-            email=email,
-            defaults={
-                'ip_address': get_client_ip(request),
-                'user_agent': request.META.get('HTTP_USER_AGENT', '')[:200],
-            }
-        )
-        
-        # Store in session
-        request.session['subscribed'] = True
-        request.session['subscriber_email'] = email
-        
-        # Show success and downloads
-        return render(request, 'conversion/start.html', {
-            'show_form': False,
-            'show_downloads': True,
-            'just_subscribed': True,
-            'subscriber_email': email,
-        })
-    
-    # GET request or already subscribed
-    return render(request, 'conversion/start.html', {
-        'show_form': show_form,
-        'show_downloads': show_downloads,
-        'just_subscribed': False,
-    })
-
-
-def get_client_ip(request):
-    """Get client IP address from request"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-# ============================================================================
-# HOME FEED VIEWS
-# ============================================================================
-
-def home_feed_view(request):
-    """
-    The main feed/home page - shows journeys and activities
-    in an immersive, infinite-scroll format.
-    """
-    
-    # ====== BASE QUERY: All public, active journeys ======
-    base_journeys = Journey.objects.filter(
-        is_public=True,
-        is_active=True
-    ).select_related('creator__user').prefetch_related('activities', 'followers')
-    
-    if request.user.is_authenticated:
-        # Get user's followed journey IDs
-        followed_journey_ids = JourneyFollow.objects.filter(
-            user=request.user
-        ).values_list('journey_id', flat=True)
-        
-        # Get IDs of creators the user follows (through JourneyFollow)
-        followed_creator_ids = JourneyFollow.objects.filter(
-            user=request.user
-        ).values_list('journey__creator_id', flat=True).distinct()
-        
-        # Build personalized feed
-        if followed_journey_ids.exists() or followed_creator_ids.exists():
-            journeys = base_journeys.filter(
-                Q(id__in=followed_journey_ids) |
-                Q(creator_id__in=followed_creator_ids) |
-                Q(is_featured=True)
-            )
-        else:
-            journeys = base_journeys
-        
-        # Simple ordering without complex annotations
-        journeys = journeys.order_by('-created_at', '-view_count')
-        
-        # Get current user's own journeys
-        own_journeys = Journey.objects.filter(
-            creator__user=request.user, is_active=True
-        ).order_by('-created_at')
-        
-    else:
-        # For non-logged-in users: show all public journeys
-        journeys = base_journeys.order_by('-created_at', '-view_count')
-        own_journeys = []
-    
-    # ====== FEED ITEMS ======
-    feed_items = []
-    
-    for journey in journeys[:20]:
-        cover_url = '/static/images/default-cover.jpg'
-        if journey.cover_image:
-            cover_url = journey.cover_image.url
-        
-        feed_items.append({
-            'type': 'journey_card',
-            'data': journey,
-            'cover': cover_url,
-            'progress': journey.get_progress_percentage(),
-            'days_left': journey.duration - journey.get_current_day(),
-        })
-    
-    # Add activities with media
+    # Recent activity (last 5)
     recent_activities = Activity.objects.filter(
-        journey__is_public=True,
-        journey__is_active=True,
-    ).exclude(
-        file=''
-    ).select_related('journey', 'journey__creator__user').order_by('-created_at')[:10]
-    
-    for activity in recent_activities:
-        feed_items.append({
-            'type': 'activity_card',
-            'data': activity,
-            'journey': activity.journey,
-            'media_url': activity.file.url if activity.file else None,
-            'is_video': activity.is_video,
-        })
-    
-    # Sort by recency
-    feed_items = sorted(
-        feed_items, 
-        key=lambda x: x['data'].created_at if hasattr(x['data'], 'created_at') else timezone.now(), 
-        reverse=True
-    )
+        journey__creator=profile
+    ).select_related('journey').order_by('-created_at')[:5]
     
     context = {
-        'feed_items': feed_items[:30],
-        'own_journeys': own_journeys[:5],
-        'is_authenticated': request.user.is_authenticated,
-        'unread_count': Notification.objects.filter(user=request.user, viewed=False).count() if request.user.is_authenticated else 0,
-        'total_journeys': base_journeys.count(),
+        'total_journeys': total_journeys,
+        'total_followers': total_followers,
+        'total_views': total_views,
+        'total_imported': total_imported,
+        'pending_imports': pending_imports,
+        'recent_activities': recent_activities,
     }
     
-    return render(request, 'home_feed.html', context)
+    return render(request, 'toolbox/index.html', context)
 
-def api_feed_load_more(request):
-    """Load more feed items for infinite scroll"""
-    last_id = request.GET.get('last_id')
-    limit = 20
+
+
+
     
-    try:
-        last_id = int(last_id) if last_id else 999999999
-    except (ValueError, TypeError):
-        last_id = 999999999
-    
-    # Show ALL public journeys
-    journeys = Journey.objects.filter(
-        is_public=True,
-        is_active=True,
-        id__lt=last_id
-    ).select_related('creator__user').order_by('-created_at')[:limit]
-    
-    feed_items = []
-    for journey in journeys:
-        cover_url = '/static/images/default-cover.jpg'
-        if journey.cover_image:
-            cover_url = journey.cover_image.url
-        
-        feed_items.append({
-            'type': 'journey_card',
-            'id': journey.id,
-            'title': journey.title,
-            'creator': journey.creator.user.username,
-            'cover_url': cover_url,
-            'progress': journey.get_progress_percentage(),
-            'url': reverse('journey_detail', kwargs={'slug': journey.slug}),
-        })
-    
-    return JsonResponse({
-        'items': feed_items, 
-        'has_more': len(feed_items) == limit
-    })
-def unread_notification_count(request):
-    """API endpoint for unread notification count - handles unauthenticated users"""
-    if not request.user.is_authenticated:
-        return JsonResponse({'unread_count': 0})
-    
-    try:
-        unread_count = Notification.objects.filter(
-            user=request.user, 
-            viewed=False
-        ).count()
-        return JsonResponse({'unread_count': unread_count})
-    except Exception as e:
-        return JsonResponse({'unread_count': 0})

@@ -46,9 +46,6 @@ class Profile(models.Model):
     # Verification
     profile_verified = models.BooleanField(default=False)
     
-    # Payments
-    paypal_email = models.EmailField(max_length=254, blank=True, null=True)
-    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(default=timezone.now)
@@ -79,7 +76,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 
 # ============================================================================
-# SOCIAL CONNECTION MODELS (THE BRIDGE)
+# SOCIAL CONNECTION MODELS (THE BRIDGE) - KEPT
 # ============================================================================
 
 class SocialConnection(models.Model):
@@ -89,6 +86,8 @@ class SocialConnection(models.Model):
         ('tiktok', 'TikTok'),
         ('instagram', 'Instagram'),
         ('youtube', 'YouTube'),
+        ('twitter', 'Twitter/X'),
+        ('linkedin', 'LinkedIn'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_connections')
@@ -125,7 +124,7 @@ class SocialConnection(models.Model):
 
 
 class ImportedContent(models.Model):
-    """Content imported from social platforms - the bridge between socials and activities"""
+    """Content imported from social platforms - KEPT (Critical for Social-First)"""
     
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
@@ -142,8 +141,8 @@ class ImportedContent(models.Model):
     
     # Content
     caption = models.TextField()
-    media_url = models.URLField(max_length=500)
-    media_type = models.CharField(max_length=20)  # video, image
+    media_url = models.URLField(max_length=500, blank=True)
+    media_type = models.CharField(max_length=20, blank=True)  # video, image
     thumbnail_url = models.URLField(max_length=500, blank=True)
     
     # Metadata from platform
@@ -151,7 +150,7 @@ class ImportedContent(models.Model):
     like_count = models.PositiveIntegerField(default=0)
     comment_count = models.PositiveIntegerField(default=0)
     
-    # Assignment
+    # Assignment - CRITICAL FOR SOCIAL-FIRST
     detected_day = models.PositiveIntegerField(null=True, blank=True)
     assigned_journey = models.ForeignKey('Journey', on_delete=models.SET_NULL, null=True, related_name='imported_content')
     assigned_day = models.PositiveIntegerField(null=True, blank=True)
@@ -188,8 +187,9 @@ class ImportedContent(models.Model):
 
 
 # ============================================================================
-# JOURNEY MODEL
+# JOURNEY MODEL - KEPT (Core)
 # ============================================================================
+
 class Journey(models.Model):
     """
     Main Journey model - a structured series of content
@@ -238,16 +238,22 @@ class Journey(models.Model):
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
     
-    # ==================== SETTINGS ====================
-    is_public = models.BooleanField(default=True)
-    allow_comments = models.BooleanField(default=True)
+    # ==================== SOCIAL-FIRST SETTINGS (NEW) ====================
     auto_import_enabled = models.BooleanField(default=False)
     import_hashtag = models.CharField(max_length=50, blank=True)
     
-    # ==================== FUNDING (OPTIONAL) ====================
-    funding_enabled = models.BooleanField(default=False)
-    funding_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True)
-    funding_description = models.TextField(blank=True)
+    # NEW: Social share settings
+    social_share_url = models.URLField(blank=True, help_text="Custom share link")
+    auto_post_to_social = models.BooleanField(default=False)
+    social_share_text = models.CharField(max_length=280, blank=True, help_text="Default share text for social posts")
+    
+    # NEW: Traffic tracking
+    traffic_sources = models.JSONField(default=dict, blank=True)  # {'twitter': 45, 'instagram': 32}
+    social_engagement_stats = models.JSONField(default=dict, blank=True)  # {'views': 120, 'shares': 15}
+    
+    # ==================== SETTINGS ====================
+    is_public = models.BooleanField(default=True)
+    allow_comments = models.BooleanField(default=True)
     
     # ==================== RELATIONSHIPS ====================
     followers = models.ManyToManyField(User, through='JourneyFollow', related_name='followed_journeys', blank=True)
@@ -293,7 +299,6 @@ class Journey(models.Model):
                 counter += 1
             self.slug = slug
         
-        # Guard against None start_date
         if not self.start_date:
             self.start_date = timezone.now()
         
@@ -336,11 +341,7 @@ class Journey(models.Model):
         return min(round((current / self.duration) * 100), 100)
     
     def is_day_locked(self, day_number):
-        """
-        Check if a day/milestone is locked.
-        - Daily: Locked if day > current calendar day (respects override)
-        - Milestone: NEVER locked
-        """
+        """Check if a day/milestone is locked."""
         if self.journey_type == 'daily':
             current = self.get_current_day()
             return day_number > current
@@ -395,18 +396,18 @@ class Journey(models.Model):
     def get_share_count(self):
         return self.shares.count()
     
-    def get_save_count(self):
-        return self.saves.count()
+    # NEW: Social metrics
+    def get_social_traffic(self):
+        """Get traffic breakdown by social platform"""
+        return self.traffic_sources
     
-    def get_total_donations(self):
-        if not self.funding_enabled:
-            return 0
-        return self.donations.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
-    
-    def get_donation_percentage(self):
-        if not self.funding_enabled or self.funding_goal == 0:
-            return 0
-        return min(round((self.get_total_donations() / float(self.funding_goal)) * 100), 100)
+    def record_traffic_source(self, source):
+        """Record where traffic came from"""
+        if source in self.traffic_sources:
+            self.traffic_sources[source] += 1
+        else:
+            self.traffic_sources[source] = 1
+        self.save(update_fields=['traffic_sources'])
     
     # ==================== URL METHODS ====================
     
@@ -414,7 +415,16 @@ class Journey(models.Model):
         return reverse('journey_detail', kwargs={'slug': self.slug})
     
     def get_share_url(self):
+        """Get shareable URL for social media"""
+        if self.social_share_url:
+            return self.social_share_url
         return f"https://rallynex.com/j/{self.slug}"
+    
+    def get_social_share_text(self):
+        """Get default text for social sharing"""
+        if self.social_share_text:
+            return self.social_share_text
+        return f"Follow my {self.title} journey! 🚀"
     
     # ==================== META METHODS ====================
     
@@ -433,8 +443,9 @@ class Journey(models.Model):
 
 
 # ============================================================================
-# ACTIVITY MODEL (DAY CONTENT)
+# ACTIVITY MODEL (DAY CONTENT) - KEPT
 # ============================================================================
+
 class Activity(models.Model):
     """Individual day/milestone content within a journey"""
     
@@ -449,16 +460,26 @@ class Activity(models.Model):
     # Day tracking
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
     
-    # NEW: Actual date when this milestone happened (for portfolio/trust building)
+    # NEW: Actual date when this milestone happened
     actual_date = models.DateField(
         null=True, 
         blank=True,
         help_text="When this milestone actually happened (e.g., project completion date)"
     )
     
-    # Source tracking (if imported)
+    # Source tracking - CRITICAL FOR SOCIAL-FIRST
     imported_from = models.ForeignKey(ImportedContent, on_delete=models.SET_NULL, null=True, blank=True)
     source_url = models.URLField(blank=True, help_text="Original social media URL")
+    source_platform = models.CharField(max_length=20, blank=True, help_text="tiktok, youtube, instagram, twitter")
+    
+    # NEW: Social engagement tracking
+    social_post_id = models.CharField(max_length=200, blank=True, help_text="Original social post ID")
+    social_engagement = models.JSONField(default=dict, blank=True)  # {'likes': 12, 'comments': 3}
+    is_cross_posted = models.BooleanField(default=False)
+    cross_posted_at = models.DateTimeField(null=True, blank=True)
+    
+    # Embed
+    embed_html = models.TextField(blank=True, help_text="Embed HTML for social media content")
     
     # Stats
     view_count = models.PositiveIntegerField(default=0)
@@ -466,10 +487,6 @@ class Activity(models.Model):
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     published_at = models.DateTimeField(null=True, blank=True)
-    source_url = models.URLField(blank=True, help_text="Original social media URL")
-    source_platform = models.CharField(max_length=20, blank=True, help_text="tiktok, youtube, instagram, facebook")
-    # Embed
-    embed_html = models.TextField(blank=True, help_text="Embed HTML for social media content")
     
     class Meta:
         ordering = ['day_number_field']
@@ -488,7 +505,6 @@ class Activity(models.Model):
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         
-        # Detect if file is video
         if self.file and hasattr(self.file, 'resource_type'):
             self.is_video = self.file.resource_type == 'video'
         
@@ -501,16 +517,10 @@ class Activity(models.Model):
     
     def _notify_followers(self):
         """Notify journey followers of new activity"""
-        # Customize message based on journey type
-        if self.journey.journey_type == 'milestone':
-            message = f"Milestone {self.day_number_field} of '{self.journey.title}' is complete!"
-        else:
-            message = f"Day {self.day_number_field} of '{self.journey.title}' is now available!"
-        
         for follow in self.journey.journeyfollow_set.filter(notify_on_activity=True):
             Notification.objects.create(
                 user=follow.user,
-                message=message,
+                message=f"New update on '{self.journey.title}' - Day {self.day_number_field}!",
                 redirect_link=self.journey.get_absolute_url(),
                 journey=self.journey
             )
@@ -540,8 +550,122 @@ class Activity(models.Model):
             return date.strftime("%b %d, %Y")
         return None
 
+    # NEW: Social embed helpers
+    def get_social_embed(self):
+        """Get embed HTML for social post"""
+        if self.embed_html:
+            return self.embed_html
+        return None
+    
+    def get_social_share_text(self):
+        """Generate text for social sharing"""
+        return f"Day {self.day_number_field}: {self.content[:100]}..."
+
+    # NEW: Create from social post
+    @classmethod
+    def create_from_imported(cls, imported_content, journey, day_number):
+        """Create an activity from imported social content"""
+        activity = cls.objects.create(
+            journey=journey,
+            day_number_field=day_number,
+            content=imported_content.caption[:500],
+            imported_from=imported_content,
+            source_url=imported_content.platform_url,
+            source_platform=imported_content.platform,
+            social_engagement={
+                'likes': imported_content.like_count,
+                'comments': imported_content.comment_count,
+                'posted_at': imported_content.posted_at.isoformat(),
+            },
+            social_post_id=imported_content.platform_post_id,
+            published_at=imported_content.posted_at,
+        )
+        
+        # Link back to imported content
+        imported_content.created_activity = activity
+        imported_content.status = 'assigned'
+        imported_content.assigned_journey = journey
+        imported_content.assigned_day = day_number
+        imported_content.save()
+        
+        return activity
+
+
 # ============================================================================
-# RELATIONSHIP MODELS
+# NEW: SocialPostTemplate (Social-First Feature)
+# ============================================================================
+
+class SocialPostTemplate(models.Model):
+    """Templates for posting back to social media"""
+    
+    PLATFORM_CHOICES = [
+        ('twitter', 'Twitter/X'),
+        ('instagram', 'Instagram'),
+        ('linkedin', 'LinkedIn'),
+        ('tiktok', 'TikTok'),
+    ]
+    
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='social_templates')
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    template_text = models.TextField(
+        help_text="Use {day} and {title} as placeholders. Example: 'Day {day} of {title}! 🚀'"
+    )
+    auto_post = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('journey', 'platform')
+        verbose_name_plural = 'Social Post Templates'
+    
+    def __str__(self):
+        return f"{self.journey.title} - {self.platform}"
+    
+    def render(self, day, title, url, content=None):
+        """Render template with variables"""
+        text = self.template_text.format(day=day, title=title, url=url)
+        if content:
+            text = text.replace('{content}', content[:100])
+        return text
+
+
+# ============================================================================
+# NEW: ReferralTracking (Social-First Analytics)
+# ============================================================================
+
+class ReferralTracking(models.Model):
+    """Track where traffic comes from"""
+    
+    SOURCE_CHOICES = [
+        ('twitter', 'Twitter/X'),
+        ('instagram', 'Instagram'),
+        ('linkedin', 'LinkedIn'),
+        ('facebook', 'Facebook'),
+        ('tiktok', 'TikTok'),
+        ('youtube', 'YouTube'),
+        ('email', 'Email'),
+        ('direct', 'Direct'),
+        ('other', 'Other'),
+    ]
+    
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='referrals')
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    session_id = models.CharField(max_length=100, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['journey', 'source', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.journey.title} - {self.source} at {self.created_at}"
+
+
+# ============================================================================
+# RELATIONSHIP MODELS - KEPT
 # ============================================================================
 
 class JourneyFollow(models.Model):
@@ -591,7 +715,7 @@ class JourneyTag(models.Model):
 
 
 # ============================================================================
-# ENGAGEMENT MODELS
+# ENGAGEMENT MODELS - KEPT
 # ============================================================================
 
 class ActivityLove(models.Model):
@@ -645,9 +769,11 @@ class Share(models.Model):
     
     PLATFORM_CHOICES = [
         ('facebook', 'Facebook'),
-        ('twitter', 'Twitter'),
+        ('twitter', 'Twitter/X'),
         ('whatsapp', 'WhatsApp'),
         ('linkedin', 'LinkedIn'),
+        ('tiktok', 'TikTok'),
+        ('instagram', 'Instagram'),
         ('copy', 'Copy Link'),
         ('other', 'Other'),
     ]
@@ -669,46 +795,7 @@ class Share(models.Model):
 
 
 # ============================================================================
-# DONATION MODEL
-# ============================================================================
-
-class Donation(models.Model):
-    """Simple donations for journeys with funding enabled"""
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-    ]
-    
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='donations')
-    donor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    donor_name = models.CharField(max_length=100, blank=True)
-    donor_email = models.EmailField(blank=True)
-    
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    message = models.TextField(max_length=500, blank=True)
-    
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    paypal_order_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['journey', 'status']),
-            models.Index(fields=['donor', '-created_at']),
-        ]
-    
-    def __str__(self):
-        donor_display = self.donor.username if self.donor else (self.donor_name or 'Anonymous')
-        return f"${self.amount} from {donor_display} to {self.journey.title}"
-
-
-# ============================================================================
-# NOTIFICATION MODEL
+# NOTIFICATION MODEL - KEPT
 # ============================================================================
 
 class Notification(models.Model):
@@ -735,45 +822,7 @@ class Notification(models.Model):
 
 
 # ============================================================================
-# POST-JOURNEY PRODUCT (OPTIONAL MONETIZATION)
-# ============================================================================
-
-class PostJourneyProduct(models.Model):
-    """Products creators can sell after journey completes"""
-    
-    PRODUCT_TYPES = [
-        ('blueprint', 'Blueprint PDF'),
-        ('behind_scenes', 'Behind the Scenes Video'),
-        ('coaching', 'One-on-One Coaching'),
-        ('bundle', 'Complete Bundle'),
-    ]
-    
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='post_journey_products')
-    product_type = models.CharField(max_length=20, choices=PRODUCT_TYPES)
-    title = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    
-    # Files
-    pdf_file = CloudinaryField('pdf', folder='post_journey_pdfs', null=True, blank=True, resource_type='raw')
-    video_file = CloudinaryField('video', folder='post_journey_videos', null=True, blank=True, resource_type='video')
-    
-    # Coaching specific
-    coaching_calendar_link = models.URLField(blank=True)
-    coaching_duration = models.IntegerField(default=60, help_text="Minutes per session")
-    
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.journey.title} - {self.get_product_type_display()}"
-
-
-# ============================================================================
-# MODERATION MODELS
+# MODERATION MODELS - KEPT
 # ============================================================================
 
 class Report(models.Model):
@@ -802,6 +851,9 @@ class Report(models.Model):
         return f"Report by {self.reported_by.username}"
 
 
+# ============================================================================
+# FAQ MODEL - KEPT
+# ============================================================================
 
 class FAQ(models.Model):
     """Frequently Asked Questions"""
@@ -810,7 +862,8 @@ class FAQ(models.Model):
         ('general', 'General'),
         ('creators', 'For Creators'),
         ('supporters', 'For Supporters'),
-        ('payments', 'Payments'),
+        ('social', 'Social Media Integration'),
+        ('import', 'Importing Content'),
     ]
     
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
@@ -829,7 +882,41 @@ class FAQ(models.Model):
 
 
 # ============================================================================
-# SIGNALS
+# NEW: QuickAddTracker (Social-First Feature)
+# ============================================================================
+
+class QuickAddTracker(models.Model):
+    """Track quick adds from social media"""
+    
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='quick_adds')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    # Source info
+    source_url = models.URLField(max_length=500)
+    source_platform = models.CharField(max_length=20)
+    
+    # Auto-detected
+    detected_day = models.PositiveIntegerField()
+    detected_title = models.CharField(max_length=200, blank=True)
+    
+    # Result
+    created_activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Timing
+    added_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-added_at']
+        indexes = [
+            models.Index(fields=['journey', 'added_at']),
+        ]
+    
+    def __str__(self):
+        return f"Quick add: {self.source_platform} to {self.journey.title}"
+
+
+# ============================================================================
+# SIGNALS - KEPT & UPDATED
 # ============================================================================
 
 @receiver(post_save, sender=JourneyFollow)
@@ -838,20 +925,7 @@ def create_follow_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
             user=instance.journey.creator.user,
-            message=f"{instance.user.username} started following your journey '{instance.journey.title}'!",
-            redirect_link=instance.journey.get_absolute_url(),
-            journey=instance.journey
-        )
-
-
-@receiver(post_save, sender=Donation)
-def create_donation_notification(sender, instance, created, **kwargs):
-    """Notify creator when they receive a donation"""
-    if created:
-        donor_display = instance.donor.username if instance.donor else (instance.donor_name or 'Someone')
-        Notification.objects.create(
-            user=instance.journey.creator.user,
-            message=f"{donor_display} donated ${instance.amount} to '{instance.journey.title}'!",
+            message=f"{instance.user.username} started following your journey '{instance.journey.title}'! 🎉",
             redirect_link=instance.journey.get_absolute_url(),
             journey=instance.journey
         )
@@ -868,55 +942,46 @@ def delete_journey_files(sender, instance, **kwargs):
         destroy(instance.cover_video.public_id, resource_type="video")
 
 
+# ============================================================================
+# COMMENTED OUT / REMOVED (Not Social-First Focused)
+# ============================================================================
+
+"""
+# REMOVED: Donation Model - Not core to social-first strategy
+class Donation(models.Model):
+    ... (commented out)
+
+# REMOVED: PostJourneyProduct Model - Not core to social-first
+class PostJourneyProduct(models.Model):
+    ... (commented out)
+
+# REMOVED: JourneyTemplate Model - Not core to social-first
 class JourneyTemplate(models.Model):
-    """Pre-built journey templates creators can purchase"""
-    
-    CATEGORY_CHOICES = Journey.CATEGORY_CHOICES
-    JOURNEY_TYPES = Journey.JOURNEY_TYPES
-    
-    STYLE_CHOICES = [
-        ('default', 'Default'),
-        ('fitness', 'Fitness'),
-        ('portfolio', 'Portfolio'),
-        ('startup', 'Startup'),
-    ]
-    
-    title = models.CharField(max_length=100)
-    description = models.TextField(max_length=500)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    journey_type = models.CharField(max_length=20, choices=JOURNEY_TYPES, default='daily')
-    duration = models.PositiveIntegerField(default=30)
-    milestones = models.JSONField(default=list, blank=True)
-    template_style = models.CharField(max_length=20, choices=STYLE_CHOICES, default='default')
-    price = models.DecimalField(max_digits=6, decimal_places=2, default=10.00)
-    is_free = models.BooleanField(default=False)
-    cover_image = CloudinaryField('image', folder='template_covers', null=True, blank=True)
-    usage_count = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['category', '-usage_count']
-    
-    def __str__(self):
-        return f"{self.title} — ${self.price}"
+    ... (commented out)
+
+# REMOVED: ContactMessage - Keep in separate app if needed
+class ContactMessage(models.Model):
+    ... (commented out)
+
+# REMOVED: Subscriber - Keep in separate app if needed
+class Subscriber(models.Model):
+    ... (commented out)
+"""
 
 
-
-
-
-
-
-from django.db import models
-from django.contrib.auth.models import User
+# ============================================================================
+# KEPT: ContactMessage (Moved to separate app or kept minimal)
+# ============================================================================
 
 class ContactMessage(models.Model):
+    """Contact form messages - kept for user support"""
+    
     SUBJECT_CHOICES = [
         ('general', 'General Question'),
         ('support', 'Technical Support'),
-        ('fundraising', 'Fundraising Question'),
-        ('journey', 'Journey Help'),
         ('import', 'Content Import Issue'),
+        ('social', 'Social Media Integration'),
+        ('journey', 'Journey Help'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -931,9 +996,9 @@ class ContactMessage(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-        
 
 class Subscriber(models.Model):
+    """Email subscribers - kept for marketing"""
     email = models.EmailField(unique=True)
     subscribed_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)

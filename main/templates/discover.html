@@ -251,6 +251,49 @@
         background: rgba(255,255,255,0.25);
     }
     
+    /* ===== SOCIAL-FIRST: Platform Filter Chips ===== */
+    .filter-chip.social-chip {
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+    
+    .filter-chip.social-chip:hover {
+        border-color: var(--accent);
+    }
+    
+    .filter-chip.social-chip.active.tiktok {
+        background: rgba(0, 242, 234, 0.15);
+        border-color: #00f2ea;
+        color: #00f2ea;
+    }
+    
+    .filter-chip.social-chip.active.instagram {
+        background: rgba(220, 39, 67, 0.15);
+        border-color: #dc2743;
+        color: #dc2743;
+    }
+    
+    .filter-chip.social-chip.active.youtube {
+        background: rgba(255, 0, 0, 0.15);
+        border-color: #ff0000;
+        color: #ff0000;
+    }
+    
+    .filter-chip.social-chip.active.twitter {
+        background: rgba(29, 161, 242, 0.15);
+        border-color: #1DA1F2;
+        color: #1DA1F2;
+    }
+    
+    .filter-chip.social-chip.active.facebook {
+        background: rgba(24, 119, 242, 0.15);
+        border-color: #1877f2;
+        color: #1877f2;
+    }
+    
+    .filter-chip.social-chip .chip-icon {
+        font-size: 14px;
+    }
+    
     /* ----- Results Header ----- */
     .results-header {
         display: flex;
@@ -470,6 +513,49 @@
         opacity: 1;
     }
     
+    /* ===== SOCIAL-FIRST: Import Badge ===== */
+    .card-badge.imported {
+        background: rgba(59, 130, 246, 0.85);
+        backdrop-filter: blur(8px);
+    }
+    
+    .card-badge.imported i {
+        opacity: 1;
+    }
+    
+    /* ===== SOCIAL-FIRST: Social Source Badges on Card ===== */
+    .social-sources {
+        display: flex;
+        gap: 4px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .social-source-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+    }
+    
+    .social-source-chip.tiktok { color: #00f2ea; border-color: rgba(0, 242, 234, 0.3); background: rgba(0, 242, 234, 0.05); }
+    .social-source-chip.instagram { color: #dc2743; border-color: rgba(220, 39, 67, 0.3); background: rgba(220, 39, 67, 0.05); }
+    .social-source-chip.youtube { color: #ff0000; border-color: rgba(255, 0, 0, 0.3); background: rgba(255, 0, 0, 0.05); }
+    .social-source-chip.twitter { color: #1DA1F2; border-color: rgba(29, 161, 242, 0.3); background: rgba(29, 161, 242, 0.05); }
+    .social-source-chip.facebook { color: #1877f2; border-color: rgba(24, 119, 242, 0.3); background: rgba(24, 119, 242, 0.05); }
+    
+    .social-source-chip i {
+        font-size: 9px;
+    }
+    
     /* ----- Card Content ----- */
     .card-content {
         padding: 20px 22px 22px;
@@ -630,6 +716,16 @@
         opacity: 0.7;
     }
     
+    /* ===== SOCIAL-FIRST: Import Stats ===== */
+    .card-stats .import-stat {
+        color: var(--accent);
+    }
+    
+    .card-stats .import-stat i {
+        color: var(--accent);
+        opacity: 0.8;
+    }
+    
     .card-action {
         color: var(--accent);
         font-size: 13px;
@@ -729,6 +825,33 @@
     .pagination-modern .disabled {
         opacity: 0.4;
         cursor: not-allowed;
+    }
+    
+    /* ===== SOCIAL-FIRST: Quick Import CTA ===== */
+    .quick-import-cta {
+        margin-top: 40px;
+        padding: 32px 40px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+        border: 1px solid rgba(59, 130, 246, 0.15);
+        border-radius: 20px;
+        text-align: center;
+    }
+    
+    .quick-import-cta h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .quick-import-cta p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    .quick-import-cta .btn {
+        padding: 12px 32px;
     }
     
     /* ----- Responsive ----- */
@@ -831,6 +954,10 @@
             font-size: 13px;
             padding: 6px 14px 6px 16px;
             padding-right: 32px;
+        }
+        
+        .quick-import-cta {
+            padding: 24px 20px;
         }
     }
     
@@ -936,19 +1063,38 @@
             
             <!-- Filter Chips -->
             <div class="filter-chips">
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-created_at" 
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' and key != 'platform' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-created_at" 
                    class="filter-chip {% if not request.GET.sort or request.GET.sort == '-created_at' %}active{% endif %}">
                     <i class="fas fa-clock chip-icon"></i> Newest
                 </a>
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-view_count" 
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' and key != 'platform' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-view_count" 
                    class="filter-chip {% if request.GET.sort == '-view_count' %}active{% endif %}">
                     <i class="fas fa-fire chip-icon"></i> Trending
                 </a>
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-get_follower_count" 
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' and key != 'platform' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-get_follower_count" 
                    class="filter-chip {% if request.GET.sort == '-get_follower_count' %}active{% endif %}">
                     <i class="fas fa-users chip-icon"></i> Popular
                 </a>
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'funding_enabled' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}funding_enabled=on" 
+                
+                <!-- ===== SOCIAL-FIRST: Platform Filter Chips ===== -->
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'platform' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}platform=tiktok" 
+                   class="filter-chip social-chip {% if request.GET.platform == 'tiktok' %}active tiktok{% endif %}">
+                    <i class="fab fa-tiktok chip-icon"></i> TikTok
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'platform' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}platform=instagram" 
+                   class="filter-chip social-chip {% if request.GET.platform == 'instagram' %}active instagram{% endif %}">
+                    <i class="fab fa-instagram chip-icon"></i> Instagram
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'platform' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}platform=youtube" 
+                   class="filter-chip social-chip {% if request.GET.platform == 'youtube' %}active youtube{% endif %}">
+                    <i class="fab fa-youtube chip-icon"></i> YouTube
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'platform' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}platform=twitter" 
+                   class="filter-chip social-chip {% if request.GET.platform == 'twitter' %}active twitter{% endif %}">
+                    <i class="fab fa-x-twitter chip-icon"></i> X/Twitter
+                </a>
+                
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'funding_enabled' and key != 'page' and key != 'platform' %}{{ key }}={{ value }}&{% endif %}{% endfor %}funding_enabled=on" 
                    class="filter-chip {% if request.GET.funding_enabled %}active{% endif %}">
                     <i class="fas fa-hand-holding-heart chip-icon"></i> Fundraising
                     {% if request.GET.funding_enabled %}
@@ -956,7 +1102,7 @@
                     {% endif %}
                 </a>
                 
-                {% if request.GET.category or request.GET.q or request.GET.journey_type or request.GET.funding_enabled %}
+                {% if request.GET.category or request.GET.q or request.GET.journey_type or request.GET.funding_enabled or request.GET.platform %}
                     <a href="{% url 'discover' %}" class="filter-chip" style="border-color: var(--error); color: var(--error);">
                         <i class="fas fa-times"></i> Clear All
                     </a>
@@ -978,6 +1124,13 @@
                 <strong>{{ total_count }}</strong> journey{{ total_count|pluralize }} found
                 {% if request.GET.q %}
                     <span style="color: var(--text-muted);">for "<strong>{{ request.GET.q }}</strong>"</span>
+                {% endif %}
+                {% if request.GET.platform %}
+                    <span style="color: var(--text-muted);">
+                        <i class="fab fa-{% if request.GET.platform == 'twitter' %}x-twitter{% else %}{{ request.GET.platform }}{% endif %}" 
+                           style="color: {% if request.GET.platform == 'tiktok' %}#00f2ea{% elif request.GET.platform == 'instagram' %}#dc2743{% elif request.GET.platform == 'youtube' %}#ff0000{% elif request.GET.platform == 'twitter' %}#1DA1F2{% else %}#1877f2{% endif %};"></i>
+                        {{ request.GET.platform|title }}
+                    </span>
                 {% endif %}
             </div>
             
@@ -1058,6 +1211,12 @@
                                             <i class="fas fa-hand-holding-heart"></i> Fundraising
                                         </span>
                                     {% endif %}
+                                    {# ===== SOCIAL-FIRST: Import Badge ===== #}
+                                    {% if journey.total_imported > 0 %}
+                                        <span class="card-badge imported">
+                                            <i class="fas fa-cloud-upload-alt"></i> {{ journey.total_imported }} Imported
+                                        </span>
+                                    {% endif %}
                                 </div>
                             </div>
                             
@@ -1086,6 +1245,18 @@
                             <a href="{% url 'journey_detail' slug=journey.slug %}" style="text-decoration: none; color: inherit; display: block;">
                                 <p class="card-description">{{ journey.description|truncatechars:100 }}</p>
                                 
+                                {# ===== SOCIAL-FIRST: Social Sources ===== #}
+                                {% if journey.platforms %}
+                                <div class="social-sources">
+                                    {% for platform in journey.platforms %}
+                                    <span class="social-source-chip {{ platform }}">
+                                        <i class="fab fa-{% if platform == 'twitter' %}x-twitter{% else %}{{ platform }}{% endif %}"></i>
+                                        {{ platform|title }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                
                                 <div class="card-progress">
                                     <div class="progress-label">
                                         <span>
@@ -1107,6 +1278,12 @@
                                         <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
                                         <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
                                         <span><i class="fas fa-eye"></i> {{ journey.view_count }}</span>
+                                        {# ===== SOCIAL-FIRST: Import Stat ===== #}
+                                        {% if journey.total_imported > 0 %}
+                                        <span class="import-stat">
+                                            <i class="fas fa-cloud-upload-alt"></i> {{ journey.total_imported }}
+                                        </span>
+                                        {% endif %}
                                     </div>
                                     <span class="card-action">
                                         View <i class="fas fa-arrow-right"></i>
@@ -1151,7 +1328,7 @@
                 </div>
             {% endif %}
             
-            <!-- Debug info - remove after confirming -->
+            <!-- Debug info -->
             <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
                 <span>Showing {{ journeys|length }} of {{ total_count }} journeys</span>
                 <span style="margin: 0 8px;">·</span>
@@ -1185,6 +1362,17 @@
                     {% endif %}
                 </div>
             </div>
+        {% endif %}
+        
+        {# ===== SOCIAL-FIRST: Quick Import CTA ===== #}
+        {% if user.is_authenticated %}
+        <div class="quick-import-cta">
+            <h3><i class="fas fa-cloud-upload-alt" style="color: var(--accent);"></i> Have content on social media?</h3>
+            <p>Import your TikTok, Instagram, or YouTube posts directly into a journey.</p>
+            <a href="{% url 'quick_import' %}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Import Now
+            </a>
+        </div>
         {% endif %}
     </div>
 </section>
