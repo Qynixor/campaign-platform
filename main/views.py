@@ -17,6 +17,7 @@ import requests
 import re
 from datetime import timedelta
 from django.contrib.auth import get_user_model
+
 from .models import (
     Profile, SocialConnection, ImportedContent,
     Journey, Activity, JourneyFollow, Tag, JourneyTag,
@@ -58,16 +59,14 @@ def track_journey_view(request, journey):
     """Track journey view for analytics"""
     session_key = get_or_create_session_key(request)
     
-    # Update view counts
     journey.view_count += 1
     journey.save(update_fields=['view_count'])
     
-    # Track unique viewers (simplified - use cache for production)
     cache_key = f'journey_view_{journey.id}_{session_key}'
     if not cache.get(cache_key):
         journey.unique_viewers += 1
         journey.save(update_fields=['unique_viewers'])
-        cache.set(cache_key, True, 3600)  # 1 hour
+        cache.set(cache_key, True, 3600)
 
 
 def parse_day_from_caption(caption):
@@ -118,6 +117,33 @@ def get_client_ip(request):
     return ip
 
 
+def extract_tweet_id(url):
+    """Extract tweet ID from Twitter/X URL"""
+    patterns = [
+        r'/status/(\d+)',
+        r'/statuses/(\d+)',
+        r'status/(\d+)',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
+def extract_youtube_video_id(url):
+    """Extract video ID from YouTube URL"""
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
+        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
 # ============================================================================
 # AUTHENTICATION VIEWS
 # ============================================================================
@@ -135,7 +161,6 @@ def signup_view(request):
             user = form.save()
             login(request, user)
             messages.success(request, f'Welcome to Rallynex, {user.username}!')
-            
             if next_url:
                 return redirect(next_url)
             return redirect('dashboard')
@@ -158,12 +183,9 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            
             if not form.cleaned_data.get('remember_me'):
                 request.session.set_expiry(0)
-            
             messages.success(request, f'Welcome back, {user.username}!')
-            
             next_url = request.GET.get('next')
             if next_url:
                 return redirect(next_url)
@@ -203,27 +225,18 @@ def landing_view(request):
         'trending_journeys': trending_journeys,
     }
     
-    # ========== ADD USER-SPECIFIC DATA FOR LOGGED-IN USERS ==========
     if request.user.is_authenticated:
         try:
             profile = request.user.profile
             user_journeys = Journey.objects.filter(creator=profile, is_active=True)
-            
             context.update({
                 'user_journeys': user_journeys[:3],
                 'user_journey_count': user_journeys.count(),
-                'user_completed_journeys': user_journeys.filter(is_completed=True).count() if hasattr(Journey, 'is_completed') else 0,
                 'user_following': JourneyFollow.objects.filter(user=request.user).count(),
                 'user_notifications': Notification.objects.filter(user=request.user, viewed=False).count(),
             })
         except Profile.DoesNotExist:
-            context.update({
-                'user_journeys': [],
-                'user_journey_count': 0,
-                'user_completed_journeys': 0,
-                'user_following': 0,
-                'user_notifications': 0,
-            })
+            pass
     
     return render(request, 'landing.html', context)
 
@@ -241,15 +254,12 @@ def discover_view(request):
                 Q(description__icontains=q) |
                 Q(creator__user__username__icontains=q)
             )
-        
         category = form.cleaned_data.get('category')
         if category:
             journeys = journeys.filter(category=category)
-        
         journey_type = form.cleaned_data.get('journey_type')
         if journey_type:
             journeys = journeys.filter(journey_type=journey_type)
-        
         sort = form.cleaned_data.get('sort')
         allowed_sorts = ['-created_at', 'created_at', '-view_count', 'view_count', 'title', '-title']
         if sort and sort in allowed_sorts:
@@ -260,7 +270,6 @@ def discover_view(request):
         journeys = journeys.order_by('-created_at')
     
     total_count = journeys.count()
-    
     paginator = Paginator(journeys, 10)
     page = request.GET.get('page')
     
@@ -285,38 +294,23 @@ def journey_detail_view(request, slug):
     """View a single journey"""
     journey_qs = Journey.objects.select_related('creator__user').prefetch_related(
         'activities', 'tags', 'followers'
-    ).filter(
-        slug=slug,
-        is_active=True
-    )
-    
+    ).filter(slug=slug, is_active=True)
     journey = get_object_or_404(journey_qs)
     
     if not journey.is_public:
-        if not request.user.is_authenticated or (
-            request.user != journey.creator.user and not request.user.is_superuser
-        ):
+        if not request.user.is_authenticated or (request.user != journey.creator.user and not request.user.is_superuser):
             raise Http404("Journey not found")
     
     track_journey_view(request, journey)
-    
     activities_by_day = journey.get_all_activities_by_day()
     current_day = journey.get_current_day()
     current_activity = activities_by_day.get(current_day)
     
     is_following = False
-    if request.user.is_authenticated:
-        is_following = JourneyFollow.objects.filter(
-            user=request.user,
-            journey=journey
-        ).exists()
-    
     is_saved = False
     if request.user.is_authenticated:
-        is_saved = JourneySave.objects.filter(
-            user=request.user,
-            journey=journey
-        ).exists()
+        is_following = JourneyFollow.objects.filter(user=request.user, journey=journey).exists()
+        is_saved = JourneySave.objects.filter(user=request.user, journey=journey).exists()
     
     recent_comments = ActivityComment.objects.filter(
         activity__journey=journey
@@ -384,7 +378,6 @@ def creator_profile_view(request, username):
 def dashboard_view(request):
     """Creator dashboard home"""
     profile = get_user_profile(request.user)
-    
     journeys = Journey.objects.filter(creator=profile).order_by('-created_at')
     
     total_journeys = journeys.count()
@@ -405,7 +398,6 @@ def dashboard_view(request):
         status='pending'
     ).count()
     
-    # NEW: Social stats
     social_connections = SocialConnection.objects.filter(user=request.user)
     total_social_posts = ImportedContent.objects.filter(
         social_connection__user=request.user
@@ -432,7 +424,6 @@ def dashboard_view(request):
 def my_journeys_view(request):
     """List all user's journeys"""
     profile = get_user_profile(request.user)
-    
     journeys = Journey.objects.filter(creator=profile).order_by('-created_at')
     
     active_count = journeys.filter(is_active=True).count()
@@ -464,21 +455,16 @@ def create_journey_view(request):
     
     if request.method == 'POST':
         form = JourneyForm(request.POST, request.FILES)
-        
         if form.is_valid():
             try:
                 journey = form.save(commit=False)
                 journey.creator = profile
-                
                 cover_image_url = request.POST.get('cover_image_url')
                 cover_image_public_id = request.POST.get('cover_image_public_id')
-                
                 if cover_image_url and cover_image_public_id:
                     journey.cover_image = cover_image_public_id
-                
                 journey.save()
                 
-                # Save tags
                 tags_input = form.cleaned_data.get('tags_input', '')
                 if tags_input:
                     tag_names = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
@@ -488,14 +474,12 @@ def create_journey_view(request):
                 
                 messages.success(request, f'Journey "{journey.title}" created successfully!')
                 return redirect('journey_content', slug=journey.slug)
-                
             except Exception as e:
                 messages.error(request, f'Error creating journey: {str(e)}')
         else:
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f'{field}: {error}')
-    
     else:
         form = JourneyForm()
     
@@ -519,16 +503,12 @@ def edit_journey_view(request, slug):
         form = JourneyForm(request.POST, request.FILES, instance=journey)
         if form.is_valid():
             journey = form.save(commit=False)
-            
             cover_image_url = request.POST.get('cover_image_url')
             cover_image_public_id = request.POST.get('cover_image_public_id')
-            
             if cover_image_url and cover_image_public_id:
                 journey.cover_image = cover_image_public_id
-            
             journey.save()
             form.save()
-            
             messages.success(request, f'Journey "{journey.title}" updated!')
             return redirect('my_journeys')
     else:
@@ -560,7 +540,6 @@ def journey_settings_view(request, slug):
         journey.social_share_text = request.POST.get('social_share_text', '')
         journey.auto_post_to_social = request.POST.get('auto_post_to_social') == 'on'
         journey.save()
-        
         messages.success(request, 'Settings updated!')
         return redirect('my_journeys')
     
@@ -597,11 +576,9 @@ def journey_content_view(request, slug):
     """Manage content for a journey (day by day)"""
     profile = get_user_profile(request.user)
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
     activities = journey.get_all_activities_by_day()
     current_day = journey.get_current_day()
     
-    # ===== SOCIAL-FIRST: Context =====
     imported_count = 0
     manual_count = 0
     platform_counts = {}
@@ -652,7 +629,6 @@ def post_activity_view(request, slug, day_number=None):
         day = request.POST.get('day_number_field') or day_number
         
         if content:
-            # Build social engagement dict
             social_engagement = {}
             if social_likes or social_comments:
                 social_engagement = {
@@ -665,7 +641,7 @@ def post_activity_view(request, slug, day_number=None):
                 day_number_field=day or day_number,
                 defaults={
                     'content': content,
-                    'file': file_url if file_url else None,
+                    'media_file': file_url if file_url else None,
                     'is_video': is_video,
                     'actual_date': actual_date if actual_date else None,
                     'source_url': source_url,
@@ -716,19 +692,14 @@ def delete_activity_view(request, activity_id):
 
 
 # ============================================================================
-# SOCIAL IMPORT VIEWS - CRITICAL FOR SOCIAL-FIRST
+# SOCIAL IMPORT VIEWS - WITH REAL CONTENT FETCHING
 # ============================================================================
 
 @login_required
 def social_connections_view(request):
     """Manage social connections"""
     connections = SocialConnection.objects.filter(user=request.user)
-    
-    # Get import stats
-    total_imported = ImportedContent.objects.filter(
-        social_connection__user=request.user
-    ).count()
-    
+    total_imported = ImportedContent.objects.filter(social_connection__user=request.user).count()
     pending_imports = ImportedContent.objects.filter(
         social_connection__user=request.user,
         status='pending'
@@ -817,120 +788,6 @@ def disconnect_social_view(request, connection_id):
     return redirect('social_connections')
 
 
-@login_required
-def quick_import_view(request):
-    """Quick import from social media - CRITICAL FOR SOCIAL-FIRST"""
-    profile = get_user_profile(request.user)
-    
-    if request.method == 'POST':
-        form = QuickImportForm(request.POST, user=request.user)
-        if form.is_valid():
-            url = form.cleaned_data['url']
-            journey = form.cleaned_data['journey']
-            day_number = form.cleaned_data['day_number']
-            platform = form.cleaned_data.get('detected_platform') or detect_platform_from_url(url)
-            caption = request.POST.get('caption', '').strip()
-            embed_html = request.POST.get('embed_html', '').strip()
-            thumbnail_url = request.POST.get('thumbnail_url', '').strip()
-            media_url = request.POST.get('media_url', '').strip()
-            media_type = request.POST.get('media_type', '').strip()
-            platform_post_id = request.POST.get('platform_post_id', '').strip()
-            posted_at_str = request.POST.get('posted_at', '')
-            like_count = request.POST.get('like_count', 0)
-            comment_count = request.POST.get('comment_count', 0)
-            
-            if not caption:
-                caption = f"Imported from {platform.title() if platform else 'Social Media'}"
-            
-            # Parse posted_at
-            posted_at = timezone.now()
-            if posted_at_str:
-                try:
-                    posted_at = timezone.datetime.fromisoformat(posted_at_str.replace('Z', '+00:00'))
-                except:
-                    pass
-            
-            # Build social engagement
-            social_engagement = {}
-            if like_count or comment_count:
-                social_engagement = {
-                    'likes': int(like_count) if like_count else 0,
-                    'comments': int(comment_count) if comment_count else 0,
-                    'posted_at': posted_at.isoformat(),
-                }
-            
-            # Create or update activity
-            activity, created = Activity.objects.update_or_create(
-                journey=journey,
-                day_number_field=day_number,
-                defaults={
-                    'content': caption,
-                    'source_url': url,
-                    'source_platform': platform or '',
-                    'embed_html': embed_html,
-                    'social_engagement': social_engagement,
-                    'social_post_id': platform_post_id,
-                    'published_at': posted_at,
-                }
-            )
-            
-            # Also save as imported content for tracking
-            ImportedContent.objects.get_or_create(
-                platform=platform or 'other',
-                platform_post_id=platform_post_id or url,
-                defaults={
-                    'social_connection': SocialConnection.objects.filter(user=request.user, platform=platform).first(),
-                    'platform_url': url,
-                    'caption': caption,
-                    'media_url': media_url,
-                    'media_type': media_type,
-                    'thumbnail_url': thumbnail_url,
-                    'posted_at': posted_at,
-                    'like_count': int(like_count) if like_count else 0,
-                    'comment_count': int(comment_count) if comment_count else 0,
-                    'detected_day': day_number,
-                    'assigned_journey': journey,
-                    'assigned_day': day_number,
-                    'status': 'assigned',
-                    'created_activity': activity,
-                    'processed_at': timezone.now(),
-                }
-            )
-            
-            # Track quick add
-            QuickAddTracker.objects.create(
-                journey=journey,
-                user=request.user,
-                source_url=url,
-                source_platform=platform or 'other',
-                detected_day=day_number,
-                created_activity=activity,
-            )
-            
-            if created:
-                messages.success(request, f'✅ Content imported to Day {day_number}!')
-            else:
-                messages.success(request, f'✅ Day {day_number} updated!')
-            
-            return redirect('journey_detail', slug=journey.slug)
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f'{field}: {error}')
-    else:
-        form = QuickImportForm(user=request.user)
-    
-    # Get user's journeys for the form
-    journeys = Journey.objects.filter(creator=profile, is_active=True)
-    
-    context = {
-        'form': form,
-        'journeys': journeys,
-    }
-    
-    return render(request, 'dashboard/quick_import.html', context)
-
-
 def exchange_tiktok_code(code):
     """Exchange TikTok authorization code for access token"""
     try:
@@ -959,10 +816,153 @@ def exchange_tiktok_code(code):
 
 
 @login_required
+def quick_import_view(request):
+    """Quick import from social media with REAL content storage (Synchronous)"""
+    profile = get_user_profile(request.user)
+    
+    if request.method == 'POST':
+        form = QuickImportForm(request.POST, user=request.user)
+        if form.is_valid():
+            url = form.cleaned_data['url']
+            journey = form.cleaned_data['journey']
+            day_number = form.cleaned_data['day_number']
+            platform = form.cleaned_data.get('detected_platform') or detect_platform_from_url(url)
+            caption = request.POST.get('caption', '').strip()
+            embed_html = request.POST.get('embed_html', '').strip()
+            thumbnail_url = request.POST.get('thumbnail_url', '').strip()
+            media_url = request.POST.get('media_url', '').strip()
+            media_type = request.POST.get('media_type', '').strip()
+            platform_post_id = request.POST.get('platform_post_id', '').strip()
+            posted_at_str = request.POST.get('posted_at', '')
+            like_count = request.POST.get('like_count', 0)
+            comment_count = request.POST.get('comment_count', 0)
+            
+            if not caption:
+                caption = f"Imported from {platform.title() if platform else 'Social Media'}"
+            
+            posted_at = timezone.now()
+            if posted_at_str:
+                try:
+                    posted_at = timezone.datetime.fromisoformat(posted_at_str.replace('Z', '+00:00'))
+                except:
+                    pass
+            
+            social_engagement = {}
+            if like_count or comment_count:
+                social_engagement = {
+                    'likes': int(like_count) if like_count else 0,
+                    'comments': int(comment_count) if comment_count else 0,
+                    'posted_at': posted_at.isoformat(),
+                }
+            
+            # Create or update activity
+            activity, created = Activity.objects.update_or_create(
+                journey=journey,
+                day_number_field=day_number,
+                defaults={
+                    'content': caption,
+                    'source_url': url,
+                    'source_platform': platform or '',
+                    'embed_html': embed_html,
+                    'social_engagement': social_engagement,
+                    'social_post_id': platform_post_id,
+                    'published_at': posted_at,
+                }
+            )
+            
+            # Create imported content with REAL content fetching
+            unique_id = platform_post_id or url
+            
+            imported_content, content_created = ImportedContent.objects.get_or_create(
+                platform=platform or 'other',
+                platform_post_id=unique_id,
+                defaults={
+                    'social_connection': SocialConnection.objects.filter(user=request.user, platform=platform).first(),
+                    'platform_url': url,
+                    'caption': caption,
+                    'media_url': media_url,
+                    'media_type': media_type,
+                    'thumbnail_url': thumbnail_url,
+                    'posted_at': posted_at,
+                    'like_count': int(like_count) if like_count else 0,
+                    'comment_count': int(comment_count) if comment_count else 0,
+                    'detected_day': day_number,
+                    'assigned_journey': journey,
+                    'assigned_day': day_number,
+                    'status': 'assigned',
+                    'created_activity': activity,
+                    'processed_at': timezone.now(),
+                    'processing_status': 'pending',
+                }
+            )
+            
+            # If content already exists, update it and link to activity
+            if not content_created:
+                imported_content.created_activity = activity
+                imported_content.assigned_journey = journey
+                imported_content.assigned_day = day_number
+                imported_content.status = 'assigned'
+                imported_content.processed_at = timezone.now()
+                imported_content.save()
+            
+            # ===== FIXED: Process content synchronously (no Celery needed) =====
+            from .services.content_fetcher import ContentFetcher
+            try:
+                fetcher = ContentFetcher(imported_content)
+                fetcher.fetch_and_store()
+                # Update the activity with the fetched content
+                if imported_content.rendered_html:
+                    activity.embed_html = imported_content.rendered_html
+                    activity.save()
+                    print(f"✅ Content fetched and stored for {imported_content.id}")
+                else:
+                    print(f"⚠️ No rendered HTML generated for {imported_content.id}")
+            except Exception as e:
+                print(f"❌ Content fetch error: {e}")
+                # Don't fail the import, just warn the user
+                imported_content.processing_status = 'failed'
+                imported_content.processing_error = str(e)
+                imported_content.save()
+                messages.warning(request, 'Content imported but could not fetch full details. It will still work with the provided link.')
+            
+            QuickAddTracker.objects.get_or_create(
+                journey=journey,
+                user=request.user,
+                source_url=url,
+                defaults={
+                    'source_platform': platform or 'other',
+                    'detected_day': day_number,
+                    'created_activity': activity,
+                }
+            )
+            
+            if created:
+                messages.success(request, f'✅ Content imported to Day {day_number}!')
+            else:
+                messages.success(request, f'✅ Day {day_number} updated!')
+            
+            return redirect('journey_detail', slug=journey.slug)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = QuickImportForm(user=request.user)
+    
+    journeys = Journey.objects.filter(creator=profile, is_active=True)
+    
+    context = {
+        'form': form,
+        'journeys': journeys,
+    }
+    
+    return render(request, 'dashboard/quick_import.html', context)
+
+
+@login_required
 def import_queue_view(request):
     """View and manage imported content queue"""
     profile = get_user_profile(request.user)
-    
     journeys = Journey.objects.filter(creator=profile)
     
     imports = ImportedContent.objects.filter(
@@ -974,7 +974,6 @@ def import_queue_view(request):
     if journey_id:
         imports = imports.filter(assigned_journey_id=journey_id)
     
-    # Stats
     total_imports = ImportedContent.objects.filter(social_connection__user=request.user).count()
     pending_count = ImportedContent.objects.filter(social_connection__user=request.user, status='pending').count()
     approved_count = ImportedContent.objects.filter(social_connection__user=request.user, status='approved').count()
@@ -1028,12 +1027,12 @@ def process_import_view(request, import_id):
 
 
 # ============================================================================
-# API VIEWS FOR SOCIAL IMPORT - CRITICAL
+# API VIEWS FOR SOCIAL IMPORT
 # ============================================================================
 
 @login_required
 def api_preview_url(request):
-    """Preview social media content from URL - CRITICAL FOR SOCIAL-FIRST"""
+    """Preview social media content from URL"""
     url = request.GET.get('url', '').strip()
     if not url:
         return JsonResponse({'success': False, 'error': 'No URL provided'})
@@ -1042,131 +1041,177 @@ def api_preview_url(request):
     if not platform:
         return JsonResponse({'success': False, 'error': 'Unsupported platform'})
     
-    # Try oEmbed first
-    oembed_data = fetch_oembed_data(url, platform)
+    preview_data = fetch_preview_data(url, platform)
     
-    if oembed_data and (oembed_data.get('thumbnail_url') or oembed_data.get('html')):
-        embed_html = oembed_data.get('html', '')
-        
-        # Sanitize embed
-        import re
-        embed_html = re.sub(r'<script[^>]*>.*?</script>', '', embed_html, flags=re.DOTALL)
-        
-        # For Instagram, use placeholder
-        if platform == 'instagram':
-            embed_html = f'<div class="instagram-placeholder" data-instgrm-permalink="{url}"><div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-instagram" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Instagram Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Instagram →</a></div></div>'
-        
-        # For TikTok
-        elif platform == 'tiktok':
-            embed_html = f'<div class="tiktok-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-tiktok" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>TikTok Video</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">Watch on TikTok →</a></div>'
-        
-        # For Twitter
-        elif platform == 'twitter':
-            embed_html = f'<div class="twitter-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-twitter" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Tweet</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on X →</a></div>'
-        
-        # For Facebook
-        elif platform == 'facebook':
-            embed_html = f'<div class="facebook-placeholder" style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab fa-facebook" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>Facebook Post</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">View on Facebook →</a></div>'
-        
-        # For YouTube
-        elif platform == 'youtube':
-            video_id = extract_youtube_video_id(url)
-            if video_id:
-                embed_html = f'<div class="youtube-embed-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" src="https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1&playsinline=1" frameborder="0" allowfullscreen></iframe></div>'
-        
+    if preview_data:
         return JsonResponse({
             'success': True,
             'platform': platform,
-            'title': oembed_data.get('title', f'{platform.title()} Post'),
-            'thumbnail_url': oembed_data.get('thumbnail_url', ''),
-            'author_name': oembed_data.get('author_name', ''),
-            'html': embed_html,
+            'title': preview_data.get('title', ''),
+            'thumbnail_url': preview_data.get('thumbnail_url', ''),
+            'author_name': preview_data.get('author_name', ''),
+            'html': preview_data.get('html', ''),
+            'like_count': preview_data.get('like_count', 0),
+            'comment_count': preview_data.get('comment_count', 0),
         })
     
-    # Fallback: use safe placeholders
-    safe_placeholders = {
-        'tiktok': ('fa-tiktok', 'TikTok Video', 'Watch on TikTok'),
-        'instagram': ('fa-instagram', 'Instagram Post', 'View on Instagram'),
-        'youtube': ('fa-youtube', 'YouTube Video', 'Watch on YouTube'),
-        'facebook': ('fa-facebook', 'Facebook Post', 'View on Facebook'),
-        'twitter': ('fa-twitter', 'Tweet', 'View on X'),
-        'linkedin': ('fa-linkedin', 'LinkedIn Post', 'View on LinkedIn'),
-    }
-    
-    icon, label, action = safe_placeholders.get(platform, ('fa-link', 'Content', 'View Original'))
-    
-    embed_html = f'<div style="background:var(--bg-secondary);padding:40px;text-align:center;border-radius:12px;"><i class="fab {icon}" style="font-size:32px;margin-bottom:8px;display:block;"></i><span>{label}</span><a href="{url}" target="_blank" style="display:block;margin-top:8px;color:var(--accent);">{action} →</a></div>'
-    
-    return JsonResponse({
-        'success': True,
-        'platform': platform,
-        'title': f'{platform.title()} Post',
-        'thumbnail_url': '',
-        'author_name': '',
-        'html': embed_html,
-    })
+    return JsonResponse({'success': False, 'error': 'Could not fetch preview'})
 
 
-def fetch_oembed_data(url, platform):
-    """Fetch oEmbed data for a URL"""
-    import requests
-    
-    oembed_endpoints = {
-        'tiktok': 'https://www.tiktok.com/oembed',
-        'youtube': 'https://www.youtube.com/oembed',
-        'instagram': 'https://graph.facebook.com/v18.0/instagram_oembed',
-        'facebook': 'https://graph.facebook.com/v18.0/oembed_post',
-        'twitter': 'https://publish.twitter.com/oembed',
-    }
-    
-    endpoint = oembed_endpoints.get(platform)
-    if not endpoint:
-        return None
-    
-    request_url = url
-    if platform == 'twitter':
-        request_url = url.replace('x.com', 'twitter.com')
-    
+def fetch_preview_data(url, platform):
+    """Fetch preview data for a URL"""
     try:
-        params = {'url': request_url, 'omit_script': '1'}
+        if platform == 'youtube':
+            video_id = extract_youtube_video_id(url)
+            if video_id:
+                return fetch_youtube_preview(video_id)
         
-        if platform == 'twitter':
-            params['dnt'] = '1'
-            params['hide_thread'] = '1'
-            params['theme'] = 'dark'
+        elif platform == 'twitter':
+            tweet_id = extract_tweet_id(url)
+            if tweet_id:
+                return fetch_twitter_preview(tweet_id)
         
-        response = requests.get(endpoint, params=params, timeout=10)
+        elif platform == 'tiktok':
+            return fetch_tiktok_preview(url)
         
+        elif platform == 'instagram':
+            return fetch_instagram_preview(url)
+        
+        return fetch_generic_oembed(url)
+    
+    except Exception as e:
+        print(f"Preview fetch error: {e}")
+        return None
+
+
+def fetch_youtube_preview(video_id):
+    """Fetch YouTube preview data"""
+    try:
+        import yt_dlp
+        ydl_opts = {'quiet': True, 'no_warnings': True, 'extract_flat': False}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+            if info:
+                embed_html = f'''
+                    <div class="youtube-embed-wrapper" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;border-radius:12px;">
+                        <iframe style="position:absolute;top:0;left:0;width:100%;height:100%;" 
+                                src="https://www.youtube.com/embed/{video_id}?rel=0&modestbranding=1&playsinline=1" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                '''
+                return {
+                    'title': info.get('title', 'YouTube Video'),
+                    'thumbnail_url': f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                    'author_name': info.get('uploader', ''),
+                    'like_count': info.get('like_count', 0),
+                    'comment_count': info.get('comment_count', 0),
+                    'html': embed_html,
+                }
+    except Exception as e:
+        print(f"YouTube preview error: {e}")
+    return None
+
+
+def fetch_twitter_preview(tweet_id):
+    """Fetch Twitter preview data"""
+    try:
+        oembed_url = f"https://publish.twitter.com/oembed?url=https://twitter.com/i/web/status/{tweet_id}&omit_script=1&dnt=1&hide_thread=1"
+        response = requests.get(oembed_url, timeout=10)
         if response.status_code == 200:
             data = response.json()
             return {
-                'title': data.get('title', ''),
-                'thumbnail_url': data.get('thumbnail_url', ''),
+                'title': data.get('title', 'Tweet'),
+                'thumbnail_url': '',
                 'author_name': data.get('author_name', ''),
                 'html': data.get('html', ''),
             }
     except Exception as e:
-        print(f"oEmbed fetch error for {platform}: {e}")
-    
+        print(f"Twitter preview error: {e}")
     return None
 
 
-def extract_youtube_video_id(url):
-    """Extract video ID from YouTube URL"""
-    import re
-    patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11})(?:[?&]|$)',
-        r'youtu\.be\/([0-9A-Za-z_-]{11})',
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
+def fetch_tiktok_preview(url):
+    """Fetch TikTok preview data"""
+    try:
+        oembed_url = f"https://www.tiktok.com/oembed?url={url}"
+        response = requests.get(oembed_url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            embed_html = data.get('html', '')
+            return {
+                'title': data.get('title', 'TikTok Video'),
+                'thumbnail_url': data.get('thumbnail_url', ''),
+                'author_name': data.get('author_name', ''),
+                'html': embed_html,
+            }
+    except Exception as e:
+        print(f"TikTok preview error: {e}")
+    return None
+
+
+def fetch_instagram_preview(url):
+    """Fetch Instagram preview data"""
+    try:
+        if hasattr(settings, 'INSTAGRAM_ACCESS_TOKEN') and settings.INSTAGRAM_ACCESS_TOKEN:
+            oembed_url = f"https://graph.facebook.com/v18.0/instagram_oembed?url={url}&access_token={settings.INSTAGRAM_ACCESS_TOKEN}"
+            response = requests.get(oembed_url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    'title': data.get('title', 'Instagram Post'),
+                    'thumbnail_url': data.get('thumbnail_url', ''),
+                    'author_name': data.get('author_name', ''),
+                    'html': data.get('html', ''),
+                }
+    except Exception as e:
+        print(f"Instagram preview error: {e}")
+    
+    return {
+        'title': 'Instagram Post',
+        'thumbnail_url': '',
+        'author_name': '',
+        'html': f'''
+            <div style="background:var(--bg-secondary);padding:20px;border-radius:12px;text-align:center;">
+                <i class="fab fa-instagram" style="font-size:32px;color:#dc2743;"></i>
+                <p style="margin:12px 0;color:var(--text-secondary);">Instagram Post</p>
+                <a href="{url}" target="_blank" style="color:var(--accent);text-decoration:none;">View on Instagram →</a>
+            </div>
+        ''',
+    }
+
+
+def fetch_generic_oembed(url):
+    """Fetch generic oEmbed data"""
+    try:
+        oembed_endpoints = [
+            f"https://publish.twitter.com/oembed?url={url}&omit_script=1",
+            f"https://www.tiktok.com/oembed?url={url}",
+            f"https://www.youtube.com/oembed?url={url}",
+        ]
+        
+        for endpoint in oembed_endpoints:
+            try:
+                response = requests.get(endpoint, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    return {
+                        'title': data.get('title', ''),
+                        'thumbnail_url': data.get('thumbnail_url', ''),
+                        'author_name': data.get('author_name', ''),
+                        'html': data.get('html', ''),
+                    }
+            except:
+                continue
+    except Exception as e:
+        print(f"Generic oEmbed error: {e}")
     return None
 
 
 # ============================================================================
-# SOCIAL POST TEMPLATES - NEW (Social-First)
+# SOCIAL POST TEMPLATES
 # ============================================================================
 
 @login_required
@@ -1210,7 +1255,6 @@ def delete_social_template_view(request, template_id):
 def api_social_template(request, template_id):
     """Get a single social template for editing"""
     template = get_object_or_404(SocialPostTemplate, id=template_id, journey__creator__user=request.user)
-    
     return JsonResponse({
         'success': True,
         'id': template.id,
@@ -1221,7 +1265,7 @@ def api_social_template(request, template_id):
 
 
 # ============================================================================
-# API SOCIAL SETTINGS - FIXED (Moved to proper location)
+# API SOCIAL SETTINGS
 # ============================================================================
 
 @login_required
@@ -1251,11 +1295,7 @@ def api_social_settings(request, connection_id):
 def follow_journey_view(request, slug):
     """Follow/unfollow a journey"""
     journey = get_object_or_404(Journey, slug=slug)
-    
-    follow, created = JourneyFollow.objects.get_or_create(
-        user=request.user,
-        journey=journey
-    )
+    follow, created = JourneyFollow.objects.get_or_create(user=request.user, journey=journey)
     
     if not created:
         follow.delete()
@@ -1274,11 +1314,7 @@ def follow_journey_view(request, slug):
 def save_journey_view(request, slug):
     """Save/unsave a journey"""
     journey = get_object_or_404(Journey, slug=slug)
-    
-    saved, created = JourneySave.objects.get_or_create(
-        user=request.user,
-        journey=journey
-    )
+    saved, created = JourneySave.objects.get_or_create(user=request.user, journey=journey)
     
     if not created:
         saved.delete()
@@ -1297,11 +1333,7 @@ def save_journey_view(request, slug):
 def love_activity_view(request, activity_id):
     """Love/unlove an activity"""
     activity = get_object_or_404(Activity, id=activity_id)
-    
-    love, created = ActivityLove.objects.get_or_create(
-        user=request.user,
-        activity=activity
-    )
+    love, created = ActivityLove.objects.get_or_create(user=request.user, activity=activity)
     
     if not created:
         love.delete()
@@ -1358,7 +1390,6 @@ def share_journey_view(request, slug):
         platform=platform
     )
     
-    # Update traffic sources
     if platform in ['twitter', 'instagram', 'facebook', 'linkedin', 'tiktok']:
         journey.record_traffic_source(platform)
     
@@ -1444,7 +1475,6 @@ def mark_notification_read_view(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     notification.viewed = True
     notification.save()
-    
     return JsonResponse({'success': True})
 
 
@@ -1453,7 +1483,6 @@ def mark_notification_read_view(request, notification_id):
 def mark_all_notifications_read_view(request):
     """Mark all notifications as read"""
     Notification.objects.filter(user=request.user, viewed=False).update(viewed=True)
-    
     return JsonResponse({'success': True})
 
 
@@ -1464,10 +1493,7 @@ def unread_notification_count(request):
         return JsonResponse({'unread_count': 0})
     
     try:
-        unread_count = Notification.objects.filter(
-            user=request.user, 
-            viewed=False
-        ).count()
+        unread_count = Notification.objects.filter(user=request.user, viewed=False).count()
         return JsonResponse({'unread_count': unread_count})
     except Exception:
         return JsonResponse({'unread_count': 0})
@@ -1482,14 +1508,13 @@ def unread_notification_count(request):
 def report_journey_view(request, slug):
     """Report a journey"""
     journey = get_object_or_404(Journey, slug=slug)
-    
     form = ReportForm(request.POST)
+    
     if form.is_valid():
         report = form.save(commit=False)
         report.journey = journey
         report.reported_by = request.user
         report.save()
-        
         messages.success(request, 'Thank you for your report. We will review it shortly.')
     else:
         messages.error(request, 'Please select a reason for your report.')
@@ -1502,14 +1527,13 @@ def report_journey_view(request, slug):
 def report_activity_view(request, activity_id):
     """Report an activity"""
     activity = get_object_or_404(Activity, id=activity_id)
-    
     form = ReportForm(request.POST)
+    
     if form.is_valid():
         report = form.save(commit=False)
         report.activity = activity
         report.reported_by = request.user
         report.save()
-        
         messages.success(request, 'Thank you for your report. We will review it shortly.')
     else:
         messages.error(request, 'Please select a reason for your report.')
@@ -1524,7 +1548,6 @@ def report_activity_view(request, activity_id):
 def faq_view(request):
     """FAQ page"""
     faqs = FAQ.objects.filter(is_active=True).order_by('category', 'order')
-    
     faqs_by_category = {}
     for faq in faqs:
         if faq.category not in faqs_by_category:
@@ -1568,10 +1591,8 @@ def contact_view(request):
                 'submitted': False
             })
         
-        # Generate AI response (simplified)
         ai_response = f"Thanks {name}! We'll get back to you soon about your question."
         
-        # Save to database
         try:
             contact = ContactMessage(
                 user=request.user if request.user.is_authenticated else None,
@@ -1717,7 +1738,6 @@ def toggle_theme(request):
     try:
         data = json.loads(request.body)
         theme = data.get('theme', 'light')
-        
         response = JsonResponse({'success': True, 'theme': theme})
         response.set_cookie('theme', theme, max_age=365*24*60*60, httponly=True, samesite='Lax')
         return response
@@ -1742,20 +1762,19 @@ def handler403(request, exception):
 
 
 # ============================================================================
-# TEMPLATE STORE VIEW - ADD THIS
+# TEMPLATE STORE VIEW
 # ============================================================================
 
 def template_store_view(request):
     """Template store page - placeholder for now"""
-    # This is a placeholder view. Later you can add actual template logic.
     return render(request, 'templates/store.html', {
-        'templates': [],  # Empty for now
+        'templates': [],
         'user_journeys': Journey.objects.filter(creator__user=request.user, is_active=True) if request.user.is_authenticated else [],
     })
 
 
 # ============================================================================
-# ONBOARDING WIZARD - ADD THIS
+# ONBOARDING WIZARD
 # ============================================================================
 
 def onboarding_wizard_view(request):
@@ -1764,7 +1783,7 @@ def onboarding_wizard_view(request):
 
 
 # ============================================================================
-# WELCOME VIEW - ADD THIS
+# WELCOME VIEW
 # ============================================================================
 
 def welcome_view(request):
@@ -1773,7 +1792,7 @@ def welcome_view(request):
 
 
 # ============================================================================
-# PREVIEW & CLAIM VIEWS - ADD THESE
+# PREVIEW & CLAIM VIEWS
 # ============================================================================
 
 def preview_journey_view(request, slug):
@@ -1823,19 +1842,16 @@ def claim_journey_view(request, slug):
     return redirect('journey_detail', slug=slug)
 
 
-
 @login_required
 def toolbox_view(request):
     """Creator Toolbox - Central hub for all tools"""
     profile = get_user_profile(request.user)
     
-    # Get stats
     journeys = Journey.objects.filter(creator=profile)
     total_journeys = journeys.count()
     total_followers = JourneyFollow.objects.filter(journey__creator=profile).count()
     total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     
-    # Import stats
     total_imported = ImportedContent.objects.filter(
         social_connection__user=request.user
     ).count()
@@ -1845,7 +1861,6 @@ def toolbox_view(request):
         status='pending'
     ).count()
     
-    # Recent activity (last 5)
     recent_activities = Activity.objects.filter(
         journey__creator=profile
     ).select_related('journey').order_by('-created_at')[:5]
@@ -1860,8 +1875,3 @@ def toolbox_view(request):
     }
     
     return render(request, 'toolbox/index.html', context)
-
-
-
-
-    

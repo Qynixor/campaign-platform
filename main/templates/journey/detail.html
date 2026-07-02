@@ -2,15 +2,13 @@
 {% load static %}
 {% load custom_filters %}
 
-
-{# ===== SEO BLOCKS FOR JOURNEY DETAIL PAGE ===== #}
 {% block title %}{{ journey.title }} | Rallynex{% endblock %}
 
 {% block meta_title %}{{ journey.title }}{% if journey.subtitle %} - {{ journey.subtitle }}{% endif %}{% endblock %}
 
 {% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Join this journey on Rallynex and track progress through daily challenges and milestones." }}{% endblock %}
 
-{% block meta_keywords %}{{ journey.title }}, journey, {% if journey.category %}{{ journey.category }}, {% endif %}daily challenge, milestone tracker, content journey, rallynex, youtube playlist{% endblock %}
+{% block meta_keywords %}{{ journey.title }}, journey, {% if journey.category %}{{ journey.category }}, {% endif %}daily challenge, milestone tracker, content journey, rallynex{% endblock %}
 
 {% block og_title %}{{ journey.title }} | Rallynex Journey{% endblock %}
 
@@ -42,7 +40,6 @@
 
 {% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}
 
-{# Journey-specific structured data for rich Google results #}
 {% block extra_schema %}
 <script type="application/ld+json">
 {
@@ -81,7 +78,6 @@
 }
 </script>
 
-{# Breadcrumb structured data #}
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
@@ -540,7 +536,6 @@
     .creator-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .creator-name { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
     
-    /* Profile link styling */
     .creator-profile-link {
         text-decoration: none;
         display: flex;
@@ -579,36 +574,10 @@
     .stat-card .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
     .stat-card .label { font-size: 9px; color: var(--text-muted); }
     
-    /* ===== SOCIAL-FIRST ADDITIONS ===== */
-
-    /* Social source badge on thumbnails */
-    .social-source-badge {
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(8px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        color: #fff;
-        z-index: 5;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    .social-source-badge.tiktok { color: #00f2ea; }
-    .social-source-badge.instagram { color: #dc2743; }
-    .social-source-badge.youtube { color: #ff0000; }
-    .social-source-badge.twitter { color: #1DA1F2; }
-    .social-source-badge.facebook { color: #1877f2; }
-
-    /* Social share stats bar */
+    /* ===== SOCIAL-FIRST: Share Stats Bar ===== */
     .social-share-bar {
         display: flex;
-        gap: 16px;
+        gap: 20px;
         padding: 12px 20px;
         background: var(--bg-secondary);
         border-top: 1px solid var(--border-color);
@@ -619,38 +588,25 @@
     .social-share-item {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         font-size: 12px;
         color: var(--text-secondary);
     }
     .social-share-item i { font-size: 14px; }
     .social-share-item .count { font-weight: 700; color: var(--text-primary); }
 
-    /* "Imported from" badge on content */
-    .imported-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 10px;
-        color: var(--text-muted);
-        background: var(--bg-tertiary);
-        padding: 2px 10px;
-        border-radius: 20px;
-    }
-    .imported-badge i { font-size: 9px; }
-
-    /* Social CTA banner */
+    /* ===== SOCIAL-FIRST: Social CTA Banner ===== */
     .social-cta-banner {
         margin: 0 16px 16px;
-        padding: 14px 18px;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
-        border: 1px solid rgba(59, 130, 246, 0.15);
-        border-radius: 16px;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 10px;
     }
     .social-cta-banner .cta-text {
         font-size: 13px;
@@ -660,7 +616,7 @@
         color: var(--text-primary);
     }
     .social-cta-btn {
-        padding: 8px 20px;
+        padding: 6px 16px;
         border-radius: 30px;
         background: var(--accent);
         color: #fff;
@@ -678,26 +634,887 @@
         background: var(--accent-hover);
         transform: scale(1.02);
     }
+
+    /* ===== CONTENT CARD STYLES ===== */
+    .content-card {
+        transition: all 0.3s ease;
+        background: var(--card-bg);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
     
-    .creator-prompt {
-        display: inline-block;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        font-size: 10px;
-        padding: 3px 8px;
-        border-radius: 10px;
-        margin-top: 4px;
-        font-weight: 500;
+    .content-card:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+    
+    .youtube-card .yt-thumbnail {
+        position: relative;
+        padding-bottom: 56.25%;
+        background: #000;
         cursor: pointer;
     }
-    .creator-prompt-link {
-        text-decoration: none;
-    }
-    .creator-prompt-link:hover .creator-prompt {
-        background: rgba(245, 158, 11, 0.25);
+    
+    .youtube-card .yt-thumbnail img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
-    /* DEFAULT STRIP */
+    .youtube-card .yt-play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 68px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .youtube-card .yt-play-button:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+        background: #fff;
+    }
+    
+    .youtube-card .yt-play-button i {
+        color: #ff0000;
+        font-size: 24px;
+    }
+    
+    /* ===== CURRENT DAY HERO - YOUTUBE SUPPORT ===== */
+    .current-day-hero {
+        margin: 0 16px;
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        min-height: 200px;
+        max-height: 600px;
+    }
+    
+    .current-day-hero:active {
+        transform: scale(0.98);
+    }
+    
+    .current-day-hero .hero-content {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        max-height: 600px;
+        overflow: hidden;
+    }
+    
+    .current-day-hero .hero-content .current-day-content-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+        max-height: 600px;
+        overflow: hidden;
+    }
+    
+    .current-day-hero .hero-content .current-day-content-wrapper .youtube-embed-wrapper {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        background: #000;
+        border-radius: 12px;
+    }
+    
+    .current-day-hero .hero-content .current-day-content-wrapper .youtube-embed-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    .current-day-hero .hero-content .current-day-content-wrapper .content-card {
+        max-height: 600px;
+        overflow: hidden;
+        width: 100%;
+        border-radius: 12px;
+    }
+    
+    .current-day-hero .hero-content .current-day-content-wrapper img,
+    .current-day-hero .hero-content .current-day-content-wrapper video {
+        width: 100%;
+        max-height: 600px;
+        object-fit: contain;
+        display: block;
+    }
+    
+    .current-day-hero .hero-content video,
+    .current-day-hero .hero-content img {
+        width: 100%;
+        max-height: 600px;
+        object-fit: contain;
+        display: block;
+    }
+    
+    .current-day-hero .hero-content iframe {
+        width: 100%;
+        height: 100%;
+        min-height: 200px;
+        max-height: 600px;
+        border: none;
+        aspect-ratio: 16 / 9;
+    }
+
+    .current-day-info {
+        padding: 12px 16px 16px;
+        margin: 0 16px;
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border-radius: 16px;
+        margin-bottom: 8px;
+    }
+    
+    .current-day-info:active {
+        transform: scale(0.99);
+        background: var(--bg-secondary);
+    }
+
+    .info-badge {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+    }
+
+    .badge.imported-badge {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+    
+    .badge.youtube-badge {
+        background: rgba(255, 0, 0, 0.1);
+        color: #ff0000;
+    }
+    
+    .badge.tiktok-badge {
+        background: rgba(0, 242, 234, 0.1);
+        color: #00f2ea;
+    }
+    
+    .badge.instagram-badge {
+        background: rgba(220, 39, 67, 0.1);
+        color: #dc2743;
+    }
+    
+    .badge.twitter-badge {
+        background: rgba(29, 161, 242, 0.1);
+        color: #1DA1F2;
+    }
+
+    .info-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        line-height: 1.4;
+        margin-bottom: 8px;
+    }
+
+    .source-link,
+    .edit-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--accent);
+        text-decoration: none;
+        margin-bottom: 12px;
+    }
+
+    .source-link:hover,
+    .edit-link:hover {
+        text-decoration: underline;
+    }
+
+    .info-actions {
+        display: flex;
+        gap: 24px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .info-action {
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 6px 0;
+        transition: all 0.2s;
+    }
+
+    .info-action:hover {
+        color: var(--text-primary);
+    }
+
+    .info-action:active {
+        transform: scale(0.96);
+    }
+
+    .info-action i {
+        font-size: 14px;
+    }
+
+    .current-day-empty {
+        margin: 0 16px;
+        min-height: 200px;
+        border-radius: 20px;
+        background: var(--bg-secondary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .current-day-empty i {
+        font-size: 48px;
+        color: var(--text-muted);
+        opacity: 0.4;
+    }
+
+    .current-day-empty p {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .add-hint {
+        font-size: 11px;
+        color: var(--accent);
+        padding: 4px 12px;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 20px;
+    }
+
+    .empty-hint {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    [data-theme="light"] .current-day-info {
+        background: #ffffff;
+    }
+
+    [data-theme="light"] .info-action {
+        color: #64748b;
+    }
+
+    [data-theme="light"] .info-action:hover {
+        color: #1e293b;
+    }
+
+    [data-theme="dark"] .current-day-info {
+        background: var(--bg-primary);
+    }
+
+    .action-buttons { display: flex; gap: 10px; padding: 0 20px 20px; }
+    .action-btn {
+        flex: 1; padding: 13px; border-radius: 30px; font-weight: 600; font-size: 13px;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        cursor: pointer; transition: all 0.2s; border: none;
+    }
+    .action-btn:active { transform: scale(0.98); }
+    .action-btn-primary { background: var(--accent); color: #fff; }
+    .action-btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
+    .action-btn-outline.saved { background: var(--accent); border-color: var(--accent); color: #fff; }
+    
+    /* ===== COMMENT SECTION STYLES ===== */
+    .comments-section { 
+        padding: 20px; 
+        border-top: 1px solid var(--border-color); 
+        background: var(--bg-primary);
+    }
+    
+    .comments-header { 
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between; 
+        margin-bottom: 16px; 
+    }
+    
+    .comments-header h4 { 
+        font-size: 14px; 
+        font-weight: 600; 
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .comments-header .comment-count-badge {
+        background: var(--bg-tertiary);
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+    
+    .comments-list {
+        margin-bottom: 16px;
+    }
+    
+    .comment-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .comment-item:last-child {
+        border-bottom: none;
+    }
+    
+    .comment-item .comment-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        flex-shrink: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--border-color);
+    }
+    
+    .comment-item .comment-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .comment-item .comment-avatar i {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+    
+    .comment-item .comment-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .comment-item .comment-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .comment-item .comment-username {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-primary);
+    }
+    
+    .comment-item .comment-time {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    
+    .comment-item .comment-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+    
+    .comment-item .comment-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 6px;
+    }
+    
+    .comment-item .comment-actions button {
+        background: none;
+        border: none;
+        font-size: 12px;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0;
+        transition: color 0.2s;
+    }
+    
+    .comment-item .comment-actions button:hover {
+        color: var(--text-primary);
+    }
+    
+    /* Empty comments state */
+    .comments-empty {
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--text-muted);
+    }
+    
+    .comments-empty i {
+        font-size: 36px;
+        opacity: 0.3;
+        margin-bottom: 12px;
+        display: block;
+    }
+    
+    .comments-empty p {
+        font-size: 14px;
+    }
+    
+    /* Comment Form */
+    .comment-form-container {
+        margin-top: 4px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .comment-form-container .comment-input-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .comment-form-container .comment-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        flex-shrink: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--border-color);
+    }
+    
+    .comment-form-container .comment-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .comment-form-container .comment-avatar i {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
+    
+    .comment-form-container .comment-input-group {
+        flex: 1;
+        position: relative;
+    }
+    
+    .comment-form-container textarea {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 52px;
+        max-height: 150px;
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+        line-height: 1.5;
+    }
+    
+    .comment-form-container textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+    
+    .comment-form-container textarea::placeholder {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+    
+    .comment-form-container .comment-submit-wrapper {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+    
+    .comment-form-container .comment-submit-btn {
+        padding: 8px 24px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .comment-form-container .comment-submit-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+    }
+    
+    .comment-form-container .comment-submit-btn:active {
+        transform: scale(0.96);
+    }
+    
+    .comment-form-container .comment-submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    /* Login to comment */
+    .comment-login-prompt {
+        margin-top: 16px;
+        padding: 20px;
+        text-align: center;
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .comment-login-prompt p {
+        color: var(--text-muted);
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
+    
+    .comment-login-prompt p i {
+        margin-right: 8px;
+    }
+    
+    .comment-login-prompt .login-btn {
+        padding: 10px 32px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+    }
+    
+    .comment-login-prompt .login-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+    }
+    
+    /* Light mode comment styles */
+    [data-theme="light"] .comment-form-container textarea {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+    }
+    
+    [data-theme="light"] .comment-form-container textarea:focus {
+        border-color: var(--accent);
+        background: #ffffff;
+    }
+    
+    [data-theme="light"] .comment-item {
+        border-color: #f1f5f9;
+    }
+    
+    [data-theme="light"] .comment-item .comment-avatar {
+        border-color: #e2e8f0;
+    }
+    
+    [data-theme="light"] .comments-empty i {
+        color: #94a3b8;
+    }
+    
+    /* Dark mode comment styles */
+    [data-theme="dark"] .comment-form-container textarea {
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
+    }
+    
+    [data-theme="dark"] .comment-form-container textarea:focus {
+        border-color: var(--accent);
+    }
+    
+    /* ===== MODAL STYLES - FULL BLACK CANVAS ===== */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #000;
+        z-index: 1000;
+    }
+    .modal.active {
+        display: block;
+    }
+    .modal-content {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+    }
+    .modal-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 20;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+    }
+    .modal-close {
+        width: 40px;
+        height: 40px;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.2s;
+    }
+    .modal-close:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    .modal-day {
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(10px);
+        padding: 5px 14px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+    }
+    .modal-media {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+    }
+    .modal-media .content-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        padding: 20px;
+    }
+    .modal-media .content-wrapper .content-card {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100%;
+        overflow: auto;
+    }
+    .modal-media .content-wrapper .youtube-embed-wrapper {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        background: #000;
+        border-radius: 12px;
+    }
+    .modal-media .content-wrapper .youtube-embed-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    .modal-media iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+    .modal-media video,
+    .modal-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+    .modal-spinner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+        z-index: 15;
+        transition: opacity 0.3s ease;
+    }
+    .modal-spinner.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+    .spinner-ring {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #ffffff;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    .modal-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 20px 18px 30px;
+        background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, transparent 100%);
+        z-index: 10;
+    }
+    .modal-caption {
+        color: #fff;
+        font-size: 14px;
+        margin-bottom: 14px;
+        line-height: 1.5;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        max-height: 60px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 24px;
+    }
+    .modal-action {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 8px 0;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+    .modal-action:hover {
+        opacity: 1;
+    }
+    .modal-action i {
+        font-size: 20px;
+    }
+    .modal-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 12px;
+        pointer-events: none;
+        z-index: 10;
+    }
+    .modal-nav-btn {
+        width: 44px;
+        height: 44px;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        pointer-events: auto;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.2s;
+    }
+    .modal-nav-btn:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    /* ===== OTHER STYLES ===== */
     .cinematic-strip { padding: 16px 0; position: relative; }
     .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
     .strip-header i { color: var(--text-primary); font-size: 13px; }
@@ -752,6 +1569,31 @@
         background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
+    
+    .strip-source-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        color: #fff;
+        z-index: 3;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .strip-source-badge.tiktok { color: #00f2ea; }
+    .strip-source-badge.instagram { color: #dc2743; }
+    .strip-source-badge.youtube { color: #ff0000; }
+    .strip-source-badge.twitter { color: #1DA1F2; }
+    .strip-source-badge.facebook { color: #1877f2; }
+    
     .scroll-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 0 20px; }
     .scroll-btn {
         width: 32px; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 50%;
@@ -1009,430 +1851,6 @@
     }
     .show-more-btn:active { background: var(--bg-secondary); color: var(--text-primary); }
     
-    /* ===== REDESIGNED CURRENT DAY - CLEAN & MINIMAL ===== */
-    .current-day-hero {
-        margin: 0 16px;
-        border-radius: 20px;
-        overflow: hidden;
-        background: var(--bg-secondary);
-        cursor: pointer;
-        position: relative;
-        transition: all 0.2s ease;
-    }
-    
-    .current-day-hero:active {
-        transform: scale(0.98);
-    }
-
-    .current-day-hero video,
-    .current-day-hero img,
-    .current-day-hero iframe {
-        width: 100%;
-        display: block;
-        border: none;
-    }
-
-    .current-day-hero iframe {
-        aspect-ratio: 16 / 9;
-        min-height: 200px;
-    }
-
-    .current-day-info {
-        padding: 12px 16px 16px;
-        margin: 0 16px;
-        background: var(--bg-primary);
-        border-bottom: 1px solid var(--border-color);
-        transition: all 0.2s ease;
-        cursor: pointer;
-        border-radius: 16px;
-        margin-bottom: 8px;
-    }
-    
-    .current-day-info:active {
-        transform: scale(0.99);
-        background: var(--bg-secondary);
-    }
-
-    .info-badge {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-    }
-
-    .badge {
-        font-size: 10px;
-        font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 20px;
-        background: var(--bg-tertiary);
-        color: var(--text-secondary);
-        letter-spacing: 0.5px;
-    }
-
-    .badge.youtube-badge {
-        background: rgba(255, 0, 0, 0.1);
-        color: #ff0000;
-    }
-
-    .info-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text-primary);
-        line-height: 1.4;
-        margin-bottom: 8px;
-    }
-
-    .source-link,
-    .edit-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        color: var(--accent);
-        text-decoration: none;
-        margin-bottom: 12px;
-    }
-
-    .source-link:hover,
-    .edit-link:hover {
-        text-decoration: underline;
-    }
-
-    .info-actions {
-        display: flex;
-        gap: 24px;
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .info-action {
-        background: none;
-        border: none;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--text-secondary);
-        cursor: pointer;
-        padding: 6px 0;
-        transition: all 0.2s;
-    }
-
-    .info-action:hover {
-        color: var(--text-primary);
-    }
-
-    .info-action:active {
-        transform: scale(0.96);
-    }
-
-    .info-action i {
-        font-size: 14px;
-    }
-
-    .current-day-empty {
-        margin: 0 16px;
-        min-height: 200px;
-        border-radius: 20px;
-        background: var(--bg-secondary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .current-day-empty i {
-        font-size: 48px;
-        color: var(--text-muted);
-        opacity: 0.4;
-    }
-
-    .current-day-empty p {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-secondary);
-    }
-
-    .add-hint {
-        font-size: 11px;
-        color: var(--accent);
-        padding: 4px 12px;
-        background: rgba(139, 92, 246, 0.1);
-        border-radius: 20px;
-    }
-
-    .empty-hint {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-
-    [data-theme="light"] .current-day-info {
-        background: #ffffff;
-    }
-
-    [data-theme="light"] .info-action {
-        color: #64748b;
-    }
-
-    [data-theme="light"] .info-action:hover {
-        color: #1e293b;
-    }
-
-    [data-theme="dark"] .current-day-info {
-        background: var(--bg-primary);
-    }
-
-    .action-buttons { display: flex; gap: 10px; padding: 0 20px 20px; }
-    .action-btn {
-        flex: 1; padding: 13px; border-radius: 30px; font-weight: 600; font-size: 13px;
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        cursor: pointer; transition: all 0.2s; border: none;
-    }
-    .action-btn:active { transform: scale(0.98); }
-    .action-btn-primary { background: var(--accent); color: #fff; }
-    .action-btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
-    .action-btn-outline.saved { background: var(--accent); border-color: var(--accent); color: #fff; }
-    
-    .comments-section { padding: 20px; border-top: 1px solid var(--border-color); background: var(--bg-primary); }
-    .comments-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .comments-header h4 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .comment-item { display: flex; gap: 10px; margin-bottom: 14px; }
-    .comment-avatar {
-        width: 32px; height: 32px; border-radius: 50%; background: var(--bg-secondary); flex-shrink: 0;
-        overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);
-    }
-    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .comment-content { flex: 1; }
-    .comment-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-    .comment-username { font-weight: 600; font-size: 12px; color: var(--text-primary); }
-    .comment-time { font-size: 10px; color: var(--text-muted); }
-    .comment-text { font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 6px; }
-    
-    /* ===== MODAL STYLES WITH SPINNER ===== */
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #000;
-        z-index: 1000;
-    }
-    .modal.active {
-        display: block;
-    }
-    .modal-content {
-        width: 100%;
-        max-width: 600px;
-        margin: 0 auto;
-        height: 100%;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        background: #000;
-    }
-    .modal-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        z-index: 20;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
-    }
-    .modal-close {
-        width: 40px;
-        height: 40px;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        border: none;
-    }
-    .modal-day {
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        padding: 5px 14px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #fff;
-    }
-    
-    .modal-media {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #000000;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .modal-media iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-    }
-
-    .modal-media video,
-    .modal-media img {
-        width: 100%;
-        height: auto;
-        max-height: 100%;
-        object-fit: contain;
-    }
-
-    .modal-media .youtube-embed-wrapper {
-        position: relative;
-        padding-bottom: 56.25%;
-        height: 0;
-        overflow: hidden;
-        width: 100%;
-    }
-
-    .modal-media .youtube-embed-wrapper iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    }
-    
-    .modal-spinner {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #000000;
-        z-index: 15;
-        transition: opacity 0.3s ease;
-    }
-    .modal-spinner.hidden {
-        opacity: 0;
-        visibility: hidden;
-    }
-    .spinner-ring {
-        display: inline-block;
-        width: 50px;
-        height: 50px;
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        border-top-color: #ffffff;
-        animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    
-    .modal-footer {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 25px 18px 18px;
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-        z-index: 10;
-    }
-    
-    /* Social engagement stats in modal */
-    .modal-social-stats {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 12px;
-        color: #aaa;
-        font-size: 12px;
-    }
-    .modal-social-stats span {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-    .modal-social-stats i {
-        font-size: 12px;
-    }
-    
-    .modal-caption {
-        color: #fff;
-        font-size: 13px;
-        margin-bottom: 14px;
-        line-height: 1.5;
-    }
-    .modal-actions {
-        display: flex;
-        gap: 20px;
-    }
-    .modal-action {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 13px;
-        cursor: pointer;
-        padding: 8px 0;
-    }
-    .modal-action i {
-        font-size: 20px;
-        color: #aaa;
-    }
-    .modal-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 8px;
-        pointer-events: none;
-        z-index: 10;
-    }
-    .modal-nav-btn {
-        width: 40px;
-        height: 40px;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 18px;
-        cursor: pointer;
-        pointer-events: auto;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    .milestone-date { color: #888; font-size: 11px; margin-top: 3px; }
-    .comment-form-container textarea {
-        resize: none; font-family: inherit; font-size: 13px; width: 100%;
-        padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; color: var(--text-primary);
-    }
-    .comment-form-container textarea:focus { outline: none; border-color: var(--accent); }
-    
     .template-style-indicator {
         display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
         border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase;
@@ -1446,6 +1864,49 @@
         display: inline-flex; align-items: center; gap: 4px; background: rgba(255,0,0,0.15);
         padding: 2px 8px; border-radius: 12px; font-size: 9px; color: #ff0000;
         margin-left: 6px;
+    }
+    
+    .creator-prompt {
+        display: inline-block;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        margin-top: 4px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    .creator-prompt-link {
+        text-decoration: none;
+    }
+    .creator-prompt-link:hover .creator-prompt {
+        background: rgba(245, 158, 11, 0.25);
+    }
+    
+    .processing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+    
+    .processing-indicator.fetching {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+    
+    .processing-indicator.stored {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+    
+    .processing-indicator.failed {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
     }
     
     @keyframes slideUp {
@@ -1469,6 +1930,50 @@
         .strip-day { flex: 0 0 85px; }
         .strip-thumbnail { width: 85px; height: 125px; }
     }
+    
+    @media (max-width: 500px) {
+        .comment-form-container .comment-input-wrapper {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .comment-form-container .comment-avatar {
+            width: 32px;
+            height: 32px;
+            align-self: flex-start;
+        }
+        
+        .comment-form-container textarea {
+            min-height: 44px;
+            font-size: 13px;
+            padding: 10px 14px;
+        }
+        
+        .comment-item .comment-avatar {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .comment-item .comment-text {
+            font-size: 13px;
+        }
+        
+        .current-day-hero {
+            min-height: 150px;
+            max-height: 400px;
+        }
+        
+        .current-day-hero .hero-content {
+            min-height: 150px;
+            max-height: 400px;
+        }
+        
+        .current-day-hero .hero-content iframe {
+            min-height: 150px;
+            max-height: 400px;
+        }
+    }
+    
     button, .stat-card, .strip-day, .hero-action, .action-btn, .back-btn, .menu-btn { min-height: 44px; min-width: 44px; }
 </style>
 {% endblock %}
@@ -1493,7 +1998,6 @@
                 <span class="youtube-badge"><i class="fab fa-youtube"></i> Playlist</span>
                 {% endif %}
             </h2>
-            <!-- CREATOR PROFILE REDIRECT LINK -->
             <a href="{% url 'creator_profile' username=journey.creator.user.username %}" class="creator-profile-link" onclick="event.stopPropagation();">
                 <div class="creator-info">
                     <div class="creator-avatar">
@@ -1519,7 +2023,7 @@
         </div>
     </div>
     
-    <!-- ===== SOCIAL SHARE STATS BAR ===== -->
+    <!-- ===== SOCIAL-FIRST: Share Stats Bar ===== -->
     <div class="social-share-bar">
         <div class="social-share-item">
             <i class="fab fa-twitter" style="color:#1DA1F2;"></i>
@@ -1543,25 +2047,25 @@
         </div>
     </div>
     
-    <!-- ===== SOCIAL CTA BANNER ===== -->
+    <!-- ===== SOCIAL-FIRST: Social CTA Banner ===== -->
     <div class="social-cta-banner">
         <div class="cta-text">
-            <strong>📱 Post your journey on social media</strong>
+            <strong>📱 Share this journey</strong>
             <span style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px;">
-                Share your progress and inspire others to start their own journey
+                Inspire others to start their own journey
             </span>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <a href="https://twitter.com/intent/tweet?text={{ journey.get_social_share_text|urlencode }}&url={{ request.build_absolute_uri|urlencode }}" 
                target="_blank" class="social-cta-btn" style="background:#1DA1F2;" onclick="trackShare('twitter')">
-                <i class="fab fa-twitter"></i> Post
+                <i class="fab fa-twitter"></i>
             </a>
             <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}" 
                target="_blank" class="social-cta-btn" style="background:#0a66c2;" onclick="trackShare('linkedin')">
-                <i class="fab fa-linkedin"></i> Share
+                <i class="fab fa-linkedin"></i>
             </a>
             <button class="social-cta-btn" onclick="shareJourney()" style="background:var(--accent);">
-                <i class="fas fa-link"></i> Copy Link
+                <i class="fas fa-link"></i>
             </button>
         </div>
     </div>
@@ -1636,14 +2140,14 @@
                 {% with activity=activities_by_day|get_item:day_num %}
                 <div class="strip-day {% if activity %}completed{% else %}available{% endif %}" onclick="openModal({{ day_num }})">
                     <div class="strip-thumbnail">
-                        {% if activity and activity.embed_html %}
-                            {{ activity.embed_html|safe }}
+                        {% if activity and activity.get_display_html %}
+                            {{ activity.get_display_html|safe }}
                             <div class="youtube-play-icon"><i class="fab fa-youtube"></i></div>
-                        {% elif activity and activity.file %}
+                        {% elif activity and activity.media_file %}
                             {% if activity.is_video %}
-                                <video src="{{ activity.file.url }}" muted loop playsinline></video>
+                                <video src="{{ activity.media_file.url }}" muted loop playsinline></video>
                             {% else %}
-                                <img src="{{ activity.file.url }}" alt="">
+                                <img src="{{ activity.media_file.url }}" alt="">
                             {% endif %}
                         {% elif activity and activity.thumbnail %}
                             <img src="{{ activity.thumbnail.url }}" alt="">
@@ -1659,15 +2163,14 @@
                             </div>
                         {% endif %}
                         
-                        <!-- SOCIAL SOURCE BADGE - SOCIAL-FIRST ADDITION -->
                         {% if activity and activity.source_platform %}
-                        <div class="social-source-badge {{ activity.source_platform }}">
+                        <div class="strip-source-badge {{ activity.source_platform }}">
                             <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
                         </div>
                         {% endif %}
                         
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
-                        {% if activity and activity.file %}<div class="play-icon-strip"><i class="fas fa-play"></i></div>{% endif %}
+                        {% if activity and activity.media_file %}<div class="play-icon-strip"><i class="fas fa-play"></i></div>{% endif %}
                         <div class="strip-overlay">
                             <span class="strip-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
                             <span class="strip-day-status">{% if activity %}Done{% else %}Open{% endif %}</span>
@@ -1699,14 +2202,14 @@
             <div class="gallery-item fitness-item {% if forloop.counter > 12 %}hidden-item{% endif %}" 
                  onclick="openModal({{ day_num }})" 
                  style="{% if forloop.counter > 12 %}display:none;{% endif %}">
-                {% if activity and activity.embed_html %}
-                    {{ activity.embed_html|safe }}
+                {% if activity and activity.get_display_html %}
+                    {{ activity.get_display_html|safe }}
                     <div class="gallery-check"><i class="fab fa-youtube"></i></div>
-                {% elif activity and activity.file %}
+                {% elif activity and activity.media_file %}
                     {% if activity.is_video %}
-                        <video src="{{ activity.file.url }}" muted></video>
+                        <video src="{{ activity.media_file.url }}" muted></video>
                     {% else %}
-                        <img src="{{ activity.file.url }}" alt="">
+                        <img src="{{ activity.media_file.url }}" alt="">
                     {% endif %}
                 {% elif activity and activity.thumbnail %}
                     <img src="{{ activity.thumbnail.url }}" alt="">
@@ -1718,8 +2221,8 @@
                     <div class="gallery-empty">{{ day_num }}</div>
                 {% endif %}
                 
-                {% if activity and activity.file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
-                {% if activity and activity.thumbnail and not activity.file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
+                {% if activity and activity.media_file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
+                {% if activity and activity.thumbnail and not activity.media_file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
                 <div class="gallery-item-overlay">
                     <span class="gallery-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
                 </div>
@@ -1757,13 +2260,13 @@
                  onclick="openModal({{ day_num }})"
                  style="{% if forloop.counter > 5 %}display:none;{% endif %}">
                 <div class="portfolio-card-thumb">
-                    {% if activity and activity.embed_html %}
-                        {{ activity.embed_html|safe }}
-                    {% elif activity and activity.file %}
+                    {% if activity and activity.get_display_html %}
+                        {{ activity.get_display_html|safe }}
+                    {% elif activity and activity.media_file %}
                         {% if activity.is_video %}
-                            <video src="{{ activity.file.url }}" muted></video>
+                            <video src="{{ activity.media_file.url }}" muted></video>
                         {% else %}
-                            <img src="{{ activity.file.url }}" alt="">
+                            <img src="{{ activity.media_file.url }}" alt="">
                         {% endif %}
                     {% elif activity and activity.thumbnail %}
                         <img src="{{ activity.thumbnail.url }}" alt="">
@@ -1825,18 +2328,18 @@
                  onclick="openModal({{ day_num }})"
                  style="{% if forloop.counter > 8 %}display:none;{% endif %}">
                 <div class="roadmap-dot">
-                    {% if activity and not activity.file and activity.source_platform %}
+                    {% if activity and not activity.media_file and activity.source_platform %}
                         <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
                     {% endif %}
                 </div>
                 <div class="roadmap-thumbnail">
-                    {% if activity and activity.embed_html %}
-                        {{ activity.embed_html|safe }}
-                    {% elif activity and activity.file %}
+                    {% if activity and activity.get_display_html %}
+                        {{ activity.get_display_html|safe }}
+                    {% elif activity and activity.media_file %}
                         {% if activity.is_video %}
-                            <video src="{{ activity.file.url }}" muted></video>
+                            <video src="{{ activity.media_file.url }}" muted></video>
                         {% else %}
-                            <img src="{{ activity.file.url }}" alt="">
+                            <img src="{{ activity.media_file.url }}" alt="">
                         {% endif %}
                     {% elif activity and activity.thumbnail %}
                         <img src="{{ activity.thumbnail.url }}" alt="">
@@ -1852,7 +2355,7 @@
                 </div>
                 <div class="roadmap-content">
                     <div class="roadmap-title">
-                        {% if activity and activity.file %}
+                        {% if activity and activity.media_file %}
                             📎 {{ activity.content|truncatechars:50 }}
                         {% elif activity and activity.source_platform %}
                             <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="margin-right:4px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#22c55e;{% endif %}"></i> {{ activity.content|truncatechars:50 }}
@@ -1889,39 +2392,85 @@
     {% endif %}
     
     <!-- ================================================ -->
-    <!-- DYNAMIC CURRENT DAY INFO - CHANGES BASED ON LAST VIEWED -->
-    <!-- Clicking anywhere on hero or info container opens fullscreen modal -->
+    <!-- CURRENT DAY CONTENT DISPLAY - FIXED YOUTUBE -->
     <!-- ================================================ -->
     <div class="current-day-hero" id="currentDayHero" onclick="goToCurrentDisplayedDay()">
-        <div id="heroMediaContainer">
-            <div style="display:flex;align-items:center;justify-content:center;min-height:300px;background:var(--bg-secondary);flex-direction:column;gap:16px;">
-                <i class="fas fa-play-circle" style="font-size:48px;opacity:0.3;"></i>
-                <p style="color:var(--text-muted);">Tap to view</p>
-            </div>
+        <div id="heroMediaContainer" class="hero-content">
+            {% if current_activity %}
+                {% if current_activity.get_display_html %}
+                    <div class="current-day-content-wrapper">
+                        {{ current_activity.get_display_html|safe }}
+                    </div>
+                {% elif current_activity.media_file %}
+                    {% if current_activity.is_video %}
+                        <video src="{{ current_activity.media_file.url }}" muted playsinline style="width:100%;display:block;object-fit:contain;max-height:600px;"></video>
+                    {% else %}
+                        <img src="{{ current_activity.media_file.url }}" alt="{{ current_activity.content }}" style="width:100%;display:block;object-fit:contain;max-height:600px;">
+                    {% endif %}
+                {% else %}
+                    <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;width:100%;">
+                        <i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;"></i>
+                        <span style="font-size:14px;text-align:center;padding:0 20px;">{{ current_activity.content|default:"No content yet" }}</span>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:16px;width:100%;">
+                    <i class="fas fa-play-circle" style="font-size:48px;opacity:0.3;"></i>
+                    <p style="color:var(--text-muted);">Tap to view</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 
     <div class="current-day-info" id="dynamicInfoContainer" onclick="goToCurrentDisplayedDay()">
         <div class="info-badge" id="dynamicBadge">
-            <span class="badge" id="dynamicDayBadge">DAY 1</span>
+            <span class="badge" id="dynamicDayBadge">
+                {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }}{% endif %}
+            </span>
             
-            <!-- IMPORTED FROM BADGE - SOCIAL-FIRST ADDITION -->
             {% if current_activity and current_activity.source_platform %}
-            <span class="badge" style="background:rgba(59,130,246,0.1);color:var(--accent);">
+            <span class="badge imported-badge {{ current_activity.source_platform }}-badge">
                 <i class="fab fa-{% if current_activity.source_platform == 'twitter' %}x-twitter{% elif current_activity.source_platform == 'tiktok' %}tiktok{% elif current_activity.source_platform == 'youtube' %}youtube{% elif current_activity.source_platform == 'instagram' %}instagram{% elif current_activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
-                Imported from {{ current_activity.source_platform|title }}
+                {{ current_activity.source_platform|title }}
             </span>
             {% endif %}
+            
+            {% if current_activity.imported_from %}
+                <span class="processing-indicator {{ current_activity.imported_from.processing_status }}">
+                    {% if current_activity.imported_from.processing_status == 'fetching' %}
+                        <i class="fas fa-spinner fa-spin"></i> Processing...
+                    {% elif current_activity.imported_from.processing_status == 'stored' %}
+                        <i class="fas fa-check-circle"></i> Stored
+                    {% elif current_activity.imported_from.processing_status == 'failed' %}
+                        <i class="fas fa-exclamation-circle"></i> Failed
+                    {% endif %}
+                </span>
+            {% endif %}
         </div>
-        <h3 class="info-title" id="dynamicTitle">Loading...</h3>
-        <div id="dynamicSourceLink"></div>
-        <div id="dynamicEditLink"></div>
+        <h3 class="info-title" id="dynamicTitle">{{ current_activity.content|default:"No content yet" }}</h3>
+        
+        <div id="dynamicSourceLink">
+            {% if current_activity and current_activity.source_url %}
+            <a href="{{ current_activity.source_url }}" target="_blank" class="source-link" onclick="event.stopPropagation();">
+                <i class="fas fa-external-link-alt"></i> {{ current_activity.source_platform|title|default:"Source" }}
+            </a>
+            {% endif %}
+        </div>
+        
+        <div id="dynamicEditLink">
+            {% if user == journey.creator.user and current_activity %}
+            <a href="{% url 'post_activity_day' slug=journey.slug day_number=current_day %}" class="edit-link" onclick="event.stopPropagation();">
+                Edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}
+            </a>
+            {% endif %}
+        </div>
+        
         <div class="info-actions" id="dynamicActions">
             <button class="info-action" id="dynamicLoveBtn" onclick="event.stopPropagation(); toggleLoveFromDynamic()">
-                <i class="far fa-heart"></i> <span id="dynamicLoveCount">0</span>
+                <i class="far fa-heart"></i> <span id="dynamicLoveCount">{{ current_activity.get_love_count|default:0 }}</span>
             </button>
             <button class="info-action" onclick="event.stopPropagation(); scrollToComments()">
-                <i class="far fa-comment"></i> <span id="dynamicCommentCount">0</span>
+                <i class="far fa-comment"></i> <span id="dynamicCommentCount">{{ current_activity.get_comment_count|default:0 }}</span>
             </button>
             <button class="info-action" onclick="event.stopPropagation(); shareJourney()">
                 <i class="fas fa-share-alt"></i> Share
@@ -1938,14 +2487,18 @@
         </button>
     </div>
     
+    <!-- ===== COMMENTS SECTION ===== -->
     <div class="comments-section" id="comments">
-        <div class="comments-header"><h4>Comments ({{ recent_comments|length }})</h4></div>
+        <div class="comments-header">
+            <h4><i class="fas fa-comment"></i> Comments <span class="comment-count-badge">{{ recent_comments|length }}</span></h4>
+        </div>
+        
         <div class="comments-list">
             {% for comment in recent_comments %}
             <div class="comment-item">
                 <div class="comment-avatar">
                     {% if comment.user.profile.image %}
-                        <img src="{{ comment.user.profile.image.url }}" alt="">
+                        <img src="{{ comment.user.profile.image.url }}" alt="{{ comment.user.username }}">
                     {% else %}
                         <i class="fas fa-user"></i>
                     {% endif %}
@@ -1956,45 +2509,55 @@
                         <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
                     </div>
                     <p class="comment-text">{{ comment.content }}</p>
+                    <div class="comment-actions">
+                        <button onclick="replyToComment({{ comment.id }})"><i class="fas fa-reply"></i> Reply</button>
+                    </div>
                 </div>
             </div>
             {% empty %}
-            <p style="color:var(--text-muted);text-align:center;padding:20px;">No comments yet.</p>
+            <div class="comments-empty">
+                <i class="fas fa-comment-slash"></i>
+                <p>No comments yet. Be the first to share your thoughts!</p>
+            </div>
             {% endfor %}
         </div>
         
         {% if user.is_authenticated %}
-        <div class="comment-form-container" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-color);">
+        <div class="comment-form-container">
             <form onsubmit="submitComment(event)">
                 {% csrf_token %}
                 <input type="hidden" id="commentActivityId" value="{{ current_activity.id|default:'' }}">
-                <div style="display:flex;gap:10px;">
-                    <div class="comment-avatar" style="width:32px;height:32px;">
+                <div class="comment-input-wrapper">
+                    <div class="comment-avatar">
                         {% if user.profile.image %}
-                            <img src="{{ user.profile.image.url }}" alt="">
+                            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
                         {% else %}
                             <i class="fas fa-user"></i>
                         {% endif %}
                     </div>
-                    <div style="flex:1;">
-                        <textarea id="commentContent" placeholder="Add a comment..." rows="2"></textarea>
-                        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-                            <button type="submit" class="action-btn action-btn-primary" style="padding:7px 18px;font-size:12px;">Post</button>
+                    <div class="comment-input-group">
+                        <textarea id="commentContent" placeholder="Write a comment..." rows="1"></textarea>
+                        <div class="comment-submit-wrapper">
+                            <button type="submit" class="comment-submit-btn" id="commentSubmitBtn">
+                                <i class="fas fa-paper-plane"></i> Post
+                            </button>
                         </div>
                     </div>
                 </div>
             </form>
         </div>
         {% else %}
-        <div style="margin-top:16px;padding:14px;text-align:center;background:var(--bg-secondary);border-radius:12px;">
-            <p style="color:var(--text-muted);margin-bottom:10px;">Log in to leave a comment</p>
-            <a href="{% url 'login' %}?next={{ request.path }}" class="action-btn action-btn-outline">Log in</a>
+        <div class="comment-login-prompt">
+            <p><i class="fas fa-lock"></i> Log in to join the conversation</p>
+            <a href="{% url 'login' %}?next={{ request.path }}" class="login-btn">Log In</a>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- MODAL WITH SPINNER -->
+<!-- ================================================ -->
+<!-- FULL SCREEN BLACK CANVAS MODAL -->
+<!-- ================================================ -->
 <div class="modal" id="mediaModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -2007,17 +2570,17 @@
             </div>
         </div>
         <div class="modal-footer">
-            <!-- SOCIAL ENGAGEMENT STATS - SOCIAL-FIRST ADDITION -->
-            <div class="modal-social-stats" id="modalSocialStats" style="display:none;">
-                <span><i class="fas fa-heart"></i> <span id="modalSocialLikes">0</span></span>
-                <span><i class="fas fa-comment"></i> <span id="modalSocialComments">0</span></span>
-                <span><i class="fas fa-clock"></i> <span id="modalSocialDate"></span></span>
-            </div>
             <p class="modal-caption" id="modalCaption"></p>
             <div class="modal-actions">
-                <button class="modal-action" onclick="toggleLoveFromModal()"><i class="far fa-heart"></i> <span id="modalLoveCount">0</span></button>
-                <button class="modal-action" onclick="scrollToCommentsAndClose()"><i class="far fa-comment"></i> Comments</button>
-                <button class="modal-action" onclick="shareJourney()"><i class="fas fa-share-alt"></i> Share</button>
+                <button class="modal-action" onclick="toggleLoveFromModal()">
+                    <i class="far fa-heart"></i> <span id="modalLoveCount">0</span>
+                </button>
+                <button class="modal-action" onclick="scrollToCommentsAndClose()">
+                    <i class="far fa-comment"></i> Comments
+                </button>
+                <button class="modal-action" onclick="shareJourney()">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
             </div>
         </div>
         <div class="modal-nav">
@@ -2038,7 +2601,6 @@
     let currentModalDay = currentDay;
     let currentActivityId = {{ current_activity.id|default:'null' }};
     
-    // Track the currently displayed day in the hero/info section
     let currentlyDisplayedDay = currentDay;
     
     const activitiesData = {
@@ -2046,15 +2608,14 @@
             {{ day }}: {
                 id: {{ activity.id }},
                 content: "{{ activity.content|escapejs }}",
-                fileUrl: "{% if activity.file %}{{ activity.file.url }}{% endif %}",
-                embedHtml: "{% if activity.embed_html %}{{ activity.embed_html|escapejs }}{% endif %}",
+                fileUrl: "{% if activity.media_file %}{{ activity.media_file.url }}{% endif %}",
+                embedHtml: "{% if activity.get_display_html %}{{ activity.get_display_html|escapejs }}{% endif %}",
                 thumbnailUrl: "{% if activity.thumbnail %}{{ activity.thumbnail.url }}{% endif %}",
                 isVideo: {{ activity.is_video|yesno:"true,false" }},
                 sourceUrl: "{% if activity.source_url %}{{ activity.source_url|escapejs }}{% endif %}",
                 sourcePlatform: "{% if activity.source_platform %}{{ activity.source_platform|escapejs }}{% endif %}",
                 loveCount: {{ activity.get_love_count }},
-                commentCount: {{ activity.get_comment_count }},
-                socialEngagement: {{ activity.social_engagement|default:'{}'|safe }}
+                commentCount: {{ activity.get_comment_count }}
             },
         {% endfor %}
     };
@@ -2143,7 +2704,6 @@
     
     const activitiesCount = Object.keys(activitiesData).filter(key => activitiesData[key] && activitiesData[key].id).length;
     
-    // Update the main hero and info section with the selected day
     function updateDisplayedDay(day) {
         const activity = activitiesData[day];
         if (!activity) return;
@@ -2151,26 +2711,21 @@
         currentlyDisplayedDay = day;
         currentActivityId = activity.id;
         
-        // Update hidden comment form input
         const commentInput = document.getElementById('commentActivityId');
         if (commentInput) commentInput.value = activity.id;
         
-        // Update badge
         const badgeText = journeyType === 'milestone' ? `MILESTONE ${day}` : `DAY ${day}`;
         const badgeEl = document.getElementById('dynamicDayBadge');
         if (badgeEl) badgeEl.textContent = badgeText;
         
-        // Update title
         const titleEl = document.getElementById('dynamicTitle');
         if (titleEl) titleEl.textContent = activity.content || (journeyType === 'milestone' ? `Milestone ${day}` : `Day ${day}`);
         
-        // Update love count
         const loveCountEl = document.getElementById('dynamicLoveCount');
         if (loveCountEl) loveCountEl.textContent = activity.loveCount;
         const commentCountEl = document.getElementById('dynamicCommentCount');
         if (commentCountEl) commentCountEl.textContent = activity.commentCount;
         
-        // Update source link if exists
         const sourceLinkDiv = document.getElementById('dynamicSourceLink');
         if (sourceLinkDiv) {
             if (activity.sourceUrl) {
@@ -2180,7 +2735,6 @@
             }
         }
         
-        // Update edit link for creator
         const editLinkDiv = document.getElementById('dynamicEditLink');
         {% if user == journey.creator.user %}
         editLinkDiv.innerHTML = `<a href="{% url 'post_activity_day' slug=journey.slug day_number=999999 %}" class="edit-link" onclick="event.stopPropagation();" id="dynamicEditLinkUrl">Edit this ${journeyType === 'milestone' ? 'milestone' : 'day'}</a>`;
@@ -2192,17 +2746,13 @@
         editLinkDiv.innerHTML = '';
         {% endif %}
         
-        // Update hero media
         updateHeroMedia(activity);
         
-        // Add animation to the info container
         const infoContainer = document.getElementById('dynamicInfoContainer');
         if (infoContainer) {
             infoContainer.classList.add('info-updated');
             setTimeout(() => infoContainer.classList.remove('info-updated'), 300);
         }
-        
-        // Also update the hero container animation
         const heroContainer = document.getElementById('currentDayHero');
         if (heroContainer) {
             heroContainer.classList.add('info-updated');
@@ -2215,20 +2765,69 @@
         if (!heroContainer) return;
         
         if (activity.embedHtml) {
-            heroContainer.innerHTML = activity.embedHtml;
-            const iframe = heroContainer.querySelector('iframe');
-            if (iframe) {
-                iframe.style.width = '100%';
-                iframe.style.border = 'none';
-                iframe.style.aspectRatio = '16 / 9';
-                iframe.style.pointerEvents = 'none';
+            // Wrap the content in a div with the proper class
+            heroContainer.innerHTML = `<div class="current-day-content-wrapper">${activity.embedHtml}</div>`;
+            
+            // Find and style YouTube embeds
+            const wrapper = heroContainer.querySelector('.current-day-content-wrapper');
+            if (wrapper) {
+                const youtubeWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
+                youtubeWrappers.forEach(ytWrapper => {
+                    ytWrapper.style.position = 'relative';
+                    ytWrapper.style.paddingBottom = '56.25%';
+                    ytWrapper.style.height = '0';
+                    ytWrapper.style.overflow = 'hidden';
+                    ytWrapper.style.width = '100%';
+                    ytWrapper.style.maxWidth = '100%';
+                    ytWrapper.style.background = '#000';
+                    ytWrapper.style.borderRadius = '8px';
+                    
+                    const iframe = ytWrapper.querySelector('iframe');
+                    if (iframe) {
+                        iframe.style.position = 'absolute';
+                        iframe.style.top = '0';
+                        iframe.style.left = '0';
+                        iframe.style.width = '100%';
+                        iframe.style.height = '100%';
+                        iframe.style.border = 'none';
+                        iframe.setAttribute('allowfullscreen', '');
+                        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
+                    }
+                });
+                
+                // Find and style content cards
+                const cards = wrapper.querySelectorAll('.content-card');
+                cards.forEach(card => {
+                    card.style.maxHeight = '600px';
+                    card.style.overflow = 'hidden';
+                    card.style.width = '100%';
+                    card.style.borderRadius = '12px';
+                });
+                
+                // Find and style images
+                const images = wrapper.querySelectorAll('img');
+                images.forEach(img => {
+                    img.style.width = '100%';
+                    img.style.maxHeight = '600px';
+                    img.style.objectFit = 'contain';
+                    img.style.display = 'block';
+                });
+                
+                // Find and style videos
+                const videos = wrapper.querySelectorAll('video');
+                videos.forEach(video => {
+                    video.style.width = '100%';
+                    video.style.maxHeight = '600px';
+                    video.style.objectFit = 'contain';
+                    video.style.display = 'block';
+                });
             }
         } else if (activity.fileUrl && activity.isVideo) {
-            heroContainer.innerHTML = `<video src="${activity.fileUrl}" muted playsinline style="width:100%;display:block;"></video>`;
+            heroContainer.innerHTML = `<video src="${activity.fileUrl}" muted playsinline style="width:100%;display:block;object-fit:contain;max-height:600px;"></video>`;
         } else if (activity.fileUrl) {
-            heroContainer.innerHTML = `<img src="${activity.fileUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;">`;
+            heroContainer.innerHTML = `<img src="${activity.fileUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;object-fit:contain;max-height:600px;">`;
         } else if (activity.thumbnailUrl) {
-            heroContainer.innerHTML = `<img src="${activity.thumbnailUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;">`;
+            heroContainer.innerHTML = `<img src="${activity.thumbnailUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;object-fit:contain;max-height:600px;">`;
         } else if (activity.sourceUrl) {
             const platform = activity.sourcePlatform || 'link';
             const platformColors = {
@@ -2237,14 +2836,14 @@
             };
             const color = platformColors[platform] || 'var(--accent)';
             heroContainer.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;min-height:300px;background:var(--bg-secondary);flex-direction:column;gap:16px;">
+                <div style="display:flex;align-items:center;justify-content:center;min-height:200px;background:var(--bg-secondary);flex-direction:column;gap:16px;width:100%;">
                     <i class="fab fa-${platform === 'twitter' ? 'x-twitter' : platform}" style="font-size:48px;color:${color};opacity:0.7;"></i>
                     <p style="color:var(--text-secondary);font-size:13px;text-align:center;padding:0 20px;">${activity.content?.substring(0, 80) || `View on ${platform}`}</p>
                 </div>
             `;
         } else {
             heroContainer.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;width:100%;">
                     <i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;"></i>
                     <span style="font-size:14px;text-align:center;padding:0 20px;">${activity.content || (journeyType === 'milestone' ? `Milestone ${currentlyDisplayedDay}` : `Day ${currentlyDisplayedDay}`)}</span>
                 </div>
@@ -2252,7 +2851,6 @@
         }
     }
     
-    // Go to the currently displayed day - opens fullscreen modal
     function goToCurrentDisplayedDay() {
         if (currentlyDisplayedDay && activitiesData[currentlyDisplayedDay]) {
             openModal(currentlyDisplayedDay);
@@ -2282,34 +2880,19 @@
     
     function openModal(day) {
         const a = activitiesData[day];
-        if (!a) { alert('No content for day ' + day); return; }
+        if (!a) { 
+            alert('No content for day ' + day); 
+            return; 
+        }
         currentModalDay = day; 
         currentActivityId = a.id;
         
-        // Update the displayed day section to show this day
         updateDisplayedDay(day);
         
         document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
         document.getElementById('modalCaption').textContent = a.content || 'No description';
         document.getElementById('modalLoveCount').textContent = a.loveCount;
         document.getElementById('commentActivityId').value = a.id;
-        
-        // Update social engagement stats in modal
-        const socialStats = a.socialEngagement || {};
-        const socialStatsContainer = document.getElementById('modalSocialStats');
-        if (socialStats && (socialStats.likes || socialStats.comments || socialStats.posted_at)) {
-            socialStatsContainer.style.display = 'flex';
-            document.getElementById('modalSocialLikes').textContent = socialStats.likes || 0;
-            document.getElementById('modalSocialComments').textContent = socialStats.comments || 0;
-            if (socialStats.posted_at) {
-                const date = new Date(socialStats.posted_at);
-                document.getElementById('modalSocialDate').textContent = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            } else {
-                document.getElementById('modalSocialDate').textContent = '';
-            }
-        } else {
-            socialStatsContainer.style.display = 'none';
-        }
         
         const mediaContainer = document.getElementById('modalMedia');
         const spinner = document.getElementById('modalSpinner');
@@ -2324,24 +2907,97 @@
         
         let contentElement = null;
         
+        // PRIORITY 1: Check for embedHtml (rendered card HTML from imported content)
         if (a.embedHtml) {
             const wrapper = document.createElement('div');
-            wrapper.className = 'youtube-embed-wrapper';
+            wrapper.className = 'content-wrapper';
             wrapper.innerHTML = a.embedHtml;
-            const iframe = wrapper.querySelector('iframe');
-            if (iframe) {
+            
+            // Preserve YouTube embeds - look for youtube-embed-wrapper
+            const youtubeWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
+            youtubeWrappers.forEach(ytWrapper => {
+                ytWrapper.style.position = 'relative';
+                ytWrapper.style.paddingBottom = '56.25%';
+                ytWrapper.style.height = '0';
+                ytWrapper.style.overflow = 'hidden';
+                ytWrapper.style.width = '100%';
+                ytWrapper.style.maxWidth = '100%';
+                ytWrapper.style.background = '#000';
+                ytWrapper.style.borderRadius = '12px';
+                
+                const iframe = ytWrapper.querySelector('iframe');
+                if (iframe) {
+                    iframe.style.position = 'absolute';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                    iframe.setAttribute('allowfullscreen', '');
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
+                    iframe.onload = hideSpinner;
+                    iframe.onerror = hideSpinner;
+                }
+            });
+            
+            // Handle regular iframes
+            const iframes = wrapper.querySelectorAll('iframe:not(.youtube-embed-wrapper iframe)');
+            iframes.forEach(iframe => {
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
+                iframe.style.minHeight = '300px';
                 iframe.style.border = 'none';
+                iframe.style.borderRadius = '12px';
                 iframe.setAttribute('allowfullscreen', '');
                 iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
                 iframe.onload = hideSpinner;
                 iframe.onerror = hideSpinner;
-            } else {
+            });
+            
+            // Handle images
+            const images = wrapper.querySelectorAll('img');
+            images.forEach(img => {
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '70vh';
+                img.style.objectFit = 'contain';
+                img.style.borderRadius = '12px';
+                img.onload = hideSpinner;
+                img.onerror = hideSpinner;
+            });
+            
+            // Handle videos
+            const videos = wrapper.querySelectorAll('video');
+            videos.forEach(video => {
+                video.style.width = '100%';
+                video.style.maxHeight = '70vh';
+                video.style.objectFit = 'contain';
+                video.style.borderRadius = '12px';
+                video.controls = true;
+                video.onloadeddata = hideSpinner;
+                video.onerror = hideSpinner;
+            });
+            
+            // Style the content card
+            const card = wrapper.querySelector('.content-card');
+            if (card) {
+                card.style.maxWidth = '100%';
+                card.style.width = '100%';
+                card.style.margin = '0 auto';
+                card.style.borderRadius = '16px';
+                card.style.overflow = 'hidden';
+                card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+                card.style.maxHeight = '80vh';
+                card.style.overflow = 'auto';
+            }
+            
+            // If no media elements found, hide spinner after a moment
+            if (iframes.length === 0 && images.length === 0 && videos.length === 0 && youtubeWrappers.length === 0) {
                 setTimeout(hideSpinner, 500);
             }
+            
             contentElement = wrapper;
         } 
+        // PRIORITY 2: Video file
         else if (a.fileUrl && a.isVideo) {
             const video = document.createElement('video');
             video.src = a.fileUrl;
@@ -2351,40 +3007,46 @@
             video.style.width = '100%';
             video.style.height = '100%';
             video.style.objectFit = 'contain';
+            video.style.background = '#000';
             video.onloadeddata = hideSpinner;
             video.onerror = hideSpinner;
             contentElement = video;
         } 
+        // PRIORITY 3: Image file
         else if (a.fileUrl) {
             const img = document.createElement('img');
             img.src = a.fileUrl;
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
+            img.style.background = '#000';
             img.onload = hideSpinner;
             img.onerror = hideSpinner;
             contentElement = img;
         } 
+        // PRIORITY 4: Thumbnail
         else if (a.thumbnailUrl) {
             const img = document.createElement('img');
             img.src = a.thumbnailUrl;
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
+            img.style.background = '#000';
             img.onload = hideSpinner;
             img.onerror = hideSpinner;
             contentElement = img;
         } 
+        // PRIORITY 5: Source URL
         else if (a.sourceUrl) {
             const platform = a.sourcePlatform || 'link';
             const platformColors = {
-                'tiktok': { color: '#00f2ea', bg: 'linear-gradient(135deg, #001a1a, #000)' },
-                'instagram': { color: '#dc2743', bg: 'linear-gradient(135deg, #1a0010, #000)' },
-                'youtube': { color: '#ff0000', bg: 'linear-gradient(135deg, #1a0000, #000)' },
-                'twitter': { color: '#1DA1F2', bg: 'linear-gradient(135deg, #001020, #000)' },
-                'facebook': { color: '#1877f2', bg: 'linear-gradient(135deg, #001030, #000)' }
+                'tiktok': '#00f2ea',
+                'instagram': '#dc2743',
+                'youtube': '#ff0000',
+                'twitter': '#1DA1F2',
+                'facebook': '#1877f2'
             };
-            const pc = platformColors[platform] || { color: 'var(--accent)', bg: 'linear-gradient(135deg, #111, #000)' };
+            const color = platformColors[platform] || '#fff';
             const iconClass = {
                 'tiktok': 'fa-tiktok', 'instagram': 'fa-instagram', 'youtube': 'fa-youtube',
                 'twitter': 'fa-x-twitter', 'facebook': 'fa-facebook'
@@ -2396,37 +3058,58 @@
             div.style.alignItems = 'center';
             div.style.justifyContent = 'center';
             div.style.height = '100%';
+            div.style.width = '100%';
             div.style.padding = '20px';
             div.style.textAlign = 'center';
-            div.style.background = pc.bg;
+            div.style.background = '#000';
             div.innerHTML = `
-                <i class="fab ${iconClass}" style="font-size:64px;margin-bottom:16px;color:${pc.color};"></i>
-                <p style="margin-bottom:16px;color:#ccc;">Content from <strong style="color:#fff;">${platform.charAt(0).toUpperCase() + platform.slice(1)}</strong></p>
-                <a href="${a.sourceUrl}" target="_blank" class="action-btn action-btn-primary" style="padding:12px 24px;display:inline-flex;gap:8px;">
+                <i class="fab ${iconClass}" style="font-size:80px;margin-bottom:20px;color:${color};opacity:0.8;"></i>
+                <p style="color:#aaa;margin-bottom:16px;font-size:14px;">Content from <strong style="color:#fff;">${platform.charAt(0).toUpperCase() + platform.slice(1)}</strong></p>
+                <a href="${a.sourceUrl}" target="_blank" style="padding:12px 32px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:30px;text-decoration:none;font-size:14px;transition:all 0.2s;">
                     <i class="fas fa-external-link-alt"></i> View Original
                 </a>
             `;
             setTimeout(hideSpinner, 300);
             contentElement = div;
         } 
+        // PRIORITY 6: Text only
         else {
             const div = document.createElement('div');
             div.style.display = 'flex';
             div.style.alignItems = 'center';
             div.style.justifyContent = 'center';
             div.style.height = '100%';
-            div.style.color = '#aaa';
+            div.style.width = '100%';
+            div.style.color = '#fff';
             div.style.flexDirection = 'column';
-            div.style.gap = '12px';
-            div.style.padding = '20px';
+            div.style.gap = '16px';
+            div.style.padding = '30px';
             div.style.textAlign = 'center';
-            div.innerHTML = `<i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;"></i><span style="font-size:14px;">${a.content || 'No content available'}</span>`;
+            div.style.background = '#000';
+            div.innerHTML = `
+                <i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;color:#fff;"></i>
+                <span style="font-size:16px;color:#fff;">${a.content || 'No content available'}</span>
+            `;
             setTimeout(hideSpinner, 300);
             contentElement = div;
         }
         
         if (contentElement) {
             mediaContainer.appendChild(contentElement);
+        } else {
+            const fallback = document.createElement('div');
+            fallback.style.display = 'flex';
+            fallback.style.alignItems = 'center';
+            fallback.style.justifyContent = 'center';
+            fallback.style.height = '100%';
+            fallback.style.width = '100%';
+            fallback.style.color = '#fff';
+            fallback.style.padding = '20px';
+            fallback.style.textAlign = 'center';
+            fallback.style.background = '#000';
+            fallback.textContent = a.content || 'No content available';
+            mediaContainer.appendChild(fallback);
+            setTimeout(hideSpinner, 300);
         }
         
         document.getElementById('mediaModal').classList.add('active');
@@ -2485,14 +3168,73 @@
         });
     }
     
+    // Auto-resize comment textarea
+    document.addEventListener('DOMContentLoaded', function() {
+        const commentTextarea = document.getElementById('commentContent');
+        if (commentTextarea) {
+            commentTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+            });
+            
+            commentTextarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    const form = this.closest('form');
+                    if (form) form.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
+    });
+    
     function submitComment(e) {
         e.preventDefault();
-        const content = document.getElementById('commentContent').value.trim();
-        if (!content) return;
-        fetch('/api/activity/' + currentActivityId + '/comment/', {
-            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'content=' + encodeURIComponent(content)
-        }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
+        const content = document.getElementById('commentContent');
+        const submitBtn = document.getElementById('commentSubmitBtn');
+        const activityId = document.getElementById('commentActivityId').value;
+        
+        if (!content.value.trim()) {
+            content.focus();
+            content.style.borderColor = '#ef4444';
+            setTimeout(() => content.style.borderColor = '', 2000);
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+        
+        fetch('/api/activity/' + activityId + '/comment/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'content=' + encodeURIComponent(content.value.trim())
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                location.reload();
+            } else {
+                alert('Error posting comment: ' + (d.error || 'Please try again'));
+            }
+        })
+        .catch(err => {
+            alert('Error posting comment. Please try again.');
+            console.error('Comment error:', err);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
+        });
+    }
+    
+    function replyToComment(commentId) {
+        const textarea = document.getElementById('commentContent');
+        if (textarea) {
+            textarea.focus();
+            textarea.value = '@' + commentId + ' ';
+            textarea.dispatchEvent(new Event('input'));
+        }
     }
     
     function scrollToCommentsAndClose() {
@@ -2535,14 +3277,11 @@
     
     document.addEventListener('DOMContentLoaded', () => {
         drawMeanderingPath();
-        
-        // Initialize the displayed day with current day
         if (activitiesData[currentDay]) {
             updateDisplayedDay(currentDay);
         } else if (activitiesData[1]) {
             updateDisplayedDay(1);
         }
-        
         if (document.getElementById('dayStrip')) {
             const s = document.getElementById('dayStrip');
             s.addEventListener('scroll', updateScrollIndicator);

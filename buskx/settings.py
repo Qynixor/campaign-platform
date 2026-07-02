@@ -308,3 +308,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # YOUTUBE API
 # =====================================================
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+
+
+CELERY_BROKER_URL = 'sqla+sqlite:///celerydb.sqlite'
+CELERY_RESULT_BACKEND = 'db+sqlite:///celerydb.sqlite'

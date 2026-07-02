@@ -76,7 +76,7 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 
 # ============================================================================
-# SOCIAL CONNECTION MODELS (THE BRIDGE) - KEPT
+# SOCIAL CONNECTION MODELS (THE BRIDGE)
 # ============================================================================
 
 class SocialConnection(models.Model):
@@ -124,7 +124,7 @@ class SocialConnection(models.Model):
 
 
 class ImportedContent(models.Model):
-    """Content imported from social platforms - KEPT (Critical for Social-First)"""
+    """Content imported from social platforms with REAL content storage"""
     
     STATUS_CHOICES = [
         ('pending', 'Pending Review'),
@@ -133,35 +133,114 @@ class ImportedContent(models.Model):
         ('ignored', 'Ignored'),
     ]
     
-    # Source info
-    social_connection = models.ForeignKey(SocialConnection, on_delete=models.CASCADE, related_name='imported_content', null=True, blank=True)
+    # ====== SOURCE INFO ======
+    social_connection = models.ForeignKey(
+        SocialConnection, 
+        on_delete=models.CASCADE, 
+        related_name='imported_content', 
+        null=True, 
+        blank=True
+    )
     platform = models.CharField(max_length=20)
     platform_post_id = models.CharField(max_length=100)
     platform_url = models.URLField(max_length=500)
     
-    # Content
+    # ====== CONTENT (Original) ======
     caption = models.TextField()
     media_url = models.URLField(max_length=500, blank=True)
     media_type = models.CharField(max_length=20, blank=True)  # video, image
     thumbnail_url = models.URLField(max_length=500, blank=True)
     
-    # Metadata from platform
+    # ====== METADATA FROM PLATFORM ======
     posted_at = models.DateTimeField()
     like_count = models.PositiveIntegerField(default=0)
     comment_count = models.PositiveIntegerField(default=0)
     
-    # Assignment - CRITICAL FOR SOCIAL-FIRST
+    # ====== REAL CONTENT STORAGE (NEW) ======
+    content_title = models.CharField(max_length=200, blank=True)
+    content_description = models.TextField(blank=True)
+    
+    # Store media locally (not just URLs)
+    media_file = CloudinaryField(
+        'media',
+        folder='imported_media',
+        resource_type='auto',
+        null=True,
+        blank=True
+    )
+    thumbnail_file = CloudinaryField(
+        'thumbnail',
+        folder='imported_thumbnails',
+        null=True,
+        blank=True
+    )
+    
+    # Rich metadata
+    author_name = models.CharField(max_length=100, blank=True)
+    author_avatar_url = models.URLField(blank=True)
+    author_followers = models.PositiveIntegerField(default=0)
+    
+    # Engagement stats
+    view_count = models.PositiveIntegerField(default=0)
+    share_count = models.PositiveIntegerField(default=0)
+    
+    # Content categorization
+    content_type = models.CharField(max_length=20, choices=[
+        ('video', 'Video'),
+        ('image', 'Image'),
+        ('text', 'Text Post'),
+        ('carousel', 'Carousel'),
+    ], default='text')
+    
+    # Store text content for search
+    raw_text = models.TextField(blank=True)
+    
+    # Store the actual HTML content we generate
+    rendered_html = models.TextField(blank=True)
+    
+    # Tags from original content
+    original_tags = models.JSONField(default=list, blank=True)
+    
+    # When was this content actually created (original date)
+    original_created_at = models.DateTimeField(null=True, blank=True)
+    
+    # Processing status
+    processing_status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('fetching', 'Fetching Content'),
+        ('processing', 'Processing'),
+        ('stored', 'Stored Locally'),
+        ('failed', 'Failed'),
+    ], default='pending')
+    
+    # Error tracking
+    processing_error = models.TextField(blank=True)
+    last_fetch_attempt = models.DateTimeField(null=True, blank=True)
+    fetch_attempts = models.PositiveIntegerField(default=0)
+    
+    # ====== ASSIGNMENT ======
     detected_day = models.PositiveIntegerField(null=True, blank=True)
-    assigned_journey = models.ForeignKey('Journey', on_delete=models.SET_NULL, null=True, related_name='imported_content')
+    assigned_journey = models.ForeignKey(
+        'Journey', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name='imported_content'
+    )
     assigned_day = models.PositiveIntegerField(null=True, blank=True)
     
-    # Status
+    # ====== STATUS ======
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # Resulting activity (once processed)
-    created_activity = models.OneToOneField('Activity', on_delete=models.SET_NULL, null=True, blank=True)
+    # ====== RESULTING ACTIVITY ======
+    created_activity = models.ForeignKey(
+        'Activity', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='imported_content'
+    )
     
-    # Timestamps
+    # ====== TIMESTAMPS ======
     imported_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
     
@@ -171,6 +250,7 @@ class ImportedContent(models.Model):
         indexes = [
             models.Index(fields=['social_connection', 'status']),
             models.Index(fields=['assigned_journey', 'assigned_day']),
+            models.Index(fields=['processing_status']),
         ]
         verbose_name_plural = 'Imported Content'
     
@@ -184,16 +264,20 @@ class ImportedContent(models.Model):
         self.assigned_day = day
         self.processed_at = timezone.now()
         self.save()
+    
+    def get_display_html(self):
+        """Get the best available HTML for display"""
+        if self.rendered_html:
+            return self.rendered_html
+        return None
 
 
 # ============================================================================
-# JOURNEY MODEL - KEPT (Core)
+# JOURNEY MODEL
 # ============================================================================
 
 class Journey(models.Model):
-    """
-    Main Journey model - a structured series of content
-    """
+    """Main Journey model - a structured series of content"""
     
     JOURNEY_TYPES = [
         ('daily', 'Daily Challenge'),
@@ -226,7 +310,6 @@ class Journey(models.Model):
     duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
     duration_unit = models.CharField(max_length=10, default='days')
     
-    # Allow creators already mid-journey to jump to their current day
     current_day_override = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -238,18 +321,14 @@ class Journey(models.Model):
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
     
-    # ==================== SOCIAL-FIRST SETTINGS (NEW) ====================
+    # ==================== SOCIAL-FIRST SETTINGS ====================
     auto_import_enabled = models.BooleanField(default=False)
     import_hashtag = models.CharField(max_length=50, blank=True)
-    
-    # NEW: Social share settings
     social_share_url = models.URLField(blank=True, help_text="Custom share link")
     auto_post_to_social = models.BooleanField(default=False)
     social_share_text = models.CharField(max_length=280, blank=True, help_text="Default share text for social posts")
-    
-    # NEW: Traffic tracking
-    traffic_sources = models.JSONField(default=dict, blank=True)  # {'twitter': 45, 'instagram': 32}
-    social_engagement_stats = models.JSONField(default=dict, blank=True)  # {'views': 120, 'shares': 15}
+    traffic_sources = models.JSONField(default=dict, blank=True)
+    social_engagement_stats = models.JSONField(default=dict, blank=True)
     
     # ==================== SETTINGS ====================
     is_public = models.BooleanField(default=True)
@@ -273,7 +352,6 @@ class Journey(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
     
-    # Template tracking
     template_style = models.CharField(max_length=20, default='default')
     
     class Meta:
@@ -307,14 +385,7 @@ class Journey(models.Model):
         
         super().save(*args, **kwargs)
     
-    # ==================== DAY/MILESTONE METHODS ====================
-    
     def get_current_day(self):
-        """
-        Calculate current day based on journey type:
-        - Daily: Based on calendar days elapsed OR manual override
-        - Milestone: Based on number of completed milestones
-        """
         if self.current_day_override:
             return min(self.current_day_override, self.duration)
         
@@ -329,7 +400,6 @@ class Journey(models.Model):
         return min(days_passed + 1, self.duration)
     
     def get_progress_percentage(self):
-        """Get completion percentage"""
         if self.duration == 0:
             return 0
         
@@ -341,16 +411,12 @@ class Journey(models.Model):
         return min(round((current / self.duration) * 100), 100)
     
     def is_day_locked(self, day_number):
-        """Check if a day/milestone is locked."""
         if self.journey_type == 'daily':
             current = self.get_current_day()
             return day_number > current
-        elif self.journey_type == 'milestone':
-            return False
         return False
     
     def get_day_status(self, day_number):
-        """Get status of a specific day/milestone."""
         has_content = self.activities.filter(day_number_field=day_number).exists()
         
         if self.journey_type == 'daily':
@@ -371,8 +437,6 @@ class Journey(models.Model):
         
         return 'available'
     
-    # ==================== CONTENT METHODS ====================
-    
     def get_activity_for_day(self, day_number):
         return self.activities.filter(day_number_field=day_number).first()
     
@@ -381,8 +445,6 @@ class Journey(models.Model):
         for activity in self.activities.all():
             activities[activity.day_number_field] = activity
         return activities
-    
-    # ==================== STATS METHODS ====================
     
     def get_follower_count(self):
         return self.followers.count()
@@ -396,37 +458,25 @@ class Journey(models.Model):
     def get_share_count(self):
         return self.shares.count()
     
-    # NEW: Social metrics
-    def get_social_traffic(self):
-        """Get traffic breakdown by social platform"""
-        return self.traffic_sources
-    
     def record_traffic_source(self, source):
-        """Record where traffic came from"""
         if source in self.traffic_sources:
             self.traffic_sources[source] += 1
         else:
             self.traffic_sources[source] = 1
         self.save(update_fields=['traffic_sources'])
     
-    # ==================== URL METHODS ====================
-    
     def get_absolute_url(self):
         return reverse('journey_detail', kwargs={'slug': self.slug})
     
     def get_share_url(self):
-        """Get shareable URL for social media"""
         if self.social_share_url:
             return self.social_share_url
         return f"https://rallynex.com/j/{self.slug}"
     
     def get_social_share_text(self):
-        """Get default text for social sharing"""
         if self.social_share_text:
             return self.social_share_text
         return f"Follow my {self.title} journey! 🚀"
-    
-    # ==================== META METHODS ====================
     
     def get_meta_title(self):
         return f"{self.title} | Rallynex"
@@ -443,7 +493,7 @@ class Journey(models.Model):
 
 
 # ============================================================================
-# ACTIVITY MODEL (DAY CONTENT) - KEPT
+# ACTIVITY MODEL (DAY CONTENT)
 # ============================================================================
 
 class Activity(models.Model):
@@ -453,33 +503,31 @@ class Activity(models.Model):
     content = models.TextField(max_length=500, help_text="Caption/description for this day")
     
     # Media
-    file = CloudinaryField('file', folder='activity_files', null=True, blank=True, resource_type='auto')
+    media_file = CloudinaryField('file', folder='activity_files', null=True, blank=True, resource_type='auto')
     is_video = models.BooleanField(default=False)
     thumbnail = CloudinaryField('image', folder='activity_thumbnails', null=True, blank=True)
     
     # Day tracking
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
+    actual_date = models.DateField(null=True, blank=True)
     
-    # NEW: Actual date when this milestone happened
-    actual_date = models.DateField(
+    # Source tracking
+    imported_from = models.ForeignKey(
+        ImportedContent, 
+        on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        help_text="When this milestone actually happened (e.g., project completion date)"
+        related_name='activities_created'
     )
-    
-    # Source tracking - CRITICAL FOR SOCIAL-FIRST
-    imported_from = models.ForeignKey(ImportedContent, on_delete=models.SET_NULL, null=True, blank=True)
     source_url = models.URLField(blank=True, help_text="Original social media URL")
-    source_platform = models.CharField(max_length=20, blank=True, help_text="tiktok, youtube, instagram, twitter")
-    
-    # NEW: Social engagement tracking
-    social_post_id = models.CharField(max_length=200, blank=True, help_text="Original social post ID")
-    social_engagement = models.JSONField(default=dict, blank=True)  # {'likes': 12, 'comments': 3}
+    source_platform = models.CharField(max_length=20, blank=True)
+    social_post_id = models.CharField(max_length=200, blank=True)
+    social_engagement = models.JSONField(default=dict, blank=True)
     is_cross_posted = models.BooleanField(default=False)
     cross_posted_at = models.DateTimeField(null=True, blank=True)
     
     # Embed
-    embed_html = models.TextField(blank=True, help_text="Embed HTML for social media content")
+    embed_html = models.TextField(blank=True)
     
     # Stats
     view_count = models.PositiveIntegerField(default=0)
@@ -505,8 +553,8 @@ class Activity(models.Model):
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         
-        if self.file and hasattr(self.file, 'resource_type'):
-            self.is_video = self.file.resource_type == 'video'
+        if self.media_file and hasattr(self.media_file, 'resource_type'):
+            self.is_video = self.media_file.resource_type == 'video'
         
         super().save(*args, **kwargs)
         
@@ -516,7 +564,6 @@ class Activity(models.Model):
             self._notify_followers()
     
     def _notify_followers(self):
-        """Notify journey followers of new activity"""
         for follow in self.journey.journeyfollow_set.filter(notify_on_activity=True):
             Notification.objects.create(
                 user=follow.user,
@@ -538,61 +585,38 @@ class Activity(models.Model):
         return self.comments.count()
     
     def get_display_date(self):
-        """Return the actual date if set, otherwise the published date"""
         if self.actual_date:
             return self.actual_date
         return self.published_at.date() if self.published_at else None
     
     def get_date_display(self):
-        """Return formatted date for display"""
         date = self.get_display_date()
         if date:
             return date.strftime("%b %d, %Y")
         return None
+    
 
-    # NEW: Social embed helpers
-    def get_social_embed(self):
-        """Get embed HTML for social post"""
+    def get_display_html(self):
+        """Get the best available HTML for display"""
+        # First check if we have imported content with rendered HTML
+        if self.imported_from and self.imported_from.rendered_html:
+            return self.imported_from.rendered_html
+        # Then check if we have embed HTML directly on the activity
         if self.embed_html:
             return self.embed_html
+        # Finally, check if we have a media file
+        if self.media_file:
+            if self.is_video:
+                return f'<video src="{self.media_file.url}" muted playsinline style="width:100%;display:block;"></video>'
+            else:
+                return f'<img src="{self.media_file.url}" alt="{self.content}" style="width:100%;display:block;">'
+        # If we have a thumbnail
+        if self.thumbnail:
+            return f'<img src="{self.thumbnail.url}" alt="{self.content}" style="width:100%;display:block;">'
         return None
-    
-    def get_social_share_text(self):
-        """Generate text for social sharing"""
-        return f"Day {self.day_number_field}: {self.content[:100]}..."
-
-    # NEW: Create from social post
-    @classmethod
-    def create_from_imported(cls, imported_content, journey, day_number):
-        """Create an activity from imported social content"""
-        activity = cls.objects.create(
-            journey=journey,
-            day_number_field=day_number,
-            content=imported_content.caption[:500],
-            imported_from=imported_content,
-            source_url=imported_content.platform_url,
-            source_platform=imported_content.platform,
-            social_engagement={
-                'likes': imported_content.like_count,
-                'comments': imported_content.comment_count,
-                'posted_at': imported_content.posted_at.isoformat(),
-            },
-            social_post_id=imported_content.platform_post_id,
-            published_at=imported_content.posted_at,
-        )
-        
-        # Link back to imported content
-        imported_content.created_activity = activity
-        imported_content.status = 'assigned'
-        imported_content.assigned_journey = journey
-        imported_content.assigned_day = day_number
-        imported_content.save()
-        
-        return activity
-
 
 # ============================================================================
-# NEW: SocialPostTemplate (Social-First Feature)
+# SOCIAL POST TEMPLATE
 # ============================================================================
 
 class SocialPostTemplate(models.Model):
@@ -621,7 +645,6 @@ class SocialPostTemplate(models.Model):
         return f"{self.journey.title} - {self.platform}"
     
     def render(self, day, title, url, content=None):
-        """Render template with variables"""
         text = self.template_text.format(day=day, title=title, url=url)
         if content:
             text = text.replace('{content}', content[:100])
@@ -629,7 +652,7 @@ class SocialPostTemplate(models.Model):
 
 
 # ============================================================================
-# NEW: ReferralTracking (Social-First Analytics)
+# REFERRAL TRACKING
 # ============================================================================
 
 class ReferralTracking(models.Model):
@@ -665,7 +688,7 @@ class ReferralTracking(models.Model):
 
 
 # ============================================================================
-# RELATIONSHIP MODELS - KEPT
+# RELATIONSHIP MODELS
 # ============================================================================
 
 class JourneyFollow(models.Model):
@@ -715,7 +738,7 @@ class JourneyTag(models.Model):
 
 
 # ============================================================================
-# ENGAGEMENT MODELS - KEPT
+# ENGAGEMENT MODELS
 # ============================================================================
 
 class ActivityLove(models.Model):
@@ -795,7 +818,7 @@ class Share(models.Model):
 
 
 # ============================================================================
-# NOTIFICATION MODEL - KEPT
+# NOTIFICATION MODEL
 # ============================================================================
 
 class Notification(models.Model):
@@ -804,9 +827,7 @@ class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     message = models.CharField(max_length=255)
     redirect_link = models.URLField(blank=True)
-    
     journey = models.ForeignKey(Journey, on_delete=models.CASCADE, null=True, blank=True)
-    
     viewed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -822,7 +843,7 @@ class Notification(models.Model):
 
 
 # ============================================================================
-# MODERATION MODELS - KEPT
+# MODERATION MODELS
 # ============================================================================
 
 class Report(models.Model):
@@ -852,7 +873,7 @@ class Report(models.Model):
 
 
 # ============================================================================
-# FAQ MODEL - KEPT
+# FAQ MODEL
 # ============================================================================
 
 class FAQ(models.Model):
@@ -882,7 +903,7 @@ class FAQ(models.Model):
 
 
 # ============================================================================
-# NEW: QuickAddTracker (Social-First Feature)
+# QUICK ADD TRACKER
 # ============================================================================
 
 class QuickAddTracker(models.Model):
@@ -890,19 +911,11 @@ class QuickAddTracker(models.Model):
     
     journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='quick_adds')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    
-    # Source info
     source_url = models.URLField(max_length=500)
     source_platform = models.CharField(max_length=20)
-    
-    # Auto-detected
     detected_day = models.PositiveIntegerField()
     detected_title = models.CharField(max_length=200, blank=True)
-    
-    # Result
     created_activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Timing
     added_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -916,65 +929,11 @@ class QuickAddTracker(models.Model):
 
 
 # ============================================================================
-# SIGNALS - KEPT & UPDATED
-# ============================================================================
-
-@receiver(post_save, sender=JourneyFollow)
-def create_follow_notification(sender, instance, created, **kwargs):
-    """Notify creator when someone follows their journey"""
-    if created:
-        Notification.objects.create(
-            user=instance.journey.creator.user,
-            message=f"{instance.user.username} started following your journey '{instance.journey.title}'! 🎉",
-            redirect_link=instance.journey.get_absolute_url(),
-            journey=instance.journey
-        )
-
-
-@receiver(models.signals.post_delete, sender=Journey)
-def delete_journey_files(sender, instance, **kwargs):
-    """Clean up Cloudinary files when journey is deleted"""
-    if instance.cover_image:
-        from cloudinary.uploader import destroy
-        destroy(instance.cover_image.public_id)
-    if instance.cover_video:
-        from cloudinary.uploader import destroy
-        destroy(instance.cover_video.public_id, resource_type="video")
-
-
-# ============================================================================
-# COMMENTED OUT / REMOVED (Not Social-First Focused)
-# ============================================================================
-
-"""
-# REMOVED: Donation Model - Not core to social-first strategy
-class Donation(models.Model):
-    ... (commented out)
-
-# REMOVED: PostJourneyProduct Model - Not core to social-first
-class PostJourneyProduct(models.Model):
-    ... (commented out)
-
-# REMOVED: JourneyTemplate Model - Not core to social-first
-class JourneyTemplate(models.Model):
-    ... (commented out)
-
-# REMOVED: ContactMessage - Keep in separate app if needed
-class ContactMessage(models.Model):
-    ... (commented out)
-
-# REMOVED: Subscriber - Keep in separate app if needed
-class Subscriber(models.Model):
-    ... (commented out)
-"""
-
-
-# ============================================================================
-# KEPT: ContactMessage (Moved to separate app or kept minimal)
+# CONTACT & SUBSCRIBER
 # ============================================================================
 
 class ContactMessage(models.Model):
-    """Contact form messages - kept for user support"""
+    """Contact form messages"""
     
     SUBJECT_CHOICES = [
         ('general', 'General Question'),
@@ -998,7 +957,7 @@ class ContactMessage(models.Model):
 
 
 class Subscriber(models.Model):
-    """Email subscribers - kept for marketing"""
+    """Email subscribers"""
     email = models.EmailField(unique=True)
     subscribed_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -1009,3 +968,28 @@ class Subscriber(models.Model):
     
     def __str__(self):
         return self.email
+
+
+# ============================================================================
+# SIGNALS
+# ============================================================================
+
+@receiver(post_save, sender=JourneyFollow)
+def create_follow_notification(sender, instance, created, **kwargs):
+    if created:
+        Notification.objects.create(
+            user=instance.journey.creator.user,
+            message=f"{instance.user.username} started following your journey '{instance.journey.title}'! 🎉",
+            redirect_link=instance.journey.get_absolute_url(),
+            journey=instance.journey
+        )
+
+
+@receiver(models.signals.post_delete, sender=Journey)
+def delete_journey_files(sender, instance, **kwargs):
+    if instance.cover_image:
+        from cloudinary.uploader import destroy
+        destroy(instance.cover_image.public_id)
+    if instance.cover_video:
+        from cloudinary.uploader import destroy
+        destroy(instance.cover_video.public_id, resource_type="video")

@@ -47,7 +47,6 @@
         color: var(--text-secondary);
     }
     
-    /* ALERT STYLES - ADD THIS */
     .alert {
         padding: 14px 18px;
         border-radius: 12px;
@@ -64,7 +63,6 @@
     .alert-warning { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b; }
     .alert-info { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: var(--accent); }
     
-    /* URL INPUT BAR */
     .url-bar {
         display: flex;
         gap: 0;
@@ -129,7 +127,6 @@
     .platform-badge.facebook { background: rgba(24, 119, 242, 0.1); color: #1877f2; }
     .platform-badge.twitter { background: rgba(29, 161, 242, 0.1); color: #1DA1F2; }
     
-    /* PREVIEW CARD */
     .preview-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
@@ -227,26 +224,6 @@
         transform: scale(1.02);
     }
     
-    .preview-media .no-preview {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px;
-        color: var(--text-muted);
-        text-align: center;
-    }
-    
-    .preview-media .no-preview i {
-        font-size: 48px;
-        margin-bottom: 12px;
-        opacity: 0.3;
-    }
-    
-    .preview-media .no-preview span {
-        font-size: 13px;
-    }
-    
     .preview-info {
         padding: 16px 20px;
         border-top: 1px solid var(--border-color);
@@ -266,6 +243,22 @@
         margin-bottom: 4px;
     }
     
+    .preview-info .preview-stats {
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .preview-info .preview-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
     .preview-info .preview-url {
         font-size: 11px;
         color: var(--text-muted);
@@ -275,7 +268,6 @@
         border-top: 1px solid var(--border-color);
     }
     
-    /* FORM SECTION */
     .form-section {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
@@ -379,7 +371,6 @@
         transform: none;
     }
     
-    /* PLATFORM TABS */
     .platform-tabs {
         display: flex;
         gap: 6px;
@@ -436,7 +427,32 @@
         transition: all 0.3s;
     }
     
-    /* ANIMATION */
+    /* Processing status badge */
+    .processing-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+    
+    .processing-badge.fetching {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+    
+    .processing-badge.stored {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+    
+    .processing-badge.failed {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+    
     @keyframes fadeOut {
         0% { opacity: 1; transform: translateX(-50%) scale(1); }
         70% { opacity: 1; transform: translateX(-50%) scale(1); }
@@ -474,7 +490,7 @@
             <i class="fas fa-cloud-upload-alt"></i>
         </div>
         <h1>📥 Import Content</h1>
-        <p>Paste a link from any platform — we'll save it to your journey</p>
+        <p>Paste a link from any platform — we'll save the real content to your journey</p>
     </div>
     
     {% if messages %}
@@ -546,6 +562,7 @@
             <div class="preview-info">
                 <div class="preview-title" id="previewTitle">-</div>
                 <div class="preview-author" id="previewAuthor"></div>
+                <div class="preview-stats" id="previewStats" style="display:none;"></div>
                 <div class="preview-url" id="previewUrlDisplay"></div>
             </div>
         </div>
@@ -588,6 +605,12 @@
             <input type="hidden" name="detected_platform" id="detectedPlatform">
             <input type="hidden" name="embed_html" id="embedHtml">
             <input type="hidden" name="thumbnail_url" id="thumbnailUrl">
+            <input type="hidden" name="media_url" id="mediaUrl">
+            <input type="hidden" name="media_type" id="mediaType">
+            <input type="hidden" name="platform_post_id" id="platformPostId">
+            <input type="hidden" name="posted_at" id="postedAt">
+            <input type="hidden" name="like_count" id="likeCount">
+            <input type="hidden" name="comment_count" id="commentCount">
             
             <button type="submit" class="submit-btn" id="submitBtn">
                 <i class="fas fa-plus-circle"></i> Add to Journey
@@ -597,7 +620,7 @@
     
     <div style="margin-top: 20px; padding: 16px; background: var(--bg-secondary); border-radius: 12px; text-align: center;">
         <p style="font-size: 12px; color: var(--text-muted);">
-            <i class="fas fa-shield-alt"></i> We never store your content — it stays linked from the original source.
+            <i class="fas fa-shield-alt"></i> We store thumbnails and metadata locally for a professional look.
         </p>
     </div>
     
@@ -611,12 +634,19 @@
     const previewMedia = document.getElementById('previewMedia');
     const previewTitle = document.getElementById('previewTitle');
     const previewAuthor = document.getElementById('previewAuthor');
+    const previewStats = document.getElementById('previewStats');
     const previewUrlDisplay = document.getElementById('previewUrlDisplay');
     const captionInput = document.getElementById('caption');
     const journeySelect = document.getElementById('id_journey');
     const dayInput = document.getElementById('id_day_number');
     const embedHtmlInput = document.getElementById('embedHtml');
     const thumbnailUrlInput = document.getElementById('thumbnailUrl');
+    const mediaUrlInput = document.getElementById('mediaUrl');
+    const mediaTypeInput = document.getElementById('mediaType');
+    const platformPostIdInput = document.getElementById('platformPostId');
+    const postedAtInput = document.getElementById('postedAt');
+    const likeCountInput = document.getElementById('likeCount');
+    const commentCountInput = document.getElementById('commentCount');
     const submitBtn = document.getElementById('submitBtn');
     
     const platformPatterns = {
@@ -686,6 +716,7 @@
         
         previewTitle.textContent = `${platformName} Post`;
         previewAuthor.style.display = 'none';
+        previewStats.style.display = 'none';
         embedHtmlInput.value = '';
         submitBtn.disabled = false;
     }
@@ -696,11 +727,19 @@
         return div.innerHTML;
     }
     
+    function formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+    
     async function fetchPreview(url, platform) {
         previewCard.classList.add('active');
         previewMedia.innerHTML = '<div class="no-preview"><i class="fas fa-spinner fa-spin"></i><span>Loading preview...</span></div>';
         previewTitle.textContent = 'Loading...';
         previewAuthor.textContent = '';
+        previewStats.style.display = 'none';
+        previewStats.innerHTML = '';
         previewUrlDisplay.textContent = url;
         submitBtn.disabled = true;
         
@@ -713,7 +752,8 @@
             const data = await response.json();
             
             if (data.success) {
-                if (platform === 'youtube' && data.html) {
+                // Display media
+                if (data.html) {
                     previewMedia.innerHTML = data.html;
                     embedHtmlInput.value = data.html;
                 } else {
@@ -721,14 +761,14 @@
                     embedHtmlInput.value = '';
                 }
                 
-                if (data.title && platform !== 'youtube') {
-                    previewTitle.textContent = data.title;
-                } else if (platform === 'youtube' && data.title) {
+                // Set title
+                if (data.title) {
                     previewTitle.textContent = data.title;
                 } else {
                     previewTitle.textContent = platformNames[platform] + ' Post';
                 }
                 
+                // Set author
                 if (data.author_name) {
                     previewAuthor.textContent = 'by ' + data.author_name;
                     previewAuthor.style.display = 'block';
@@ -736,6 +776,33 @@
                     previewAuthor.style.display = 'none';
                 }
                 
+                // Set stats
+                if (data.like_count || data.comment_count) {
+                    let statsHtml = '';
+                    if (data.like_count) {
+                        statsHtml += `<span><i class="fas fa-heart"></i> ${formatNumber(data.like_count)}</span>`;
+                    }
+                    if (data.comment_count) {
+                        statsHtml += `<span><i class="fas fa-comment"></i> ${formatNumber(data.comment_count)}</span>`;
+                    }
+                    previewStats.innerHTML = statsHtml;
+                    previewStats.style.display = 'flex';
+                } else {
+                    previewStats.style.display = 'none';
+                }
+                
+                // Store data for form submission
+                if (data.thumbnail_url) {
+                    thumbnailUrlInput.value = data.thumbnail_url;
+                }
+                if (data.like_count) {
+                    likeCountInput.value = data.like_count;
+                }
+                if (data.comment_count) {
+                    commentCountInput.value = data.comment_count;
+                }
+                
+                // Auto-fill caption if empty
                 if (!captionInput.value && data.title) {
                     captionInput.value = data.title;
                 }
@@ -784,7 +851,7 @@
         });
     });
     
-    // Paste button - FIXED
+    // Paste button
     async function pasteFromClipboard() {
         try {
             const text = await navigator.clipboard.readText();
