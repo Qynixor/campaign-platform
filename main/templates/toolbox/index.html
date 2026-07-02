@@ -421,7 +421,7 @@
             <i class="fas fa-toolbox"></i>
         </div>
         <h1>🧰 Creator Toolbox</h1>
-        <p>Everything you need to create, organize, and share your journey</p>
+        <p>Everything you need to create and organize your journey</p>
     </div>
     
     <!-- Quick Stats -->
@@ -433,11 +433,6 @@
             <div class="label">Total Journeys</div>
         </div>
         <div class="quick-stat">
-            <span class="stat-icon"><i class="fas fa-cloud-upload-alt" style="color: #3b82f6;"></i></span>
-            <div class="value">{{ total_imported|default:0 }}</div>
-            <div class="label">Content Imported</div>
-        </div>
-        <div class="quick-stat">
             <span class="stat-icon"><i class="fas fa-users" style="color: #8b5cf6;"></i></span>
             <div class="value">{{ total_followers|default:0 }}</div>
             <div class="label">Followers</div>
@@ -446,6 +441,11 @@
             <span class="stat-icon"><i class="fas fa-eye" style="color: #f59e0b;"></i></span>
             <div class="value">{{ total_views|default:0 }}</div>
             <div class="label">Total Views</div>
+        </div>
+        <div class="quick-stat">
+            <span class="stat-icon"><i class="fas fa-heart" style="color: #ec4899;"></i></span>
+            <div class="value">{{ total_loves|default:0 }}</div>
+            <div class="label">Total Loves</div>
         </div>
     </div>
     {% endif %}
@@ -467,39 +467,6 @@
             </div>
         </a>
         
-        <!-- Social Connections -->
-        <a href="{% url 'social_connections' %}" class="tool-card">
-            <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
-            <div class="tool-icon green">
-                <i class="fas fa-link"></i>
-            </div>
-            <div class="tool-name">Social Connections</div>
-            <div class="tool-desc">Connect your social media accounts for automatic import. Set up auto-import with hashtag filters.</div>
-            <div class="tool-meta">
-                <span class="badge new">✨ New</span>
-                <span><i class="fas fa-plug"></i> OAuth</span>
-            </div>
-        </a>
-        
-        <!-- Import Queue -->
-        <a href="{% url 'import_queue' %}" class="tool-card">
-            <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
-            <div class="tool-icon purple">
-                <i class="fas fa-inbox"></i>
-            </div>
-            <div class="tool-name">Import Queue</div>
-            <div class="tool-desc">Review and approve imported content before it goes live. Filter by platform and assign to the right day.</div>
-            <div class="tool-meta">
-                {% if pending_imports > 0 %}
-                <span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;">
-                    {{ pending_imports }} pending
-                </span>
-                {% else %}
-                <span><i class="fas fa-check-circle" style="color:#22c55e;"></i> All clear</span>
-                {% endif %}
-            </div>
-        </a>
-        
         <!-- Create Journey -->
         <a href="{% url 'create_journey' %}" class="tool-card">
             <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
@@ -510,20 +477,6 @@
             <div class="tool-desc">Start a new daily challenge or milestone journey. Choose a template, set duration, and start organizing your content.</div>
             <div class="tool-meta">
                 <span><i class="fas fa-rocket"></i> Get started</span>
-            </div>
-        </a>
-        
-        <!-- Social Templates - Redirect to My Journeys -->
-        <a href="{% url 'my_journeys' %}" class="tool-card">
-            <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
-            <div class="tool-icon pink">
-                <i class="fas fa-file-alt"></i>
-            </div>
-            <div class="tool-name">Social Templates</div>
-            <div class="tool-desc">Create auto-posting templates for your social media. Select a journey from My Journeys to get started.</div>
-            <div class="tool-meta">
-                <span class="badge beta">🧪 Beta</span>
-                <span><i class="fas fa-robot"></i> Auto-post</span>
             </div>
         </a>
         
@@ -540,7 +493,7 @@
             </div>
         </a>
         
-        <!-- Content Manager - Redirect to My Journeys -->
+        <!-- Content Manager -->
         <a href="{% url 'my_journeys' %}" class="tool-card">
             <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
             <div class="tool-icon indigo">
@@ -550,6 +503,19 @@
             <div class="tool-desc">Manage all your days and milestones. Select a journey from My Journeys to manage its content.</div>
             <div class="tool-meta">
                 <span><i class="fas fa-edit"></i> Full control</span>
+            </div>
+        </a>
+        
+        <!-- Social Templates (kept but now links to My Journeys) -->
+        <a href="{% url 'my_journeys' %}" class="tool-card">
+            <div class="tool-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="tool-icon pink">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="tool-name">Social Templates</div>
+            <div class="tool-desc">Create templates for posting to social media. Select a journey from My Journeys to get started.</div>
+            <div class="tool-meta">
+                <span><i class="fas fa-robot"></i> Auto-post</span>
             </div>
         </a>
         
@@ -579,23 +545,23 @@
             {% if recent_activities %}
                 {% for activity in recent_activities %}
                 <div class="activity-item">
-                    <div class="activity-icon {% if activity.imported_from %}import{% else %}journey{% endif %}">
-                        <i class="fas fa-{% if activity.imported_from %}cloud-upload-alt{% else %}flag-checkered{% endif %}"></i>
+                    <div class="activity-icon {% if activity.source_url %}import{% else %}journey{% endif %}">
+                        <i class="fas fa-{% if activity.source_url %}cloud-upload-alt{% else %}flag-checkered{% endif %}"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-text">
-                            {% if activity.imported_from %}
+                            {% if activity.source_url %}
                                 <strong>Imported</strong> content to 
                                 <strong>{{ activity.journey.title }}</strong>
-                            {% else %}
-                                <strong>Posted</strong> to 
-                                <strong>{{ activity.journey.title }}</strong>
-                            {% endif %}
-                            {% if activity.source_platform %}
+                                {% if activity.source_platform %}
                                 <span style="font-size:11px;color:var(--text-muted);">
                                     <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% else %}{{ activity.source_platform }}{% endif %}"></i>
                                     {{ activity.source_platform|title }}
                                 </span>
+                                {% endif %}
+                            {% else %}
+                                <strong>Posted</strong> to 
+                                <strong>{{ activity.journey.title }}</strong>
                             {% endif %}
                         </div>
                         <div class="activity-time">
