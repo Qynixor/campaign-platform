@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Journal | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .journal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .journal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .journal-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .journal-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-top: 4px;
+    }
+    
+    .entry-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        transition: all 0.2s;
+    }
+    
+    .entry-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+    
+    .entry-card .entry-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .entry-card .entry-title a {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+    
+    .entry-card .entry-title a:hover {
+        color: var(--accent);
+    }
+    
+    .entry-card .entry-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .entry-card .entry-meta i {
+        margin-right: 4px;
+    }
+    
+    .entry-card .entry-content {
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .entry-card .entry-tags {
+        display: flex;
+        gap: 6px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .entry-card .entry-tags span {
+        background: var(--bg-secondary);
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .entry-card .entry-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .entry-card .entry-actions .btn-sm {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h3 {
+        font-size: 20px;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+    }
+    
+    .privacy-badge {
+        display: inline-block;
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .privacy-badge.private {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .privacy-badge.public {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+    
+    @media (max-width: 768px) {
+        .journal-container {
+            padding: 20px 16px;
+        }
+        
+        .journal-header h1 {
+            font-size: 24px;
+        }
+        
+        .entry-card {
+            padding: 18px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="journal-container">
+    
+    <div class="journal-header">
+        <div>
+            <h1>📝 Journal</h1>
+            <p>Your private space for free-form writing</p>
+        </div>
+        <a href="{% url 'journal_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Entry
+        </a>
+    </div>
+    
+    {% if entries %}
+        <div class="journal-list">
+            {% for entry in entries %}
+            <div class="entry-card">
+                <div class="entry-title">
+                    <a href="{% url 'journal_detail' pk=entry.pk %}">{{ entry.title }}</a>
+                </div>
+                <div class="entry-meta">
+                    <span><i class="fas fa-calendar-alt"></i> {{ entry.created_at|date:"M d, Y" }}</span>
+                    <span><i class="fas fa-clock"></i> {{ entry.created_at|timesince }} ago</span>
+                    <span class="privacy-badge {% if entry.is_private %}private{% else %}public{% endif %}">
+                        <i class="fas fa-{% if entry.is_private %}lock{% else %}globe{% endif %}"></i>
+                        {% if entry.is_private %}Private{% else %}Public{% endif %}
+                    </span>
+                    {% if entry.mood %}
+                    <span><i class="fas fa-smile"></i> {{ entry.mood }}</span>
+                    {% endif %}
+                </div>
+                <div class="entry-content">{{ entry.content|linebreaks|truncatewords:30 }}</div>
+                {% if entry.tags %}
+                <div class="entry-tags">
+                    {% for tag in entry.tags %}
+                    <span>#{{ tag }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="entry-actions">
+                    <a href="{% url 'journal_edit' pk=entry.pk %}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{% url 'journal_delete' pk=entry.pk %}" class="btn btn-outline btn-sm" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);" onclick="return confirm('Delete this entry?')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if entries.has_other_pages %}
+        <div class="pagination" style="margin-top: 30px; display: flex; justify-content: center; gap: 8px;">
+            {% if entries.has_previous %}
+                <a href="?page={{ entries.previous_page_number }}" class="btn btn-outline btn-sm">Previous</a>
+            {% endif %}
+            <span style="padding: 8px 16px; color: var(--text-secondary);">
+                Page {{ entries.number }} of {{ entries.paginator.num_pages }}
+            </span>
+            {% if entries.has_next %}
+                <a href="?page={{ entries.next_page_number }}" class="btn btn-outline btn-sm">Next</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-pen-fancy"></i>
+            <h3>No journal entries yet</h3>
+            <p>Write your thoughts, ideas, or reflections — completely free-form.</p>
+            <a href="{% url 'journal_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Write Your First Entry
+            </a>
+        </div>
+    {% endif %}
+    
+</div>
+
+{% endblock %}

@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <style>
-    /* Main content padding fix - ensures content doesn't get hidden under navbar or footer */
+    /* Main content padding */
     main {
         padding-top: 20px;
         padding-bottom: 40px;
@@ -54,7 +54,7 @@
         flex-wrap: wrap;
     }
     
-    /* Stats Grid */
+    /* Stats Grid — Documentation Focus */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -282,6 +282,31 @@
         font-size: 11px;
     }
     
+    .journey-privacy-tag {
+        font-size: 10px;
+        padding: 1px 10px;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .journey-privacy-tag.private {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+    
+    .journey-privacy-tag.public {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+    }
+    
+    .journey-privacy-tag.unlisted {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+    
     .journey-progress-mini {
         display: flex;
         align-items: center;
@@ -434,7 +459,7 @@
         color: var(--text-muted);
     }
     
-    /* Quick Links */
+    /* Quick Links — Documentation Focus */
     .quick-link {
         display: flex;
         align-items: center;
@@ -533,7 +558,43 @@
         margin-right: 6px;
     }
     
-    /* Responsive Styles */
+    /* Journal Entry Quick Access */
+    .journal-prompt {
+        background: var(--bg-secondary);
+        border: 1px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+    }
+    
+    .journal-prompt .prompt-text {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .journal-prompt .prompt-text i {
+        color: var(--accent);
+        font-size: 18px;
+    }
+    
+    .journal-prompt .prompt-text strong {
+        color: var(--text-primary);
+    }
+    
+    .journal-prompt .btn {
+        font-size: 13px;
+        padding: 8px 20px;
+    }
+    
+    /* Responsive */
     @media (max-width: 1024px) {
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -625,6 +686,11 @@
             font-size: 11px;
             gap: 10px;
         }
+        
+        .journal-prompt {
+            flex-direction: column;
+            text-align: center;
+        }
     }
     
     @media (max-width: 480px) {
@@ -686,7 +752,6 @@
         }
     }
     
-    /* Safe area support */
     @supports (padding: max(0px)) {
         .dashboard-container {
             padding-left: max(16px, env(safe-area-inset-left));
@@ -700,20 +765,18 @@
 
 <div class="dashboard-container">
     
-    {# Header #}
+    <!-- ====== HEADER ====== -->
     <div class="dashboard-header">
         <div>
             <h1 class="dashboard-title">
-                <span class="greeting-icon">
-                    <i class="fas fa-hand-peace"></i>
-                </span>
-                Welcome back, {{ user.username }}
+                <span class="greeting-icon"><i class="fas fa-pen-fancy"></i></span>
+                Your Documentation Dashboard
             </h1>
-            <p class="dashboard-subtitle">Manage your journeys and track your progress</p>
+            <p class="dashboard-subtitle">Write, organize, and track your journeys</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'quick_import' %}" class="btn btn-outline">
-                <i class="fas fa-cloud-upload-alt"></i> Quick Import
+            <a href="{% url 'journal_create' %}" class="btn btn-outline">
+                <i class="fas fa-pen"></i> Write Journal
             </a>
             <a href="{% url 'create_journey' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> New Journey
@@ -721,12 +784,10 @@
         </div>
     </div>
     
-    {# Stats Grid #}
+    <!-- ====== STATS ====== -->
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-flag-checkered"></i>
-            </div>
+            <div class="stat-icon"><i class="fas fa-route"></i></div>
             <div class="stat-content">
                 <div class="stat-value">{{ total_journeys|default:0 }}</div>
                 <div class="stat-label">Total Journeys</div>
@@ -734,9 +795,15 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-play-circle"></i>
+            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_entries|default:0 }}</div>
+                <div class="stat-label">Total Entries</div>
             </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
             <div class="stat-content">
                 <div class="stat-value">{{ active_journeys|default:0 }}</div>
                 <div class="stat-label">Active Journeys</div>
@@ -744,35 +811,24 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-eye"></i>
-            </div>
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
             <div class="stat-content">
-                <div class="stat-value">{{ total_views|default:0 }}</div>
-                <div class="stat-label">Total Views</div>
-            </div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ total_followers|default:0 }}</div>
-                <div class="stat-label">Total Followers</div>
+                <div class="stat-value">{{ journal_entries|length|default:0 }}</div>
+                <div class="stat-label">Journal Entries</div>
             </div>
         </div>
     </div>
     
-    {# Main Grid #}
+    <!-- ====== MAIN GRID ====== -->
     <div class="dashboard-grid">
         
-        {# Left Column #}
+        <!-- ====== LEFT COLUMN ====== -->
         <div>
-            {# Your Journeys #}
+            
+            <!-- Your Journeys -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-flag-checkered"></i> Your Active Journeys</h3>
+                    <h3 class="card-title"><i class="fas fa-route"></i> Your Journeys</h3>
                     <a href="{% url 'my_journeys' %}" class="card-link">View All →</a>
                 </div>
                 <div class="card-body">
@@ -794,6 +850,10 @@
                                     <span class="journey-type-tag {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
                                         {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
                                     </span>
+                                    <span class="journey-privacy-tag {{ journey.privacy_status }}">
+                                        <i class="fas fa-{% if journey.privacy_status == 'private' %}lock{% elif journey.privacy_status == 'public' %}globe{% else %}link{% endif %}"></i>
+                                        {{ journey.privacy_status|title }}
+                                    </span>
                                 </a>
                                 <div class="journey-meta">
                                     <span>
@@ -804,23 +864,22 @@
                                             Day {{ journey.get_current_day }}/{{ journey.duration }}
                                         {% endif %}
                                     </span>
-                                    <span><i class="fas fa-users"></i> {{ journey.get_follower_count }}</span>
-                                    <span><i class="fas fa-heart"></i> {{ journey.get_love_count }}</span>
+                                    <span><i class="fas fa-eye"></i> {{ journey.view_count|default:0 }}</span>
                                 </div>
                                 <div class="journey-progress-mini">
                                     <div class="progress-bar-mini">
                                         <div class="progress-fill-mini {% if journey.journey_type == 'milestone' %}milestone{% endif %}" 
                                              style="width: {{ journey.get_progress_percentage }}%;"></div>
                                     </div>
-                                    <span style="font-size: 11px; color: var(--text-muted);">{{ journey.get_progress_percentage }}%</span>
+                                    <span style="font-size: 11px; color: var(--text-muted);">{{ journey.get_progress_percentage }}% complete</span>
                                 </div>
                             </div>
                             
                             <div class="journey-actions">
-                                <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-icon" title="Manage Content">
-                                    <i class="fas fa-images"></i>
+                                <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-icon" title="Manage Entries">
+                                    <i class="fas fa-list-ul"></i>
                                 </a>
-                                <a href="{% url 'post_activity' slug=journey.slug %}" class="btn-icon" title="Post Update">
+                                <a href="{% url 'create_activity' slug=journey.slug %}" class="btn-icon" title="Add Entry">
                                     <i class="fas fa-plus-circle"></i>
                                 </a>
                             </div>
@@ -828,47 +887,66 @@
                         {% endfor %}
                     {% else %}
                         <div class="empty-state">
-                            <i class="fas fa-flag-checkered empty-icon"></i>
+                            <i class="fas fa-route empty-icon"></i>
                             <h4>No journeys yet</h4>
-                            <p>Create your first journey to start organizing your content.</p>
-                            <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Journey</a>
+                            <p>Start documenting your journey today. It only takes a minute.</p>
+                            <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Your First Journey</a>
                         </div>
                     {% endif %}
                 </div>
             </div>
             
-            {# Recent Activity #}
+            <!-- Recent Activity -->
             {% if recent_activities %}
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-history"></i> Recent Activity</h3>
+                    <h3 class="card-title"><i class="fas fa-history"></i> Recent Entries</h3>
                 </div>
                 <div class="card-body">
                     {% for activity in recent_activities %}
                     <div class="activity-item">
                         <div class="activity-icon {% if activity.journey.journey_type == 'milestone' %}milestone-icon{% else %}daily-icon{% endif %}">
-                            <i class="fas fa-{% if activity.journey.journey_type == 'milestone' %}flag-checkered{% else %}video{% endif %}"></i>
+                            <i class="fas fa-{% if activity.journey.journey_type == 'milestone' %}flag-checkered{% else %}pencil-alt{% endif %}"></i>
                         </div>
                         <div class="activity-content">
                             <p class="activity-text">
-                                Posted {% if activity.journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
-                                {{ activity.day_number_field }} in 
-                                <a href="{% url 'journey_detail' slug=activity.journey.slug %}">
-                                    {{ activity.journey.title }}
-                                </a>
+                                {% if activity.title %}
+                                    {{ activity.title }}
+                                {% else %}
+                                    {% if activity.journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} 
+                                    {{ activity.day_number_field }}
+                                {% endif %}
+                                in <a href="{% url 'journey_detail' slug=activity.journey.slug %}">{{ activity.journey.title }}</a>
                             </p>
-                            <span class="activity-time">{{ activity.created_at|timesince }} ago</span>
+                            <span class="activity-time">
+                                {{ activity.created_at|timesince }} ago
+                                {% if activity.privacy_status == 'private' %}
+                                    · <i class="fas fa-lock" style="font-size: 10px;"></i> Private
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Journal Prompt -->
+            <div class="journal-prompt">
+                <span class="prompt-text">
+                    <i class="fas fa-pen-fancy"></i>
+                    <span>Quick journal entry? <strong>Write freely</strong> without starting a journey.</span>
+                </span>
+                <a href="{% url 'journal_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-pen"></i> Write Now
+                </a>
+            </div>
         </div>
         
-        {# Right Column #}
+        <!-- ====== RIGHT COLUMN ====== -->
         <div>
-            {# Profile Summary #}
+            
+            <!-- Profile Summary -->
             <div class="dashboard-card">
                 <div class="card-body profile-summary">
                     <div class="profile-avatar-large">
@@ -892,21 +970,43 @@
                 </div>
             </div>
             
-            {# Quick Links #}
+            <!-- Quick Links — Documentation Focus -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-link"></i> Quick Links</h3>
+                    <h3 class="card-title"><i class="fas fa-link"></i> Quick Access</h3>
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'quick_import' %}" class="quick-link">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Quick Import</span>
+                    <a href="{% url 'my_journeys' %}" class="quick-link">
+                        <i class="fas fa-route"></i>
+                        <span>All Journeys</span>
+                        <span class="badge">{{ total_journeys|default:0 }}</span>
                     </a>
                     
-                    <a href="{% url 'my_journeys' %}" class="quick-link">
-                        <i class="fas fa-flag-checkered"></i>
-                        <span>My Journeys</span>
+                    <a href="{% url 'journal_view' %}" class="quick-link">
+                        <i class="fas fa-pen-fancy"></i>
+                        <span>Journal</span>
+                        <span class="badge">{{ journal_entries|length|default:0 }}</span>
                     </a>
+                    
+                    <a href="{% url 'create_journey' %}" class="quick-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>New Journey</span>
+                    </a>
+                    
+                    <!-- FIXED: Only show Add Entry if there's at least one journey -->
+                    {% if journeys|length > 0 %}
+                        {% with first_journey=journeys|first %}
+                        <a href="{% url 'create_activity' slug=first_journey.slug %}" class="quick-link">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Add Entry</span>
+                        </a>
+                        {% endwith %}
+                    {% else %}
+                        <a href="{% url 'create_journey' %}" class="quick-link">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Add Entry (Create Journey First)</span>
+                        </a>
+                    {% endif %}
                     
                     <a href="{% url 'saved_journeys' %}" class="quick-link">
                         <i class="fas fa-bookmark"></i>
@@ -923,28 +1023,29 @@
                     
                     <a href="{% url 'profile_settings' %}" class="quick-link">
                         <i class="fas fa-cog"></i>
-                        <span>Profile Settings</span>
+                        <span>Settings</span>
                     </a>
                 </div>
             </div>
             
-            {# Recent Comments #}
-            {% if recent_comments %}
+            <!-- Recent Journal Entries -->
+            {% if journal_entries %}
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-comments"></i> Recent Comments</h3>
+                    <h3 class="card-title"><i class="fas fa-pen-fancy"></i> Recent Journal</h3>
+                    <a href="{% url 'journal_view' %}" class="card-link">View All →</a>
                 </div>
                 <div class="card-body">
-                    {% for comment in recent_comments %}
+                    {% for entry in journal_entries|slice:":3" %}
                     <div class="activity-item">
                         <div class="activity-icon">
-                            <i class="fas fa-comment"></i>
+                            <i class="fas fa-pen"></i>
                         </div>
                         <div class="activity-content">
-                            <p class="activity-text">{{ comment.content|truncatechars:50 }}</p>
-                            <span class="activity-time">
-                                @{{ comment.user.username }} · {{ comment.created_at|timesince }} ago
-                            </span>
+                            <p class="activity-text">
+                                <a href="{% url 'journal_detail' pk=entry.pk %}">{{ entry.title|truncatechars:30 }}</a>
+                            </p>
+                            <span class="activity-time">{{ entry.created_at|timesince }} ago</span>
                         </div>
                     </div>
                     {% endfor %}

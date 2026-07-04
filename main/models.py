@@ -18,16 +18,9 @@ User = get_user_model()
 # ============================================================================
 # CORE USER MODELS
 # ============================================================================
-
 class Profile(models.Model):
-    """User profile for Rallynex"""
+    """User profile for Rallynex — simple and clean"""
     
-    GENDER_CHOICES = (
-        ('M', 'Male'),
-        ('F', 'Female'),
-        ('O', 'Other'),
-    )
-
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = CloudinaryField(
         'image',
@@ -35,20 +28,16 @@ class Profile(models.Model):
         default='v1763637368/pp_vvzbcj'
     )
     
-    bio = models.TextField(default='No bio available', max_length=200)
+    bio = models.TextField(default='', max_length=200, blank=True)
     location = models.CharField(max_length=100, blank=True)
     
-    # Social connections (usernames for display)
-    tiktok_username = models.CharField(max_length=50, blank=True)
-    instagram_username = models.CharField(max_length=50, blank=True)
-    youtube_channel = models.CharField(max_length=100, blank=True)
+    # Optional social links (just for display)
+    website = models.URLField(blank=True)
+    twitter = models.CharField(max_length=50, blank=True)
+    instagram = models.CharField(max_length=50, blank=True)
     
-    # Verification
-    profile_verified = models.BooleanField(default=False)
-    
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
-    last_activity = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         indexes = [
@@ -64,9 +53,8 @@ class Profile(models.Model):
     def get_journey_count(self):
         return self.journeys.count()
     
-    def update_last_activity(self):
-        self.last_activity = timezone.now()
-        self.save(update_fields=['last_activity'])
+    def get_total_entries(self):
+        return Activity.objects.filter(journey__creator=self).count()
 
 
 @receiver(post_save, sender=User)
@@ -75,212 +63,20 @@ def create_user_profile(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance)
 
 
-# ============================================================================
-# SOCIAL CONNECTION MODELS (THE BRIDGE)
-# ============================================================================
-
-class SocialConnection(models.Model):
-    """OAuth connections to social platforms"""
-    
-    PLATFORMS = [
-        ('tiktok', 'TikTok'),
-        ('instagram', 'Instagram'),
-        ('youtube', 'YouTube'),
-        ('twitter', 'Twitter/X'),
-        ('linkedin', 'LinkedIn'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_connections')
-    platform = models.CharField(max_length=20, choices=PLATFORMS)
-    platform_user_id = models.CharField(max_length=100)
-    platform_username = models.CharField(max_length=100)
-    
-    # OAuth tokens
-    access_token = models.TextField()
-    refresh_token = models.TextField(blank=True)
-    token_expires = models.DateTimeField(null=True)
-    
-    # Auto-import settings
-    auto_import = models.BooleanField(default=True)
-    import_hashtag = models.CharField(max_length=50, blank=True)
-    
-    # Metadata
-    connected_at = models.DateTimeField(auto_now_add=True)
-    last_sync = models.DateTimeField(null=True)
-    
-    class Meta:
-        unique_together = ('user', 'platform')
-        indexes = [
-            models.Index(fields=['user', 'platform']),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.username} - {self.platform}"
-    
-    def is_token_expired(self):
-        if not self.token_expires:
-            return False
-        return timezone.now() > self.token_expires
-
-
-class ImportedContent(models.Model):
-    """Content imported from social platforms with REAL content storage"""
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending Review'),
-        ('approved', 'Approved'),
-        ('assigned', 'Assigned to Day'),
-        ('ignored', 'Ignored'),
-    ]
-    
-    # ====== SOURCE INFO ======
-    social_connection = models.ForeignKey(
-        SocialConnection, 
-        on_delete=models.CASCADE, 
-        related_name='imported_content', 
-        null=True, 
-        blank=True
-    )
-    platform = models.CharField(max_length=20)
-    platform_post_id = models.CharField(max_length=100)
-    platform_url = models.URLField(max_length=500)
-    
-    # ====== CONTENT (Original) ======
-    caption = models.TextField()
-    media_url = models.URLField(max_length=500, blank=True)
-    media_type = models.CharField(max_length=20, blank=True)  # video, image
-    thumbnail_url = models.URLField(max_length=500, blank=True)
-    
-    # ====== METADATA FROM PLATFORM ======
-    posted_at = models.DateTimeField()
-    like_count = models.PositiveIntegerField(default=0)
-    comment_count = models.PositiveIntegerField(default=0)
-    
-    # ====== REAL CONTENT STORAGE (NEW) ======
-    content_title = models.CharField(max_length=200, blank=True)
-    content_description = models.TextField(blank=True)
-    
-    # Store media locally (not just URLs)
-    media_file = CloudinaryField(
-        'media',
-        folder='imported_media',
-        resource_type='auto',
-        null=True,
-        blank=True
-    )
-    thumbnail_file = CloudinaryField(
-        'thumbnail',
-        folder='imported_thumbnails',
-        null=True,
-        blank=True
-    )
-    
-    # Rich metadata
-    author_name = models.CharField(max_length=100, blank=True)
-    author_avatar_url = models.URLField(blank=True)
-    author_followers = models.PositiveIntegerField(default=0)
-    
-    # Engagement stats
-    view_count = models.PositiveIntegerField(default=0)
-    share_count = models.PositiveIntegerField(default=0)
-    
-    # Content categorization
-    content_type = models.CharField(max_length=20, choices=[
-        ('video', 'Video'),
-        ('image', 'Image'),
-        ('text', 'Text Post'),
-        ('carousel', 'Carousel'),
-    ], default='text')
-    
-    # Store text content for search
-    raw_text = models.TextField(blank=True)
-    
-    # Store the actual HTML content we generate
-    rendered_html = models.TextField(blank=True)
-    
-    # Tags from original content
-    original_tags = models.JSONField(default=list, blank=True)
-    
-    # When was this content actually created (original date)
-    original_created_at = models.DateTimeField(null=True, blank=True)
-    
-    # Processing status
-    processing_status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('fetching', 'Fetching Content'),
-        ('processing', 'Processing'),
-        ('stored', 'Stored Locally'),
-        ('failed', 'Failed'),
-    ], default='pending')
-    
-    # Error tracking
-    processing_error = models.TextField(blank=True)
-    last_fetch_attempt = models.DateTimeField(null=True, blank=True)
-    fetch_attempts = models.PositiveIntegerField(default=0)
-    
-    # ====== ASSIGNMENT ======
-    detected_day = models.PositiveIntegerField(null=True, blank=True)
-    assigned_journey = models.ForeignKey(
-        'Journey', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        related_name='imported_content'
-    )
-    assigned_day = models.PositiveIntegerField(null=True, blank=True)
-    
-    # ====== STATUS ======
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # ====== RESULTING ACTIVITY ======
-    created_activity = models.ForeignKey(
-        'Activity', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='imported_content'
-    )
-    
-    # ====== TIMESTAMPS ======
-    imported_at = models.DateTimeField(auto_now_add=True)
-    processed_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        unique_together = ('platform', 'platform_post_id')
-        ordering = ['-posted_at']
-        indexes = [
-            models.Index(fields=['social_connection', 'status']),
-            models.Index(fields=['assigned_journey', 'assigned_day']),
-            models.Index(fields=['processing_status']),
-        ]
-        verbose_name_plural = 'Imported Content'
-    
-    def __str__(self):
-        return f"{self.platform} post: {self.caption[:50]}"
-    
-    def approve_and_assign(self, journey, day):
-        """Approve content and assign to a journey day"""
-        self.status = 'assigned'
-        self.assigned_journey = journey
-        self.assigned_day = day
-        self.processed_at = timezone.now()
-        self.save()
-    
-    def get_display_html(self):
-        """Get the best available HTML for display"""
-        if self.rendered_html:
-            return self.rendered_html
-        return None
 
 
 # ============================================================================
-# JOURNEY MODEL
+# JOURNEY MODEL — Documentation Focus
 # ============================================================================
 
 class Journey(models.Model):
-    """Main Journey model - a structured series of content"""
+    """
+    A journey is a container for documenting progress over time.
+    Can be daily or milestone-based.
+    """
     
     JOURNEY_TYPES = [
-        ('daily', 'Daily Challenge'),
+        ('daily', 'Daily Journey'),
         ('milestone', 'Milestone Journey'),
     ]
     
@@ -294,71 +90,67 @@ class Journey(models.Model):
         ('other', 'Other'),
     ]
     
+    PRIVACY_CHOICES = [
+        ('private', 'Private — Only Me'),
+        ('unlisted', 'Unlisted — Anyone with Link'),
+        ('public', 'Public — Everyone'),
+    ]
+    
     # ==================== BASIC INFO ====================
     creator = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='journeys')
     title = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
-    description = models.TextField(max_length=500)
+    description = models.TextField(max_length=500, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='personal')
     journey_type = models.CharField(max_length=20, choices=JOURNEY_TYPES, default='daily')
     
     # ==================== VISUALS ====================
     cover_image = CloudinaryField('image', folder='journey_covers', null=True, blank=True)
-    cover_video = CloudinaryField('video', folder='journey_covers', resource_type='video', null=True, blank=True)
     
     # ==================== STRUCTURE ====================
     duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
-    duration_unit = models.CharField(max_length=10, default='days')
     
+    # Manual override for creators already in progress
     current_day_override = models.PositiveIntegerField(
         null=True,
         blank=True,
-        help_text="Manually set current day for creators already in progress. Overrides calendar calculation."
+        help_text="Manually set current day. Overrides calendar calculation."
     )
     
+    # Milestone descriptions (for milestone journeys)
     milestones = models.JSONField(default=list, blank=True, help_text="List of milestone descriptions")
     
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
     
-    # ==================== SOCIAL-FIRST SETTINGS ====================
-    auto_import_enabled = models.BooleanField(default=False)
-    import_hashtag = models.CharField(max_length=50, blank=True)
-    social_share_url = models.URLField(blank=True, help_text="Custom share link")
-    auto_post_to_social = models.BooleanField(default=False)
-    social_share_text = models.CharField(max_length=280, blank=True, help_text="Default share text for social posts")
-    traffic_sources = models.JSONField(default=dict, blank=True)
-    social_engagement_stats = models.JSONField(default=dict, blank=True)
-    
-    # ==================== SETTINGS ====================
-    is_public = models.BooleanField(default=True)
-    allow_comments = models.BooleanField(default=True)
-    
-    # ==================== RELATIONSHIPS ====================
-    followers = models.ManyToManyField(User, through='JourneyFollow', related_name='followed_journeys', blank=True)
-    tags = models.ManyToManyField('Tag', through='JourneyTag', related_name='journeys', blank=True)
-    
     # ==================== ANALYTICS ====================
     view_count = models.PositiveIntegerField(default=0)
-    unique_viewers = models.PositiveIntegerField(default=0)
-    total_watch_time = models.PositiveIntegerField(default=0)
+    unique_viewers = models.PositiveIntegerField(default=0)  # ← ADDED THIS
+    
+    # ==================== PRIVACY ====================
+    privacy_status = models.CharField(
+        max_length=20,
+        choices=PRIVACY_CHOICES,
+        default='private'
+    )
+    
+    # ==================== SETTINGS ====================
+    allow_comments = models.BooleanField(default=False, help_text="Allow public comments")
     
     # ==================== STATUS ====================
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False, help_text="Journey is complete and archived")
     
     # ==================== TIMESTAMPS ====================
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    published_at = models.DateTimeField(null=True, blank=True)
-    
-    template_style = models.CharField(max_length=20, default='default')
     
     class Meta:
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['creator', '-created_at']),
-            models.Index(fields=['category', 'is_public']),
+            models.Index(fields=['category', 'privacy_status']),
             models.Index(fields=['slug']),
             models.Index(fields=['is_featured', '-created_at']),
         ]
@@ -386,6 +178,7 @@ class Journey(models.Model):
         super().save(*args, **kwargs)
     
     def get_current_day(self):
+        """Get the current day based on start date or manual override"""
         if self.current_day_override:
             return min(self.current_day_override, self.duration)
         
@@ -400,6 +193,7 @@ class Journey(models.Model):
         return min(days_passed + 1, self.duration)
     
     def get_progress_percentage(self):
+        """Calculate progress percentage"""
         if self.duration == 0:
             return 0
         
@@ -411,12 +205,14 @@ class Journey(models.Model):
         return min(round((current / self.duration) * 100), 100)
     
     def is_day_locked(self, day_number):
+        """Check if a day is locked (future day)"""
         if self.journey_type == 'daily':
             current = self.get_current_day()
             return day_number > current
         return False
     
     def get_day_status(self, day_number):
+        """Get status of a specific day"""
         has_content = self.activities.filter(day_number_field=day_number).exists()
         
         if self.journey_type == 'daily':
@@ -438,45 +234,18 @@ class Journey(models.Model):
         return 'available'
     
     def get_activity_for_day(self, day_number):
+        """Get activity for a specific day"""
         return self.activities.filter(day_number_field=day_number).first()
     
     def get_all_activities_by_day(self):
+        """Get all activities indexed by day number"""
         activities = {}
         for activity in self.activities.all():
             activities[activity.day_number_field] = activity
         return activities
     
-    def get_follower_count(self):
-        return self.followers.count()
-    
-    def get_love_count(self):
-        return ActivityLove.objects.filter(activity__journey=self).count()
-    
-    def get_comment_count(self):
-        return ActivityComment.objects.filter(activity__journey=self).count()
-    
-    def get_share_count(self):
-        return self.shares.count()
-    
-    def record_traffic_source(self, source):
-        if source in self.traffic_sources:
-            self.traffic_sources[source] += 1
-        else:
-            self.traffic_sources[source] = 1
-        self.save(update_fields=['traffic_sources'])
-    
     def get_absolute_url(self):
         return reverse('journey_detail', kwargs={'slug': self.slug})
-    
-    def get_share_url(self):
-        if self.social_share_url:
-            return self.social_share_url
-        return f"https://rallynex.com/j/{self.slug}"
-    
-    def get_social_share_text(self):
-        if self.social_share_text:
-            return self.social_share_text
-        return f"Follow my {self.title} journey! 🚀"
     
     def get_meta_title(self):
         return f"{self.title} | Rallynex"
@@ -489,51 +258,71 @@ class Journey(models.Model):
     def get_meta_image(self):
         if self.cover_image:
             return self.cover_image.url
-        return self.creator.image.url
-
+        return None
 
 # ============================================================================
-# ACTIVITY MODEL (DAY CONTENT)
+# ACTIVITY MODEL — Daily Entries
 # ============================================================================
 
 class Activity(models.Model):
-    """Individual day/milestone content within a journey"""
+    """
+    Individual entry within a journey.
+    This is where users document their daily progress.
+    """
     
+    MOOD_CHOICES = [
+        ('excited', 'Excited'),
+        ('motivated', 'Motivated'),
+        ('challenged', 'Challenged'),
+        ('proud', 'Proud'),
+        ('tired', 'Tired'),
+        ('neutral', 'Neutral'),
+        ('unsure', 'Unsure'),
+        ('accomplished', 'Accomplished'),
+        ('struggling', 'Struggling'),
+        ('grateful', 'Grateful'),
+    ]
+    
+    # ==================== RELATIONSHIPS ====================
     journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='activities')
-    content = models.TextField(max_length=500, help_text="Caption/description for this day")
     
-    # Media
-    media_file = CloudinaryField('file', folder='activity_files', null=True, blank=True, resource_type='auto')
+    # ==================== CONTENT ====================
+    title = models.CharField(max_length=200, blank=True, help_text="Optional title for this entry")
+    content = models.TextField(max_length=500, help_text="Your entry content")
+    summary = models.TextField(blank=True, help_text="Short summary")
+    
+    # ==================== MEDIA ====================
+    media_file = CloudinaryField(
+        'file', 
+        folder='activity_files', 
+        null=True, 
+        blank=True, 
+        resource_type='auto'
+    )
     is_video = models.BooleanField(default=False)
     thumbnail = CloudinaryField('image', folder='activity_thumbnails', null=True, blank=True)
+    media_caption = models.CharField(max_length=200, blank=True)
     
-    # Day tracking
+    # ==================== DAY TRACKING ====================
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
-    actual_date = models.DateField(null=True, blank=True)
+    actual_date = models.DateField(null=True, blank=True, help_text="Actual date of the entry")
     
-    # Source tracking
-    imported_from = models.ForeignKey(
-        ImportedContent, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        related_name='activities_created'
-    )
-    source_url = models.URLField(blank=True, help_text="Original social media URL")
-    source_platform = models.CharField(max_length=20, blank=True)
-    social_post_id = models.CharField(max_length=200, blank=True)
-    social_engagement = models.JSONField(default=dict, blank=True)
-    is_cross_posted = models.BooleanField(default=False)
-    cross_posted_at = models.DateTimeField(null=True, blank=True)
+    # ==================== MOOD & METRICS ====================
+    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, blank=True, null=True)
     
-    # Embed
-    embed_html = models.TextField(blank=True)
+    # Flexible metrics (e.g., {"weight": 75, "distance": 5.2, "pages": 10})
+    progress_metrics = models.JSONField(default=dict, blank=True)
     
-    # Stats
-    view_count = models.PositiveIntegerField(default=0)
+    # ==================== LOCATION ====================
+    location = models.CharField(max_length=200, blank=True)
     
-    # Timestamps
+    # ==================== STATUS ====================
+    is_draft = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
+    
+    # ==================== TIMESTAMPS ====================
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
@@ -546,8 +335,8 @@ class Activity(models.Model):
         verbose_name_plural = 'Activities'
     
     def __str__(self):
-        if self.journey.journey_type == 'milestone':
-            return f"Milestone {self.day_number_field} - {self.journey.title}"
+        if self.title:
+            return f"Day {self.day_number_field} - {self.title}"
         return f"Day {self.day_number_field} - {self.journey.title}"
     
     def save(self, *args, **kwargs):
@@ -561,28 +350,12 @@ class Activity(models.Model):
         if is_new and not self.published_at:
             self.published_at = timezone.now()
             self.save(update_fields=['published_at'])
-            self._notify_followers()
-    
-    def _notify_followers(self):
-        for follow in self.journey.journeyfollow_set.filter(notify_on_activity=True):
-            Notification.objects.create(
-                user=follow.user,
-                message=f"New update on '{self.journey.title}' - Day {self.day_number_field}!",
-                redirect_link=self.journey.get_absolute_url(),
-                journey=self.journey
-            )
     
     def get_absolute_url(self):
         return f"{self.journey.get_absolute_url()}?day={self.day_number_field}"
     
     def is_locked(self):
         return self.journey.is_day_locked(self.day_number_field)
-    
-    def get_love_count(self):
-        return self.loves.count()
-    
-    def get_comment_count(self):
-        return self.comments.count()
     
     def get_display_date(self):
         if self.actual_date:
@@ -595,108 +368,229 @@ class Activity(models.Model):
             return date.strftime("%b %d, %Y")
         return None
     
-
     def get_display_html(self):
         """Get the best available HTML for display"""
-        # First check if we have imported content with rendered HTML
-        if self.imported_from and self.imported_from.rendered_html:
-            return self.imported_from.rendered_html
-        # Then check if we have embed HTML directly on the activity
-        if self.embed_html:
-            return self.embed_html
-        # Finally, check if we have a media file
         if self.media_file:
             if self.is_video:
-                return f'<video src="{self.media_file.url}" muted playsinline style="width:100%;display:block;"></video>'
+                return f'<video src="{self.media_file.url}" controls playsinline style="width:100%;display:block;"></video>'
             else:
-                return f'<img src="{self.media_file.url}" alt="{self.content}" style="width:100%;display:block;">'
-        # If we have a thumbnail
+                return f'<img src="{self.media_file.url}" alt="{self.title or self.content}" style="width:100%;display:block;">'
         if self.thumbnail:
-            return f'<img src="{self.thumbnail.url}" alt="{self.content}" style="width:100%;display:block;">'
+            return f'<img src="{self.thumbnail.url}" alt="{self.title or self.content}" style="width:100%;display:block;">'
         return None
 
+
 # ============================================================================
-# SOCIAL POST TEMPLATE
+# JOURNAL MODEL — Free-Form Documentation
 # ============================================================================
 
-class SocialPostTemplate(models.Model):
-    """Templates for posting back to social media"""
+class JournalEntry(models.Model):
+    """
+    Free-form journal entries for users who want to write without 
+    being tied to a specific journey structure.
+    This gives flexibility to people who just want to document.
+    """
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='journal_entries')
+    
+    # ==================== CONTENT ====================
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    
+    # ==================== MEDIA ====================
+    media_files = models.JSONField(default=list, blank=True)
+    
+    # ==================== ORGANIZATION ====================
+    tags = models.JSONField(default=list, blank=True)
+    
+    # ==================== PRIVACY ====================
+    is_private = models.BooleanField(default=True)
+    
+    # ==================== CONTEXT ====================
+    related_journey = models.ForeignKey(
+        Journey, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='journal_entries'
+    )
+    related_activity = models.ForeignKey(
+        Activity,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_entries'
+    )
+    
+    # ==================== MOOD ====================
+    mood = models.CharField(max_length=50, blank=True)
+    location = models.CharField(max_length=200, blank=True)
+    
+    # ==================== TIMESTAMPS ====================
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['user', 'related_journey']),
+            models.Index(fields=['user', 'is_private']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title[:50]}"
+    
+    def get_absolute_url(self):
+        return reverse('journal_detail', kwargs={'pk': self.pk})
+
+
+# ============================================================================
+# SIMPLIFIED SOCIAL PUBLISHING (Optional Sharing)
+# ============================================================================
+
+class SocialPublish(models.Model):
+    """
+    Optional publishing — users can share their journey entries
+    to social media when they're ready.
+    """
     
     PLATFORM_CHOICES = [
         ('twitter', 'Twitter/X'),
         ('instagram', 'Instagram'),
         ('linkedin', 'LinkedIn'),
-        ('tiktok', 'TikTok'),
+        ('facebook', 'Facebook'),
     ]
     
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='social_templates')
-    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
-    template_text = models.TextField(
-        help_text="Use {day} and {title} as placeholders. Example: 'Day {day} of {title}! 🚀'"
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('pending', 'Pending'),
+        ('published', 'Published'),
+        ('failed', 'Failed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_publishes')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='social_publishes')
+    activity = models.ForeignKey(
+        Activity, 
+        on_delete=models.CASCADE, 
+        related_name='social_publishes',
+        null=True,
+        blank=True
     )
-    auto_post = models.BooleanField(default=False)
+    
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    share_text = models.TextField()
+    share_image = CloudinaryField('image', folder='social_shares', null=True, blank=True)
+    
+    publish_url = models.URLField(blank=True)
+    publish_id = models.CharField(max_length=100, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('journey', 'platform')
-        verbose_name_plural = 'Social Post Templates'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['journey', 'status']),
+        ]
     
     def __str__(self):
-        return f"{self.journey.title} - {self.platform}"
-    
-    def render(self, day, title, url, content=None):
-        text = self.template_text.format(day=day, title=title, url=url)
-        if content:
-            text = text.replace('{content}', content[:100])
-        return text
+        return f"{self.user.username} - {self.platform} - {self.journey.title}"
 
 
 # ============================================================================
-# REFERRAL TRACKING
+# NOTIFICATION MODEL (Minimal)
 # ============================================================================
-
-class ReferralTracking(models.Model):
-    """Track where traffic comes from"""
+class Notification(models.Model):
+    """User notifications — minimal and clean"""
     
-    SOURCE_CHOICES = [
-        ('twitter', 'Twitter/X'),
-        ('instagram', 'Instagram'),
-        ('linkedin', 'LinkedIn'),
-        ('facebook', 'Facebook'),
-        ('tiktok', 'TikTok'),
-        ('youtube', 'YouTube'),
-        ('email', 'Email'),
-        ('direct', 'Direct'),
-        ('other', 'Other'),
+    NOTIFICATION_TYPES = [
+        ('comment', 'New Comment'),
+        ('follow', 'New Follower'),
+        ('milestone', 'Milestone Reached'),
+        ('export', 'Export Ready'),
     ]
     
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='referrals')
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
-    session_id = models.CharField(max_length=100, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(
+        max_length=20, 
+        choices=NOTIFICATION_TYPES,
+        default='comment'
+    )
+    message = models.CharField(max_length=255)
+    
+    related_journey = models.ForeignKey('Journey', on_delete=models.CASCADE, null=True, blank=True)
+    related_activity = models.ForeignKey('Activity', on_delete=models.CASCADE, null=True, blank=True)
+    
+    redirect_link = models.URLField(blank=True)
+    is_read = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['journey', 'source', '-created_at']),
+            models.Index(fields=['user', 'is_read']),
+            models.Index(fields=['user', '-created_at']),
         ]
     
     def __str__(self):
-        return f"{self.journey.title} - {self.source} at {self.created_at}"
+        return f"{self.user.username}: {self.message[:50]}"
+
+# ============================================================================
+# COMMENT MODEL (For Journeys and Activities)
+# ============================================================================
+
+class Comment(models.Model):
+    """
+    Comments on journeys and activities.
+    Turned off by default for privacy.
+    """
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
+    
+    content = models.TextField(max_length=500)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['journey', '-created_at']),
+            models.Index(fields=['activity', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} on {self.journey or self.activity}"
 
 
 # ============================================================================
-# RELATIONSHIP MODELS
+# JOURNEY FOLLOW (Opt-in Following)
 # ============================================================================
 
 class JourneyFollow(models.Model):
-    """Users following a journey"""
+    """
+    Users who follow a journey to get updates.
+    Following is opt-in — not the default.
+    """
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE)
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='followers')
+    
+    notify_on_new_entry = models.BooleanField(default=True)
+    notify_on_completion = models.BooleanField(default=True)
+    
     followed_at = models.DateTimeField(auto_now_add=True)
-    notify_on_activity = models.BooleanField(default=True)
     
     class Meta:
         unique_together = ('user', 'journey')
@@ -709,8 +603,36 @@ class JourneyFollow(models.Model):
         return f"{self.user.username} follows {self.journey.title}"
 
 
+# ============================================================================
+# JOURNEY SAVE (Bookmark)
+# ============================================================================
+
+class JourneySave(models.Model):
+    """
+    Users saving/bookmarking journeys to read later.
+    """
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='saves')
+    saved_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'journey')
+        indexes = [
+            models.Index(fields=['journey', '-saved_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} saved {self.journey.title}"
+
+
+# ============================================================================
+# TAG MODEL (Simple)
+# ============================================================================
+
 class Tag(models.Model):
-    """Tags for journeys"""
+    """Tags for journeys — simple categorization"""
+    
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -729,6 +651,7 @@ class Tag(models.Model):
 
 class JourneyTag(models.Model):
     """Through model for journey tags"""
+    
     journey = models.ForeignKey(Journey, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
@@ -738,198 +661,58 @@ class JourneyTag(models.Model):
 
 
 # ============================================================================
-# ENGAGEMENT MODELS
+# EXPORT MODEL
 # ============================================================================
 
-class ActivityLove(models.Model):
-    """Likes on activities"""
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='loves')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Export(models.Model):
+    """
+    Track exported journeys — users can export their documentation.
+    """
     
-    class Meta:
-        unique_together = ('activity', 'user')
-        indexes = [
-            models.Index(fields=['activity', '-created_at']),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.username} loved Activity {self.activity.id}"
-
-
-class ActivityComment(models.Model):
-    """Comments on activities"""
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=500)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['activity', '-created_at']),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.username} on Activity {self.activity.id}"
-
-
-class JourneySave(models.Model):
-    """Users saving/bookmarking journeys"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='saves')
-    saved_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        unique_together = ('user', 'journey')
-        indexes = [
-            models.Index(fields=['journey', '-saved_at']),
-        ]
-
-
-class Share(models.Model):
-    """Track shares of journeys"""
-    
-    PLATFORM_CHOICES = [
-        ('facebook', 'Facebook'),
-        ('twitter', 'Twitter/X'),
-        ('whatsapp', 'WhatsApp'),
-        ('linkedin', 'LinkedIn'),
-        ('tiktok', 'TikTok'),
-        ('instagram', 'Instagram'),
-        ('copy', 'Copy Link'),
-        ('other', 'Other'),
+    EXPORT_FORMATS = [
+        ('pdf', 'PDF'),
+        ('markdown', 'Markdown'),
+        ('json', 'JSON'),
+        ('html', 'HTML'),
     ]
     
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='shares')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, default='other')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        indexes = [
-            models.Index(fields=['journey', '-created_at']),
-        ]
-        verbose_name = 'Share'
-        verbose_name_plural = 'Shares'
-    
-    def __str__(self):
-        return f"Share of {self.journey.title} on {self.platform}"
-
-
-# ============================================================================
-# NOTIFICATION MODEL
-# ============================================================================
-
-class Notification(models.Model):
-    """User notifications"""
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    message = models.CharField(max_length=255)
-    redirect_link = models.URLField(blank=True)
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, null=True, blank=True)
-    viewed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['user', 'viewed']),
-            models.Index(fields=['user', '-created_at']),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.username}: {self.message[:50]}"
-
-
-# ============================================================================
-# MODERATION MODELS
-# ============================================================================
-
-class Report(models.Model):
-    """User reports for inappropriate content"""
-    
-    REASON_CHOICES = [
-        ('spam', 'Spam'),
-        ('inappropriate', 'Inappropriate Content'),
-        ('copyright', 'Copyright Violation'),
-        ('harassment', 'Harassment'),
-        ('other', 'Other'),
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
     ]
     
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='reports', null=True, blank=True)
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='reports', null=True, blank=True)
-    reported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_made')
-    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
-    description = models.TextField(blank=True)
-    resolved = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exports')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='exports')
+    
+    format = models.CharField(max_length=20, choices=EXPORT_FORMATS)
+    include_media = models.BooleanField(default=True)
+    include_comments = models.BooleanField(default=False)
+    
+    file_url = models.URLField(blank=True)
+    file_size = models.PositiveIntegerField(default=0)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True)
+    
+    requested_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"Report by {self.reported_by.username}"
-
-
-# ============================================================================
-# FAQ MODEL
-# ============================================================================
-
-class FAQ(models.Model):
-    """Frequently Asked Questions"""
-    
-    CATEGORY_CHOICES = [
-        ('general', 'General'),
-        ('creators', 'For Creators'),
-        ('supporters', 'For Supporters'),
-        ('social', 'Social Media Integration'),
-        ('import', 'Importing Content'),
-    ]
-    
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
-    question = models.CharField(max_length=255)
-    answer = models.TextField()
-    order = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-    
-    class Meta:
-        ordering = ['category', 'order']
-        verbose_name = 'FAQ'
-        verbose_name_plural = 'FAQs'
-    
-    def __str__(self):
-        return self.question
-
-
-# ============================================================================
-# QUICK ADD TRACKER
-# ============================================================================
-
-class QuickAddTracker(models.Model):
-    """Track quick adds from social media"""
-    
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='quick_adds')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    source_url = models.URLField(max_length=500)
-    source_platform = models.CharField(max_length=20)
-    detected_day = models.PositiveIntegerField()
-    detected_title = models.CharField(max_length=200, blank=True)
-    created_activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
-    added_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-added_at']
+        ordering = ['-requested_at']
         indexes = [
-            models.Index(fields=['journey', 'added_at']),
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['journey', 'status']),
         ]
     
     def __str__(self):
-        return f"Quick add: {self.source_platform} to {self.journey.title}"
+        return f"{self.user.username} - {self.journey.title} - {self.format}"
 
 
 # ============================================================================
-# CONTACT & SUBSCRIBER
+# CONTACT & SUBSCRIBER (Minimal)
 # ============================================================================
 
 class ContactMessage(models.Model):
@@ -938,30 +721,32 @@ class ContactMessage(models.Model):
     SUBJECT_CHOICES = [
         ('general', 'General Question'),
         ('support', 'Technical Support'),
-        ('import', 'Content Import Issue'),
-        ('social', 'Social Media Integration'),
         ('journey', 'Journey Help'),
+        ('export', 'Export Help'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=200)
     email = models.EmailField()
-    subject = models.CharField(max_length=50, choices=SUBJECT_CHOICES)
+    subject = models.CharField(max_length=50, choices=SUBJECT_CHOICES, default='general')
     message = models.TextField()
-    ai_response = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    ai_response = models.TextField(blank=True, null=True)  # ← Add this
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
 
 
 class Subscriber(models.Model):
-    """Email subscribers"""
+    """Email subscribers for updates"""
+    
     email = models.EmailField(unique=True)
     subscribed_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
     
     class Meta:
         ordering = ['-subscribed_at']
@@ -976,20 +761,51 @@ class Subscriber(models.Model):
 
 @receiver(post_save, sender=JourneyFollow)
 def create_follow_notification(sender, instance, created, **kwargs):
+    """Create notification when someone follows a journey"""
     if created:
         Notification.objects.create(
             user=instance.journey.creator.user,
-            message=f"{instance.user.username} started following your journey '{instance.journey.title}'! 🎉",
-            redirect_link=instance.journey.get_absolute_url(),
-            journey=instance.journey
+            notification_type='follow',
+            message=f"{instance.user.username} started following your journey '{instance.journey.title}'.",
+            related_journey=instance.journey,
+            redirect_link=instance.journey.get_absolute_url()
         )
 
 
-@receiver(models.signals.post_delete, sender=Journey)
-def delete_journey_files(sender, instance, **kwargs):
-    if instance.cover_image:
-        from cloudinary.uploader import destroy
-        destroy(instance.cover_image.public_id)
-    if instance.cover_video:
-        from cloudinary.uploader import destroy
-        destroy(instance.cover_video.public_id, resource_type="video")
+@receiver(post_save, sender=Comment)
+def create_comment_notification(sender, instance, created, **kwargs):
+    """Create notification when someone comments"""
+    if created:
+        target_user = None
+        if instance.journey:
+            target_user = instance.journey.creator.user
+        elif instance.activity:
+            target_user = instance.activity.journey.creator.user
+        
+        if target_user and target_user != instance.user:
+            Notification.objects.create(
+                user=target_user,
+                notification_type='comment',
+                message=f"{instance.user.username} commented on your journey.",
+                related_journey=instance.journey,
+                related_activity=instance.activity,
+                redirect_link=instance.journey.get_absolute_url() if instance.journey else instance.activity.get_absolute_url()
+            )
+
+
+@receiver(post_save, sender=Activity)
+def check_milestone_notification(sender, instance, created, **kwargs):
+    """Check if journey hit a milestone (25%, 50%, 75%, 100%)"""
+    if created:
+        progress = instance.journey.get_progress_percentage()
+        milestones = [25, 50, 75, 100]
+        
+        if progress in milestones:
+            Notification.objects.create(
+                user=instance.journey.creator.user,
+                notification_type='milestone',
+                message=f"🎉 Your journey '{instance.journey.title}' is {progress}% complete!",
+                related_journey=instance.journey,
+                related_activity=instance,
+                redirect_link=instance.journey.get_absolute_url()
+            )

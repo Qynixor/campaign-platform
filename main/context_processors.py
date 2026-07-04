@@ -7,8 +7,6 @@ def cloudinary_config(request):
     }
 
 
-# your_app/context_processors.py
-
 def theme_context(request):
     """
     Provides theme to ALL templates automatically.
@@ -22,8 +20,10 @@ def theme_context(request):
 
 
 def notification_count(request):
+    """Get unread notification count for the current user"""
     if request.user.is_authenticated:
         from .models import Notification
-        count = Notification.objects.filter(user=request.user, viewed=False).count()
+        # FIXED: viewed → is_read (matches the renamed field in Notification model)
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
         return {'unread_count': count}
     return {'unread_count': 0}

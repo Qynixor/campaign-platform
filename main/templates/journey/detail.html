@@ -6,19 +6,17 @@
 
 {% block meta_title %}{{ journey.title }}{% if journey.subtitle %} - {{ journey.subtitle }}{% endif %}{% endblock %}
 
-{% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Join this journey on Rallynex and track progress through daily challenges and milestones." }}{% endblock %}
+{% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Documenting a journey on Rallynex — track progress through daily entries and milestones." }}{% endblock %}
 
-{% block meta_keywords %}{{ journey.title }}, journey, {% if journey.category %}{{ journey.category }}, {% endif %}daily challenge, milestone tracker, content journey, rallynex{% endblock %}
+{% block meta_keywords %}{{ journey.title }}, documentation, journey, {% if journey.category %}{{ journey.category }}, {% endif %}daily log, progress tracking, rallynex{% endblock %}
 
-{% block og_title %}{{ journey.title }} | Rallynex Journey{% endblock %}
+{% block og_title %}{{ journey.title }} | Rallynex{% endblock %}
 
-{% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Track progress, join the community, and complete this journey on Rallynex." }}{% endblock %}
+{% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Documenting a journey on Rallynex." }}{% endblock %}
 
 {% block og_image %}
     {% if journey.cover_image %}
         {{ journey.cover_image.url }}
-    {% elif journey.cover_video %}
-        {{ journey.cover_video.url }}
     {% else %}
         {{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-og-default.png' %}
     {% endif %}
@@ -31,8 +29,6 @@
 {% block twitter_image %}
     {% if journey.cover_image %}
         {{ journey.cover_image.url }}
-    {% elif journey.cover_video %}
-        {{ journey.cover_video.url }}
     {% else %}
         {{ request.scheme }}://{{ request.get_host }}{% static 'images/rallynex-og-default.png' %}
     {% endif %}
@@ -57,51 +53,7 @@
         "url": "{{ request.scheme }}://{{ request.get_host }}/@{{ journey.creator.user.username }}/"
     },
     "dateCreated": "{{ journey.created_at|date:'c' }}",
-    "dateModified": "{{ journey.updated_at|date:'c' }}",
-    "interactionStatistic": [
-        {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/FollowAction",
-            "userInteractionCount": {{ journey.get_follower_count }}
-        },
-        {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/LikeAction",
-            "userInteractionCount": {{ journey.get_love_count }}
-        }
-    ],
-    "potentialAction": {
-        "@type": "JoinAction",
-        "name": "Follow Journey",
-        "target": "{{ request.build_absolute_uri }}"
-    }
-}
-</script>
-
-<script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-        {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "{{ request.scheme }}://{{ request.get_host }}/"
-        },
-        {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Discover",
-            "item": "{{ request.scheme }}://{{ request.get_host }}/discover/"
-        },
-        {
-            "@type": "ListItem",
-            "position": 3,
-            "name": "{{ journey.title|escapejs|truncatewords:5 }}",
-            "item": "{{ request.build_absolute_uri }}"
-        }
-    ]
+    "dateModified": "{{ journey.updated_at|date:'c' }}"
 }
 </script>
 {% endblock %}
@@ -119,7 +71,100 @@
         overflow-x: hidden;
     }
     
-    /* ===== ENHANCED LIGHT MODE - PREMIUM SILVER WHITE HERO ===== */
+    /* ===== JOURNEY HERO ===== */
+    .journey-hero {
+        position: relative;
+        height: 300px;
+        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        overflow: hidden;
+    }
+    
+    /* Template Style Hero Backgrounds */
+    .journey-container.template-fitness .journey-hero {
+        background: linear-gradient(180deg, var(--bg-primary) 0%, #1a0a0a 100%);
+    }
+    .journey-container.template-fitness .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(239, 68, 68, 0.12) 0%, transparent 50%);
+    }
+    
+    .journey-container.template-portfolio .journey-hero {
+        background: linear-gradient(180deg, var(--bg-primary) 0%, #0a0a1a 100%);
+    }
+    .journey-container.template-portfolio .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.10) 0%, transparent 50%);
+    }
+    
+    .journey-container.template-startup .journey-hero {
+        background: linear-gradient(180deg, var(--bg-primary) 0%, #0a1a0a 100%);
+    }
+    .journey-container.template-startup .journey-hero::before {
+        background: radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
+    }
+    
+    /* Progress Fill Colors by Template */
+    .journey-container.template-fitness .progress-fill {
+        background: linear-gradient(90deg, #ef4444, #f97316);
+    }
+    .journey-container.template-fitness .progress-fill::after {
+        background: #f97316;
+        box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+    }
+    
+    .journey-container.template-portfolio .progress-fill {
+        background: linear-gradient(90deg, #3b82f6, #6366f1);
+    }
+    .journey-container.template-portfolio .progress-fill::after {
+        background: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+    }
+    
+    .journey-container.template-startup .progress-fill {
+        background: linear-gradient(90deg, #22c55e, #10b981);
+    }
+    .journey-container.template-startup .progress-fill::after {
+        background: #10b981;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+    
+    /* Template Style Badge */
+    .template-style-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+    .template-style-badge.fitness {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+    .template-style-badge.portfolio {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+    }
+    .template-style-badge.startup {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+    .template-style-badge.default {
+        background: rgba(108, 117, 125, 0.15);
+        color: var(--text-muted);
+    }
+    
+    /* Template Banner Icons */
+    .template-banner.fitness .title::before { content: '🏋️ '; }
+    .template-banner.portfolio .title::before { content: '💼 '; }
+    .template-banner.startup .title::before { content: '🚀 '; }
+    
+    /* ===== REST OF YOUR EXISTING STYLES ===== */
+    /* ... keep all your existing CSS here ... */
+    
     [data-theme="light"] .journey-hero {
         background: linear-gradient(160deg, #fafbfc 0%, #f0f2f5 30%, #e8ecf1 70%, #e2e8f0 100%) !important;
         border-bottom: 1px solid rgba(0, 0, 0, 0.04);
@@ -133,270 +178,11 @@
         background: 
             radial-gradient(ellipse at 15% 25%, rgba(59, 130, 246, 0.06) 0%, transparent 55%),
             radial-gradient(ellipse at 85% 75%, rgba(139, 92, 246, 0.04) 0%, transparent 55%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
-            linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 25%, transparent 75%, rgba(255,255,255,0.2) 100%);
+            radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.8) 0%, transparent 60%);
         pointer-events: none;
         z-index: 1;
     }
     
-    [data-theme="light"] .journey-hero::after {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image: radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px);
-        background-size: 24px 24px;
-        pointer-events: none;
-        z-index: 0;
-        opacity: 0.5;
-    }
-    
-    [data-theme="light"] .template-fitness .journey-hero {
-        background: linear-gradient(160deg, #fdf5f5 0%, #f7e8e8 30%, #f0dcdc 70%, #ead0d0 100%) !important;
-    }
-    [data-theme="light"] .template-fitness .journey-hero::before {
-        background: 
-            radial-gradient(ellipse at 20% 30%, rgba(239, 68, 68, 0.07) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 70%, rgba(251, 191, 36, 0.04) 0%, transparent 55%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 60%),
-            linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.2) 100%);
-    }
-
-    [data-theme="light"] .template-portfolio .journey-hero {
-        background: linear-gradient(160deg, #f5f8fc 0%, #e8eef5 30%, #dce4f0 70%, #d0daea 100%) !important;
-    }
-    [data-theme="light"] .template-portfolio .journey-hero::before {
-        background: 
-            radial-gradient(ellipse at 20% 30%, rgba(59, 130, 246, 0.07) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 70%, rgba(99, 102, 241, 0.05) 0%, transparent 55%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 60%),
-            linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.2) 100%);
-    }
-
-    [data-theme="light"] .template-startup .journey-hero {
-        background: linear-gradient(160deg, #f5fcf7 0%, #e8f5ec 30%, #dcefe1 70%, #d0e9d6 100%) !important;
-    }
-    [data-theme="light"] .template-startup .journey-hero::before {
-        background: 
-            radial-gradient(ellipse at 20% 30%, rgba(34, 197, 94, 0.07) 0%, transparent 55%),
-            radial-gradient(ellipse at 80% 70%, rgba(16, 185, 129, 0.05) 0%, transparent 55%),
-            radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 60%),
-            linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 30%, transparent 70%, rgba(255,255,255,0.2) 100%);
-    }
-
-    [data-theme="light"] .progress-fill {
-        background: linear-gradient(90deg, #cbd5e1, #94a3b8) !important;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    [data-theme="light"] .progress-fill::after {
-        background: #64748b !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 3px rgba(100, 116, 139, 0.1) !important;
-        border: 2px solid #ffffff !important;
-        transition: all 0.3s ease;
-    }
-
-    [data-theme="light"] .template-fitness .progress-fill {
-        background: linear-gradient(90deg, #fecaca, #f87171) !important;
-    }
-    [data-theme="light"] .template-fitness .progress-fill::after {
-        background: #ef4444 !important;
-        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2), 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
-    }
-
-    [data-theme="light"] .template-portfolio .progress-fill {
-        background: linear-gradient(90deg, #bfdbfe, #60a5fa) !important;
-    }
-    [data-theme="light"] .template-portfolio .progress-fill::after {
-        background: #3b82f6 !important;
-        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2), 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-    }
-
-    [data-theme="light"] .template-startup .progress-fill {
-        background: linear-gradient(90deg, #bbf7d0, #4ade80) !important;
-    }
-    [data-theme="light"] .template-startup .progress-fill::after {
-        background: #22c55e !important;
-        box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2), 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
-    }
-
-    [data-theme="light"] .hero-stats {
-        background: rgba(255, 255, 255, 0.85) !important;
-        backdrop-filter: blur(30px) saturate(180%);
-        -webkit-backdrop-filter: blur(30px) saturate(180%);
-        border: 1px solid rgba(0, 0, 0, 0.06) !important;
-        box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.04),
-            0 1px 3px rgba(0, 0, 0, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        transition: all 0.3s ease;
-    }
-    [data-theme="light"] .hero-stat .value {
-        color: #1a202c !important;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-    }
-    [data-theme="light"] .hero-stat .label {
-        color: #718096 !important;
-        font-weight: 600;
-    }
-
-    [data-theme="light"] .back-btn,
-    [data-theme="light"] .menu-btn {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border: 1px solid rgba(0, 0, 0, 0.06) !important;
-        box-shadow: 
-            0 2px 10px rgba(0, 0, 0, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
-        color: #4a5568 !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    [data-theme="light"] .back-btn:hover,
-    [data-theme="light"] .menu-btn:hover {
-        background: rgba(255, 255, 255, 0.95) !important;
-        box-shadow: 
-            0 4px 15px rgba(0, 0, 0, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.95);
-        transform: translateY(-1px);
-    }
-    [data-theme="light"] .back-btn:active,
-    [data-theme="light"] .menu-btn:active {
-        transform: scale(0.95);
-        background: #f7fafc !important;
-        box-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.08),
-            inset 0 0 0 1px rgba(0, 0, 0, 0.04);
-    }
-
-    [data-theme="light"] .journey-title-top h2 {
-        color: #1a202c !important;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-        font-weight: 700;
-        letter-spacing: -0.3px;
-    }
-    [data-theme="light"] .creator-name {
-        color: #64748b !important;
-        font-weight: 500;
-    }
-
-    [data-theme="light"] .path-svg {
-        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06)) !important;
-    }
-    [data-theme="light"] .path-line {
-        stroke: rgba(0, 0, 0, 0.08) !important;
-        stroke-linecap: round;
-    }
-    [data-theme="light"] .path-node.completed {
-        fill: #48bb78 !important;
-        stroke: #48bb78 !important;
-        filter: drop-shadow(0 2px 4px rgba(72, 187, 120, 0.2));
-    }
-    [data-theme="light"] .path-node.current {
-        fill: #ffffff !important;
-        stroke: #4a5568 !important;
-        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
-    }
-    [data-theme="light"] .path-node.locked {
-        fill: #edf2f7 !important;
-        stroke: #cbd5e0 !important;
-    }
-    [data-theme="light"] .path-node.available {
-        fill: #fbd38d !important;
-        stroke: #ed8936 !important;
-    }
-    [data-theme="light"] .node-label-svg {
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) !important;
-        font-weight: 700;
-    }
-    [data-theme="light"] .node-glow {
-        opacity: 0.15 !important;
-        filter: blur(2px);
-    }
-
-    [data-theme="light"] .roadmap-line {
-        background: #e2e8f0 !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
-    }
-    [data-theme="light"] .roadmap-line-progress {
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.15);
-    }
-    [data-theme="light"] .roadmap-dot {
-        background: #ffffff !important;
-        border-color: #cbd5e0 !important;
-        box-shadow: 
-            0 2px 4px rgba(0, 0, 0, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.8);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    [data-theme="light"] .roadmap-item.completed .roadmap-dot {
-        background: #22c55e !important;
-        border-color: #16a34a !important;
-        box-shadow: 
-            0 2px 8px rgba(34, 197, 94, 0.25),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-    [data-theme="light"] .roadmap-item.current .roadmap-dot {
-        background: #ffffff !important;
-        border-color: #22c55e !important;
-        box-shadow: 
-            0 0 0 4px rgba(34, 197, 94, 0.1),
-            0 2px 8px rgba(34, 197, 94, 0.2);
-        animation: lightPulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    [data-theme="light"] .roadmap-item.locked .roadmap-dot {
-        background: #f7fafc !important;
-        border-color: #e2e8f0 !important;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    }
-    [data-theme="light"] .roadmap-thumbnail {
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-        transition: all 0.2s ease;
-    }
-    [data-theme="light"] .roadmap-item:hover .roadmap-thumbnail {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        transform: translateY(-1px);
-    }
-    
-    @keyframes lightPulseDot {
-        0%, 100% { 
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1), 0 2px 8px rgba(34, 197, 94, 0.2);
-        }
-        50% { 
-            box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.05), 0 4px 16px rgba(34, 197, 94, 0.3);
-        }
-    }
-
-    [data-theme="light"] .strip-thumbnail {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-        border: 1px solid rgba(0, 0, 0, 0.04) !important;
-        transition: all 0.2s ease;
-    }
-    [data-theme="light"] .strip-day:hover .strip-thumbnail {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-        transform: translateY(-2px);
-    }
-    [data-theme="light"] .strip-day.current .strip-thumbnail {
-        border-color: #8b5cf6 !important;
-        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1), 0 4px 16px rgba(139, 92, 246, 0.15) !important;
-    }
-
-    [data-theme="light"] .stat-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        transform: translateY(-2px);
-    }
-    [data-theme="light"] .portfolio-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-        transform: translateY(-1px);
-    }
-    
-    /* DARK MODE */
-    .journey-hero {
-        position: relative;
-        height: 360px;
-        background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-        overflow: hidden;
-    }
     .journey-hero::before {
         content: '';
         position: absolute;
@@ -405,130 +191,40 @@
         pointer-events: none;
     }
     
-    .template-fitness .journey-hero {
-        background: linear-gradient(180deg, var(--bg-primary) 0%, #1a0a0a 100%);
-    }
-    .template-fitness .journey-hero::before {
-        background: radial-gradient(circle at 30% 50%, rgba(239, 68, 68, 0.12) 0%, transparent 50%);
-    }
-    .template-fitness .progress-fill {
-        background: linear-gradient(90deg, #ef4444, #f97316);
-    }
-    .template-fitness .progress-fill::after {
-        background: #f97316;
-        box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
-    }
-    .template-fitness .path-node.completed { fill: #ef4444; stroke: #ef4444; }
-    .template-fitness .path-node.current { fill: #fff; stroke: #f97316; }
-    .template-fitness .strip-day.current .strip-thumbnail {
-        border-color: #ef4444;
-        box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-    }
-    .template-fitness .hero-badge { background: #ef4444; color: #fff; }
-    
-    .template-portfolio .journey-hero {
-        background: linear-gradient(180deg, var(--bg-primary) 0%, #0a0a1a 100%);
-    }
-    .template-portfolio .journey-hero::before {
-        background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.10) 0%, transparent 50%);
-    }
-    .template-portfolio .progress-fill {
-        background: linear-gradient(90deg, #3b82f6, #6366f1);
-    }
-    .template-portfolio .progress-fill::after {
-        background: #6366f1;
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
-    }
-    .template-portfolio .path-node.completed { fill: #3b82f6; stroke: #3b82f6; }
-    .template-portfolio .path-node.current { fill: #fff; stroke: #6366f1; }
-    .template-portfolio .strip-day.current .strip-thumbnail {
-        border-color: #3b82f6;
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-    }
-    .template-portfolio .hero-badge { background: #3b82f6; color: #fff; }
-    
-    .template-startup .journey-hero {
-        background: linear-gradient(180deg, var(--bg-primary) 0%, #0a1a0a 100%);
-    }
-    .template-startup .journey-hero::before {
-        background: radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
-    }
-    .template-startup .progress-fill {
-        background: linear-gradient(90deg, #22c55e, #10b981);
-    }
-    .template-startup .progress-fill::after {
-        background: #10b981;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-    }
-    .template-startup .path-node.completed { fill: #22c55e; stroke: #22c55e; }
-    .template-startup .path-node.current { fill: #fff; stroke: #10b981; }
-    .template-startup .strip-day.current .strip-thumbnail {
-        border-color: #22c55e;
-        box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-    }
-    .template-startup .hero-badge { background: #22c55e; color: #0a0a0a; }
-    
-    .progress-fill {
-        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
-        position: relative; transition: width 0.3s ease;
-    }
-    .progress-fill::after {
-        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
-        width: 10px; height: 10px; background: #8b5cf6; border-radius: 50%;
-        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); border: 2px solid var(--bg-primary);
-    }
-    
-    .journey-path-visual {
-        position: relative; height: 100%; display: flex;
-        align-items: center; justify-content: center; padding: 20px 10px;
-    }
-    .path-svg {
-        width: 100%; height: 140px; display: block;
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
-    }
-    .path-node { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .path-node:hover { transform: scale(1.2); }
-    .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
-    .path-node.current { fill: #fff; stroke: #fff; stroke-width: 3; animation: pulseNode 2s infinite; }
-    .path-node.locked { fill: var(--bg-tertiary); stroke: var(--border-color); stroke-width: 2; }
-    .path-node.available { fill: #f59e0b; stroke: #f59e0b; stroke-width: 2; }
-    
-    @keyframes pulseNode {
-        0%, 100% { r: 10px; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
-        50% { r: 12px; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)); }
-    }
-    .node-glow { animation: pulseGlow 2s infinite; }
-    @keyframes pulseGlow { 0%, 100% { opacity: 0.2; r: 16px; } 50% { opacity: 0.4; r: 20px; } }
-    .node-label-svg {
-        font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
-        pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    }
-    .path-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.8s ease-out forwards; }
-    @keyframes drawLine { to { stroke-dashoffset: 0; } }
-    
-    .hero-stats {
-        position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-around;
-        z-index: 10; background: var(--navbar-bg); backdrop-filter: blur(10px);
-        padding: 12px 8px; border-radius: 40px; border: 1px solid var(--border-color);
-    }
-    .hero-stat { text-align: center; }
-    .hero-stat .value { font-size: 22px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
-    .hero-stat .label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    
     .back-btn {
         position: absolute; top: 16px; left: 16px; width: 40px; height: 40px;
         background: var(--navbar-bg); backdrop-filter: blur(10px); border-radius: 50%;
         display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-size: 18px;
         cursor: pointer; z-index: 20; border: 1px solid var(--border-color); transition: all 0.2s;
     }
-    .back-btn:active { transform: scale(0.95); background: var(--bg-secondary); }
+    .back-btn:active { transform: scale(0.95); }
     
-    .journey-title-top { position: absolute; top: 20px; left: 68px; right: 68px; z-index: 20; }
+    [data-theme="light"] .back-btn {
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        color: #4a5568 !important;
+    }
+    
+    .journey-title-top {
+        position: absolute; top: 20px; left: 68px; right: 68px; z-index: 20;
+    }
+    
     .journey-title-top h2 {
         font-size: 15px; font-weight: 700; color: var(--text-primary); white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        overflow: hidden; text-overflow: ellipsis;
     }
-    .creator-info { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    
+    [data-theme="light"] .journey-title-top h2 {
+        color: #1a202c !important;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    
+    .creator-info {
+        display: flex; align-items: center; gap: 6px; margin-top: 4px;
+    }
+    
     .creator-avatar {
         width: 22px; height: 22px; border-radius: 50%; background: var(--bg-secondary); overflow: hidden;
         display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--border-color);
@@ -544,27 +240,113 @@
     }
     .creator-profile-link:hover .creator-name {
         color: var(--accent);
-        text-decoration: underline;
     }
     .creator-profile-link:hover .creator-avatar {
         border-color: var(--accent);
     }
     
-    .menu-btn {
-        position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
-        background: var(--navbar-bg); backdrop-filter: blur(10px); border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; color: var(--text-primary); font-size: 18px;
-        cursor: pointer; z-index: 20; border: 1px solid var(--border-color); transition: all 0.2s;
+    .privacy-badge-hero {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 20;
+        font-size: 11px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: var(--navbar-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--text-secondary);
     }
-    .menu-btn:active { transform: scale(0.95); background: var(--bg-secondary); }
     
+    .privacy-badge-hero i {
+        font-size: 12px;
+    }
+    
+    [data-theme="light"] .privacy-badge-hero {
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    /* ===== PATH VISUAL ===== */
+    .journey-path-visual {
+        position: relative; height: 100%; display: flex;
+        align-items: center; justify-content: center; padding: 20px 10px;
+    }
+    
+    .path-svg {
+        width: 100%; height: 140px; display: block;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+    }
+    
+    .path-node { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .path-node:hover { transform: scale(1.2); }
+    .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
+    .path-node.current { fill: #fff; stroke: #fff; stroke-width: 3; animation: pulseNode 2s infinite; }
+    .path-node.locked { fill: var(--bg-tertiary); stroke: var(--border-color); stroke-width: 2; }
+    .path-node.available { fill: #f59e0b; stroke: #f59e0b; stroke-width: 2; }
+    
+    @keyframes pulseNode {
+        0%, 100% { r: 10px; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
+        50% { r: 12px; filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.6)); }
+    }
+    
+    .node-label-svg {
+        font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
+        pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .path-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.8s ease-out forwards; }
+    @keyframes drawLine { to { stroke-dashoffset: 0; } }
+    
+    /* ===== HERO STATS ===== */
+    .hero-stats {
+        position: absolute; bottom: 16px; left: 16px; right: 16px; display: flex; justify-content: space-around;
+        z-index: 10; background: var(--navbar-bg); backdrop-filter: blur(10px);
+        padding: 12px 8px; border-radius: 40px; border: 1px solid var(--border-color);
+    }
+    
+    [data-theme="light"] .hero-stats {
+        background: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(30px);
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    
+    .hero-stat { text-align: center; }
+    .hero-stat .value { font-size: 22px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+    .hero-stat .label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    
+    [data-theme="light"] .hero-stat .value { color: #1a202c !important; }
+    [data-theme="light"] .hero-stat .label { color: #718096 !important; }
+    
+    /* ===== PROGRESS SECTION ===== */
     .progress-section { padding: 16px 20px; background: var(--bg-primary); }
     .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
     .progress-header span { font-size: 12px; font-weight: 600; color: var(--text-primary); }
     .progress-header span:last-child { color: var(--text-secondary); }
     .progress-track { height: 3px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
     
-    .stats-cards { display: flex; gap: 10px; padding: 16px 20px; }
+    .progress-fill {
+        height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 2px;
+        position: relative; transition: width 0.3s ease;
+    }
+    
+    .progress-fill::after {
+        content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+        width: 10px; height: 10px; background: #8b5cf6; border-radius: 50%;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); border: 2px solid var(--bg-primary);
+    }
+    
+    [data-theme="light"] .progress-fill {
+        background: linear-gradient(90deg, #cbd5e1, #94a3b8) !important;
+    }
+    
+    /* ===== STATS CARDS ===== */
+    .stats-cards { display: flex; gap: 10px; padding: 0 20px 16px; }
     .stat-card {
         flex: 1; background: var(--card-bg); border-radius: 14px; padding: 14px 8px; border: 1px solid var(--border-color);
         text-align: center; cursor: pointer; transition: all 0.2s;
@@ -574,128 +356,33 @@
     .stat-card .value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
     .stat-card .label { font-size: 9px; color: var(--text-muted); }
     
-    /* ===== SOCIAL-FIRST: Share Stats Bar ===== */
-    .social-share-bar {
-        display: flex;
-        gap: 20px;
-        padding: 12px 20px;
-        background: var(--bg-secondary);
-        border-top: 1px solid var(--border-color);
-        border-bottom: 1px solid var(--border-color);
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-    .social-share-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--text-secondary);
-    }
-    .social-share-item i { font-size: 14px; }
-    .social-share-item .count { font-weight: 700; color: var(--text-primary); }
-
-    /* ===== SOCIAL-FIRST: Social CTA Banner ===== */
-    .social-cta-banner {
-        margin: 0 16px 16px;
-        padding: 12px 16px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-    .social-cta-banner .cta-text {
-        font-size: 13px;
-        color: var(--text-secondary);
-    }
-    .social-cta-banner .cta-text strong {
-        color: var(--text-primary);
-    }
-    .social-cta-btn {
-        padding: 6px 16px;
-        border-radius: 30px;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-    }
-    .social-cta-btn:hover {
-        background: var(--accent-hover);
-        transform: scale(1.02);
-    }
-
-    /* ===== CONTENT CARD STYLES ===== */
-    .content-card {
-        transition: all 0.3s ease;
-        background: var(--card-bg);
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        width: 100%;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    .content-card:hover {
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    [data-theme="light"] .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         transform: translateY(-2px);
     }
     
-    .youtube-card .yt-thumbnail {
-        position: relative;
-        padding-bottom: 56.25%;
-        background: #000;
-        cursor: pointer;
+    /* ===== TEMPLATE BANNERS ===== */
+    .template-banner {
+        padding: 0 20px 16px;
+    }
+    .template-banner .inner {
+        border-radius: 14px; padding: 14px; text-align: center;
+    }
+    .template-banner .inner .title {
+        font-weight: 700; font-size: 14px;
+    }
+    .template-banner .inner .sub {
+        font-size: 12px; margin-top: 4px; color: var(--text-secondary);
     }
     
-    .youtube-card .yt-thumbnail img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+    .template-banner.fitness .inner { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .template-banner.fitness .inner .title { color: #ef4444; }
+    .template-banner.portfolio .inner { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .template-banner.portfolio .inner .title { color: #3b82f6; }
+    .template-banner.startup .inner { background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); }
+    .template-banner.startup .inner .title { color: #22c55e; }
     
-    .youtube-card .yt-play-button {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 68px;
-        height: 48px;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .youtube-card .yt-play-button:hover {
-        transform: translate(-50%, -50%) scale(1.1);
-        background: #fff;
-    }
-    
-    .youtube-card .yt-play-button i {
-        color: #ff0000;
-        font-size: 24px;
-    }
-    
-    /* ===== CURRENT DAY HERO - YOUTUBE SUPPORT ===== */
+    /* ===== CURRENT DAY HERO ===== */
     .current-day-hero {
         margin: 0 16px;
         border-radius: 20px;
@@ -723,54 +410,8 @@
         overflow: hidden;
     }
     
-    .current-day-hero .hero-content .current-day-content-wrapper {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 200px;
-        max-height: 600px;
-        overflow: hidden;
-    }
-    
-    .current-day-hero .hero-content .current-day-content-wrapper .youtube-embed-wrapper {
-        position: relative;
-        padding-bottom: 56.25%;
-        height: 0;
-        overflow: hidden;
-        width: 100%;
-        max-width: 100%;
-        background: #000;
-        border-radius: 12px;
-    }
-    
-    .current-day-hero .hero-content .current-day-content-wrapper .youtube-embed-wrapper iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-    
-    .current-day-hero .hero-content .current-day-content-wrapper .content-card {
-        max-height: 600px;
-        overflow: hidden;
-        width: 100%;
-        border-radius: 12px;
-    }
-    
-    .current-day-hero .hero-content .current-day-content-wrapper img,
-    .current-day-hero .hero-content .current-day-content-wrapper video {
-        width: 100%;
-        max-height: 600px;
-        object-fit: contain;
-        display: block;
-    }
-    
-    .current-day-hero .hero-content video,
-    .current-day-hero .hero-content img {
+    .current-day-hero .hero-content img,
+    .current-day-hero .hero-content video {
         width: 100%;
         max-height: 600px;
         object-fit: contain;
@@ -785,7 +426,35 @@
         border: none;
         aspect-ratio: 16 / 9;
     }
-
+    
+    .current-day-hero .hero-content .youtube-embed-wrapper {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        width: 100%;
+        max-width: 100%;
+        background: #000;
+        border-radius: 12px;
+    }
+    
+    .current-day-hero .hero-content .youtube-embed-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    .current-day-hero .hero-content .content-card {
+        max-height: 600px;
+        overflow: hidden;
+        width: 100%;
+        border-radius: 12px;
+    }
+    
+    /* ===== CURRENT DAY INFO ===== */
     .current-day-info {
         padding: 12px 16px 16px;
         margin: 0 16px;
@@ -801,14 +470,14 @@
         transform: scale(0.99);
         background: var(--bg-secondary);
     }
-
+    
     .info-badge {
         display: flex;
         gap: 8px;
         margin-bottom: 10px;
         flex-wrap: wrap;
     }
-
+    
     .badge {
         font-size: 10px;
         font-weight: 600;
@@ -818,32 +487,12 @@
         color: var(--text-secondary);
         letter-spacing: 0.5px;
     }
-
-    .badge.imported-badge {
+    
+    .badge.imported {
         background: rgba(59, 130, 246, 0.1);
         color: var(--accent);
     }
     
-    .badge.youtube-badge {
-        background: rgba(255, 0, 0, 0.1);
-        color: #ff0000;
-    }
-    
-    .badge.tiktok-badge {
-        background: rgba(0, 242, 234, 0.1);
-        color: #00f2ea;
-    }
-    
-    .badge.instagram-badge {
-        background: rgba(220, 39, 67, 0.1);
-        color: #dc2743;
-    }
-    
-    .badge.twitter-badge {
-        background: rgba(29, 161, 242, 0.1);
-        color: #1DA1F2;
-    }
-
     .info-title {
         font-size: 15px;
         font-weight: 600;
@@ -851,8 +500,7 @@
         line-height: 1.4;
         margin-bottom: 8px;
     }
-
-    .source-link,
+    
     .edit-link {
         display: inline-flex;
         align-items: center;
@@ -862,12 +510,11 @@
         text-decoration: none;
         margin-bottom: 12px;
     }
-
-    .source-link:hover,
+    
     .edit-link:hover {
         text-decoration: underline;
     }
-
+    
     .info-actions {
         display: flex;
         gap: 24px;
@@ -875,7 +522,7 @@
         padding-top: 10px;
         border-top: 1px solid var(--border-color);
     }
-
+    
     .info-action {
         background: none;
         border: none;
@@ -888,74 +535,20 @@
         padding: 6px 0;
         transition: all 0.2s;
     }
-
+    
     .info-action:hover {
         color: var(--text-primary);
     }
-
+    
     .info-action:active {
         transform: scale(0.96);
     }
-
+    
     .info-action i {
         font-size: 14px;
     }
-
-    .current-day-empty {
-        margin: 0 16px;
-        min-height: 200px;
-        border-radius: 20px;
-        background: var(--bg-secondary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .current-day-empty i {
-        font-size: 48px;
-        color: var(--text-muted);
-        opacity: 0.4;
-    }
-
-    .current-day-empty p {
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--text-secondary);
-    }
-
-    .add-hint {
-        font-size: 11px;
-        color: var(--accent);
-        padding: 4px 12px;
-        background: rgba(139, 92, 246, 0.1);
-        border-radius: 20px;
-    }
-
-    .empty-hint {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-
-    [data-theme="light"] .current-day-info {
-        background: #ffffff;
-    }
-
-    [data-theme="light"] .info-action {
-        color: #64748b;
-    }
-
-    [data-theme="light"] .info-action:hover {
-        color: #1e293b;
-    }
-
-    [data-theme="dark"] .current-day-info {
-        background: var(--bg-primary);
-    }
-
+    
+    /* ===== ACTION BUTTONS ===== */
     .action-buttons { display: flex; gap: 10px; padding: 0 20px 20px; }
     .action-btn {
         flex: 1; padding: 13px; border-radius: 30px; font-weight: 600; font-size: 13px;
@@ -967,7 +560,241 @@
     .action-btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
     .action-btn-outline.saved { background: var(--accent); border-color: var(--accent); color: #fff; }
     
-    /* ===== COMMENT SECTION STYLES ===== */
+    /* ===== CINEMATIC STRIP ===== */
+    .cinematic-strip { padding: 16px 0; position: relative; }
+    .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
+    .strip-header i { color: var(--text-primary); font-size: 13px; }
+    .strip-header h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .strip-header span { margin-left: auto; font-size: 10px; color: var(--text-muted); }
+    
+    .day-strip {
+        display: flex; gap: 8px; overflow-x: auto; padding: 8px 20px 12px;
+        scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin; scrollbar-color: var(--accent) var(--bg-tertiary); cursor: grab; scroll-behavior: smooth;
+    }
+    .day-strip:active { cursor: grabbing; }
+    .day-strip::-webkit-scrollbar { height: 4px; display: block; }
+    .day-strip::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 2px; }
+    .day-strip::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+    
+    .strip-day {
+        flex: 0 0 95px; scroll-snap-align: start; position: relative; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .strip-day:active { transform: scale(0.97); }
+    .strip-day.locked { opacity: 0.4; }
+    
+    .strip-thumbnail {
+        width: 95px; height: 140px; border-radius: 12px; overflow: hidden; position: relative;
+        background: var(--bg-secondary); border: 1px solid transparent; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .strip-day.current .strip-thumbnail { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+    .strip-thumbnail video, .strip-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+    .strip-thumbnail iframe { width: 100%; height: 100%; object-fit: cover; border: none; pointer-events: none; }
+    
+    .strip-overlay {
+        position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 6px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    }
+    .strip-day-number { font-size: 13px; font-weight: 700; color: #fff; display: block; }
+    .strip-day-status { font-size: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .check-badge {
+        position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
+        background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .play-icon-strip {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 30px; height: 30px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 11px;
+    }
+    
+    .lock-icon-strip {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        color: var(--text-muted); font-size: 18px;
+    }
+    
+    .scroll-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 0 20px; }
+    .scroll-btn {
+        width: 32px; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer;
+        transition: all 0.2s; font-size: 12px;
+    }
+    .scroll-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--accent); }
+    .scroll-btn:active { transform: scale(0.95); }
+    .scroll-indicator { font-size: 11px; color: var(--text-muted); min-width: 60px; text-align: center; }
+    
+    @media (max-width: 768px) {
+        .scroll-controls { display: none; }
+        .day-strip::-webkit-scrollbar { display: none; }
+    }
+    
+    /* ===== FITNESS GALLERY ===== */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        padding: 0 16px 16px;
+    }
+    .gallery-item {
+        aspect-ratio: 1;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        background: var(--bg-secondary);
+        transition: transform 0.2s;
+    }
+    .gallery-item:active { transform: scale(0.96); }
+    .gallery-item img, .gallery-item video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .gallery-item iframe {
+        width: 100%; height: 100%; object-fit: cover; border: none;
+        pointer-events: none;
+    }
+    .gallery-item-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.2s;
+    }
+    .gallery-item:hover .gallery-item-overlay { opacity: 1; }
+    .gallery-day-number { font-size: 18px; font-weight: 800; color: #fff; }
+    .gallery-check {
+        position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
+        background: #22c55e; border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; color: #fff; font-size: 9px;
+    }
+    
+    /* ===== PORTFOLIO CARDS ===== */
+    .portfolio-list {
+        display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px;
+    }
+    .portfolio-card {
+        display: flex; gap: 12px; background: var(--card-bg); border-radius: 14px; padding: 10px;
+        cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); align-items: center;
+    }
+    .portfolio-card:active { background: var(--bg-secondary); transform: scale(0.98); }
+    .portfolio-card.completed { border-left: 3px solid #3b82f6; }
+    .portfolio-card-thumb {
+        width: 60px; height: 60px; border-radius: 10px; overflow: hidden;
+        background: var(--bg-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .portfolio-card-thumb img, .portfolio-card-thumb video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .portfolio-card-thumb iframe {
+        width: 100%; height: 100%; object-fit: cover; border: none;
+        pointer-events: none;
+    }
+    .portfolio-card-info { flex: 1; min-width: 0; }
+    .portfolio-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .portfolio-card-meta { font-size: 10px; color: var(--text-muted); }
+    .portfolio-card-arrow { color: var(--text-muted); font-size: 14px; }
+    
+    [data-theme="light"] .portfolio-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        transform: translateY(-1px);
+    }
+    
+    /* ===== STARTUP ROADMAP ===== */
+    .roadmap { 
+        padding: 0 16px 16px; 
+        position: relative; 
+        background: transparent;
+    }
+    .roadmap-line {
+        position: absolute; 
+        left: 27px; 
+        top: 0; 
+        bottom: 0; 
+        width: 2px; 
+        background: var(--border-color);
+    }
+    .roadmap-line-progress {
+        position: absolute; 
+        left: 27px; 
+        top: 0; 
+        width: 2px; 
+        background: #22c55e;
+        transition: height 0.5s ease;
+    }
+    .roadmap-item {
+        display: flex; 
+        gap: 14px; 
+        padding: 10px 0; 
+        position: relative;
+        cursor: pointer; 
+        transition: all 0.2s;
+    }
+    .roadmap-item:active { opacity: 0.7; }
+    
+    .roadmap-thumbnail {
+        width: 48px; 
+        height: 48px; 
+        border-radius: 8px; 
+        overflow: hidden;
+        flex-shrink: 0; 
+        background: var(--bg-secondary); 
+        margin-top: 2px;
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+    }
+    .roadmap-thumbnail img, .roadmap-thumbnail video {
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover;
+    }
+    .roadmap-thumbnail iframe {
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover;
+        border: none;
+        pointer-events: none;
+    }
+    
+    .roadmap-dot {
+        width: 16px; 
+        height: 16px; 
+        border-radius: 50%; 
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary) !important;
+        flex-shrink: 0; 
+        margin-top: 2px; 
+        z-index: 1; 
+        transition: all 0.3s;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .roadmap-item.completed .roadmap-dot {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+        box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+    }
+    
+    .roadmap-item.current .roadmap-dot {
+        background: var(--bg-primary) !important;
+        border-color: #22c55e !important;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+        animation: pulseDot 2s infinite;
+    }
+    
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+    }
+    
+    .roadmap-content { flex: 1; min-width: 0; }
+    .roadmap-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .roadmap-item.locked .roadmap-title { color: var(--text-muted); }
+    .roadmap-meta { font-size: 10px; color: var(--text-muted); }
+    
+    /* ===== COMMENTS SECTION ===== */
     .comments-section { 
         padding: 20px; 
         border-top: 1px solid var(--border-color); 
@@ -1069,27 +896,6 @@
         word-wrap: break-word;
     }
     
-    .comment-item .comment-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 6px;
-    }
-    
-    .comment-item .comment-actions button {
-        background: none;
-        border: none;
-        font-size: 12px;
-        color: var(--text-muted);
-        cursor: pointer;
-        padding: 0;
-        transition: color 0.2s;
-    }
-    
-    .comment-item .comment-actions button:hover {
-        color: var(--text-primary);
-    }
-    
-    /* Empty comments state */
     .comments-empty {
         text-align: center;
         padding: 30px 20px;
@@ -1107,7 +913,6 @@
         font-size: 14px;
     }
     
-    /* Comment Form */
     .comment-form-container {
         margin-top: 4px;
         padding-top: 16px;
@@ -1137,11 +942,6 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-    }
-    
-    .comment-form-container .comment-avatar i {
-        font-size: 14px;
-        color: var(--text-muted);
     }
     
     .comment-form-container .comment-input-group {
@@ -1207,13 +1007,6 @@
         transform: scale(0.96);
     }
     
-    .comment-form-container .comment-submit-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-    
-    /* Login to comment */
     .comment-login-prompt {
         margin-top: 16px;
         padding: 20px;
@@ -1252,40 +1045,7 @@
         transform: scale(1.02);
     }
     
-    /* Light mode comment styles */
-    [data-theme="light"] .comment-form-container textarea {
-        background: #f8fafc;
-        border-color: #e2e8f0;
-    }
-    
-    [data-theme="light"] .comment-form-container textarea:focus {
-        border-color: var(--accent);
-        background: #ffffff;
-    }
-    
-    [data-theme="light"] .comment-item {
-        border-color: #f1f5f9;
-    }
-    
-    [data-theme="light"] .comment-item .comment-avatar {
-        border-color: #e2e8f0;
-    }
-    
-    [data-theme="light"] .comments-empty i {
-        color: #94a3b8;
-    }
-    
-    /* Dark mode comment styles */
-    [data-theme="dark"] .comment-form-container textarea {
-        background: var(--bg-secondary);
-        border-color: var(--border-color);
-    }
-    
-    [data-theme="dark"] .comment-form-container textarea:focus {
-        border-color: var(--accent);
-    }
-    
-    /* ===== MODAL STYLES - FULL BLACK CANVAS ===== */
+    /* ===== MODAL ===== */
     .modal {
         display: none;
         position: fixed;
@@ -1369,12 +1129,6 @@
         overflow: auto;
         padding: 20px;
     }
-    .modal-media .content-wrapper .content-card {
-        max-width: 100%;
-        width: 100%;
-        max-height: 100%;
-        overflow: auto;
-    }
     .modal-media .content-wrapper .youtube-embed-wrapper {
         position: relative;
         padding-bottom: 56.25%;
@@ -1393,6 +1147,12 @@
         height: 100%;
         border: none;
     }
+    .modal-media .content-wrapper .content-card {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100%;
+        overflow: auto;
+    }
     .modal-media iframe {
         width: 100%;
         height: 100%;
@@ -1409,35 +1169,6 @@
         height: 100%;
         object-fit: contain;
         display: block;
-    }
-    .modal-spinner {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #000;
-        z-index: 15;
-        transition: opacity 0.3s ease;
-    }
-    .modal-spinner.hidden {
-        opacity: 0;
-        visibility: hidden;
-    }
-    .spinner-ring {
-        display: inline-block;
-        width: 50px;
-        height: 50px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        border-top-color: #ffffff;
-        animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
     }
     .modal-footer {
         position: absolute;
@@ -1514,335 +1245,6 @@
         background: rgba(255,255,255,0.2);
     }
     
-    /* ===== OTHER STYLES ===== */
-    .cinematic-strip { padding: 16px 0; position: relative; }
-    .strip-header { padding: 0 20px 12px; display: flex; align-items: center; gap: 8px; }
-    .strip-header i { color: var(--text-primary); font-size: 13px; }
-    .strip-header h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .strip-header span { margin-left: auto; font-size: 10px; color: var(--text-muted); }
-    
-    .day-strip {
-        display: flex; gap: 8px; overflow-x: auto; padding: 8px 20px 12px;
-        scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin; scrollbar-color: var(--accent) var(--bg-tertiary); cursor: grab; scroll-behavior: smooth;
-    }
-    .day-strip:active { cursor: grabbing; }
-    .day-strip::-webkit-scrollbar { height: 4px; display: block; }
-    .day-strip::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 2px; }
-    .day-strip::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
-    .day-strip::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
-    
-    .strip-day {
-        flex: 0 0 95px; scroll-snap-align: start; position: relative; cursor: pointer;
-        transition: all 0.2s;
-    }
-    .strip-day:active { transform: scale(0.97); }
-    .strip-day.locked { opacity: 0.4; }
-    .strip-thumbnail {
-        width: 95px; height: 140px; border-radius: 12px; overflow: hidden; position: relative;
-        background: var(--bg-secondary); border: 1px solid transparent; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-    .strip-day.current .strip-thumbnail { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
-    .strip-thumbnail video, .strip-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
-    .strip-thumbnail iframe { width: 100%; height: 100%; object-fit: cover; border: none; pointer-events: none; }
-    .strip-overlay {
-        position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 6px;
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-    }
-    .strip-day-number { font-size: 13px; font-weight: 700; color: #fff; display: block; }
-    .strip-day-status { font-size: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
-    .play-icon-strip {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 30px; height: 30px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 11px;
-    }
-    .youtube-play-icon {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 36px; height: 36px; background: rgba(255,0,0,0.8); border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 14px; z-index: 2;
-    }
-    .lock-icon-strip { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-muted); font-size: 18px; }
-    .check-badge {
-        position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
-        background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    
-    .strip-source-badge {
-        position: absolute;
-        top: 4px;
-        left: 4px;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 9px;
-        color: #fff;
-        z-index: 3;
-        border: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .strip-source-badge.tiktok { color: #00f2ea; }
-    .strip-source-badge.instagram { color: #dc2743; }
-    .strip-source-badge.youtube { color: #ff0000; }
-    .strip-source-badge.twitter { color: #1DA1F2; }
-    .strip-source-badge.facebook { color: #1877f2; }
-    
-    .scroll-controls { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; padding: 0 20px; }
-    .scroll-btn {
-        width: 32px; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer;
-        transition: all 0.2s; font-size: 12px;
-    }
-    .scroll-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); border-color: var(--accent); }
-    .scroll-btn:active { transform: scale(0.95); }
-    .scroll-indicator { font-size: 11px; color: var(--text-muted); min-width: 60px; text-align: center; }
-    @media (max-width: 768px) { .scroll-controls { display: none; } .day-strip::-webkit-scrollbar { display: none; } }
-    
-    /* FITNESS GALLERY */
-    .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 4px;
-        padding: 0 16px 16px;
-    }
-    .gallery-item {
-        aspect-ratio: 1;
-        border-radius: 4px;
-        overflow: hidden;
-        position: relative;
-        cursor: pointer;
-        background: var(--bg-secondary);
-        transition: transform 0.2s;
-    }
-    .gallery-item:active { transform: scale(0.96); }
-    .gallery-item img, .gallery-item video {
-        width: 100%; height: 100%; object-fit: cover;
-    }
-    .gallery-item iframe {
-        width: 100%; height: 100%; object-fit: cover; border: none;
-        pointer-events: none;
-    }
-    .gallery-thumbnail-placeholder {
-        width: 100%; height: 100%;
-        display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
-    }
-    .gallery-thumbnail-placeholder i {
-        font-size: 28px;
-        color: var(--text-muted);
-    }
-    .gallery-item-overlay {
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
-        flex-direction: column; opacity: 0; transition: opacity 0.2s;
-    }
-    .gallery-item:hover .gallery-item-overlay { opacity: 1; }
-    .gallery-day-number { font-size: 18px; font-weight: 800; color: #fff; }
-    .gallery-check {
-        position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
-        background: #22c55e; border-radius: 50%; display: flex; align-items: center;
-        justify-content: center; color: #fff; font-size: 9px;
-    }
-    .gallery-empty {
-        display: flex; align-items: center; justify-content: center;
-        color: var(--text-muted); font-size: 20px; font-weight: 700;
-    }
-    .gallery-edit-link {
-        text-decoration: none;
-        display: block;
-    }
-    
-    /* PORTFOLIO CARDS */
-    .portfolio-list {
-        display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px;
-    }
-    .portfolio-card {
-        display: flex; gap: 12px; background: var(--card-bg); border-radius: 14px; padding: 10px;
-        cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); align-items: center;
-    }
-    .portfolio-card:active { background: var(--bg-secondary); transform: scale(0.98); }
-    .portfolio-card.completed { border-left: 3px solid #3b82f6; }
-    .portfolio-card-thumb {
-        width: 60px; height: 60px; border-radius: 10px; overflow: hidden;
-        background: var(--bg-secondary); flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-        position: relative;
-    }
-    .portfolio-card-thumb img, .portfolio-card-thumb video {
-        width: 100%; height: 100%; object-fit: cover;
-    }
-    .portfolio-card-thumb iframe {
-        width: 100%; height: 100%; object-fit: cover; border: none;
-        pointer-events: none;
-    }
-    .portfolio-thumb-placeholder {
-        width: 100%; height: 100%;
-        display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
-    }
-    .portfolio-thumb-placeholder i {
-        font-size: 24px;
-        color: var(--text-muted);
-    }
-    .portfolio-card-info { flex: 1; min-width: 0; }
-    .portfolio-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
-    .portfolio-card-meta { font-size: 10px; color: var(--text-muted); }
-    .portfolio-card-arrow { color: var(--text-muted); font-size: 14px; }
-    
-    /* STARTUP ROADMAP */
-    .roadmap { 
-        padding: 0 16px 16px; 
-        position: relative; 
-        background: transparent;
-    }
-    .roadmap-line {
-        position: absolute; 
-        left: 27px; 
-        top: 0; 
-        bottom: 0; 
-        width: 2px; 
-        background: var(--border-color);
-    }
-    .roadmap-line-progress {
-        position: absolute; 
-        left: 27px; 
-        top: 0; 
-        width: 2px; 
-        background: #22c55e;
-        transition: height 0.5s ease;
-    }
-    .roadmap-item {
-        display: flex; 
-        gap: 14px; 
-        padding: 10px 0; 
-        position: relative;
-        cursor: pointer; 
-        transition: all 0.2s;
-    }
-    .roadmap-item:active { opacity: 0.7; }
-    
-    .roadmap-thumbnail {
-        width: 48px; 
-        height: 48px; 
-        border-radius: 8px; 
-        overflow: hidden;
-        flex-shrink: 0; 
-        background: var(--bg-secondary); 
-        margin-top: 2px;
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-    }
-    .roadmap-thumbnail img, .roadmap-thumbnail video {
-        width: 100%; 
-        height: 100%; 
-        object-fit: cover;
-    }
-    .roadmap-thumbnail iframe {
-        width: 100%; 
-        height: 100%; 
-        object-fit: cover;
-        border: none;
-        pointer-events: none;
-    }
-    .roadmap-thumb-placeholder {
-        width: 100%; 
-        height: 100%;
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
-    }
-    .roadmap-thumb-placeholder i {
-        font-size: 16px;
-        color: var(--text-muted);
-    }
-    
-    .roadmap-dot {
-        width: 16px; 
-        height: 16px; 
-        border-radius: 50%; 
-        border: 2px solid var(--border-color);
-        background: var(--bg-primary) !important;
-        flex-shrink: 0; 
-        margin-top: 2px; 
-        z-index: 1; 
-        transition: all 0.3s;
-        position: relative;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    
-    .roadmap-item.completed .roadmap-dot {
-        background: #22c55e !important;
-        border-color: #22c55e !important;
-        box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
-    }
-    
-    .roadmap-item.current .roadmap-dot {
-        background: var(--bg-primary) !important;
-        border-color: #22c55e !important;
-        box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
-        animation: pulseDot 2s infinite;
-    }
-    
-    .roadmap-item.locked .roadmap-dot {
-        background: var(--bg-secondary) !important;
-        border-color: var(--border-color) !important;
-    }
-    
-    .roadmap-dot i {
-        font-size: 8px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-    
-    .roadmap-dot i.fa-tiktok { color: #00f2ea; }
-    .roadmap-dot i.fa-instagram { color: #dc2743; }
-    .roadmap-dot i.fa-youtube { color: #ff0000; }
-    .roadmap-dot i.fa-x-twitter { color: #1DA1F2; }
-    .roadmap-dot i.fa-facebook { color: #1877f2; }
-    
-    @keyframes pulseDot {
-        0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
-        50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
-    }
-    
-    .roadmap-content { 
-        flex: 1; 
-        min-width: 0; 
-    }
-    .roadmap-title { 
-        font-size: 13px; 
-        font-weight: 600; 
-        color: var(--text-primary); 
-        margin-bottom: 2px; 
-    }
-    .roadmap-item.locked .roadmap-title { 
-        color: var(--text-muted); 
-    }
-    .roadmap-meta { 
-        font-size: 10px; 
-        color: var(--text-muted); 
-    }
-    .roadmap-source-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 10px;
-        color: #3b82f6;
-        text-decoration: none;
-        margin-top: 3px;
-    }
-    .roadmap-source-link:hover { text-decoration: underline; }
-    
     .show-more-btn {
         display: block; width: 100%; padding: 12px; margin: 8px 0 16px;
         background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px;
@@ -1851,86 +1253,7 @@
     }
     .show-more-btn:active { background: var(--bg-secondary); color: var(--text-primary); }
     
-    .template-style-indicator {
-        display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
-        border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.5px; margin-left: 8px; vertical-align: middle;
-    }
-    .style-fitness { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-    .style-portfolio { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-    .style-startup { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-    
-    .youtube-badge {
-        display: inline-flex; align-items: center; gap: 4px; background: rgba(255,0,0,0.15);
-        padding: 2px 8px; border-radius: 12px; font-size: 9px; color: #ff0000;
-        margin-left: 6px;
-    }
-    
-    .creator-prompt {
-        display: inline-block;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        font-size: 10px;
-        padding: 3px 8px;
-        border-radius: 10px;
-        margin-top: 4px;
-        font-weight: 500;
-        cursor: pointer;
-    }
-    .creator-prompt-link {
-        text-decoration: none;
-    }
-    .creator-prompt-link:hover .creator-prompt {
-        background: rgba(245, 158, 11, 0.25);
-    }
-    
-    .processing-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 600;
-    }
-    
-    .processing-indicator.fetching {
-        background: rgba(59, 130, 246, 0.1);
-        color: #3b82f6;
-    }
-    
-    .processing-indicator.stored {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
-    }
-    
-    .processing-indicator.failed {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-    
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .info-updated {
-        animation: slideUp 0.3s ease-out;
-    }
-    
-    @media (max-width: 380px) {
-        .journey-hero { height: 340px; }
-        .hero-stats .value { font-size: 20px; }
-        .strip-day { flex: 0 0 85px; }
-        .strip-thumbnail { width: 85px; height: 125px; }
-    }
-    
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 500px) {
         .comment-form-container .comment-input-wrapper {
             flex-direction: column;
@@ -1974,7 +1297,14 @@
         }
     }
     
-    button, .stat-card, .strip-day, .hero-action, .action-btn, .back-btn, .menu-btn { min-height: 44px; min-width: 44px; }
+    @media (max-width: 380px) {
+        .journey-hero { height: 340px; }
+        .hero-stats .value { font-size: 20px; }
+        .strip-day { flex: 0 0 85px; }
+        .strip-thumbnail { width: 85px; height: 125px; }
+    }
+    
+    button, .stat-card, .strip-day, .action-btn { min-height: 44px; min-width: 44px; }
 </style>
 {% endblock %}
 
@@ -1982,20 +1312,23 @@
 
 <div class="journey-container template-{{ journey.template_style|default:'default' }}">
     
+    <!-- ===== HERO ===== -->
     <div class="journey-hero">
         <div class="back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></div>
-        <div class="menu-btn" onclick="toggleMenu()"><i class="fas fa-ellipsis-h"></i></div>
+        
+        <div class="privacy-badge-hero">
+            <i class="fas fa-{% if journey.privacy_status == 'private' %}lock{% elif journey.privacy_status == 'public' %}globe{% else %}link{% endif %}"></i>
+            {{ journey.privacy_status|title }}
+        </div>
         
         <div class="journey-title-top">
             <h2>
                 {{ journey.title }}
                 {% if journey.template_style and journey.template_style != 'default' %}
-                <span class="template-style-indicator style-{{ journey.template_style }}">
-                    {{ journey.template_style }}
+                <span class="template-style-badge {{ journey.template_style }}">
+                    <i class="fas fa-{% if journey.template_style == 'fitness' %}dumbbell{% elif journey.template_style == 'portfolio' %}briefcase{% elif journey.template_style == 'startup' %}rocket{% else %}paint-brush{% endif %}"></i>
+                    {{ journey.template_style|title }}
                 </span>
-                {% endif %}
-                {% if journey.is_youtube_playlist %}
-                <span class="youtube-badge"><i class="fab fa-youtube"></i> Playlist</span>
                 {% endif %}
             </h2>
             <a href="{% url 'creator_profile' username=journey.creator.user.username %}" class="creator-profile-link" onclick="event.stopPropagation();">
@@ -2019,99 +1352,33 @@
         <div class="hero-stats">
             <div class="hero-stat"><div class="value">{{ current_day }}</div><div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days{% endif %}</div></div>
             <div class="hero-stat"><div class="value">{{ journey.duration }}</div><div class="label">Total</div></div>
-            <div class="hero-stat"><div class="value">{{ journey.get_follower_count }}</div><div class="label">Followers</div></div>
+            <div class="hero-stat"><div class="value">{{ journey.activities.count }}</div><div class="label">Entries</div></div>
         </div>
     </div>
     
-    <!-- ===== SOCIAL-FIRST: Share Stats Bar ===== -->
-    <div class="social-share-bar">
-        <div class="social-share-item">
-            <i class="fab fa-twitter" style="color:#1DA1F2;"></i>
-            <span class="count">{{ journey.shares.filter.platform.twitter.count|default:0 }}</span>
-        </div>
-        <div class="social-share-item">
-            <i class="fab fa-instagram" style="color:#dc2743;"></i>
-            <span class="count">{{ journey.shares.filter.platform.instagram.count|default:0 }}</span>
-        </div>
-        <div class="social-share-item">
-            <i class="fab fa-facebook" style="color:#1877f2;"></i>
-            <span class="count">{{ journey.shares.filter.platform.facebook.count|default:0 }}</span>
-        </div>
-        <div class="social-share-item">
-            <i class="fab fa-tiktok" style="color:#00f2ea;"></i>
-            <span class="count">{{ journey.shares.filter.platform.tiktok.count|default:0 }}</span>
-        </div>
-        <div class="social-share-item">
-            <i class="fas fa-link" style="color:var(--text-muted);"></i>
-            <span class="count">{{ journey.shares.filter.platform.copy.count|default:0 }}</span>
-        </div>
-    </div>
-    
-    <!-- ===== SOCIAL-FIRST: Social CTA Banner ===== -->
-    <div class="social-cta-banner">
-        <div class="cta-text">
-            <strong>📱 Share this journey</strong>
-            <span style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px;">
-                Inspire others to start their own journey
-            </span>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <a href="https://twitter.com/intent/tweet?text={{ journey.get_social_share_text|urlencode }}&url={{ request.build_absolute_uri|urlencode }}" 
-               target="_blank" class="social-cta-btn" style="background:#1DA1F2;" onclick="trackShare('twitter')">
-                <i class="fab fa-twitter"></i>
-            </a>
-            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.build_absolute_uri|urlencode }}" 
-               target="_blank" class="social-cta-btn" style="background:#0a66c2;" onclick="trackShare('linkedin')">
-                <i class="fab fa-linkedin"></i>
-            </a>
-            <button class="social-cta-btn" onclick="shareJourney()" style="background:var(--accent);">
-                <i class="fas fa-link"></i>
-            </button>
-        </div>
-    </div>
-    
-    <!-- TEMPLATE BANNERS -->
-    {% if journey.template_style == 'fitness' %}
-    <div style="padding:0 20px 16px;">
-        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:14px;text-align:center;">
-            {% if journey.journey_type == 'milestone' %}
-            <span style="color:#ef4444;font-weight:700;font-size:14px;">🏆 MILESTONE {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Track your achievements. Every milestone matters.</p>
-            {% else %}
-            <span style="color:#ef4444;font-weight:700;font-size:14px;">🏋️ DAY {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Keep pushing. Every day counts.</p>
-            {% endif %}
-        </div>
-    </div>
-    {% elif journey.template_style == 'portfolio' %}
-    <div style="padding:0 20px 16px;">
-        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:14px;padding:14px;text-align:center;">
-            {% if journey.journey_type == 'milestone' %}
-            <span style="color:#3b82f6;font-weight:700;font-size:14px;">🏆 MILESTONE {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Building proof, one milestone at a time.</p>
-            {% else %}
-            <span style="color:#3b82f6;font-weight:700;font-size:14px;">💼 DAY {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Building proof, one day at a time.</p>
-            {% endif %}
-        </div>
-    </div>
-    {% elif journey.template_style == 'startup' %}
-    <div style="padding:0 20px 16px;">
-        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:14px;text-align:center;">
-            {% if journey.journey_type == 'milestone' %}
-            <span style="color:#22c55e;font-weight:700;font-size:14px;">🏆 MILESTONE {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Building in public. Shipping milestones.</p>
-            {% else %}
-            <span style="color:#22c55e;font-weight:700;font-size:14px;">🚀 DAY {{ current_day }} OF {{ journey.duration }}</span>
-            <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Building in public. Shipping every day.</p>
-            {% endif %}
+    <!-- ===== TEMPLATE BANNER ===== -->
+    {% if journey.template_style and journey.template_style != 'default' %}
+    <div class="template-banner {{ journey.template_style }}">
+        <div class="inner">
+            <div class="title">
+                {% if journey.journey_type == 'milestone' %}
+                    🏆 MILESTONE {{ current_day }} OF {{ journey.duration }}
+                {% else %}
+                    {% if journey.template_style == 'fitness' %}🏋️{% elif journey.template_style == 'portfolio' %}💼{% elif journey.template_style == 'startup' %}🚀{% endif %}
+                    DAY {{ current_day }} OF {{ journey.duration }}
+                {% endif %}
+            </div>
+            <div class="sub">
+                {% if journey.template_style == 'fitness' %}Keep pushing. Every day counts.{% elif journey.template_style == 'portfolio' %}Building proof, one milestone at a time.{% elif journey.template_style == 'startup' %}Building in public. Shipping every day.{% endif %}
+            </div>
         </div>
     </div>
     {% endif %}
     
+    <!-- ===== PROGRESS ===== -->
     <div class="progress-section">
         <div class="progress-header">
-            <span>Journey Progress</span>
+            <span>Progress</span>
             <span>{% if journey.journey_type == 'milestone' %}{{ activities_by_day|length }}{% else %}{{ current_day }}{% endif %}/{{ journey.duration }} · {{ journey.get_progress_percentage }}%</span>
         </div>
         <div class="progress-track">
@@ -2119,16 +1386,17 @@
         </div>
     </div>
     
+    <!-- ===== STATS ===== -->
     <div class="stats-cards">
-        <div class="stat-card"><i class="fas fa-users"></i><div class="value">{{ journey.get_follower_count }}</div><div class="label">Followers</div></div>
-        <div class="stat-card"><i class="fas fa-heart"></i><div class="value" id="loveCount">{{ journey.get_love_count }}</div><div class="label">Loves</div></div>
-        <div class="stat-card"><i class="fas fa-comment"></i><div class="value">{{ journey.get_comment_count }}</div><div class="label">Comments</div></div>
+        <div class="stat-card"><i class="fas fa-file-alt"></i><div class="value">{{ journey.activities.count }}</div><div class="label">Entries</div></div>
+        <div class="stat-card"><i class="fas fa-eye"></i><div class="value">{{ journey.view_count }}</div><div class="label">Views</div></div>
+        <div class="stat-card"><i class="fas fa-comment"></i><div class="value">{{ journey.comments.count }}</div><div class="label">Comments</div></div>
     </div>
     
     <!-- ================================================ -->
     <!-- DEFAULT: Horizontal Strip -->
     <!-- ================================================ -->
-    {% if journey.template_style == 'default' %}
+    {% if journey.template_style == 'default' or not journey.template_style %}
     <div class="cinematic-strip">
         <div class="strip-header">
             <i class="fas fa-film"></i>
@@ -2142,7 +1410,6 @@
                     <div class="strip-thumbnail">
                         {% if activity and activity.get_display_html %}
                             {{ activity.get_display_html|safe }}
-                            <div class="youtube-play-icon"><i class="fab fa-youtube"></i></div>
                         {% elif activity and activity.media_file %}
                             {% if activity.is_video %}
                                 <video src="{{ activity.media_file.url }}" muted loop playsinline></video>
@@ -2151,22 +1418,11 @@
                             {% endif %}
                         {% elif activity and activity.thumbnail %}
                             <img src="{{ activity.thumbnail.url }}" alt="">
-                        {% elif activity and activity.source_platform %}
-                            <div style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                                <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="font-size:28px;margin-bottom:4px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:var(--accent);{% endif %}"></i>
-                                <span style="font-size:8px;color:var(--text-muted);text-transform:uppercase;">{{ activity.source_platform }}</span>
-                            </div>
                         {% else %}
                             <div style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));display:flex;align-items:center;justify-content:center;flex-direction:column;">
                                 <span style="font-size:24px;font-weight:800;color:var(--text-muted);">{{ day_num }}</span>
                                 <span style="font-size:8px;color:var(--text-muted);">{% if journey.journey_type == 'milestone' %}MILESTONE{% else %}DAY{% endif %}</span>
                             </div>
-                        {% endif %}
-                        
-                        {% if activity and activity.source_platform %}
-                        <div class="strip-source-badge {{ activity.source_platform }}">
-                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
-                        </div>
                         {% endif %}
                         
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
@@ -2204,7 +1460,6 @@
                  style="{% if forloop.counter > 12 %}display:none;{% endif %}">
                 {% if activity and activity.get_display_html %}
                     {{ activity.get_display_html|safe }}
-                    <div class="gallery-check"><i class="fab fa-youtube"></i></div>
                 {% elif activity and activity.media_file %}
                     {% if activity.is_video %}
                         <video src="{{ activity.media_file.url }}" muted></video>
@@ -2213,21 +1468,16 @@
                     {% endif %}
                 {% elif activity and activity.thumbnail %}
                     <img src="{{ activity.thumbnail.url }}" alt="">
-                {% elif activity and activity.source_platform %}
-                    <div class="gallery-thumbnail-placeholder">
-                        <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#ef4444;{% endif %}"></i>
-                    </div>
                 {% else %}
-                    <div class="gallery-empty">{{ day_num }}</div>
+                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);color:var(--text-muted);font-size:24px;font-weight:700;">
+                        {{ day_num }}
+                    </div>
                 {% endif %}
-                
-                {% if activity and activity.media_file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
-                {% if activity and activity.thumbnail and not activity.media_file %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
+                {% if activity %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
                 <div class="gallery-item-overlay">
                     <span class="gallery-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
                 </div>
             </div>
-            <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="gallery-edit-link" style="display:none;" id="edit-link-{{ day_num }}"></a>
             {% endwith %}
         {% endfor %}
     </div>
@@ -2235,13 +1485,6 @@
     <button class="show-more-btn" onclick="showMoreFitness()" id="fitnessShowMoreBtn">
         <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} {% if journey.journey_type == 'milestone' %}Milestones{% else %}Days{% endif %}
     </button>
-    {% endif %}
-    {% if user == journey.creator.user and journey.template_style != 'default' %}
-    <div style="padding:0 20px 16px;text-align:center;">
-        <a href="{% url 'journey_content' slug=journey.slug %}" class="creator-prompt-link">
-            <span class="creator-prompt">📝 This is your template. Click here to manage all {% if journey.journey_type == 'milestone' %}milestones{% else %}days{% endif %}.</span>
-        </a>
-    </div>
     {% endif %}
     {% endif %}
     
@@ -2270,13 +1513,9 @@
                         {% endif %}
                     {% elif activity and activity.thumbnail %}
                         <img src="{{ activity.thumbnail.url }}" alt="">
-                    {% elif activity and activity.source_platform %}
-                        <div class="portfolio-thumb-placeholder">
-                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#3b82f6;{% endif %}"></i>
-                        </div>
                     {% else %}
-                        <div class="portfolio-thumb-placeholder">
-                            <i class="fas fa-code"></i>
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);color:var(--text-muted);">
+                            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-alt{% endif %}"></i>
                         </div>
                     {% endif %}
                 </div>
@@ -2288,16 +1527,6 @@
                         {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_num }} of {{ journey.duration }}
                         {% if activity %} · ✅ Complete{% else %} · ⏳ Pending{% endif %}
                     </div>
-                    {% if activity and activity.source_url %}
-                    <a href="{{ activity.source_url }}" target="_blank" class="roadmap-source-link" onclick="event.stopPropagation();">
-                        <i class="fas fa-external-link-alt"></i> View on {{ activity.source_platform|title }}
-                    </a>
-                    {% endif %}
-                    {% if user == journey.creator.user and activity %}
-                    <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
-                        <span class="creator-prompt">📝 Click to edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}</span>
-                    </a>
-                    {% endif %}
                 </div>
                 <div class="portfolio-card-arrow"><i class="fas fa-chevron-right"></i></div>
             </div>
@@ -2327,11 +1556,7 @@
             <div class="roadmap-item roadmap-milestone {% if activity %}completed{% elif day_num == current_day and journey.journey_type == 'daily' %}current{% else %}locked{% endif %} {% if forloop.counter > 8 %}hidden-item{% endif %}" 
                  onclick="openModal({{ day_num }})"
                  style="{% if forloop.counter > 8 %}display:none;{% endif %}">
-                <div class="roadmap-dot">
-                    {% if activity and not activity.media_file and activity.source_platform %}
-                        <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
-                    {% endif %}
-                </div>
+                <div class="roadmap-dot"></div>
                 <div class="roadmap-thumbnail">
                     {% if activity and activity.get_display_html %}
                         {{ activity.get_display_html|safe }}
@@ -2343,23 +1568,15 @@
                         {% endif %}
                     {% elif activity and activity.thumbnail %}
                         <img src="{{ activity.thumbnail.url }}" alt="">
-                    {% elif activity and activity.source_platform %}
-                        <div class="roadmap-thumb-placeholder">
-                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#22c55e;{% endif %}"></i>
-                        </div>
                     {% else %}
-                        <div class="roadmap-thumb-placeholder">
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);color:var(--text-muted);">
                             <i class="fas fa-rocket"></i>
                         </div>
                     {% endif %}
                 </div>
                 <div class="roadmap-content">
                     <div class="roadmap-title">
-                        {% if activity and activity.media_file %}
-                            📎 {{ activity.content|truncatechars:50 }}
-                        {% elif activity and activity.source_platform %}
-                            <i class="fab fa-{% if activity.source_platform == 'twitter' %}x-twitter{% elif activity.source_platform == 'tiktok' %}tiktok{% elif activity.source_platform == 'youtube' %}youtube{% elif activity.source_platform == 'instagram' %}instagram{% elif activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}" style="margin-right:4px;{% if activity.source_platform == 'tiktok' %}color:#00f2ea;{% elif activity.source_platform == 'instagram' %}color:#dc2743;{% elif activity.source_platform == 'youtube' %}color:#ff0000;{% elif activity.source_platform == 'twitter' %}color:#1DA1F2;{% elif activity.source_platform == 'facebook' %}color:#1877f2;{% else %}color:#22c55e;{% endif %}"></i> {{ activity.content|truncatechars:50 }}
-                        {% elif activity %}
+                        {% if activity %}
                             {{ activity.content|truncatechars:50 }}
                         {% else %}
                             {% if journey.journey_type == 'milestone' %}Milestone {{ day_num }}{% else %}Day {{ day_num }}{% endif %}
@@ -2369,16 +1586,6 @@
                         {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_num }} of {{ journey.duration }}
                         {% if activity %} · ✅ Complete{% elif day_num == current_day and journey.journey_type == 'daily' %} · 🚀 In Progress{% else %} · 🔒 Locked{% endif %}
                     </div>
-                    {% if activity and activity.source_url %}
-                    <a href="{{ activity.source_url }}" target="_blank" class="roadmap-source-link" onclick="event.stopPropagation();">
-                        <i class="fas fa-external-link-alt"></i> View on {{ activity.source_platform|title }}
-                    </a>
-                    {% endif %}
-                    {% if user == journey.creator.user and activity %}
-                    <a href="{% url 'post_activity_day' slug=journey.slug day_number=day_num %}" class="creator-prompt-link" onclick="event.stopPropagation();">
-                        <span class="creator-prompt">📝 Click to edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}</span>
-                    </a>
-                    {% endif %}
                 </div>
             </div>
             {% endwith %}
@@ -2392,13 +1599,13 @@
     {% endif %}
     
     <!-- ================================================ -->
-    <!-- CURRENT DAY CONTENT DISPLAY - FIXED YOUTUBE -->
+    <!-- CURRENT DAY CONTENT -->
     <!-- ================================================ -->
     <div class="current-day-hero" id="currentDayHero" onclick="goToCurrentDisplayedDay()">
         <div id="heroMediaContainer" class="hero-content">
             {% if current_activity %}
                 {% if current_activity.get_display_html %}
-                    <div class="current-day-content-wrapper">
+                    <div class="content-card">
                         {{ current_activity.get_display_html|safe }}
                     </div>
                 {% elif current_activity.media_file %}
@@ -2415,8 +1622,8 @@
                 {% endif %}
             {% else %}
                 <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:16px;width:100%;">
-                    <i class="fas fa-play-circle" style="font-size:48px;opacity:0.3;"></i>
-                    <p style="color:var(--text-muted);">Tap to view</p>
+                    <i class="fas fa-plus-circle" style="font-size:48px;opacity:0.3;"></i>
+                    <p style="color:var(--text-muted);">{% if user == journey.creator.user %}Tap to add content{% else %}No content yet{% endif %}</p>
                 </div>
             {% endif %}
         </div>
@@ -2427,54 +1634,26 @@
             <span class="badge" id="dynamicDayBadge">
                 {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }}{% endif %}
             </span>
-            
-            {% if current_activity and current_activity.source_platform %}
-            <span class="badge imported-badge {{ current_activity.source_platform }}-badge">
-                <i class="fab fa-{% if current_activity.source_platform == 'twitter' %}x-twitter{% elif current_activity.source_platform == 'tiktok' %}tiktok{% elif current_activity.source_platform == 'youtube' %}youtube{% elif current_activity.source_platform == 'instagram' %}instagram{% elif current_activity.source_platform == 'facebook' %}facebook{% else %}link{% endif %}"></i>
-                {{ current_activity.source_platform|title }}
-            </span>
-            {% endif %}
-            
-            {% if current_activity.imported_from %}
-                <span class="processing-indicator {{ current_activity.imported_from.processing_status }}">
-                    {% if current_activity.imported_from.processing_status == 'fetching' %}
-                        <i class="fas fa-spinner fa-spin"></i> Processing...
-                    {% elif current_activity.imported_from.processing_status == 'stored' %}
-                        <i class="fas fa-check-circle"></i> Stored
-                    {% elif current_activity.imported_from.processing_status == 'failed' %}
-                        <i class="fas fa-exclamation-circle"></i> Failed
-                    {% endif %}
-                </span>
-            {% endif %}
         </div>
         <h3 class="info-title" id="dynamicTitle">{{ current_activity.content|default:"No content yet" }}</h3>
         
-        <div id="dynamicSourceLink">
-            {% if current_activity and current_activity.source_url %}
-            <a href="{{ current_activity.source_url }}" target="_blank" class="source-link" onclick="event.stopPropagation();">
-                <i class="fas fa-external-link-alt"></i> {{ current_activity.source_platform|title|default:"Source" }}
-            </a>
-            {% endif %}
-        </div>
-        
         <div id="dynamicEditLink">
-            {% if user == journey.creator.user and current_activity %}
-            <a href="{% url 'post_activity_day' slug=journey.slug day_number=current_day %}" class="edit-link" onclick="event.stopPropagation();">
-                Edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}
+            {% if user == journey.creator.user %}
+            <a href="{% url 'create_activity_day' slug=journey.slug day_number=current_day %}" class="edit-link" onclick="event.stopPropagation();">
+                <i class="fas fa-pen"></i> Edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}
             </a>
             {% endif %}
         </div>
         
         <div class="info-actions" id="dynamicActions">
-            <button class="info-action" id="dynamicLoveBtn" onclick="event.stopPropagation(); toggleLoveFromDynamic()">
-                <i class="far fa-heart"></i> <span id="dynamicLoveCount">{{ current_activity.get_love_count|default:0 }}</span>
-            </button>
             <button class="info-action" onclick="event.stopPropagation(); scrollToComments()">
                 <i class="far fa-comment"></i> <span id="dynamicCommentCount">{{ current_activity.get_comment_count|default:0 }}</span>
             </button>
-            <button class="info-action" onclick="event.stopPropagation(); shareJourney()">
-                <i class="fas fa-share-alt"></i> Share
-            </button>
+            {% if user == journey.creator.user %}
+            <a href="{% url 'journey_content' slug=journey.slug %}" class="info-action" style="text-decoration:none;">
+                <i class="fas fa-list-ul"></i> Manage All
+            </a>
+            {% endif %}
         </div>
     </div>
     
@@ -2509,15 +1688,12 @@
                         <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
                     </div>
                     <p class="comment-text">{{ comment.content }}</p>
-                    <div class="comment-actions">
-                        <button onclick="replyToComment({{ comment.id }})"><i class="fas fa-reply"></i> Reply</button>
-                    </div>
                 </div>
             </div>
             {% empty %}
             <div class="comments-empty">
                 <i class="fas fa-comment-slash"></i>
-                <p>No comments yet. Be the first to share your thoughts!</p>
+                <p>No comments yet.</p>
             </div>
             {% endfor %}
         </div>
@@ -2555,9 +1731,7 @@
     </div>
 </div>
 
-<!-- ================================================ -->
-<!-- FULL SCREEN BLACK CANVAS MODAL -->
-<!-- ================================================ -->
+<!-- ===== MODAL ===== -->
 <div class="modal" id="mediaModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -2565,21 +1739,13 @@
             <span class="modal-day" id="modalDay">Day 1</span>
         </div>
         <div class="modal-media" id="modalMedia">
-            <div class="modal-spinner" id="modalSpinner">
-                <div class="spinner-ring"></div>
-            </div>
+            <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-size:14px;opacity:0.5;">Loading...</div>
         </div>
         <div class="modal-footer">
             <p class="modal-caption" id="modalCaption"></p>
             <div class="modal-actions">
-                <button class="modal-action" onclick="toggleLoveFromModal()">
-                    <i class="far fa-heart"></i> <span id="modalLoveCount">0</span>
-                </button>
                 <button class="modal-action" onclick="scrollToCommentsAndClose()">
                     <i class="far fa-comment"></i> Comments
-                </button>
-                <button class="modal-action" onclick="shareJourney()">
-                    <i class="fas fa-share-alt"></i> Share
                 </button>
             </div>
         </div>
@@ -2612,10 +1778,7 @@
                 embedHtml: "{% if activity.get_display_html %}{{ activity.get_display_html|escapejs }}{% endif %}",
                 thumbnailUrl: "{% if activity.thumbnail %}{{ activity.thumbnail.url }}{% endif %}",
                 isVideo: {{ activity.is_video|yesno:"true,false" }},
-                sourceUrl: "{% if activity.source_url %}{{ activity.source_url|escapejs }}{% endif %}",
-                sourcePlatform: "{% if activity.source_platform %}{{ activity.source_platform|escapejs }}{% endif %}",
-                loveCount: {{ activity.get_love_count }},
-                commentCount: {{ activity.get_comment_count }}
+                commentCount: {{ activity.comments.count }}
             },
         {% endfor %}
     };
@@ -2629,9 +1792,9 @@
         if (!svg) return;
         svg.innerHTML = '';
         const totalNodes = totalDays;
-        const completed = journeyType === 'milestone' ? activitiesCount : currentDay;
+        const completed = journeyType === 'milestone' ? Object.keys(activitiesData).filter(key => activitiesData[key] && activitiesData[key].id).length : currentDay;
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-        const progressColor = journeyType === 'milestone' ? '#8b5cf6' : (isLight ? '#4a5568' : '#3b82f6');
+        const progressColor = '#3b82f6';
         const points = [], nodePositions = [];
         for (let i = 0; i < totalNodes; i++) {
             const x = 40 + (i / (totalNodes - 1)) * 320;
@@ -2673,13 +1836,6 @@
             let status = journeyType === 'milestone' 
                 ? (pos.day <= completed ? 'completed' : 'available')
                 : (pos.day <= completed ? 'completed' : (pos.day === completed+1 ? 'current' : 'locked'));
-            if (status === 'current') {
-                const g = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                g.setAttribute('cx', pos.x); g.setAttribute('cy', pos.y); g.setAttribute('r', '18');
-                g.setAttribute('fill', 'none'); g.setAttribute('stroke', progressColor);
-                g.setAttribute('stroke-width', '1.5'); g.setAttribute('opacity', isLight ? '0.2' : '0.3');
-                g.setAttribute('class', 'node-glow'); svg.appendChild(g);
-            }
             const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
             c.setAttribute('r', status === 'current' ? '10' : '8');
@@ -2696,13 +1852,11 @@
             const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
             t.setAttribute('x', pos.x); t.setAttribute('y', pos.y+24);
             t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'node-label-svg');
-            t.setAttribute('fill', status==='current' ? (isLight ? '#4a5568' : '#fff') : (status==='completed' ? (isLight ? '#48bb78' : '#22c55e') : (isLight ? '#a0aec0' : 'var(--text-muted)')));
+            t.setAttribute('fill', status==='current' ? (isLight ? '#4a5568' : '#fff') : (status==='completed' ? '#22c55e' : (isLight ? '#a0aec0' : 'var(--text-muted)')));
             t.textContent = journeyType==='milestone' ? 'M'+pos.day : (pos.day===1?'START':(pos.day===totalDays?'FINISH':'Day '+pos.day));
             svg.appendChild(t);
         });
     }
-    
-    const activitiesCount = Object.keys(activitiesData).filter(key => activitiesData[key] && activitiesData[key].id).length;
     
     function updateDisplayedDay(day) {
         const activity = activitiesData[day];
@@ -2711,53 +1865,14 @@
         currentlyDisplayedDay = day;
         currentActivityId = activity.id;
         
-        const commentInput = document.getElementById('commentActivityId');
-        if (commentInput) commentInput.value = activity.id;
+        document.getElementById('commentActivityId').value = activity.id;
         
         const badgeText = journeyType === 'milestone' ? `MILESTONE ${day}` : `DAY ${day}`;
-        const badgeEl = document.getElementById('dynamicDayBadge');
-        if (badgeEl) badgeEl.textContent = badgeText;
-        
-        const titleEl = document.getElementById('dynamicTitle');
-        if (titleEl) titleEl.textContent = activity.content || (journeyType === 'milestone' ? `Milestone ${day}` : `Day ${day}`);
-        
-        const loveCountEl = document.getElementById('dynamicLoveCount');
-        if (loveCountEl) loveCountEl.textContent = activity.loveCount;
-        const commentCountEl = document.getElementById('dynamicCommentCount');
-        if (commentCountEl) commentCountEl.textContent = activity.commentCount;
-        
-        const sourceLinkDiv = document.getElementById('dynamicSourceLink');
-        if (sourceLinkDiv) {
-            if (activity.sourceUrl) {
-                sourceLinkDiv.innerHTML = `<a href="${activity.sourceUrl}" target="_blank" class="source-link" onclick="event.stopPropagation();"><i class="fas fa-external-link-alt"></i> ${activity.sourcePlatform?.charAt(0).toUpperCase() + activity.sourcePlatform?.slice(1) || 'Original Source'}</a>`;
-            } else {
-                sourceLinkDiv.innerHTML = '';
-            }
-        }
-        
-        const editLinkDiv = document.getElementById('dynamicEditLink');
-        {% if user == journey.creator.user %}
-        editLinkDiv.innerHTML = `<a href="{% url 'post_activity_day' slug=journey.slug day_number=999999 %}" class="edit-link" onclick="event.stopPropagation();" id="dynamicEditLinkUrl">Edit this ${journeyType === 'milestone' ? 'milestone' : 'day'}</a>`;
-        const editUrl = editLinkDiv.querySelector('#dynamicEditLinkUrl');
-        if (editUrl) {
-            editUrl.href = editUrl.href.replace('999999', day);
-        }
-        {% else %}
-        editLinkDiv.innerHTML = '';
-        {% endif %}
+        document.getElementById('dynamicDayBadge').textContent = badgeText;
+        document.getElementById('dynamicTitle').textContent = activity.content || (journeyType === 'milestone' ? `Milestone ${day}` : `Day ${day}`);
+        document.getElementById('dynamicCommentCount').textContent = activity.commentCount;
         
         updateHeroMedia(activity);
-        
-        const infoContainer = document.getElementById('dynamicInfoContainer');
-        if (infoContainer) {
-            infoContainer.classList.add('info-updated');
-            setTimeout(() => infoContainer.classList.remove('info-updated'), 300);
-        }
-        const heroContainer = document.getElementById('currentDayHero');
-        if (heroContainer) {
-            heroContainer.classList.add('info-updated');
-            setTimeout(() => heroContainer.classList.remove('info-updated'), 300);
-        }
     }
     
     function updateHeroMedia(activity) {
@@ -2765,82 +1880,35 @@
         if (!heroContainer) return;
         
         if (activity.embedHtml) {
-            // Wrap the content in a div with the proper class
-            heroContainer.innerHTML = `<div class="current-day-content-wrapper">${activity.embedHtml}</div>`;
+            heroContainer.innerHTML = `<div class="content-card">${activity.embedHtml}</div>`;
             
-            // Find and style YouTube embeds
-            const wrapper = heroContainer.querySelector('.current-day-content-wrapper');
-            if (wrapper) {
-                const youtubeWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
-                youtubeWrappers.forEach(ytWrapper => {
-                    ytWrapper.style.position = 'relative';
-                    ytWrapper.style.paddingBottom = '56.25%';
-                    ytWrapper.style.height = '0';
-                    ytWrapper.style.overflow = 'hidden';
-                    ytWrapper.style.width = '100%';
-                    ytWrapper.style.maxWidth = '100%';
-                    ytWrapper.style.background = '#000';
-                    ytWrapper.style.borderRadius = '8px';
-                    
-                    const iframe = ytWrapper.querySelector('iframe');
-                    if (iframe) {
-                        iframe.style.position = 'absolute';
-                        iframe.style.top = '0';
-                        iframe.style.left = '0';
-                        iframe.style.width = '100%';
-                        iframe.style.height = '100%';
-                        iframe.style.border = 'none';
-                        iframe.setAttribute('allowfullscreen', '');
-                        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
-                    }
-                });
-                
-                // Find and style content cards
-                const cards = wrapper.querySelectorAll('.content-card');
-                cards.forEach(card => {
-                    card.style.maxHeight = '600px';
-                    card.style.overflow = 'hidden';
-                    card.style.width = '100%';
-                    card.style.borderRadius = '12px';
-                });
-                
-                // Find and style images
-                const images = wrapper.querySelectorAll('img');
-                images.forEach(img => {
-                    img.style.width = '100%';
-                    img.style.maxHeight = '600px';
-                    img.style.objectFit = 'contain';
-                    img.style.display = 'block';
-                });
-                
-                // Find and style videos
-                const videos = wrapper.querySelectorAll('video');
-                videos.forEach(video => {
-                    video.style.width = '100%';
-                    video.style.maxHeight = '600px';
-                    video.style.objectFit = 'contain';
-                    video.style.display = 'block';
-                });
-            }
+            // Style YouTube embeds
+            const ytWrappers = heroContainer.querySelectorAll('.youtube-embed-wrapper');
+            ytWrappers.forEach(yt => {
+                yt.style.position = 'relative';
+                yt.style.paddingBottom = '56.25%';
+                yt.style.height = '0';
+                yt.style.overflow = 'hidden';
+                yt.style.width = '100%';
+                yt.style.maxWidth = '100%';
+                yt.style.background = '#000';
+                yt.style.borderRadius = '8px';
+                const iframe = yt.querySelector('iframe');
+                if (iframe) {
+                    iframe.style.position = 'absolute';
+                    iframe.style.top = '0';
+                    iframe.style.left = '0';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                }
+            });
         } else if (activity.fileUrl && activity.isVideo) {
             heroContainer.innerHTML = `<video src="${activity.fileUrl}" muted playsinline style="width:100%;display:block;object-fit:contain;max-height:600px;"></video>`;
         } else if (activity.fileUrl) {
             heroContainer.innerHTML = `<img src="${activity.fileUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;object-fit:contain;max-height:600px;">`;
         } else if (activity.thumbnailUrl) {
             heroContainer.innerHTML = `<img src="${activity.thumbnailUrl}" alt="${activity.content?.substring(0, 50) || ''}" style="width:100%;display:block;object-fit:contain;max-height:600px;">`;
-        } else if (activity.sourceUrl) {
-            const platform = activity.sourcePlatform || 'link';
-            const platformColors = {
-                'tiktok': '#00f2ea', 'instagram': '#dc2743', 'youtube': '#ff0000',
-                'twitter': '#1DA1F2', 'facebook': '#1877f2'
-            };
-            const color = platformColors[platform] || 'var(--accent)';
-            heroContainer.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;min-height:200px;background:var(--bg-secondary);flex-direction:column;gap:16px;width:100%;">
-                    <i class="fab fa-${platform === 'twitter' ? 'x-twitter' : platform}" style="font-size:48px;color:${color};opacity:0.7;"></i>
-                    <p style="color:var(--text-secondary);font-size:13px;text-align:center;padding:0 20px;">${activity.content?.substring(0, 80) || `View on ${platform}`}</p>
-                </div>
-            `;
         } else {
             heroContainer.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;width:100%;">
@@ -2859,23 +1927,30 @@
         }
     }
     
-    function scrollStrip(d) { const s=document.getElementById('dayStrip'); if(s){s.scrollBy({left:d,behavior:'smooth'}); updateScrollIndicator();} }
-    function updateScrollIndicator() { const s=document.getElementById('dayStrip'); if(!s)return; const p=s.scrollLeft/(s.scrollWidth-s.clientWidth); const el=document.getElementById('scrollIndicator'); if(el)el.textContent=(Math.round(p*(totalDays-1))+1)+'/'+totalDays; }
+    function scrollStrip(d) { 
+        const s = document.getElementById('dayStrip'); 
+        if(s){ s.scrollBy({left:d,behavior:'smooth'}); updateScrollIndicator(); } 
+    }
+    
+    function updateScrollIndicator() { 
+        const s = document.getElementById('dayStrip'); 
+        if(!s) return; 
+        const p = s.scrollLeft/(s.scrollWidth-s.clientWidth); 
+        const el = document.getElementById('scrollIndicator'); 
+        if(el) el.textContent = (Math.round(p*(totalDays-1))+1)+'/'+totalDays; 
+    }
     
     function showMoreFitness() {
         document.querySelectorAll('#fitnessGallery .hidden-item').forEach(el => el.style.display = 'block');
-        const btn = document.getElementById('fitnessShowMoreBtn');
-        if(btn) btn.style.display = 'none';
+        document.getElementById('fitnessShowMoreBtn').style.display = 'none';
     }
     function showMorePortfolio() {
         document.querySelectorAll('#portfolioList .hidden-item').forEach(el => el.style.display = 'flex');
-        const btn = document.getElementById('portfolioShowMoreBtn');
-        if(btn) btn.style.display = 'none';
+        document.getElementById('portfolioShowMoreBtn').style.display = 'none';
     }
     function showMoreStartup() {
         document.querySelectorAll('#startupRoadmap .hidden-item').forEach(el => el.style.display = 'flex');
-        const btn = document.getElementById('startupShowMoreBtn');
-        if(btn) btn.style.display = 'none';
+        document.getElementById('startupShowMoreBtn').style.display = 'none';
     }
     
     function openModal(day) {
@@ -2891,41 +1966,29 @@
         
         document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
         document.getElementById('modalCaption').textContent = a.content || 'No description';
-        document.getElementById('modalLoveCount').textContent = a.loveCount;
         document.getElementById('commentActivityId').value = a.id;
         
         const mediaContainer = document.getElementById('modalMedia');
-        const spinner = document.getElementById('modalSpinner');
-        
-        mediaContainer.innerHTML = '';
-        mediaContainer.appendChild(spinner);
-        spinner.classList.remove('hidden');
-        
-        const hideSpinner = () => {
-            spinner.classList.add('hidden');
-        };
         
         let contentElement = null;
         
-        // PRIORITY 1: Check for embedHtml (rendered card HTML from imported content)
         if (a.embedHtml) {
             const wrapper = document.createElement('div');
             wrapper.className = 'content-wrapper';
             wrapper.innerHTML = a.embedHtml;
             
-            // Preserve YouTube embeds - look for youtube-embed-wrapper
-            const youtubeWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
-            youtubeWrappers.forEach(ytWrapper => {
-                ytWrapper.style.position = 'relative';
-                ytWrapper.style.paddingBottom = '56.25%';
-                ytWrapper.style.height = '0';
-                ytWrapper.style.overflow = 'hidden';
-                ytWrapper.style.width = '100%';
-                ytWrapper.style.maxWidth = '100%';
-                ytWrapper.style.background = '#000';
-                ytWrapper.style.borderRadius = '12px';
-                
-                const iframe = ytWrapper.querySelector('iframe');
+            // Style YouTube embeds
+            const ytWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
+            ytWrappers.forEach(yt => {
+                yt.style.position = 'relative';
+                yt.style.paddingBottom = '56.25%';
+                yt.style.height = '0';
+                yt.style.overflow = 'hidden';
+                yt.style.width = '100%';
+                yt.style.maxWidth = '100%';
+                yt.style.background = '#000';
+                yt.style.borderRadius = '12px';
+                const iframe = yt.querySelector('iframe');
                 if (iframe) {
                     iframe.style.position = 'absolute';
                     iframe.style.top = '0';
@@ -2933,51 +1996,9 @@
                     iframe.style.width = '100%';
                     iframe.style.height = '100%';
                     iframe.style.border = 'none';
-                    iframe.setAttribute('allowfullscreen', '');
-                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
-                    iframe.onload = hideSpinner;
-                    iframe.onerror = hideSpinner;
                 }
             });
             
-            // Handle regular iframes
-            const iframes = wrapper.querySelectorAll('iframe:not(.youtube-embed-wrapper iframe)');
-            iframes.forEach(iframe => {
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.minHeight = '300px';
-                iframe.style.border = 'none';
-                iframe.style.borderRadius = '12px';
-                iframe.setAttribute('allowfullscreen', '');
-                iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
-                iframe.onload = hideSpinner;
-                iframe.onerror = hideSpinner;
-            });
-            
-            // Handle images
-            const images = wrapper.querySelectorAll('img');
-            images.forEach(img => {
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '70vh';
-                img.style.objectFit = 'contain';
-                img.style.borderRadius = '12px';
-                img.onload = hideSpinner;
-                img.onerror = hideSpinner;
-            });
-            
-            // Handle videos
-            const videos = wrapper.querySelectorAll('video');
-            videos.forEach(video => {
-                video.style.width = '100%';
-                video.style.maxHeight = '70vh';
-                video.style.objectFit = 'contain';
-                video.style.borderRadius = '12px';
-                video.controls = true;
-                video.onloadeddata = hideSpinner;
-                video.onerror = hideSpinner;
-            });
-            
-            // Style the content card
             const card = wrapper.querySelector('.content-card');
             if (card) {
                 card.style.maxWidth = '100%';
@@ -2985,20 +2006,12 @@
                 card.style.margin = '0 auto';
                 card.style.borderRadius = '16px';
                 card.style.overflow = 'hidden';
-                card.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
                 card.style.maxHeight = '80vh';
                 card.style.overflow = 'auto';
             }
             
-            // If no media elements found, hide spinner after a moment
-            if (iframes.length === 0 && images.length === 0 && videos.length === 0 && youtubeWrappers.length === 0) {
-                setTimeout(hideSpinner, 500);
-            }
-            
             contentElement = wrapper;
-        } 
-        // PRIORITY 2: Video file
-        else if (a.fileUrl && a.isVideo) {
+        } else if (a.fileUrl && a.isVideo) {
             const video = document.createElement('video');
             video.src = a.fileUrl;
             video.controls = true;
@@ -3008,72 +2021,24 @@
             video.style.height = '100%';
             video.style.objectFit = 'contain';
             video.style.background = '#000';
-            video.onloadeddata = hideSpinner;
-            video.onerror = hideSpinner;
             contentElement = video;
-        } 
-        // PRIORITY 3: Image file
-        else if (a.fileUrl) {
+        } else if (a.fileUrl) {
             const img = document.createElement('img');
             img.src = a.fileUrl;
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
             img.style.background = '#000';
-            img.onload = hideSpinner;
-            img.onerror = hideSpinner;
             contentElement = img;
-        } 
-        // PRIORITY 4: Thumbnail
-        else if (a.thumbnailUrl) {
+        } else if (a.thumbnailUrl) {
             const img = document.createElement('img');
             img.src = a.thumbnailUrl;
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
             img.style.background = '#000';
-            img.onload = hideSpinner;
-            img.onerror = hideSpinner;
             contentElement = img;
-        } 
-        // PRIORITY 5: Source URL
-        else if (a.sourceUrl) {
-            const platform = a.sourcePlatform || 'link';
-            const platformColors = {
-                'tiktok': '#00f2ea',
-                'instagram': '#dc2743',
-                'youtube': '#ff0000',
-                'twitter': '#1DA1F2',
-                'facebook': '#1877f2'
-            };
-            const color = platformColors[platform] || '#fff';
-            const iconClass = {
-                'tiktok': 'fa-tiktok', 'instagram': 'fa-instagram', 'youtube': 'fa-youtube',
-                'twitter': 'fa-x-twitter', 'facebook': 'fa-facebook'
-            }[platform] || 'fa-link';
-            
-            const div = document.createElement('div');
-            div.style.display = 'flex';
-            div.style.flexDirection = 'column';
-            div.style.alignItems = 'center';
-            div.style.justifyContent = 'center';
-            div.style.height = '100%';
-            div.style.width = '100%';
-            div.style.padding = '20px';
-            div.style.textAlign = 'center';
-            div.style.background = '#000';
-            div.innerHTML = `
-                <i class="fab ${iconClass}" style="font-size:80px;margin-bottom:20px;color:${color};opacity:0.8;"></i>
-                <p style="color:#aaa;margin-bottom:16px;font-size:14px;">Content from <strong style="color:#fff;">${platform.charAt(0).toUpperCase() + platform.slice(1)}</strong></p>
-                <a href="${a.sourceUrl}" target="_blank" style="padding:12px 32px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:30px;text-decoration:none;font-size:14px;transition:all 0.2s;">
-                    <i class="fas fa-external-link-alt"></i> View Original
-                </a>
-            `;
-            setTimeout(hideSpinner, 300);
-            contentElement = div;
-        } 
-        // PRIORITY 6: Text only
-        else {
+        } else {
             const div = document.createElement('div');
             div.style.display = 'flex';
             div.style.alignItems = 'center';
@@ -3090,26 +2055,14 @@
                 <i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;color:#fff;"></i>
                 <span style="font-size:16px;color:#fff;">${a.content || 'No content available'}</span>
             `;
-            setTimeout(hideSpinner, 300);
             contentElement = div;
         }
         
         if (contentElement) {
+            mediaContainer.innerHTML = '';
             mediaContainer.appendChild(contentElement);
         } else {
-            const fallback = document.createElement('div');
-            fallback.style.display = 'flex';
-            fallback.style.alignItems = 'center';
-            fallback.style.justifyContent = 'center';
-            fallback.style.height = '100%';
-            fallback.style.width = '100%';
-            fallback.style.color = '#fff';
-            fallback.style.padding = '20px';
-            fallback.style.textAlign = 'center';
-            fallback.style.background = '#000';
-            fallback.textContent = a.content || 'No content available';
-            mediaContainer.appendChild(fallback);
-            setTimeout(hideSpinner, 300);
+            mediaContainer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;padding:20px;text-align:center;">${a.content || 'No content available'}</div>`;
         }
         
         document.getElementById('mediaModal').classList.add('active');
@@ -3119,36 +2072,10 @@
     function closeModal() { 
         document.getElementById('mediaModal').classList.remove('active'); 
         document.body.style.overflow = ''; 
-        const mediaContainer = document.getElementById('modalMedia');
-        const spinner = document.getElementById('modalSpinner');
-        mediaContainer.innerHTML = '';
-        mediaContainer.appendChild(spinner);
-        spinner.classList.remove('hidden');
     }
     
     function prevDay() { if (currentModalDay > 1) openModal(currentModalDay - 1); }
     function nextDay() { if (currentModalDay < totalDays) openModal(currentModalDay + 1); }
-    
-    function toggleLove(activityId) {
-        if (!activityId) activityId = currentActivityId;
-        fetch('/api/activity/' + activityId + '/love/', {
-            method: 'POST', headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'application/json' }
-        }).then(r => r.json()).then(d => {
-            const countEl = document.getElementById('love-count-' + activityId);
-            if (countEl) countEl.textContent = d.love_count;
-            document.getElementById('modalLoveCount').textContent = d.love_count;
-            document.getElementById('dynamicLoveCount').textContent = d.love_count;
-            if (activitiesData[currentlyDisplayedDay]) {
-                activitiesData[currentlyDisplayedDay].loveCount = d.love_count;
-            }
-        });
-    }
-    
-    function toggleLoveFromDynamic() {
-        toggleLove(currentActivityId);
-    }
-    
-    function toggleLoveFromModal() { toggleLove(currentActivityId); }
     
     function toggleFollow() {
         fetch('/api/journey/' + journeySlug + '/follow/', {
@@ -3168,24 +2095,6 @@
         });
     }
     
-    // Auto-resize comment textarea
-    document.addEventListener('DOMContentLoaded', function() {
-        const commentTextarea = document.getElementById('commentContent');
-        if (commentTextarea) {
-            commentTextarea.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 150) + 'px';
-            });
-            
-            commentTextarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                    const form = this.closest('form');
-                    if (form) form.dispatchEvent(new Event('submit'));
-                }
-            });
-        }
-    });
-    
     function submitComment(e) {
         e.preventDefault();
         const content = document.getElementById('commentContent');
@@ -3202,7 +2111,7 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
         
-        fetch('/api/activity/' + activityId + '/comment/', {
+        fetch('/api/journey/' + journeySlug + '/' + activityId + '/comment/', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),
@@ -3228,13 +2137,8 @@
         });
     }
     
-    function replyToComment(commentId) {
-        const textarea = document.getElementById('commentContent');
-        if (textarea) {
-            textarea.focus();
-            textarea.value = '@' + commentId + ' ';
-            textarea.dispatchEvent(new Event('input'));
-        }
+    function scrollToComments() { 
+        document.getElementById('comments').scrollIntoView({behavior: 'smooth'}); 
     }
     
     function scrollToCommentsAndClose() {
@@ -3242,32 +2146,10 @@
         scrollToComments();
     }
     
-    function shareJourney() { 
-        navigator.clipboard?.writeText(window.location.href).then(() => {
-            alert('📋 Link copied to clipboard!');
-            trackShare('copy');
-        }); 
-    }
+    document.getElementById('mediaModal').addEventListener('click', e => { 
+        if (e.target === e.currentTarget) closeModal(); 
+    });
     
-    function trackShare(platform) {
-        fetch('/api/journey/' + journeySlug + '/share/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'platform=' + encodeURIComponent(platform)
-        }).then(r => r.json()).then(d => {
-            console.log('✅ Share tracked:', platform);
-        }).catch(err => {
-            console.log('Share tracking error:', err);
-        });
-    }
-    
-    function scrollToComments() { document.getElementById('comments').scrollIntoView({behavior: 'smooth'}); }
-    function toggleMenu() { if (confirm('Share this journey?')) shareJourney(); }
-    
-    document.getElementById('mediaModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
     document.addEventListener('keydown', e => {
         if (!document.getElementById('mediaModal').classList.contains('active')) return;
         if (e.key === 'Escape') closeModal();

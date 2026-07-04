@@ -5,25 +5,23 @@ from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
 from cloudinary.forms import CloudinaryFileField
 from .models import (
-    Profile, SocialConnection, ImportedContent,
-    Journey, Activity, JourneyFollow, Tag,
-    ActivityComment, Report, 
-    SocialPostTemplate, QuickAddTracker
+    Profile, Journey, Activity, JournalEntry, 
+    Comment, JourneyFollow, Tag, Export,JourneyTag,
+    ContactMessage, Subscriber
 )
 import re
 from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
 # ============================================================================
-# AUTHENTICATION FORMS - KEPT
+# AUTHENTICATION FORMS
 # ============================================================================
 
 class SignUpForm(UserCreationForm):
-    """User registration form with social-first fields"""
+    """User registration form — simple and clean"""
     
     email = forms.EmailField(
         max_length=254,
@@ -62,34 +60,6 @@ class SignUpForm(UserCreationForm):
         })
     )
     
-    # Optional profile fields - social-first
-    tiktok_username = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '@username (optional)'
-        })
-    )
-    
-    instagram_username = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '@username (optional)'
-        })
-    )
-    
-    twitter_username = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '@username (optional)'
-        })
-    )
-    
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
@@ -110,35 +80,11 @@ class SignUpForm(UserCreationForm):
             raise ValidationError('This email is already registered.')
         return email
     
-    def clean_tiktok_username(self):
-        username = self.cleaned_data.get('tiktok_username', '')
-        if username and not username.startswith('@'):
-            username = '@' + username
-        return username
-    
-    def clean_instagram_username(self):
-        username = self.cleaned_data.get('instagram_username', '')
-        if username and not username.startswith('@'):
-            username = '@' + username
-        return username
-    
-    def clean_twitter_username(self):
-        username = self.cleaned_data.get('twitter_username', '')
-        if username and not username.startswith('@'):
-            username = '@' + username
-        return username
-    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email'].lower()
         if commit:
             user.save()
-            # Update profile with social usernames
-            profile = user.profile
-            profile.tiktok_username = self.cleaned_data.get('tiktok_username', '')
-            profile.instagram_username = self.cleaned_data.get('instagram_username', '')
-            # Add twitter to profile (you may need to add this field)
-            profile.save()
         return user
 
 
@@ -171,11 +117,11 @@ class LoginForm(AuthenticationForm):
 
 
 # ============================================================================
-# PROFILE FORMS - KEPT & ENHANCED
+# PROFILE FORMS
 # ============================================================================
 
 class ProfileForm(forms.ModelForm):
-    """Edit profile information - social-first"""
+    """Edit profile information"""
     
     image = CloudinaryFileField(
         required=False,
@@ -212,7 +158,15 @@ class ProfileForm(forms.ModelForm):
         })
     )
     
-    tiktok_username = forms.CharField(
+    website = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://yourwebsite.com'
+        })
+    )
+    
+    twitter = forms.CharField(
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
@@ -221,78 +175,53 @@ class ProfileForm(forms.ModelForm):
         })
     )
     
-    instagram_username = forms.CharField(
+    instagram = forms.CharField(
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
             'placeholder': '@username'
-        })
-    )
-    
-    twitter_username = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '@username'
-        })
-    )
-    
-    youtube_channel = forms.CharField(
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '@channel'
         })
     )
     
     class Meta:
         model = Profile
-        fields = ['image', 'bio', 'location', 'tiktok_username', 
-                  'instagram_username', 'twitter_username', 'youtube_channel']
+        fields = ['image', 'bio', 'location', 'website', 'twitter', 'instagram']
     
-    def clean_tiktok_username(self):
-        username = self.cleaned_data.get('tiktok_username', '')
+    def clean_twitter(self):
+        username = self.cleaned_data.get('twitter', '')
         if username and not username.startswith('@'):
             username = '@' + username
         return username
     
-    def clean_instagram_username(self):
-        username = self.cleaned_data.get('instagram_username', '')
-        if username and not username.startswith('@'):
-            username = '@' + username
-        return username
-    
-    def clean_twitter_username(self):
-        username = self.cleaned_data.get('twitter_username', '')
+    def clean_instagram(self):
+        username = self.cleaned_data.get('instagram', '')
         if username and not username.startswith('@'):
             username = '@' + username
         return username
 
 
 # ============================================================================
-# JOURNEY FORMS - KEPT & ENHANCED FOR SOCIAL-FIRST
+# JOURNEY FORMS — Documentation Focus
 # ============================================================================
-
 class JourneyForm(forms.ModelForm):
-    """Create/Edit a journey - social-first focused"""
+    """Create/Edit a journey — documentation-first"""
     
     title = forms.CharField(
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'e.g., 30 Days of Coding',
+            'placeholder': 'e.g., 30 Days of Writing',
             'autofocus': True
         })
     )
     
     description = forms.CharField(
         max_length=500,
+        required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'What is this journey about? What will followers experience?',
+            'placeholder': 'What is this journey about? What are you documenting?',
             'rows': 4
         })
     )
@@ -312,23 +241,6 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    TEMPLATE_STYLE_CHOICES = [
-        ('default', '📱 Classic — Simple day-by-day strip, works for everything'),
-        ('fitness', '🏋️ Fitness — Progress gallery, workout counter, red energy theme'),
-        ('portfolio', '💼 Portfolio — Professional cards, milestone dates, blue trust theme'),
-        ('startup', '🚀 Startup — Build-in-public roadmap, shipping tracker, green theme'),
-    ]
-    
-    template_style = forms.ChoiceField(
-        choices=TEMPLATE_STYLE_CHOICES,
-        widget=forms.RadioSelect(attrs={
-            'class': 'template-style-radio'
-        }),
-        initial='default',
-        label='🎨 Journey Display Style',
-        help_text='How your journey looks to followers. Pick the vibe that matches your goal.'
-    )
-    
     cover_image = CloudinaryFileField(
         required=False,
         options={
@@ -345,18 +257,6 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    cover_video = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'journey_covers',
-            'resource_type': 'video'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'video/*'
-        })
-    )
-    
     duration = forms.IntegerField(
         min_value=1,
         max_value=365,
@@ -369,16 +269,15 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    # SOCIAL-FIRST: Allow creators mid-journey to jump to their current day
     current_day_override = forms.IntegerField(
         required=False,
         min_value=1,
         widget=forms.NumberInput(attrs={
             'class': 'form-input',
-            'placeholder': 'e.g., 34',
+            'placeholder': 'e.g., 14',
             'min': 1
         }),
-        help_text="Already started your challenge elsewhere? Enter your current day number. Leave blank to start from Day 1."
+        help_text="Already started? Enter your current day number."
     )
     
     start_date = forms.DateTimeField(
@@ -389,67 +288,22 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    # SOCIAL-FIRST SETTINGS
-    is_public = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
+    # Privacy — Private by default
+    privacy_status = forms.ChoiceField(
+        choices=Journey.PRIVACY_CHOICES,
+        initial='private',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
         })
     )
     
     allow_comments = forms.BooleanField(
         required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    auto_import_enabled = forms.BooleanField(
-        required=False,
+        initial=False,
         widget=forms.CheckboxInput(attrs={
             'class': 'form-checkbox'
         }),
-        help_text="Automatically import posts from your connected social accounts"
-    )
-    
-    import_hashtag = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '#MyJourney'
-        }),
-        help_text="Only import posts with this hashtag"
-    )
-    
-    # SOCIAL SHARE SETTINGS (NEW)
-    social_share_url = forms.URLField(
-        required=False,
-        widget=forms.URLInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'https://yourdomain.com/journey'
-        }),
-        help_text="Custom URL for sharing your journey (optional)"
-    )
-    
-    auto_post_to_social = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        }),
-        help_text="Automatically post new updates to social media"
-    )
-    
-    social_share_text = forms.CharField(
-        max_length=280,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Follow my journey on Rallynex! 🚀'
-        }),
-        help_text="Default text for social media shares"
+        help_text="Allow other users to comment on your journey"
     )
     
     tags_input = forms.CharField(
@@ -457,7 +311,7 @@ class JourneyForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'fitness, yoga, wellness, challenge'
+            'placeholder': 'writing, personal, growth'
         }),
         help_text="Separate tags with commas (max 10)"
     )
@@ -477,24 +331,20 @@ class JourneyForm(forms.ModelForm):
         model = Journey
         fields = [
             'title', 'description', 'category', 'journey_type',
-            'template_style', 'cover_image', 'cover_video',
-            'duration', 'current_day_override', 'start_date',
-            'is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag',
-            'social_share_url', 'auto_post_to_social', 'social_share_text'
+            'cover_image', 'duration', 'current_day_override', 'start_date',
+            'privacy_status', 'allow_comments'
         ]
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         if self.instance and self.instance.pk:
-            self.fields['template_style'].initial = self.instance.template_style or 'default'
             self.fields['current_day_override'].initial = self.instance.current_day_override
-            self.fields['social_share_url'].initial = self.instance.social_share_url
-            self.fields['social_share_text'].initial = self.instance.social_share_text
             
-            tags = self.instance.tags.all()
+            # FIX: Use journeytag_set instead of tags
+            tags = self.instance.journeytag_set.all()
             if tags.exists():
-                self.fields['tags_input'].initial = ', '.join([tag.name for tag in tags])
+                self.fields['tags_input'].initial = ', '.join([tag.tag.name for tag in tags])
             
             if self.instance.milestones:
                 self.fields['milestones_input'].initial = '\n'.join(self.instance.milestones)
@@ -507,12 +357,6 @@ class JourneyForm(forms.ModelForm):
             raise ValidationError(f"Current day can't exceed the duration ({duration} days).")
         
         return override
-    
-    def clean_import_hashtag(self):
-        hashtag = self.cleaned_data.get('import_hashtag', '')
-        if hashtag and not hashtag.startswith('#'):
-            hashtag = '#' + hashtag
-        return hashtag
     
     def clean_tags_input(self):
         tags_input = self.cleaned_data.get('tags_input', '')
@@ -537,161 +381,87 @@ class JourneyForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
-        template_style = cleaned_data.get('template_style')
+        current_day_override = cleaned_data.get('current_day_override')
         journey_type = cleaned_data.get('journey_type')
         
-        # Smart defaults based on template style
-        if template_style and template_style != 'default':
-            style_category_map = {
-                'fitness': 'fitness',
-                'portfolio': 'creative',
-                'startup': 'business',
-            }
-            if template_style in style_category_map:
-                cleaned_data['category'] = style_category_map[template_style]
-            
-            style_type_map = {
-                'fitness': 'daily',
-                'portfolio': 'milestone',
-                'startup': 'daily',
-            }
-            if template_style in style_type_map and not cleaned_data.get('journey_type'):
-                cleaned_data['journey_type'] = style_type_map[template_style]
-        
-        # Validate current_day_override against journey_type
-        current_day_override = cleaned_data.get('current_day_override')
         if current_day_override and journey_type == 'milestone':
-            self.add_error('current_day_override', 'Day override is only for daily challenges, not milestone journeys.')
+            self.add_error('current_day_override', 'Day override is only for daily journeys, not milestone journeys.')
         
         return cleaned_data
     
     def save(self, commit=True):
         journey = super().save(commit=False)
-        
         journey.current_day_override = self.cleaned_data.get('current_day_override')
-        journey.social_share_url = self.cleaned_data.get('social_share_url', '')
-        journey.social_share_text = self.cleaned_data.get('social_share_text', '')
         
         if commit:
             journey.save()
             
-            # Auto-generate milestones based on template
+            # Save milestones
             milestones_input = self.cleaned_data.get('milestones_input', '')
             if milestones_input:
                 milestone_list = [m.strip() for m in milestones_input.split('\n') if m.strip()]
                 journey.milestones = milestone_list
-            elif not journey.milestones:
-                if journey.template_style == 'startup':
-                    journey.milestones = [
-                        "Idea Validation & Research",
-                        "MVP Planning & Wireframes",
-                        "First Prototype Built",
-                        "User Testing Round 1",
-                        "Iterate Based on Feedback",
-                        "Beta Launch",
-                        "First Paying Customer",
-                        "Public Launch 🚀",
-                    ]
-                elif journey.template_style == 'portfolio':
-                    journey.milestones = [
-                        "Project Kickoff",
-                        "Research & Discovery",
-                        "First Draft Complete",
-                        "Client Review",
-                        "Revisions & Polish",
-                        "Final Delivery ✅",
-                    ]
+                journey.save(update_fields=['milestones'])
             
-            journey.save(update_fields=['milestones', 'current_day_override', 'social_share_url', 'social_share_text'])
-            
-            # Save tags
+            # FIX: Use journeytag_set instead of tags
             tags_input = self.cleaned_data.get('tags_input', '')
             if tags_input:
-                journey.tags.clear()
+                journey.journeytag_set.all().delete()  # Clear existing tags
                 tag_names = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
                 for tag_name in tag_names[:10]:
                     tag, created = Tag.objects.get_or_create(name=tag_name)
-                    journey.tags.add(tag)
+                    JourneyTag.objects.get_or_create(journey=journey, tag=tag)
         
         return journey
 
-
 class JourneySettingsForm(forms.ModelForm):
-    """Quick settings update for existing journey - social-first"""
+    """Quick settings update for existing journey"""
     
     class Meta:
         model = Journey
-        fields = ['is_public', 'allow_comments', 'auto_import_enabled', 'import_hashtag', 
-                  'social_share_url', 'auto_post_to_social', 'social_share_text']
+        fields = ['privacy_status', 'allow_comments']
         widgets = {
-            'import_hashtag': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': '#MyJourney'
-            }),
-            'social_share_url': forms.URLInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'https://yourdomain.com/journey'
-            }),
-            'social_share_text': forms.TextInput(attrs={
-                'class': 'form-input',
-                'placeholder': 'Follow my journey on Rallynex! 🚀'
-            }),
+            'privacy_status': forms.Select(attrs={'class': 'form-select'}),
+            'allow_comments': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
 
 
 # ============================================================================
-# SOCIAL POST TEMPLATE FORM - NEW (Social-First)
-# ============================================================================
-
-class SocialPostTemplateForm(forms.ModelForm):
-    """Create templates for auto-posting to social media"""
-    
-    platform = forms.ChoiceField(
-        choices=SocialPostTemplate.PLATFORM_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    template_text = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Day {day} of {title}! {content}\n\nFollow my journey: {url}',
-            'rows': 3
-        }),
-        help_text="Use {day}, {title}, {url}, and {content} as placeholders"
-    )
-    
-    auto_post = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        }),
-        help_text="Automatically post to this platform when new content is added"
-    )
-    
-    class Meta:
-        model = SocialPostTemplate
-        fields = ['platform', 'template_text', 'auto_post']
-
-
-# ============================================================================
-# ACTIVITY FORMS - KEPT & ENHANCED FOR SOCIAL-FIRST
+# ACTIVITY FORMS — Daily Entries
 # ============================================================================
 
 class ActivityForm(forms.ModelForm):
-    """Post/Edit a day's activity - social-first"""
+    """Create/Edit a journey entry"""
+    
+    title = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Optional title for this entry'
+        })
+    )
     
     content = forms.CharField(
         max_length=500,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': "What happened? Share your progress...",
+            'placeholder': "What happened today? Share your progress...",
             'rows': 4
         })
     )
     
-    file = CloudinaryFileField(
+    summary = forms.CharField(
+        max_length=500,
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'A short summary of this entry',
+            'rows': 2
+        })
+    )
+    
+    media_file = CloudinaryFileField(
         required=False,
         options={
             'folder': 'activity_files',
@@ -706,47 +476,20 @@ class ActivityForm(forms.ModelForm):
         })
     )
     
+    media_caption = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Caption for your media'
+        })
+    )
+    
     day_number_field = forms.IntegerField(
         required=False,
         widget=forms.HiddenInput()
     )
     
-    # SOCIAL-FIRST: Source tracking
-    source_url = forms.URLField(
-        required=False,
-        widget=forms.URLInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'https://twitter.com/.../status/12345'
-        }),
-        help_text="Link to the original social media post"
-    )
-    
-    source_platform = forms.ChoiceField(
-        choices=[('', 'Select platform')] + [
-            ('twitter', 'Twitter/X'),
-            ('instagram', 'Instagram'),
-            ('tiktok', 'TikTok'),
-            ('youtube', 'YouTube'),
-            ('facebook', 'Facebook'),
-            ('linkedin', 'LinkedIn'),
-        ],
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    embed_html = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': '<iframe src="..."></iframe>',
-            'rows': 2
-        }),
-        help_text="Embed code from social media (optional)"
-    )
-    
-    # Actual date field for milestone journeys
     actual_date = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -754,13 +497,50 @@ class ActivityForm(forms.ModelForm):
             'type': 'date',
             'placeholder': 'YYYY-MM-DD'
         }),
-        help_text="When did this actually happen? (For portfolio/trust building)"
+        help_text="The actual date of this entry"
+    )
+    
+    mood = forms.ChoiceField(
+        choices=Activity.MOOD_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    progress_metrics = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'e.g., {"weight": 75, "pages": 10}'
+        }),
+        help_text="JSON format: {'metric_name': value}"
+    )
+    
+    location = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Where did this happen?'
+        })
+    )
+    
+    is_draft = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
     )
     
     class Meta:
         model = Activity
-        fields = ['content', 'file', 'day_number_field', 'source_url', 'source_platform', 
-                  'embed_html', 'actual_date']
+        fields = [
+            'title', 'content', 'summary', 'media_file', 'media_caption',
+            'day_number_field', 'actual_date', 'mood', 'progress_metrics',
+            'location', 'is_draft'
+        ]
     
     def __init__(self, *args, **kwargs):
         self.journey = kwargs.pop('journey', None)
@@ -774,18 +554,24 @@ class ActivityForm(forms.ModelForm):
         if self.journey:
             if self.journey.journey_type == 'milestone':
                 self.fields['content'].widget.attrs['placeholder'] = f"What did you achieve in Milestone {self.day_number}?"
-                self.fields['actual_date'].help_text = "Add the real date this milestone was completed"
             else:
                 self.fields['content'].widget.attrs['placeholder'] = f"What happened on Day {self.day_number}? Share your progress..."
     
     def clean_content(self):
         content = self.cleaned_data.get('content', '')
         if not content.strip():
-            if self.journey and self.journey.journey_type == 'milestone':
-                raise ValidationError('Please describe what you achieved in this milestone.')
-            else:
-                raise ValidationError('Please write something about this day.')
+            raise ValidationError('Please write something about this day.')
         return content
+    
+    def clean_progress_metrics(self):
+        metrics = self.cleaned_data.get('progress_metrics', '')
+        if metrics:
+            try:
+                import json
+                return json.loads(metrics)
+            except json.JSONDecodeError:
+                raise ValidationError('Please enter valid JSON format.')
+        return {}
     
     def clean(self):
         cleaned_data = super().clean()
@@ -809,9 +595,9 @@ class ActivityForm(forms.ModelForm):
                 
                 if existing.exists():
                     if self.journey.journey_type == 'milestone':
-                        raise ValidationError(f"Milestone {day_number} already has content posted. You can edit it instead.")
+                        raise ValidationError(f"Milestone {day_number} already has content.")
                     else:
-                        raise ValidationError(f"Day {day_number} already has content posted.")
+                        raise ValidationError(f"Day {day_number} already has content.")
         
         return cleaned_data
     
@@ -831,225 +617,101 @@ class ActivityForm(forms.ModelForm):
 
 
 # ============================================================================
-# QUICK IMPORT FORM - CRITICAL FOR SOCIAL-FIRST
+# JOURNAL ENTRY FORMS — Free-Form Documentation
 # ============================================================================
 
-class QuickImportForm(forms.Form):
-    """Smart Import - Paste link, auto-detect platform, preview content"""
+class JournalEntryForm(forms.ModelForm):
+    """Free-form journal entry form"""
     
-    url = forms.URLField(
-        widget=forms.URLInput(attrs={
+    title = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'https://www.tiktok.com/@username/video/123456789',
-            'autofocus': True
+            'placeholder': 'Entry title'
         })
     )
     
-    journey = forms.ModelChoiceField(
+    content = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-textarea',
+            'placeholder': 'Write your thoughts...',
+            'rows': 8
+        })
+    )
+    
+    tags = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'writing, reflection, growth'
+        }),
+        help_text="Separate tags with commas"
+    )
+    
+    is_private = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    mood = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'How are you feeling?'
+        })
+    )
+    
+    location = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Where are you?'
+        })
+    )
+    
+    related_journey = forms.ModelChoiceField(
         queryset=Journey.objects.none(),
+        required=False,
         widget=forms.Select(attrs={
             'class': 'form-select'
         })
     )
     
-    day_number = forms.IntegerField(
-        min_value=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Day number',
-            'min': 1
-        })
-    )
-    
-    # Editable caption (pre-filled from social post)
-    caption = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Describe this update...',
-            'rows': 2
-        })
-    )
-    
-    # Hidden fields for platform detection and embed data
-    detected_platform = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    embed_html = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    thumbnail_url = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    media_url = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    media_type = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    platform_post_id = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    posted_at = forms.CharField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    like_count = forms.IntegerField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
-    
-    comment_count = forms.IntegerField(
-        required=False,
-        widget=forms.HiddenInput()
-    )
+    class Meta:
+        model = JournalEntry
+        fields = [
+            'title', 'content', 'tags', 'is_private',
+            'mood', 'location', 'related_journey'
+        ]
     
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
         if user:
-            self.fields['journey'].queryset = Journey.objects.filter(
+            self.fields['related_journey'].queryset = Journey.objects.filter(
                 creator__user=user,
                 is_active=True
             ).order_by('-created_at')
     
-    def clean_url(self):
-        url = self.cleaned_data.get('url', '').strip()
-        
-        if not url:
-            raise ValidationError('Please enter a URL.')
-        
-        # Platform detection
-        platform = None
-        if 'tiktok.com' in url:
-            platform = 'tiktok'
-        elif 'instagram.com' in url:
-            platform = 'instagram'
-        elif 'youtube.com' in url or 'youtu.be' in url:
-            platform = 'youtube'
-        elif 'facebook.com' in url or 'fb.com' in url:
-            platform = 'facebook'
-        elif 'twitter.com' in url or 'x.com' in url:
-            platform = 'twitter'
-        elif 'linkedin.com' in url:
-            platform = 'linkedin'
-        else:
-            raise ValidationError('Please enter a valid TikTok, Instagram, YouTube, Facebook, Twitter/X, or LinkedIn URL.')
-        
-        self.cleaned_data['detected_platform'] = platform
-        return url
-    
-    def clean_day_number(self):
-        day_number = self.cleaned_data.get('day_number')
-        journey = self.cleaned_data.get('journey')
-        
-        if not day_number:
-            raise ValidationError('Please enter a day number.')
-        
-        if day_number < 1:
-            raise ValidationError('Day number must be at least 1.')
-        
-        if journey:
-            # Check if day is locked (only for daily challenges)
-            if journey.is_day_locked(day_number):
-                if journey.journey_type == 'daily':
-                    raise ValidationError(f"Day {day_number} is not available yet.")
-            
-            # Check if day already has content (warning, not error)
-            existing = Activity.objects.filter(journey=journey, day_number_field=day_number).first()
-            if existing:
-                self.existing_activity = existing
-        
-        return day_number
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        
-        # Ensure journey belongs to the user
-        journey = cleaned_data.get('journey')
-        user = self.initial.get('user') or (hasattr(self, 'user') and self.user)
-        
-        if journey and user:
-            if journey.creator.user != user:
-                raise ValidationError('You do not have permission to import to this journey.')
-        
-        return cleaned_data
-    
-    def get_detected_platform(self):
-        return self.cleaned_data.get('detected_platform')
-    
-    def has_existing_activity(self):
-        return hasattr(self, 'existing_activity')
-    
-    def get_existing_activity(self):
-        return getattr(self, 'existing_activity', None)
+    def clean_tags(self):
+        tags = self.cleaned_data.get('tags', '')
+        if tags:
+            return [t.strip() for t in tags.split(',') if t.strip()]
+        return []
 
 
 # ============================================================================
-# SOCIAL CONNECTION FORMS - KEPT
-# ============================================================================
-
-class SocialConnectForm(forms.Form):
-    """Connect social media account"""
-    
-    platform = forms.ChoiceField(
-        choices=SocialConnection.PLATFORMS,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-
-
-class SocialSettingsForm(forms.ModelForm):
-    """Update social connection settings"""
-    
-    auto_import = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    import_hashtag = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': '#MyJourney'
-        })
-    )
-    
-    class Meta:
-        model = SocialConnection
-        fields = ['auto_import', 'import_hashtag']
-    
-    def clean_import_hashtag(self):
-        hashtag = self.cleaned_data.get('import_hashtag', '')
-        if hashtag and not hashtag.startswith('#'):
-            hashtag = '#' + hashtag
-        return hashtag
-
-
-# ============================================================================
-# COMMENT FORMS - KEPT
+# COMMENT FORMS
 # ============================================================================
 
 class CommentForm(forms.ModelForm):
-    """Add a comment to an activity"""
+    """Add a comment to a journey or activity"""
     
     content = forms.CharField(
         max_length=500,
@@ -1061,22 +723,77 @@ class CommentForm(forms.ModelForm):
     )
     
     class Meta:
-        model = ActivityComment
+        model = Comment
         fields = ['content']
 
 
 # ============================================================================
-# SEARCH FORMS - KEPT
+# EXPORT FORMS
+# ============================================================================
+
+class ExportForm(forms.ModelForm):
+    """Export journey documentation"""
+    
+    format = forms.ChoiceField(
+        choices=Export.EXPORT_FORMATS,
+        initial='pdf',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    include_media = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    include_comments = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    class Meta:
+        model = Export
+        fields = ['format', 'include_media', 'include_comments']
+
+
+# ============================================================================
+# FOLLOW FORM
+# ============================================================================
+
+class FollowForm(forms.ModelForm):
+    """Follow a journey"""
+    
+    notify_on_new_entry = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    class Meta:
+        model = JourneyFollow
+        fields = ['notify_on_new_entry']
+
+
+# ============================================================================
+# SEARCH FORM
 # ============================================================================
 
 class JourneySearchForm(forms.Form):
-    """Search and filter journeys - social-first"""
+    """Search and filter journeys"""
     
     SORT_CHOICES = [
         ('-created_at', 'Newest'),
-        ('-view_count', 'Most Viewed'),
-        ('-get_follower_count', 'Most Followed'),
         ('title', 'Title A-Z'),
+        ('-updated_at', 'Recently Updated'),
     ]
     
     q = forms.CharField(
@@ -1114,43 +831,14 @@ class JourneySearchForm(forms.Form):
 
 
 # ============================================================================
-# REPORT FORMS - KEPT
-# ============================================================================
-
-class ReportForm(forms.ModelForm):
-    """Report inappropriate content"""
-    
-    reason = forms.ChoiceField(
-        choices=Report.REASON_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    description = forms.CharField(
-        max_length=500,
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-textarea',
-            'placeholder': 'Please provide additional details...',
-            'rows': 4
-        })
-    )
-    
-    class Meta:
-        model = Report
-        fields = ['reason', 'description']
-
-
-# ============================================================================
-# CONTACT / SUPPORT FORMS - KEPT
+# CONTACT FORMS
 # ============================================================================
 
 class ContactForm(forms.Form):
     """Contact form for support"""
     
     name = forms.CharField(
-        max_length=100,
+        max_length=200,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
             'placeholder': 'Your name'
@@ -1164,16 +852,11 @@ class ContactForm(forms.Form):
         })
     )
     
-    subject = forms.ChoiceField(
-        choices=[
-            ('general', 'General Question'),
-            ('support', 'Technical Support'),
-            ('import', 'Content Import Issue'),
-            ('social', 'Social Media Integration'),
-            ('journey', 'Journey Help'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'form-select'
+    subject = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Subject'
         })
     )
     
@@ -1198,20 +881,18 @@ class NewsletterSignupForm(forms.Form):
 
 
 # ============================================================================
-# COMMENTED OUT / REMOVED (Not Social-First Focused)
+# REMOVED (Not Documentation-First)
 # ============================================================================
 
 """
-# REMOVED: DonationForm - Not core to social-first
-class DonationForm(forms.ModelForm):
-    ...
-
-# REMOVED: PostJourneyProductForm - Not core to social-first
-class PostJourneyProductForm(forms.ModelForm):
-    ...
-
-# REMOVED: Funding-related fields from JourneyForm
-'funding_enabled', 'funding_goal', 'funding_description' removed
-
-# REMOVED: paypal_email from ProfileForm
-"""
+REMOVED:
+- SocialConnection forms (too social)
+- ImportedContent forms (too complex)
+- SocialPostTemplate forms (too social)
+- QuickAddTracker forms (replaced by simple ActivityForm)
+- Report forms (moderation, not core)
+- All donation/funding related fields
+- Auto-import social settings
+- Social share URL and auto-post settings
+- The entire "Social-First" concept is removed
+""" 
