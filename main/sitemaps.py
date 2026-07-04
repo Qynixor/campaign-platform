@@ -12,31 +12,18 @@ class StaticViewSitemap(Sitemap):
 
     def items(self):
         return [
-            # Main pages
-            ('landing', None, 1.0),
-            ('conversion_start', None, 0.9),  # ← ADD THIS LINE
-            ('about', None, 0.5),
-            ('privacy', None, 0.3),
-            ('terms', None, 0.3),
-            ('faq', None, 0.5),
-            ('contact', None, 0.5),
-            ('discover', None, 0.8),
-            
-            # Blog pages
-            ('blog_index', None, 0.8),
-            ('blog_instagram', '2026-06-07', 0.6),
-            ('blog_posts_not_journeys', '2026-06-07', 0.65),
-            ('blog_challenge_product', '2026-06-07', 0.65),
-            ('blog_journey_content', '2026-06-07', 0.65),
-            ('blog_scattered_posts', '2026-06-07', 0.65),
-            ('blog_buried_asset', '2026-06-07', 0.7),
-            ('blog_blind_spot', '2026-06-07', 0.7),
-            ('blog_challenge_fails', '2026-06-07', 0.75),
-            ('blog_journey_page', '2026-06-07', 0.75),
-            ('blog_challenge_lost', '2026-06-07', 0.75),
-            
-            # Template store
-            ('template_store', None, 0.7),
+            # Main pages - documentation-first
+            ('landing', None, 1.0),      # Home page - highest priority
+            ('discover', None, 0.8),      # Discover journeys
+            ('about', None, 0.5),         # About page
+            ('privacy', None, 0.3),       # Privacy policy (noindex in template)
+            ('terms', None, 0.3),         # Terms (noindex in template)
+            ('contact', None, 0.5),       # Contact page
+            # ('conversion_start', None, 0.9),  # REMOVED - doesn't exist
+            # ('faq', None, 0.5),                # REMOVED - FAQ content moved to contact AI
+            # ('blog_index', None, 0.8),        # REMOVED - blog pages removed
+            # All blog specific pages removed
+            # ('template_store', None, 0.7),     # REMOVED - template store removed
         ]
 
     def location(self, item):
@@ -60,13 +47,15 @@ class JourneySitemap(Sitemap):
     priority = 0.9
 
     def items(self):
-        return Journey.objects.filter(is_public=True, is_active=True)
+        # Use privacy_status instead of is_public
+        return Journey.objects.filter(privacy_status='public', is_active=True)
 
     def lastmod(self, obj):
         return obj.updated_at
 
     def location(self, obj):
         return f"/j/{obj.slug}/"
+
 
 class CreatorProfileSitemap(Sitemap):
     """Sitemap for public creator profiles"""
