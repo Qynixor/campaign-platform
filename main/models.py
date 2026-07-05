@@ -68,7 +68,6 @@ def create_user_profile(sender, instance, created, **kwargs):
 # ============================================================================
 # JOURNEY MODEL — Documentation Focus
 # ============================================================================
-
 class Journey(models.Model):
     """
     A journey is a container for documenting progress over time.
@@ -110,6 +109,8 @@ class Journey(models.Model):
     # ==================== STRUCTURE ====================
     duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
     
+
+    
     # Manual override for creators already in progress
     current_day_override = models.PositiveIntegerField(
         null=True,
@@ -125,7 +126,7 @@ class Journey(models.Model):
     
     # ==================== ANALYTICS ====================
     view_count = models.PositiveIntegerField(default=0)
-    unique_viewers = models.PositiveIntegerField(default=0)  # ← ADDED THIS
+    unique_viewers = models.PositiveIntegerField(default=0)
     
     # ==================== PRIVACY ====================
     privacy_status = models.CharField(
@@ -145,7 +146,7 @@ class Journey(models.Model):
     # ==================== TIMESTAMPS ====================
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+   
     class Meta:
         ordering = ['-created_at']
         indexes = [
