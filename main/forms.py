@@ -204,6 +204,10 @@ class ProfileForm(forms.ModelForm):
 # ============================================================================
 # JOURNEY FORMS — Documentation Focus
 # ============================================================================
+
+ # ============================================================================
+# JOURNEY FORMS — Documentation Focus
+# ============================================================================
 class JourneyForm(forms.ModelForm):
     """Create/Edit a journey — documentation-first"""
     
@@ -306,6 +310,17 @@ class JourneyForm(forms.ModelForm):
         help_text="Allow other users to comment on your journey"
     )
     
+    # ==================== TEMPLATE STYLE ====================
+    template_style = forms.ChoiceField(
+        choices=Journey.TEMPLATE_STYLE_CHOICES,
+        widget=forms.RadioSelect(attrs={
+            'class': 'template-style-radio'
+        }),
+        initial='default',
+        label='Display Style',
+        help_text='How your journey looks to visitors'
+    )
+    
     tags_input = forms.CharField(
         max_length=500,
         required=False,
@@ -332,7 +347,7 @@ class JourneyForm(forms.ModelForm):
         fields = [
             'title', 'description', 'category', 'journey_type',
             'cover_image', 'duration', 'current_day_override', 'start_date',
-            'privacy_status', 'allow_comments'
+            'privacy_status', 'allow_comments', 'template_style'  # ← ADDED template_style
         ]
     
     def __init__(self, *args, **kwargs):
@@ -340,6 +355,7 @@ class JourneyForm(forms.ModelForm):
         
         if self.instance and self.instance.pk:
             self.fields['current_day_override'].initial = self.instance.current_day_override
+            self.fields['template_style'].initial = self.instance.template_style or 'default'
             
             # FIX: Use journeytag_set instead of tags
             tags = self.instance.journeytag_set.all()
@@ -392,6 +408,7 @@ class JourneyForm(forms.ModelForm):
     def save(self, commit=True):
         journey = super().save(commit=False)
         journey.current_day_override = self.cleaned_data.get('current_day_override')
+        journey.template_style = self.cleaned_data.get('template_style', 'default')
         
         if commit:
             journey.save()
@@ -414,6 +431,8 @@ class JourneyForm(forms.ModelForm):
         
         return journey
 
+
+ 
 class JourneySettingsForm(forms.ModelForm):
     """Quick settings update for existing journey"""
     

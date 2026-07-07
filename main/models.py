@@ -68,6 +68,9 @@ def create_user_profile(sender, instance, created, **kwargs):
 # ============================================================================
 # JOURNEY MODEL — Documentation Focus
 # ============================================================================
+# ============================================================================
+# JOURNEY MODEL — Documentation Focus
+# ============================================================================
 class Journey(models.Model):
     """
     A journey is a container for documenting progress over time.
@@ -95,6 +98,14 @@ class Journey(models.Model):
         ('public', 'Public — Everyone'),
     ]
     
+    # ==================== TEMPLATE STYLE ====================
+    TEMPLATE_STYLE_CHOICES = [
+        ('default', 'Classic'),
+        ('fitness', 'Fitness'),
+        ('portfolio', 'Portfolio'),
+        ('startup', 'Startup'),
+    ]
+    
     # ==================== BASIC INFO ====================
     creator = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='journeys')
     title = models.CharField(max_length=100)
@@ -106,10 +117,16 @@ class Journey(models.Model):
     # ==================== VISUALS ====================
     cover_image = CloudinaryField('image', folder='journey_covers', null=True, blank=True)
     
+    # ==================== TEMPLATE STYLE ====================
+    template_style = models.CharField(
+        max_length=20,
+        choices=TEMPLATE_STYLE_CHOICES,
+        default='default',
+        help_text="Display style for your journey"
+    )
+    
     # ==================== STRUCTURE ====================
     duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
-    
-
     
     # Manual override for creators already in progress
     current_day_override = models.PositiveIntegerField(
