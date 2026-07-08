@@ -172,55 +172,80 @@ def landing_view(request):
     
     return render(request, 'landing.html', context)
 
-
 def discover_view(request):
-    """Browse and discover public journeys"""
+    """Browse and discover public journeys AND public journals"""
     form = JourneySearchForm(request.GET)
+    
+    # Get public journeys
     journeys = Journey.objects.filter(privacy_status='public', is_active=True)
     
-    if form.is_valid():
-        q = form.cleaned_data.get('q')
-        if q:
-            journeys = journeys.filter(
-                Q(title__icontains=q) |
-                Q(description__icontains=q) |
-                Q(creator__user__username__icontains=q)
-            )
-        category = form.cleaned_data.get('category')
-        if category:
-            journeys = journeys.filter(category=category)
-        journey_type = form.cleaned_data.get('journey_type')
-        if journey_type:
-            journeys = journeys.filter(journey_type=journey_type)
-        sort = form.cleaned_data.get('sort')
-        allowed_sorts = ['-created_at', 'created_at', 'title', '-title']
-        if sort and sort in allowed_sorts:
-            journeys = journeys.order_by(sort)
-        else:
-            journeys = journeys.order_by('-created_at')
+    # Get public journals
+    journals = JournalEntry.objects.filter(is_private=False).select_related('user')
+    
+    # Apply search filter to both
+    q = request.GET.get('q', '')
+    if q:
+        journeys = journeys.filter(
+            Q(title__icontains=q) |
+            Q(description__icontains=q) |
+            Q(creator__user__username__icontains=q)
+        )
+        journals = journals.filter(
+            Q(title__icontains=q) |
+            Q(content__icontains=q) |
+            Q(user__username__icontains=q) |
+            Q(tags__icontains=q)
+        )
+    
+    # Apply category filter (only for journeys)
+    category = request.GET.get('category')
+    if category:
+        journeys = journeys.filter(category=category)
+    
+    # Apply journey type filter
+    journey_type = request.GET.get('journey_type')
+    if journey_type:
+        journeys = journeys.filter(journey_type=journey_type)
+    
+    # Apply sort
+    sort = request.GET.get('sort', '-created_at')
+    allowed_sorts = ['-created_at', 'created_at', 'title', '-title']
+    if sort in allowed_sorts:
+        journeys = journeys.order_by(sort)
+        journals = journals.order_by(sort)
     else:
         journeys = journeys.order_by('-created_at')
+        journals = journals.order_by('-created_at')
     
-    total_count = journeys.count()
-    paginator = Paginator(journeys, 12)
-    page = request.GET.get('page')
+    # Combine and paginate
+    total_count = journeys.count() + journals.count()
+    
+    # Paginate each separately then combine
+    journey_paginator = Paginator(journeys, 12)
+    journal_paginator = Paginator(journals, 6)
+    
+    page = request.GET.get('page', 1)
     
     try:
-        journeys_page = paginator.page(page)
-    except PageNotAnInteger:
-        journeys_page = paginator.page(1)
-    except EmptyPage:
-        journeys_page = paginator.page(paginator.num_pages)
+        journeys_page = journey_paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        journeys_page = journey_paginator.page(1)
+    
+    try:
+        journals_page = journal_paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        journals_page = journal_paginator.page(1)
     
     context = {
         'form': form,
         'journeys': journeys_page,
+        'journals': journals_page,
         'categories': Journey.CATEGORY_CHOICES,
         'total_count': total_count,
+        'has_journals': journals.count() > 0,
     }
     
     return render(request, 'discover.html', context)
-
 
 def journey_detail_view(request, slug):
     """View a single journey with all its entries"""
@@ -663,12 +688,16 @@ def journal_delete_view(request, pk):
     
     return render(request, 'dashboard/journal_confirm_delete.html', context)
 
-
-@login_required
 def journal_detail_view(request, pk):
     """View a single journal entry"""
-    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+    entry = get_object_or_404(JournalEntry, pk=pk)
     
+    # Privacy check: private entries only for owner
+    if entry.is_private:
+        if not request.user.is_authenticated or request.user != entry.user:
+            raise Http404("This journal entry is private.")
+    
+    # Public entries: anyone can view
     context = {
         'entry': entry,
     }

@@ -1,28 +1,29 @@
+
 {% extends 'base.html' %}
 {% load static %}
 
 {# ===== SEO BLOCKS ===== #}
-{% block title %}Discover Journeys | Rallynex{% endblock %}
+{% block title %}Discover Journeys & Journals | Rallynex{% endblock %}
 
 {% block meta_title %}
     {% if request.GET.q %}
-        Search: "{{ request.GET.q }}" | Discover Journeys | Rallynex
+        Search: "{{ request.GET.q }}" | Discover | Rallynex
     {% elif request.GET.category %}
         {{ request.GET.category|title }} Journeys | Discover | Rallynex
     {% else %}
-        Discover Journeys - Document Your Journey | Rallynex
+        Discover Journeys & Public Journals | Rallynex
     {% endif %}
 {% endblock %}
 
 {% block meta_description %}
     {% if request.GET.q %}
-        Find "{{ request.GET.q }}" journeys and challenges on Rallynex.
+        Find "{{ request.GET.q }}" journeys and public journals on Rallynex.
     {% elif request.GET.category == 'fitness' %}
         Discover fitness journeys and daily workout challenges. Track your progress on Rallynex.
     {% elif request.GET.category == 'learning' %}
         Explore learning journeys and educational challenges. Master new skills on Rallynex.
     {% else %}
-        Discover thousands of structured journeys on Rallynex. Find daily logs, milestone trackers, and community content.
+        Discover public journeys and journals on Rallynex. Find daily logs, milestone trackers, and community reflections.
     {% endif %}
 {% endblock %}
 
@@ -637,6 +638,147 @@
         gap: 8px;
     }
     
+    /* ============================================
+       JOURNAL CARDS
+       ============================================ */
+    .journals-section {
+        margin-top: 48px;
+        padding-top: 48px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .journals-section .section-header {
+        text-align: left;
+        margin-bottom: 24px;
+    }
+    
+    .journals-section .section-header h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .journals-section .section-header h2 i {
+        color: var(--accent);
+    }
+    
+    .journals-section .section-header p {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+    
+    .journal-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+    
+    .journal-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .journal-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+    
+    .journal-card .journal-author {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    
+    .journal-card .journal-author .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .journal-card .journal-author .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .journal-card .journal-author .avatar i {
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+    
+    .journal-card .journal-author .author-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .journal-card .journal-author .author-username {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    
+    .journal-card .journal-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .journal-card .journal-title a {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+    
+    .journal-card .journal-title a:hover {
+        color: var(--accent);
+    }
+    
+    .journal-card .journal-excerpt {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .journal-card .journal-footer {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+        font-size: 12px;
+        color: var(--text-muted);
+        flex-wrap: wrap;
+    }
+    
+    .journal-card .journal-footer span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .journal-card .journal-footer i {
+        font-size: 12px;
+    }
+    
     /* ----- Empty State ----- */
     .empty-state-modern {
         text-align: center;
@@ -723,11 +865,17 @@
         cursor: not-allowed;
     }
     
-    /* ----- Responsive ----- */
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
     @media (max-width: 1024px) {
         .journey-grid-modern {
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
+        }
+        
+        .journal-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
     
@@ -779,6 +927,10 @@
             gap: 16px;
         }
         
+        .journal-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
         .card-content {
             padding: 16px 18px 18px;
         }
@@ -824,6 +976,15 @@
             padding: 6px 14px 6px 16px;
             padding-right: 32px;
         }
+        
+        .journals-section {
+            margin-top: 32px;
+            padding-top: 32px;
+        }
+        
+        .journals-section .section-header h2 {
+            font-size: 20px;
+        }
     }
     
     @media (max-width: 480px) {
@@ -839,6 +1000,10 @@
         .journey-grid-modern {
             grid-template-columns: 1fr;
             gap: 16px;
+        }
+        
+        .journal-grid {
+            grid-template-columns: 1fr;
         }
         
         .card-stats {
@@ -888,9 +1053,9 @@
         <div class="discover-hero-content">
             <h1>
                 <i class="fas fa-compass"></i> 
-                Discover Journeys
+                Discover
             </h1>
-            <p class="subtitle">Find journeys people are documenting — from daily logs to milestone achievements</p>
+            <p class="subtitle">Find public journeys and journals from the community</p>
             
             <!-- Modern Search Bar -->
             <div class="search-container">
@@ -903,9 +1068,9 @@
                             type="text" 
                             name="q" 
                             id="searchInput"
-                            placeholder="Search journeys, creators, or topics..." 
+                            placeholder="Search journeys, journals, creators, or topics..." 
                             value="{{ request.GET.q|default:'' }}"
-                            aria-label="Search journeys"
+                            aria-label="Search"
                         >
                         <div class="search-actions">
                             <button type="button" class="clear-btn" id="clearBtn" aria-label="Clear search">
@@ -960,7 +1125,7 @@
         <div class="results-header">
             <div class="results-count">
                 <i class="fas fa-route" style="color: var(--accent);"></i>
-                <strong>{{ total_count }}</strong> journey{{ total_count|pluralize }} found
+                <strong>{{ total_count }}</strong> result{{ total_count|pluralize }} found
                 {% if request.GET.q %}
                     <span style="color: var(--text-muted);">for "<strong>{{ request.GET.q }}</strong>"</span>
                 {% endif %}
@@ -1097,73 +1262,136 @@
                     </div>
                 {% endfor %}
             </div>
+        {% endif %}
+        
+        <!-- ============================================
+             PUBLIC JOURNALS SECTION
+             ============================================ -->
+        {% if journals and journals|length > 0 %}
+        <div class="journals-section">
+            <div class="section-header">
+                <h2>
+                    <i class="fas fa-pen-fancy"></i> 
+                    Public Journals
+                </h2>
+                <p>Personal reflections and thoughts from the community</p>
+            </div>
             
-            <!-- Pagination -->
-            {% if journeys.has_other_pages %}
-                <div class="pagination-modern">
-                    {% if journeys.has_previous %}
-                        <a href="?page={{ journeys.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    {% else %}
-                        <span class="disabled"><i class="fas fa-chevron-left"></i></span>
-                    {% endif %}
+            <div class="journal-grid">
+                {% for journal in journals %}
+                <div class="journal-card">
+                    <div class="journal-author">
+                        <div class="avatar">
+                            {% if journal.user.profile.image %}
+                                <img src="{{ journal.user.profile.image.url }}" alt="{{ journal.user.username }}">
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="author-name">{{ journal.user.get_full_name|default:journal.user.username }}</div>
+                            <div class="author-username">@{{ journal.user.username }}</div>
+                        </div>
+                    </div>
                     
-                    {% for num in journeys.paginator.page_range %}
-                        {% if journeys.number == num %}
-                            <span class="current">{{ num }}</span>
-                        {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
-                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                {{ num }}
-                            </a>
+                    <div class="journal-title">
+                        <a href="{% url 'journal_detail' pk=journal.pk %}">{{ journal.title }}</a>
+                    </div>
+                    
+                    <p class="journal-excerpt">{{ journal.content|truncatechars:120 }}</p>
+                    
+                    <div class="journal-footer">
+                        <span><i class="fas fa-calendar-alt"></i> {{ journal.created_at|date:"M d, Y" }}</span>
+                        {% if journal.mood %}
+                        <span><i class="fas fa-smile"></i> {{ journal.mood }}</span>
                         {% endif %}
-                    {% endfor %}
-                    
-                    {% if journeys.has_next %}
-                        <a href="?page={{ journeys.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    {% else %}
-                        <span class="disabled"><i class="fas fa-chevron-right"></i></span>
-                    {% endif %}
+                        {% if journal.tags %}
+                        <span><i class="fas fa-tags"></i> {{ journal.tags|length }}</span>
+                        {% endif %}
+                    </div>
                 </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- ============================================
+             PAGINATION
+             ============================================ -->
+        {% if journeys.has_other_pages or journals.has_other_pages %}
+        <div class="pagination-modern" style="margin-top: 40px;">
+            {% if journeys.has_previous %}
+                <a href="?page={{ journeys.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% else %}
+                <span class="disabled"><i class="fas fa-chevron-left"></i></span>
             {% endif %}
             
-            <!-- Debug info -->
-            <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
-                <span>Showing {{ journeys|length }} of {{ total_count }} journeys</span>
-                <span style="margin: 0 8px;">·</span>
-                <span>Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}</span>
-            </div>
-            
-        {% else %}
-            <!-- Empty State -->
-            <div class="empty-state-modern">
-                <span class="empty-icon">
-                    <i class="fas fa-compass"></i>
-                </span>
-                <h3>No journeys found</h3>
-                <p>
-                    {% if request.GET.q %}
-                        We couldn't find any journeys matching "<strong>{{ request.GET.q }}</strong>". 
-                        Try adjusting your search terms.
-                    {% else %}
-                        There are no journeys matching your current filters. 
-                        Try clearing some filters or check back later.
-                    {% endif %}
-                </p>
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                    <a href="{% url 'discover' %}" class="btn btn-primary">
-                        <i class="fas fa-sync-alt"></i> Reset All Filters
+            {% for num in journeys.paginator.page_range %}
+                {% if journeys.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
+                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        {{ num }}
                     </a>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'create_journey' %}" class="btn btn-outline">
-                            <i class="fas fa-plus-circle"></i> Create a Journey
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
+                {% endif %}
+            {% endfor %}
+            
+            {% if journeys.has_next %}
+                <a href="?page={{ journeys.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <span class="disabled"><i class="fas fa-chevron-right"></i></span>
+            {% endif %}
+        </div>
         {% endif %}
+        
+        <!-- Debug info -->
+        <div style="text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted);">
+            <span>Showing {{ journeys|length }} journeys</span>
+            {% if journals %}
+            <span style="margin: 0 8px;">·</span>
+            <span>{{ journals|length }} journals</span>
+            {% endif %}
+            <span style="margin: 0 8px;">·</span>
+            <span>Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}</span>
+        </div>
+        
+        <!-- ============================================
+             EMPTY STATE
+             ============================================ -->
+        {% if not journeys and not journals %}
+        <div class="empty-state-modern">
+            <span class="empty-icon">
+                <i class="fas fa-compass"></i>
+            </span>
+            <h3>Nothing found</h3>
+            <p>
+                {% if request.GET.q %}
+                    We couldn't find anything matching "<strong>{{ request.GET.q }}</strong>". 
+                    Try adjusting your search terms.
+                {% else %}
+                    No public journeys or journals yet. Check back later!
+                {% endif %}
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <a href="{% url 'discover' %}" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Reset All Filters
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'create_journey' %}" class="btn btn-outline">
+                        <i class="fas fa-plus-circle"></i> Create a Journey
+                    </a>
+                    <a href="{% url 'journal_create' %}" class="btn btn-outline">
+                        <i class="fas fa-pen"></i> Write a Journal
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
     </div>
 </section>
 
@@ -1236,7 +1464,8 @@
         console.log('🔍 Discover page initialized');
         console.log('📄 Current page: {{ journeys.number|default:1 }}');
         console.log('📊 Total pages: {{ journeys.paginator.num_pages|default:1 }}');
-        console.log('📦 Items on this page: {{ journeys|length|default:0 }}');
+        console.log('📦 Journeys on this page: {{ journeys|length|default:0 }}');
+        console.log('📝 Journals on this page: {{ journals|length|default:0 }}');
         console.log('📈 Total items: {{ total_count }}');
     })();
 </script>

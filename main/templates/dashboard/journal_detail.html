@@ -115,6 +115,107 @@
         color: var(--text-muted);
     }
     
+    /* ===== SHARE ICON ===== */
+    .share-icon-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+    }
+    
+    .share-icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 16px;
+        text-decoration: none;
+        position: relative;
+    }
+    
+    .share-icon-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+    
+    .share-icon-btn:active {
+        transform: scale(0.95);
+    }
+    
+    .share-icon-btn.copied {
+        border-color: #22c55e;
+        color: #22c55e;
+        background: rgba(34, 197, 94, 0.08);
+    }
+    
+    .share-icon-btn .tooltip {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 500;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s ease;
+    }
+    
+    .share-icon-btn .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: var(--border-color);
+    }
+    
+    .share-icon-btn:hover .tooltip {
+        opacity: 1;
+    }
+    
+    .share-icon-btn .tooltip.copied-tooltip {
+        border-color: #22c55e;
+        color: #22c55e;
+    }
+    
+    .share-icon-btn .tooltip.copied-tooltip::after {
+        border-top-color: #22c55e;
+    }
+    
+    /* Private entry - disable share */
+    .share-icon-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    
+    .share-icon-btn.disabled:hover {
+        transform: none;
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+        box-shadow: none;
+    }
+    
+    .share-icon-btn.disabled .tooltip {
+        opacity: 0 !important;
+    }
+    
     /* ===== MOOD & LOCATION ===== */
     .entry-context {
         display: flex;
@@ -260,6 +361,7 @@
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
+        margin-top: 4px;
     }
     
     .entry-actions .btn {
@@ -282,6 +384,56 @@
     .back-link:hover {
         color: var(--text-primary);
         transform: translateX(-4px);
+    }
+    
+    /* ===== BACK BUTTON (for non-owners) ===== */
+    .back-link-simple {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+    
+    .back-link-simple:hover {
+        color: var(--text-primary);
+        transform: translateX(-4px);
+    }
+    
+    /* ===== TOAST ===== */
+    .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        padding: 12px 24px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        pointer-events: none;
+    }
+    
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    
+    .toast i {
+        color: #22c55e;
+        font-size: 18px;
     }
     
     /* ===== RESPONSIVE ===== */
@@ -317,6 +469,10 @@
             align-items: flex-start;
         }
         
+        .share-icon-wrapper {
+            margin-left: 0;
+        }
+        
         .entry-actions {
             flex-direction: column;
         }
@@ -339,9 +495,15 @@
 <div class="journal-detail-container">
     
     <!-- Back Link -->
+    {% if user == entry.user %}
     <a href="{% url 'journal_view' %}" class="back-link">
         <i class="fas fa-arrow-left"></i> Back to Journal
     </a>
+    {% else %}
+    <a href="{% url 'discover' %}" class="back-link-simple">
+        <i class="fas fa-arrow-left"></i> Back to Discover
+    </a>
+    {% endif %}
     
     <!-- Hero Section -->
     <div class="entry-hero">
@@ -349,10 +511,25 @@
             <span class="entry-badge">
                 <i class="fas fa-pen-fancy"></i> Journal Entry
             </span>
-            <span class="privacy-badge-hero {% if entry.is_private %}private{% else %}public{% endif %}">
-                <i class="fas fa-{% if entry.is_private %}lock{% else %}globe{% endif %}"></i>
-                {% if entry.is_private %}Private{% else %}Public{% endif %}
-            </span>
+            <div class="share-icon-wrapper">
+                <!-- Share/Copy Link Icon -->
+                {% if not entry.is_private %}
+                <button class="share-icon-btn" id="shareBtn" onclick="copyJournalLink()" title="Copy link to share">
+                    <i class="fas fa-share-alt"></i>
+                    <span class="tooltip" id="tooltip">Copy link</span>
+                </button>
+                {% else %}
+                <button class="share-icon-btn disabled" disabled title="Private entry cannot be shared">
+                    <i class="fas fa-share-alt"></i>
+                    <span class="tooltip">Private</span>
+                </button>
+                {% endif %}
+                
+                <span class="privacy-badge-hero {% if entry.is_private %}private{% else %}public{% endif %}">
+                    <i class="fas fa-{% if entry.is_private %}lock{% else %}globe{% endif %}"></i>
+                    {% if entry.is_private %}Private{% else %}Public{% endif %}
+                </span>
+            </div>
         </div>
         
         <h1 class="entry-title">{{ entry.title }}</h1>
@@ -363,6 +540,7 @@
             {% if entry.updated_at != entry.created_at %}
             <span><i class="fas fa-edit"></i> Updated {{ entry.updated_at|timesince }} ago</span>
             {% endif %}
+            <span><i class="fas fa-user"></i> @{{ entry.user.username }}</span>
         </div>
     </div>
     
@@ -412,7 +590,8 @@
     </a>
     {% endif %}
     
-    <!-- Actions -->
+    <!-- Actions - ONLY SHOW FOR OWNER -->
+    {% if user == entry.user %}
     <div class="entry-actions">
         <a href="{% url 'journal_edit' pk=entry.pk %}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Edit Entry
@@ -420,11 +599,76 @@
         <a href="{% url 'journal_delete' pk=entry.pk %}" class="btn btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);" onclick="return confirm('Delete this entry?')">
             <i class="fas fa-trash"></i> Delete
         </a>
-        <a href="{% url 'journal_view' %}" class="btn btn-outline">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
     </div>
+    {% endif %}
     
 </div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span>Link copied to clipboard!</span>
+</div>
+
+<script>
+    // ===== COPY LINK FUNCTION =====
+    function copyJournalLink() {
+        const url = window.location.href;
+        const btn = document.getElementById('shareBtn');
+        const tooltip = document.getElementById('tooltip');
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Link copied to clipboard!');
+                showCopiedState(btn, tooltip);
+            }).catch(() => {
+                fallbackCopy(url, btn, tooltip);
+            });
+        } else {
+            fallbackCopy(url, btn, tooltip);
+        }
+    }
+    
+    function fallbackCopy(text, btn, tooltip) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {
+            document.execCommand('copy');
+            showToast('Link copied to clipboard!');
+            showCopiedState(btn, tooltip);
+        } catch (err) {
+            prompt('Copy this link:', text);
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+    
+    function showCopiedState(btn, tooltip) {
+        btn.classList.add('copied');
+        tooltip.textContent = 'Copied! ✅';
+        tooltip.classList.add('copied-tooltip');
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            tooltip.textContent = 'Copy link';
+            tooltip.classList.remove('copied-tooltip');
+        }, 2000);
+    }
+    
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const span = toast.querySelector('span');
+        span.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+</script>
 
 {% endblock %}
