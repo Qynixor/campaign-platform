@@ -4,7 +4,9 @@ Tells Google which pages to index and how often to check them
 """
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from .models import Journey, Profile
+from django.views.generic import RedirectView
+from .models import Journey, Profile, JournalEntry
+
 
 class StaticViewSitemap(Sitemap):
     changefreq = "monthly"
@@ -20,10 +22,6 @@ class StaticViewSitemap(Sitemap):
             ('terms', None, 0.3),         # Terms (noindex in template)
             ('contact', None, 0.5),       # Contact page
             # ('conversion_start', None, 0.9),  # REMOVED - doesn't exist
-            # ('faq', None, 0.5),                # REMOVED - FAQ content moved to contact AI
-            # ('blog_index', None, 0.8),        # REMOVED - blog pages removed
-            # All blog specific pages removed
-            # ('template_store', None, 0.7),     # REMOVED - template store removed
         ]
 
     def location(self, item):
@@ -48,7 +46,7 @@ class JourneySitemap(Sitemap):
 
     def items(self):
         # Use privacy_status instead of is_public
-        return Journey.objects.filter(privacy_status='public', is_active=True)
+        return Journey.objects.filter(privacy_status='public', is_active=True).order_by('-created_at')
 
     def lastmod(self, obj):
         return obj.updated_at
@@ -63,10 +61,27 @@ class CreatorProfileSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        return Profile.objects.filter(user__is_active=True)
+        # Order by id to fix UnorderedObjectListWarning
+        return Profile.objects.filter(user__is_active=True).order_by('id')
 
     def lastmod(self, obj):
         return obj.user.date_joined
 
     def location(self, obj):
         return f"/@{obj.user.username}/"
+
+
+class JournalSitemap(Sitemap):
+    """Sitemap for public journal entries"""
+    changefreq = "weekly"
+    priority = 0.6
+
+    def items(self):
+        # Only include public journal entries, ordered to fix warning
+        return JournalEntry.objects.filter(is_private=False).order_by('-created_at')
+
+    def lastmod(self, obj):
+        return obj.updated_at
+
+    def location(self, obj):
+        return reverse('journal_detail', kwargs={'pk': obj.pk})
