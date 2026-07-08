@@ -71,6 +71,125 @@
         overflow-x: hidden;
     }
     
+    /* ===== FULL SCREEN LOADING OVERLAY ===== */
+    .fullscreen-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 24px;
+        transition: opacity 0.3s ease;
+    }
+    
+    .fullscreen-loader.active {
+        display: flex;
+        animation: fadeInLoader 0.3s ease;
+    }
+    
+    @keyframes fadeInLoader {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    /* White Spinner Styles */
+    .loader-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #ffffff;
+        animation: spinLoader 0.8s linear infinite;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
+    }
+    
+    .loader-spinner-inner {
+        width: 44px;
+        height: 44px;
+        border: 3px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        border-top-color: #ffffff;
+        animation: spinLoader 0.6s linear infinite reverse;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .loader-wrapper {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    @keyframes spinLoader {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loader-text {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        animation: pulseText 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulseText {
+        0%, 100% {
+            opacity: 0.6;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+    
+    .loader-dots {
+        display: inline-flex;
+        gap: 4px;
+        margin-left: 4px;
+    }
+    
+    .loader-dots span {
+        animation: dotBounce 1.4s ease-in-out infinite;
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .loader-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .loader-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes dotBounce {
+        0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.3;
+        }
+        40% {
+            transform: translateY(-8px);
+            opacity: 1;
+        }
+    }
+    
     /* ===== JOURNEY HERO ===== */
     .journey-hero {
         position: relative;
@@ -100,70 +219,6 @@
     .journey-container.template-startup .journey-hero::before {
         background: radial-gradient(circle at 30% 50%, rgba(34, 197, 94, 0.10) 0%, transparent 50%);
     }
-    
-    /* Progress Fill Colors by Template */
-    .journey-container.template-fitness .progress-fill {
-        background: linear-gradient(90deg, #ef4444, #f97316);
-    }
-    .journey-container.template-fitness .progress-fill::after {
-        background: #f97316;
-        box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
-    }
-    
-    .journey-container.template-portfolio .progress-fill {
-        background: linear-gradient(90deg, #3b82f6, #6366f1);
-    }
-    .journey-container.template-portfolio .progress-fill::after {
-        background: #6366f1;
-        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
-    }
-    
-    .journey-container.template-startup .progress-fill {
-        background: linear-gradient(90deg, #22c55e, #10b981);
-    }
-    .journey-container.template-startup .progress-fill::after {
-        background: #10b981;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
-    }
-    
-    /* Template Style Badge */
-    .template-style-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 9px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-left: 8px;
-        vertical-align: middle;
-    }
-    .template-style-badge.fitness {
-        background: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
-    }
-    .template-style-badge.portfolio {
-        background: rgba(59, 130, 246, 0.15);
-        color: #3b82f6;
-    }
-    .template-style-badge.startup {
-        background: rgba(34, 197, 94, 0.15);
-        color: #22c55e;
-    }
-    .template-style-badge.default {
-        background: rgba(108, 117, 125, 0.15);
-        color: var(--text-muted);
-    }
-    
-    /* Template Banner Icons */
-    .template-banner.fitness .title::before { content: '🏋️ '; }
-    .template-banner.portfolio .title::before { content: '💼 '; }
-    .template-banner.startup .title::before { content: '🚀 '; }
-    
-    /* ===== REST OF YOUR EXISTING STYLES ===== */
-    /* ... keep all your existing CSS here ... */
     
     [data-theme="light"] .journey-hero {
         background: linear-gradient(160deg, #fafbfc 0%, #f0f2f5 30%, #e8ecf1 70%, #e2e8f0 100%) !important;
@@ -282,7 +337,10 @@
         filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
     }
     
-    .path-node { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .path-node { 
+        cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
     .path-node:hover { transform: scale(1.2); }
     .path-node.completed { fill: #22c55e; stroke: #22c55e; stroke-width: 2; }
     .path-node.current { fill: #fff; stroke: #fff; stroke-width: 3; animation: pulseNode 2s infinite; }
@@ -295,8 +353,21 @@
     }
     
     .node-label-svg {
-        font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
-        pointer-events: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        font-weight: 700; 
+        font-size: 9px; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px;
+        pointer-events: none;
+    }
+    
+    /* Light mode - clean dark text for labels */
+    [data-theme="light"] .node-label-svg {
+        fill: #1a202c !important;
+    }
+    
+    /* Dark mode - clean white text for labels */
+    [data-theme="dark"] .node-label-svg {
+        fill: #ffffff !important;
     }
     
     .path-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 1.8s ease-out forwards; }
@@ -343,6 +414,31 @@
     
     [data-theme="light"] .progress-fill {
         background: linear-gradient(90deg, #cbd5e1, #94a3b8) !important;
+    }
+    
+    /* Progress Fill Colors by Template */
+    .journey-container.template-fitness .progress-fill {
+        background: linear-gradient(90deg, #ef4444, #f97316);
+    }
+    .journey-container.template-fitness .progress-fill::after {
+        background: #f97316;
+        box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+    }
+    
+    .journey-container.template-portfolio .progress-fill {
+        background: linear-gradient(90deg, #3b82f6, #6366f1);
+    }
+    .journey-container.template-portfolio .progress-fill::after {
+        background: #6366f1;
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+    }
+    
+    .journey-container.template-startup .progress-fill {
+        background: linear-gradient(90deg, #22c55e, #10b981);
+    }
+    .journey-container.template-startup .progress-fill::after {
+        background: #10b981;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
     }
     
     /* ===== STATS CARDS ===== */
@@ -603,13 +699,6 @@
         position: absolute; top: 6px; right: 6px; width: 18px; height: 18px;
         background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center;
         color: #fff; font-size: 9px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    
-    .play-icon-strip {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 30px; height: 30px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 11px;
     }
     
     .lock-icon-strip {
@@ -1120,6 +1209,36 @@
         height: 100%;
         padding: 20px;
     }
+    
+    /* ===== MODAL SPINNER ===== */
+    .modal-spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 15;
+        transition: opacity 0.3s ease;
+    }
+    .modal-spinner.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    .modal-spinner .spinner-ring {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #ffffff;
+        animation: spin 0.8s linear infinite;
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
     .modal-media .content-wrapper {
         width: 100%;
         height: 100%;
@@ -1310,6 +1429,17 @@
 
 {% block content %}
 
+<!-- FULL SCREEN LOADING SPINNER -->
+<div class="fullscreen-loader" id="fullscreenLoader">
+    <div class="loader-wrapper">
+        <div class="loader-spinner"></div>
+        <div class="loader-spinner-inner"></div>
+    </div>
+    <div class="loader-text">
+        Loading<span class="loader-dots"><span>.</span><span>.</span><span>.</span></span>
+    </div>
+</div>
+
 <div class="journey-container template-{{ journey.template_style|default:'default' }}">
     
     <!-- ===== HERO ===== -->
@@ -1322,15 +1452,7 @@
         </div>
         
         <div class="journey-title-top">
-            <h2>
-                {{ journey.title }}
-                {% if journey.template_style and journey.template_style != 'default' %}
-                <span class="template-style-badge {{ journey.template_style }}">
-                    <i class="fas fa-{% if journey.template_style == 'fitness' %}dumbbell{% elif journey.template_style == 'portfolio' %}briefcase{% elif journey.template_style == 'startup' %}rocket{% else %}paint-brush{% endif %}"></i>
-                    {{ journey.template_style|title }}
-                </span>
-                {% endif %}
-            </h2>
+            <h2>{{ journey.title }}</h2>
             <a href="{% url 'creator_profile' username=journey.creator.user.username %}" class="creator-profile-link" onclick="event.stopPropagation();">
                 <div class="creator-info">
                     <div class="creator-avatar">
@@ -1426,7 +1548,7 @@
                         {% endif %}
                         
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
-                        {% if activity and activity.media_file %}<div class="play-icon-strip"><i class="fas fa-play"></i></div>{% endif %}
+                        
                         <div class="strip-overlay">
                             <span class="strip-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
                             <span class="strip-day-status">{% if activity %}Done{% else %}Open{% endif %}</span>
@@ -1739,7 +1861,9 @@
             <span class="modal-day" id="modalDay">Day 1</span>
         </div>
         <div class="modal-media" id="modalMedia">
-            <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-size:14px;opacity:0.5;">Loading...</div>
+            <div class="modal-spinner" id="modalSpinner">
+                <div class="spinner-ring"></div>
+            </div>
         </div>
         <div class="modal-footer">
             <p class="modal-caption" id="modalCaption"></p>
@@ -1756,6 +1880,50 @@
     </div>
 </div>
 
+<script>
+    // Fullscreen loader controls
+    let loaderTimeout = null;
+    
+    function showFullscreenLoader() {
+        const loader = document.getElementById('fullscreenLoader');
+        if (loader) {
+            loader.classList.add('active');
+        }
+        // Clear any existing timeout
+        if (loaderTimeout) {
+            clearTimeout(loaderTimeout);
+            loaderTimeout = null;
+        }
+    }
+    
+    function hideFullscreenLoader() {
+        const loader = document.getElementById('fullscreenLoader');
+        if (loader) {
+            loader.classList.remove('active');
+        }
+        if (loaderTimeout) {
+            clearTimeout(loaderTimeout);
+            loaderTimeout = null;
+        }
+    }
+    
+    function toggleFullscreenLoader(show) {
+        if (show) {
+            showFullscreenLoader();
+        } else {
+            hideFullscreenLoader();
+        }
+    }
+    
+    // Auto-hide loader after page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide loader when page is fully loaded
+        setTimeout(function() {
+            hideFullscreenLoader();
+        }, 300);
+    });
+</script>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1768,6 +1936,7 @@
     let currentActivityId = {{ current_activity.id|default:'null' }};
     
     let currentlyDisplayedDay = currentDay;
+    let isLoadingContent = false;
     
     const activitiesData = {
         {% for day, activity in activities_by_day.items %}
@@ -1852,7 +2021,15 @@
             const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
             t.setAttribute('x', pos.x); t.setAttribute('y', pos.y+24);
             t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'node-label-svg');
-            t.setAttribute('fill', status==='current' ? (isLight ? '#4a5568' : '#fff') : (status==='completed' ? '#22c55e' : (isLight ? '#a0aec0' : 'var(--text-muted)')));
+            let labelColor = '';
+            if (isLight) {
+                labelColor = status === 'current' ? '#4a5568' : 
+                             (status === 'completed' ? '#22c55e' : '#a0aec0');
+            } else {
+                labelColor = status === 'current' ? '#fff' : 
+                             (status === 'completed' ? '#22c55e' : 'var(--text-muted)');
+            }
+            t.setAttribute('fill', labelColor);
             t.textContent = journeyType==='milestone' ? 'M'+pos.day : (pos.day===1?'START':(pos.day===totalDays?'FINISH':'Day '+pos.day));
             svg.appendChild(t);
         });
@@ -1882,7 +2059,6 @@
         if (activity.embedHtml) {
             heroContainer.innerHTML = `<div class="content-card">${activity.embedHtml}</div>`;
             
-            // Style YouTube embeds
             const ytWrappers = heroContainer.querySelectorAll('.youtube-embed-wrapper');
             ytWrappers.forEach(yt => {
                 yt.style.position = 'relative';
@@ -1954,30 +2130,46 @@
     }
     
     function openModal(day) {
+        // Prevent multiple simultaneous loads
+        if (isLoadingContent) return;
+        
         const a = activitiesData[day];
         if (!a) { 
             alert('No content for day ' + day); 
             return; 
         }
+        
+        isLoadingContent = true;
         currentModalDay = day; 
         currentActivityId = a.id;
         
-        updateDisplayedDay(day);
+        // Show both spinners
+        const spinner = document.getElementById('modalSpinner');
+        if (spinner) spinner.classList.remove('hidden');
+        showFullscreenLoader();
         
+        // Update UI immediately
+        updateDisplayedDay(day);
         document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
         document.getElementById('modalCaption').textContent = a.content || 'No description';
         document.getElementById('commentActivityId').value = a.id;
         
         const mediaContainer = document.getElementById('modalMedia');
-        
         let contentElement = null;
         
+        // Function to hide loaders
+        const hideLoaders = function() {
+            if (spinner) spinner.classList.add('hidden');
+            hideFullscreenLoader();
+            isLoadingContent = false;
+        };
+        
+        // Build content
         if (a.embedHtml) {
             const wrapper = document.createElement('div');
             wrapper.className = 'content-wrapper';
             wrapper.innerHTML = a.embedHtml;
             
-            // Style YouTube embeds
             const ytWrappers = wrapper.querySelectorAll('.youtube-embed-wrapper');
             ytWrappers.forEach(yt => {
                 yt.style.position = 'relative';
@@ -1996,6 +2188,12 @@
                     iframe.style.width = '100%';
                     iframe.style.height = '100%';
                     iframe.style.border = 'none';
+                    iframe.onload = function() { 
+                        hideLoaders();
+                    };
+                    iframe.onerror = function() { 
+                        hideLoaders();
+                    };
                 }
             });
             
@@ -2011,6 +2209,11 @@
             }
             
             contentElement = wrapper;
+            
+            // If no iframes, hide after short delay
+            if (ytWrappers.length === 0) {
+                setTimeout(hideLoaders, 300);
+            }
         } else if (a.fileUrl && a.isVideo) {
             const video = document.createElement('video');
             video.src = a.fileUrl;
@@ -2021,6 +2224,14 @@
             video.style.height = '100%';
             video.style.objectFit = 'contain';
             video.style.background = '#000';
+            video.onloadeddata = function() { 
+                hideLoaders();
+            };
+            video.onerror = function() { 
+                hideLoaders();
+            };
+            // Fallback timeout
+            setTimeout(hideLoaders, 5000);
             contentElement = video;
         } else if (a.fileUrl) {
             const img = document.createElement('img');
@@ -2029,6 +2240,14 @@
             img.style.height = '100%';
             img.style.objectFit = 'contain';
             img.style.background = '#000';
+            img.onload = function() { 
+                hideLoaders();
+            };
+            img.onerror = function() { 
+                hideLoaders();
+            };
+            // Fallback timeout
+            setTimeout(hideLoaders, 3000);
             contentElement = img;
         } else if (a.thumbnailUrl) {
             const img = document.createElement('img');
@@ -2037,6 +2256,14 @@
             img.style.height = '100%';
             img.style.objectFit = 'contain';
             img.style.background = '#000';
+            img.onload = function() { 
+                hideLoaders();
+            };
+            img.onerror = function() { 
+                hideLoaders();
+            };
+            // Fallback timeout
+            setTimeout(hideLoaders, 3000);
             contentElement = img;
         } else {
             const div = document.createElement('div');
@@ -2055,14 +2282,17 @@
                 <i class="fas fa-pen-to-square" style="font-size:48px;opacity:0.3;color:#fff;"></i>
                 <span style="font-size:16px;color:#fff;">${a.content || 'No content available'}</span>
             `;
+            setTimeout(hideLoaders, 300);
             contentElement = div;
         }
         
+        // Clear and set content
+        mediaContainer.innerHTML = '';
         if (contentElement) {
-            mediaContainer.innerHTML = '';
             mediaContainer.appendChild(contentElement);
         } else {
             mediaContainer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;padding:20px;text-align:center;">${a.content || 'No content available'}</div>`;
+            hideLoaders();
         }
         
         document.getElementById('mediaModal').classList.add('active');
@@ -2071,11 +2301,22 @@
     
     function closeModal() { 
         document.getElementById('mediaModal').classList.remove('active'); 
-        document.body.style.overflow = ''; 
+        document.body.style.overflow = '';
+        hideFullscreenLoader();
+        isLoadingContent = false;
     }
     
-    function prevDay() { if (currentModalDay > 1) openModal(currentModalDay - 1); }
-    function nextDay() { if (currentModalDay < totalDays) openModal(currentModalDay + 1); }
+    function prevDay() { 
+        if (currentModalDay > 1 && !isLoadingContent) {
+            openModal(currentModalDay - 1); 
+        }
+    }
+    
+    function nextDay() { 
+        if (currentModalDay < totalDays && !isLoadingContent) {
+            openModal(currentModalDay + 1); 
+        }
+    }
     
     function toggleFollow() {
         fetch('/api/journey/' + journeySlug + '/follow/', {
@@ -2158,6 +2399,9 @@
     });
     
     document.addEventListener('DOMContentLoaded', () => {
+        // Hide loader when page is fully loaded
+        hideFullscreenLoader();
+        
         drawMeanderingPath();
         if (activitiesData[currentDay]) {
             updateDisplayedDay(currentDay);
