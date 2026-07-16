@@ -8,7 +8,6 @@ from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.text import slugify
@@ -18,13 +17,13 @@ from datetime import timedelta, datetime
 from django.contrib.auth import get_user_model
 
 from .models import (
-    Profile, Journey, Activity, JournalEntry,
+    Profile, Journey, Activity, Reflection,
     Comment, JourneyFollow, JourneySave, Tag,
     Notification, Export, ContactMessage, Subscriber
 )
 from .forms import (
     SignUpForm, LoginForm, ProfileForm,
-    JourneyForm, JourneySettingsForm, ActivityForm, JournalEntryForm,
+    JourneyForm, JourneySettingsForm, ActivityForm, ReflectionForm,
     CommentForm, JourneySearchForm, ExportForm, FollowForm,
     ContactForm, NewsletterSignupForm
 )
@@ -139,7 +138,7 @@ def logout_view(request):
 # ============================================================================
 
 def landing_view(request):
-    """Landing page — documentation first"""
+    """Landing page — Fitness & Wellness focus"""
     featured_journeys = Journey.objects.filter(
         privacy_status='public',
         is_active=True,
@@ -151,12 +150,18 @@ def landing_view(request):
         is_active=True
     ).order_by('-created_at')[:6]
     
+    # Get fitness and wellness stats
+    fitness_journeys = Journey.objects.filter(category='fitness', privacy_status='public').count()
+    wellness_journeys = Journey.objects.filter(category='wellness', privacy_status='public').count()
+    
     context = {
         'featured_journeys': featured_journeys,
         'recent_journeys': recent_journeys,
+        'fitness_journeys': fitness_journeys,
+        'wellness_journeys': wellness_journeys,
+        'total_activities': Activity.objects.filter(journey__privacy_status='public').count(),
     }
     
-    # Add user-specific data if logged in
     if request.user.is_authenticated:
         try:
             profile = request.user.profile
@@ -172,92 +177,65 @@ def landing_view(request):
     
     return render(request, 'landing.html', context)
 
+
 def discover_view(request):
-    """Browse and discover public journeys AND public journals"""
+    """Browse and discover public journeys"""
     form = JourneySearchForm(request.GET)
     
-    # Get public journeys
-    journeys = Journey.objects.filter(privacy_status='public', is_active=True)
+    journeys = Journey.objects.filter(
+        privacy_status='public', 
+        is_active=True
+    ).select_related('creator__user').prefetch_related('activities')
     
-    # Get public journals
-    journals = JournalEntry.objects.filter(is_private=False).select_related('user')
-    
-    # Apply search filter to both
     q = request.GET.get('q', '')
     if q:
         journeys = journeys.filter(
             Q(title__icontains=q) |
             Q(description__icontains=q) |
-            Q(creator__user__username__icontains=q)
-        )
-        journals = journals.filter(
-            Q(title__icontains=q) |
-            Q(content__icontains=q) |
-            Q(user__username__icontains=q) |
-            Q(tags__icontains=q)
+            Q(creator__user__username__icontains=q) |
+            Q(custom_goal__icontains=q)
         )
     
-    # Apply category filter (only for journeys)
     category = request.GET.get('category')
     if category:
         journeys = journeys.filter(category=category)
     
-    # Apply journey type filter
-    journey_type = request.GET.get('journey_type')
-    if journey_type:
-        journeys = journeys.filter(journey_type=journey_type)
-    
-    # Apply sort
     sort = request.GET.get('sort', '-created_at')
-    allowed_sorts = ['-created_at', 'created_at', 'title', '-title']
+    allowed_sorts = ['-created_at', 'created_at', 'title', '-title', '-view_count', 'view_count']
     if sort in allowed_sorts:
         journeys = journeys.order_by(sort)
-        journals = journals.order_by(sort)
     else:
         journeys = journeys.order_by('-created_at')
-        journals = journals.order_by('-created_at')
     
-    # Combine and paginate
-    total_count = journeys.count() + journals.count()
-    
-    # Paginate each separately then combine
-    journey_paginator = Paginator(journeys, 12)
-    journal_paginator = Paginator(journals, 6)
-    
+    paginator = Paginator(journeys, 12)
     page = request.GET.get('page', 1)
     
     try:
-        journeys_page = journey_paginator.page(page)
+        journeys_page = paginator.page(page)
     except (PageNotAnInteger, EmptyPage):
-        journeys_page = journey_paginator.page(1)
-    
-    try:
-        journals_page = journal_paginator.page(page)
-    except (PageNotAnInteger, EmptyPage):
-        journals_page = journal_paginator.page(1)
+        journeys_page = paginator.page(1)
     
     context = {
         'form': form,
         'journeys': journeys_page,
-        'journals': journals_page,
         'categories': Journey.CATEGORY_CHOICES,
-        'total_count': total_count,
-        'has_journals': journals.count() > 0,
+        'total_count': journeys.count(),
     }
     
     return render(request, 'discover.html', context)
+
 
 def journey_detail_view(request, slug):
     """View a single journey with all its entries"""
     journey_qs = Journey.objects.select_related('creator__user').prefetch_related(
         'activities', 
         'followers',
-        'comments'
+        'comments',
+        'reflections'
     ).filter(slug=slug, is_active=True)
     
     journey = get_object_or_404(journey_qs)
     
-    # Check privacy
     if journey.privacy_status != 'public':
         if not request.user.is_authenticated or (request.user != journey.creator.user and not request.user.is_superuser):
             raise Http404("Journey not found")
@@ -266,6 +244,24 @@ def journey_detail_view(request, slug):
     activities_by_day = journey.get_all_activities_by_day()
     current_day = journey.get_current_day()
     current_activity = activities_by_day.get(current_day)
+    
+    # ===== FIXED: Get reflections for this journey =====
+    # Show ALL reflections for the owner, only public ones for others
+    if request.user.is_authenticated and request.user == journey.creator.user:
+        reflections = Reflection.objects.filter(
+            related_journey=journey
+        ).order_by('-created_at')[:10]
+    else:
+        reflections = Reflection.objects.filter(
+            related_journey=journey,
+            is_private=False
+        ).order_by('-created_at')[:10]
+    
+    # Debug: Print to console to check if reflections are being found
+    print(f"Journey: {journey.title}")
+    print(f"Reflections found: {reflections.count()}")
+    for r in reflections:
+        print(f"  - {r.summary} (Private: {r.is_private})")
     
     is_following = False
     is_saved = False
@@ -288,6 +284,7 @@ def journey_detail_view(request, slug):
         'activities_by_day': activities_by_day,
         'current_day': current_day,
         'current_activity': current_activity,
+        'reflections': reflections,  # ← Make sure this is passed
         'is_following': is_following,
         'is_saved': is_saved,
         'recent_comments': recent_comments,
@@ -296,6 +293,7 @@ def journey_detail_view(request, slug):
     }
     
     return render(request, 'journey/detail.html', context)
+
 
 
 def creator_profile_view(request, username):
@@ -332,7 +330,6 @@ def creator_profile_view(request, username):
 # ============================================================================
 # DASHBOARD VIEWS
 # ============================================================================
-# main/views.py - dashboard_view
 
 @login_required
 def dashboard_view(request):
@@ -342,15 +339,17 @@ def dashboard_view(request):
     total_journeys = journeys.count()
     active_journeys = journeys.filter(is_active=True).count()
     total_entries = Activity.objects.filter(journey__creator=profile).count()
+    total_reflections = Reflection.objects.filter(user=request.user).count()
     
     try:
         total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     except:
         total_views = 0
     
-    # Comment out journal_entries for now
-    # journal_entries = JournalEntry.objects.filter(user=request.user).order_by('-created_at')[:5]
-    journal_entries = []
+    # Get recent reflections
+    recent_reflections = Reflection.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
     
     context = {
         'profile': profile,
@@ -358,13 +357,16 @@ def dashboard_view(request):
         'total_journeys': total_journeys,
         'active_journeys': active_journeys,
         'total_entries': total_entries,
+        'total_reflections': total_reflections,
         'total_views': total_views,
         'recent_activities': Activity.objects.filter(journey__creator=profile).order_by('-created_at')[:10],
         'recent_comments': Comment.objects.filter(journey__creator=profile).order_by('-created_at')[:5],
-        'journal_entries': journal_entries,  # Empty list
+        'recent_reflections': recent_reflections,
     }
     
     return render(request, 'dashboard/home.html', context)
+
+
 @login_required
 def my_journeys_view(request):
     """List all user's journeys"""
@@ -379,6 +381,7 @@ def my_journeys_view(request):
     for journey in journeys:
         journey.activity_count = journey.activities.count()
         journey.follower_count = journey.followers.count()
+        journey.reflection_count = journey.reflections.count()
     
     context = {
         'journeys': journeys,
@@ -397,7 +400,7 @@ def my_journeys_view(request):
 
 @login_required
 def create_journey_view(request):
-    """Create a new journey"""
+    """Create a new fitness or wellness journey"""
     profile = get_user_profile(request.user)
     
     if request.method == 'POST':
@@ -407,7 +410,7 @@ def create_journey_view(request):
                 journey = form.save(commit=False)
                 journey.creator = profile
                 journey.save()
-                form.save()  # Save many-to-many (tags)
+                form.save()
                 
                 messages.success(request, f'Journey "{journey.title}" created successfully!')
                 return redirect('journey_content', slug=journey.slug)
@@ -572,10 +575,6 @@ def create_activity_view(request, slug, day_number=None):
 @login_required
 def edit_activity_view(request, slug, day_number):
     """Edit an existing activity"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    activity = get_object_or_404(Activity, journey=journey, day_number_field=day_number)
-    
     return create_activity_view(request, slug, day_number)
 
 
@@ -601,108 +600,109 @@ def delete_activity_view(request, slug, day_number):
 
 
 # ============================================================================
-# JOURNAL ENTRY VIEWS (Free-Form Documentation)
+# REFLECTION VIEWS (Replaces JournalEntry)
 # ============================================================================
 
 @login_required
-def journal_view(request):
-    """View all journal entries"""
-    entries = JournalEntry.objects.filter(user=request.user).order_by('-created_at')
+def reflection_view(request):
+    """View all reflections"""
+    reflections = Reflection.objects.filter(
+        user=request.user
+    ).order_by('-created_at')
     
-    paginator = Paginator(entries, 20)
+    paginator = Paginator(reflections, 20)
     page = request.GET.get('page')
     
     try:
-        entries_page = paginator.page(page)
+        reflections_page = paginator.page(page)
     except PageNotAnInteger:
-        entries_page = paginator.page(1)
+        reflections_page = paginator.page(1)
     except EmptyPage:
-        entries_page = paginator.page(paginator.num_pages)
+        reflections_page = paginator.page(paginator.num_pages)
     
     context = {
-        'entries': entries_page,
-        'total_entries': entries.count(),
+        'reflections': reflections_page,
+        'total_reflections': reflections.count(),
     }
     
-    return render(request, 'dashboard/journal.html', context)
+    return render(request, 'dashboard/reflections.html', context)
 
 
 @login_required
-def journal_create_view(request):
-    """Create a new journal entry"""
+def create_reflection_view(request):
+    """Create a new reflection"""
     if request.method == 'POST':
-        form = JournalEntryForm(request.POST, user=request.user)
+        form = ReflectionForm(request.POST, user=request.user)
         if form.is_valid():
-            entry = form.save(commit=False)
-            entry.user = request.user
-            entry.save()
-            messages.success(request, 'Journal entry saved!')
-            return redirect('journal_view')
+            reflection = form.save(commit=False)
+            reflection.user = request.user
+            reflection.save()
+            messages.success(request, 'Reflection saved!')
+            return redirect('reflection_view')
     else:
-        form = JournalEntryForm(user=request.user)
+        form = ReflectionForm(user=request.user)
     
     context = {
         'form': form,
         'is_editing': False,
     }
     
-    return render(request, 'dashboard/journal_form.html', context)
+    return render(request, 'dashboard/reflection_form.html', context)
 
 
 @login_required
-def journal_edit_view(request, pk):
-    """Edit a journal entry"""
-    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+def edit_reflection_view(request, pk):
+    """Edit a reflection"""
+    reflection = get_object_or_404(Reflection, pk=pk, user=request.user)
     
     if request.method == 'POST':
-        form = JournalEntryForm(request.POST, user=request.user, instance=entry)
+        form = ReflectionForm(request.POST, user=request.user, instance=reflection)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Journal entry updated!')
-            return redirect('journal_view')
+            messages.success(request, 'Reflection updated!')
+            return redirect('reflection_view')
     else:
-        form = JournalEntryForm(user=request.user, instance=entry)
+        form = ReflectionForm(user=request.user, instance=reflection)
     
     context = {
         'form': form,
         'is_editing': True,
-        'entry': entry,
+        'reflection': reflection,
     }
     
-    return render(request, 'dashboard/journal_form.html', context)
+    return render(request, 'dashboard/reflection_form.html', context)
 
 
 @login_required
-def journal_delete_view(request, pk):
-    """Delete a journal entry"""
-    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+def delete_reflection_view(request, pk):
+    """Delete a reflection"""
+    reflection = get_object_or_404(Reflection, pk=pk, user=request.user)
     
     if request.method == 'POST':
-        entry.delete()
-        messages.success(request, 'Journal entry deleted.')
-        return redirect('journal_view')
+        reflection.delete()
+        messages.success(request, 'Reflection deleted.')
+        return redirect('reflection_view')
     
     context = {
-        'entry': entry,
+        'reflection': reflection,
     }
     
-    return render(request, 'dashboard/journal_confirm_delete.html', context)
+    return render(request, 'dashboard/reflection_confirm_delete.html', context)
 
-def journal_detail_view(request, pk):
-    """View a single journal entry"""
-    entry = get_object_or_404(JournalEntry, pk=pk)
+
+def reflection_detail_view(request, pk):
+    """View a single reflection"""
+    reflection = get_object_or_404(Reflection, pk=pk)
     
-    # Privacy check: private entries only for owner
-    if entry.is_private:
-        if not request.user.is_authenticated or request.user != entry.user:
-            raise Http404("This journal entry is private.")
+    if reflection.is_private:
+        if not request.user.is_authenticated or request.user != reflection.user:
+            raise Http404("This reflection is private.")
     
-    # Public entries: anyone can view
     context = {
-        'entry': entry,
+        'reflection': reflection,
     }
     
-    return render(request, 'dashboard/journal_detail.html', context)
+    return render(request, 'dashboard/reflection_detail.html', context)
 
 
 # ============================================================================
@@ -975,12 +975,11 @@ def unread_notification_count(request):
 # CONTACT VIEWS
 # ============================================================================
 
-# main/views.py
-
-from .services.faq_service import get_ai_response
-
 def contact_view(request):
     """Contact form with AI response"""
+    # Note: faq_service is assumed to exist in your services folder
+    from .services.faq_service import get_ai_response
+    
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         email = request.POST.get('email', '').strip()
@@ -1004,7 +1003,6 @@ def contact_view(request):
                 'submitted': False
             })
         
-        # Generate AI response from FAQ
         ai_response = get_ai_response(message, name)
         
         try:
@@ -1030,8 +1028,6 @@ def contact_view(request):
     return render(request, 'contact.html', {'submitted': False})
 
 
-
-
 def newsletter_signup_view(request):
     """Newsletter signup"""
     if request.method == 'POST':
@@ -1039,8 +1035,7 @@ def newsletter_signup_view(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             subscriber, created = Subscriber.objects.get_or_create(
-                email=email,
-                # REMOVE THIS LINE: defaults={'ip_address': get_client_ip(request)}
+                email=email
             )
             if created:
                 messages.success(request, 'You\'re subscribed!')
@@ -1051,6 +1046,7 @@ def newsletter_signup_view(request):
         form = NewsletterSignupForm()
     
     return render(request, 'newsletter_signup.html', {'form': form})
+
 
 # ============================================================================
 # STATIC PAGES
@@ -1066,11 +1062,6 @@ def privacy_view(request):
 
 def terms_view(request):
     return render(request, 'terms.html')
-
-
-def blog_view(request):
-    """Blog index"""
-    return render(request, 'blog/index.html')
 
 
 # ============================================================================
@@ -1090,8 +1081,6 @@ def toggle_theme(request):
         return JsonResponse({'success': False}, status=400)
 
 
-# main/views.py
-
 @login_required
 def toolbox_view(request):
     """Creator Toolbox - Central hub for all tools"""
@@ -1100,6 +1089,7 @@ def toolbox_view(request):
     journeys = Journey.objects.filter(creator=profile)
     total_journeys = journeys.count()
     total_entries = Activity.objects.filter(journey__creator=profile).count()
+    total_reflections = Reflection.objects.filter(user=request.user).count()
     total_views = journeys.aggregate(total=Sum('view_count'))['total'] or 0
     total_followers = JourneyFollow.objects.filter(journey__creator=profile).count()
     
@@ -1107,13 +1097,14 @@ def toolbox_view(request):
         'profile': profile,
         'total_journeys': total_journeys,
         'total_entries': total_entries,
+        'total_reflections': total_reflections,
         'total_views': total_views,
         'total_followers': total_followers,
         'recent_activities': Activity.objects.filter(journey__creator=profile).order_by('-created_at')[:5],
+        'recent_reflections': Reflection.objects.filter(user=request.user).order_by('-created_at')[:5],
     }
     
     return render(request, 'toolbox/index.html', context)
-
 
 
 # ============================================================================

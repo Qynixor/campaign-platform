@@ -13,16 +13,22 @@ from django.contrib.sitemaps.views import sitemap
 import os
 
 # Import your sitemaps
-from main.sitemaps import StaticViewSitemap, JourneySitemap,  CreatorProfileSitemap,   JournalSitemap
+from main.sitemaps import (
+    StaticViewSitemap, 
+    JourneySitemap, 
+    CreatorProfileSitemap, 
+    ReflectionSitemap,
+    ActivitySitemap  # Optional: include daily logs
+)
 
 # Sitemap configuration
 sitemaps = {
     'static': StaticViewSitemap,
     'journeys': JourneySitemap,
-    'journals': JournalSitemap,
+    'reflections': ReflectionSitemap,  # Replaces 'journals'
     'creators': CreatorProfileSitemap,
+    'activities': ActivitySitemap,     # Optional: daily logs
 }
-
 
 def service_worker_view(request):
     """Serve service worker from static files with correct MIME type."""

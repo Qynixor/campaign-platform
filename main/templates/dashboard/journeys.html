@@ -5,7 +5,6 @@
 
 {% block extra_css %}
 <style>
-    /* Add padding to the main content wrapper */
     .main-content-wrapper {
         padding: 40px 0;
     }
@@ -37,7 +36,6 @@
         margin-top: 4px;
     }
     
-    /* Filter Tabs */
     .filter-tabs {
         display: flex;
         gap: 8px;
@@ -69,7 +67,6 @@
         color: #fff;
     }
     
-    /* Journey List */
     .journey-list {
         display: flex;
         flex-direction: column;
@@ -207,6 +204,24 @@
         border: 1px solid rgba(59, 130, 246, 0.3);
     }
     
+    .status-private {
+        background: rgba(107, 114, 128, 0.1);
+        color: #6b7280;
+        border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+    
+    .status-public {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .status-unlisted {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
     .journey-meta {
         display: flex;
         gap: 20px;
@@ -303,7 +318,6 @@
         color: #ef4444;
     }
     
-    /* Empty State */
     .empty-state {
         text-align: center;
         padding: 80px 20px;
@@ -329,7 +343,6 @@
         margin-bottom: 24px;
     }
     
-    /* Stats Summary */
     .stats-summary {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -363,7 +376,6 @@
         font-size: 13px;
     }
     
-    /* Modal Styles */
     .modal-overlay {
         position: fixed;
         top: 0;
@@ -611,8 +623,13 @@
                             <span class="journey-status status-active"><i class="fas fa-play-circle"></i> Active</span>
                         {% endif %}
                         
-                        {% if not journey.is_public %}
-                            <span class="journey-status status-draft"><i class="fas fa-lock"></i> Private</span>
+                        {# ===== FIXED: Privacy Badge ===== #}
+                        {% if journey.privacy_status == 'private' %}
+                            <span class="journey-status status-private"><i class="fas fa-lock"></i> Private</span>
+                        {% elif journey.privacy_status == 'public' %}
+                            <span class="journey-status status-public"><i class="fas fa-globe"></i> Public</span>
+                        {% elif journey.privacy_status == 'unlisted' %}
+                            <span class="journey-status status-unlisted"><i class="fas fa-link"></i> Unlisted</span>
                         {% endif %}
                     </div>
                     
@@ -645,16 +662,13 @@
                     
                     <div class="journey-stats">
                         <span class="journey-stat">
-                            <i class="fas fa-users"></i> {{ journey.get_follower_count }} followers
-                        </span>
-                        <span class="journey-stat">
-                            <i class="fas fa-heart"></i> {{ journey.get_love_count }} loves
+                            <i class="fas fa-users"></i> {{ journey.followers.count }} followers
                         </span>
                         <span class="journey-stat">
                             <i class="fas fa-eye"></i> {{ journey.view_count }} views
                         </span>
                         <span class="journey-stat">
-                            <i class="fas fa-image"></i> {{ journey.activities.count }} posts
+                            <i class="fas fa-file-alt"></i> {{ journey.activities.count }} entries
                         </span>
                     </div>
                 </div>
@@ -769,16 +783,13 @@
 
 <script>
     function filterJourneys(status) {
-        // Get the clicked button
         const clickedBtn = event.currentTarget;
         
-        // Update active tab
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.classList.remove('active');
         });
         clickedBtn.classList.add('active');
         
-        // Filter items
         const items = document.querySelectorAll('.journey-item');
         let visibleCount = 0;
         
@@ -791,7 +802,6 @@
             }
         });
         
-        // Optional: Show/hide empty state message
         const journeyList = document.querySelector('.journey-list');
         const emptyMessage = document.querySelector('.empty-state-filter');
         
@@ -830,7 +840,6 @@
         document.body.style.overflow = '';
     }
     
-    // Close modal on background click or Escape key
     document.getElementById('deleteModal').addEventListener('click', function(e) {
         if (e.target === this) hideDeleteModal();
     });
@@ -841,7 +850,6 @@
         }
     });
     
-    // Preserve filter state when coming back from another page
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const statusFilter = urlParams.get('status');

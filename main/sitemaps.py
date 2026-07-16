@@ -4,24 +4,22 @@ Tells Google which pages to index and how often to check them
 """
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from django.views.generic import RedirectView
-from .models import Journey, Profile, JournalEntry
+from .models import Journey, Profile, Reflection, Activity
 
 
 class StaticViewSitemap(Sitemap):
+    """Sitemap for static pages - Fitness & Wellness focus"""
     changefreq = "monthly"
     priority = 0.5
 
     def items(self):
         return [
-            # Main pages - documentation-first
-            ('landing', None, 1.0),      # Home page - highest priority
+            ('landing', None, 1.0),       # Home page - highest priority
             ('discover', None, 0.8),      # Discover journeys
             ('about', None, 0.5),         # About page
-            ('privacy', None, 0.3),       # Privacy policy (noindex in template)
-            ('terms', None, 0.3),         # Terms (noindex in template)
+            ('privacy', None, 0.3),       # Privacy policy
+            ('terms', None, 0.3),         # Terms
             ('contact', None, 0.5),       # Contact page
-            # ('conversion_start', None, 0.9),  # REMOVED - doesn't exist
         ]
 
     def location(self, item):
@@ -40,13 +38,15 @@ class StaticViewSitemap(Sitemap):
 
 
 class JourneySitemap(Sitemap):
-    """Sitemap for all public journeys"""
+    """Sitemap for all public fitness & wellness journeys"""
     changefreq = "daily"
     priority = 0.9
 
     def items(self):
-        # Use privacy_status instead of is_public
-        return Journey.objects.filter(privacy_status='public', is_active=True).order_by('-created_at')
+        return Journey.objects.filter(
+            privacy_status='public', 
+            is_active=True
+        ).order_by('-created_at')
 
     def lastmod(self, obj):
         return obj.updated_at
@@ -61,7 +61,6 @@ class CreatorProfileSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        # Order by id to fix UnorderedObjectListWarning
         return Profile.objects.filter(user__is_active=True).order_by('id')
 
     def lastmod(self, obj):
@@ -71,17 +70,40 @@ class CreatorProfileSitemap(Sitemap):
         return f"/@{obj.user.username}/"
 
 
-class JournalSitemap(Sitemap):
-    """Sitemap for public journal entries"""
+class ReflectionSitemap(Sitemap):
+    """
+    Sitemap for public reflections (replaces JournalEntry)
+    Reflections are private by default, only public ones are indexed
+    """
     changefreq = "weekly"
-    priority = 0.6
+    priority = 0.5
 
     def items(self):
-        # Only include public journal entries, ordered to fix warning
-        return JournalEntry.objects.filter(is_private=False).order_by('-created_at')
+        return Reflection.objects.filter(is_private=False).order_by('-created_at')
 
     def lastmod(self, obj):
         return obj.updated_at
 
     def location(self, obj):
-        return reverse('journal_detail', kwargs={'pk': obj.pk})
+        return reverse('reflection_detail', kwargs={'pk': obj.pk})
+
+
+class ActivitySitemap(Sitemap):
+    """
+    Sitemap for public activities (daily logs)
+    """
+    changefreq = "daily"
+    priority = 0.6
+
+    def items(self):
+        return Activity.objects.filter(
+            journey__privacy_status='public',
+            journey__is_active=True,
+            is_published=True
+        ).order_by('-created_at')[:1000]
+
+    def lastmod(self, obj):
+        return obj.updated_at or obj.created_at
+
+    def location(self, obj):
+        return f"/j/{obj.journey.slug}/?day={obj.day_number_field}"

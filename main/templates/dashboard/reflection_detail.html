@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ reflection.summary }} | Rallynex{% endblock %}
+
+{% block meta_description %}{{ reflection.reflection|striptags|truncatewords:30 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 30px 20px 60px;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+        color: var(--text-primary);
+    }
+    
+    .back-link i {
+        font-size: 14px;
+        color: var(--silver);
+    }
+    
+    .detail-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 32px;
+    }
+    
+    .detail-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .detail-type-badge {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 4px 14px;
+        border-radius: 20px;
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .detail-type-badge.workout {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.15);
+    }
+    
+    .detail-type-badge.nutrition {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.15);
+    }
+    
+    .detail-type-badge.mental {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+        border-color: rgba(139, 92, 246, 0.15);
+    }
+    
+    .detail-type-badge.recovery {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.15);
+    }
+    
+    .detail-type-badge.milestone {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.15);
+    }
+    
+    .detail-type-badge.struggle {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.15);
+    }
+    
+    .detail-type-badge.gratitude {
+        background: rgba(236, 72, 153, 0.1);
+        color: #ec4899;
+        border-color: rgba(236, 72, 153, 0.15);
+    }
+    
+    .detail-mood {
+        font-size: 28px;
+        flex-shrink: 0;
+    }
+    
+    .detail-summary {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+    
+    .detail-reflection {
+        font-size: 16px;
+        color: var(--text-secondary);
+        line-height: 1.8;
+        margin-bottom: 20px;
+        white-space: pre-wrap;
+    }
+    
+    .detail-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        padding: 16px 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 20px;
+    }
+    
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .meta-item .label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    
+    .meta-item .value {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .meta-item .value i {
+        color: var(--silver);
+        font-size: 14px;
+    }
+    
+    .detail-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .detail-footer .date {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .detail-footer .date i {
+        color: var(--silver);
+    }
+    
+    .detail-footer .privacy-badge {
+        font-size: 11px;
+        padding: 4px 14px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+    
+    .detail-footer .privacy-badge.public {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.15);
+    }
+    
+    .detail-footer .actions {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-action:hover {
+        background: var(--bg-secondary);
+        border-color: var(--silver);
+        color: var(--text-primary);
+    }
+    
+    .btn-action.primary {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+    
+    .btn-action.primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        color: white;
+    }
+    
+    .btn-action.danger {
+        color: var(--error);
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .btn-action.danger:hover {
+        background: rgba(239, 68, 68, 0.04);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: var(--error);
+    }
+    
+    .related-journey-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        margin-top: 4px;
+    }
+    
+    .related-journey-link:hover {
+        text-decoration: underline;
+    }
+    
+    @media (max-width: 768px) {
+        .detail-container {
+            padding: 20px 16px 80px;
+        }
+        
+        .detail-card {
+            padding: 20px;
+        }
+        
+        .detail-summary {
+            font-size: 18px;
+        }
+        
+        .detail-reflection {
+            font-size: 14px;
+        }
+        
+        .detail-meta-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .detail-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .detail-footer .actions {
+            width: 100%;
+        }
+        
+        .detail-footer .actions .btn-action {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .detail-meta-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .detail-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+    
+    <a href="{% url 'reflection_view' %}" class="back-link">
+        <i class="fas fa-arrow-left"></i> All Reflections
+    </a>
+    
+    <div class="detail-card">
+        
+        <!-- Header -->
+        <div class="detail-header">
+            <span class="detail-type-badge {{ reflection.reflection_type }}">
+                {% if reflection.reflection_type == 'workout' %}💪 Workout
+                {% elif reflection.reflection_type == 'nutrition' %}🥗 Nutrition
+                {% elif reflection.reflection_type == 'mental' %}🧠 Mental
+                {% elif reflection.reflection_type == 'recovery' %}😴 Recovery
+                {% elif reflection.reflection_type == 'milestone' %}🏆 Milestone
+                {% elif reflection.reflection_type == 'struggle' %}😞 Struggle
+                {% elif reflection.reflection_type == 'gratitude' %}🙏 Gratitude
+                {% else %}📝 General{% endif %}
+            </span>
+            {% if reflection.mood %}
+                <span class="detail-mood">{{ reflection.mood }}</span>
+            {% endif %}
+        </div>
+        
+        <!-- Summary -->
+        <h1 class="detail-summary">{{ reflection.summary }}</h1>
+        
+        <!-- Reflection Content -->
+        <div class="detail-reflection">{{ reflection.reflection }}</div>
+        
+        <!-- Meta Grid -->
+        <div class="detail-meta-grid">
+            {% if reflection.energy_level %}
+            <div class="meta-item">
+                <span class="label">Energy</span>
+                <span class="value">
+                    <i class="fas fa-bolt"></i> {{ reflection.energy_level }}/10
+                </span>
+            </div>
+            {% endif %}
+            
+            {% if reflection.sleep_hours %}
+            <div class="meta-item">
+                <span class="label">Sleep</span>
+                <span class="value">
+                    <i class="fas fa-moon"></i> {{ reflection.sleep_hours }} hours
+                </span>
+            </div>
+            {% endif %}
+            
+            {% if reflection.related_journey %}
+            <div class="meta-item">
+                <span class="label">Journey</span>
+                <span class="value">
+                    <i class="fas fa-route"></i>
+                    <a href="{% url 'journey_detail' slug=reflection.related_journey.slug %}" class="related-journey-link" style="font-size:14px;">
+                        {{ reflection.related_journey.title }}
+                    </a>
+                </span>
+            </div>
+            {% endif %}
+            
+            <div class="meta-item">
+                <span class="label">Created</span>
+                <span class="value">
+                    <i class="fas fa-calendar-alt"></i>
+                    {{ reflection.created_at|date:"M d, Y" }}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="detail-footer">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span class="date">
+                    <i class="far fa-clock"></i>
+                    {{ reflection.created_at|timesince }} ago
+                </span>
+                <span class="privacy-badge {% if not reflection.is_private %}public{% endif %}">
+                    <i class="fas fa-{% if reflection.is_private %}lock{% else %}globe{% endif %}"></i>
+                    {% if reflection.is_private %}Private{% else %}Public{% endif %}
+                </span>
+            </div>
+            
+            <div class="actions">
+                <a href="{% url 'edit_reflection' pk=reflection.pk %}" class="btn-action primary">
+                    <i class="fas fa-pen"></i> Edit
+                </a>
+                <a href="{% url 'delete_reflection' pk=reflection.pk %}" class="btn-action danger" 
+                   onclick="return confirm('Are you sure you want to delete this reflection? This cannot be undone.')">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
+            </div>
+        </div>
+        
+    </div>
+    
+</div>
+
+{% endblock %}

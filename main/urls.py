@@ -6,7 +6,7 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 # ============================================================================
-# URL PATTERNS - DOCUMENTATION-FIRST
+# URL PATTERNS - FITNESS & WELLNESS FOCUS
 # ============================================================================
 
 urlpatterns = [
@@ -46,7 +46,7 @@ urlpatterns = [
     path('privacy/', views.privacy_view, name='privacy'),
     path('terms/', views.terms_view, name='terms'),
     path('contact/', views.contact_view, name='contact'),
-    path('blog/', views.blog_view, name='blog'),
+    # path('blog/', views.blog_view, name='blog'),  # ← COMMENTED: Blog removed for fitness/wellness focus
 
     # ============================================================================
     # DASHBOARD
@@ -68,7 +68,7 @@ urlpatterns = [
     path('dashboard/exports/<int:export_id>/download/', views.download_export_view, name='download_export'),
     
     # ============================================================================
-    # CONTENT MANAGEMENT (Entries/Activities)
+    # CONTENT MANAGEMENT (Activities - Daily Logs)
     # ============================================================================
     path('dashboard/journeys/<slug:slug>/content/', views.journey_content_view, name='journey_content'),
     path('dashboard/journeys/<slug:slug>/entry/new/', views.create_activity_view, name='create_activity'),
@@ -77,13 +77,13 @@ urlpatterns = [
     path('dashboard/journeys/<slug:slug>/entry/<int:day_number>/delete/', views.delete_activity_view, name='delete_activity'),
     
     # ============================================================================
-    # JOURNAL ENTRIES (Free-Form Documentation)
+    # REFLECTIONS (Replaces Journal - Fitness & Wellness Reflections)
     # ============================================================================
-    path('dashboard/journal/', views.journal_view, name='journal_view'),
-    path('dashboard/journal/new/', views.journal_create_view, name='journal_create'),
-    path('dashboard/journal/<int:pk>/', views.journal_detail_view, name='journal_detail'),
-    path('dashboard/journal/<int:pk>/edit/', views.journal_edit_view, name='journal_edit'),
-    path('dashboard/journal/<int:pk>/delete/', views.journal_delete_view, name='journal_delete'),
+    path('dashboard/reflections/', views.reflection_view, name='reflection_view'),
+    path('dashboard/reflections/new/', views.create_reflection_view, name='create_reflection'),
+    path('dashboard/reflections/<int:pk>/', views.reflection_detail_view, name='reflection_detail'),
+    path('dashboard/reflections/<int:pk>/edit/', views.edit_reflection_view, name='edit_reflection'),
+    path('dashboard/reflections/<int:pk>/delete/', views.delete_reflection_view, name='delete_reflection'),
     
     # ============================================================================
     # ENGAGEMENT (AJAX/API)
@@ -102,7 +102,12 @@ urlpatterns = [
     path('api/notifications/unread-count/', views.unread_notification_count, name='unread_notification_count'),
     path('api/notifications/<int:notification_id>/read/', views.mark_notification_read_view, name='mark_notification_read'),
     path('api/notifications/read-all/', views.mark_all_notifications_read_view, name='mark_all_read'),
-     path('toolbox/', views.dashboard_view, name='toolbox'),    
+    
+    # ============================================================================
+    # TOOLBOX (Creator Tools)
+    # ============================================================================
+    path('toolbox/', views.toolbox_view, name='toolbox'),
+    
     # ============================================================================
     # NEWSLETTER
     # ============================================================================
@@ -112,6 +117,9 @@ urlpatterns = [
     # THEME TOGGLE
     # ============================================================================
     path('api/toggle-theme/', views.toggle_theme, name='toggle_theme'),
+
+# CORRECT
+path('j/<slug:slug>/', views.journey_detail_view, name='journey_detail'),
 ]
 
 # ============================================================================

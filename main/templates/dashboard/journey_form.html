@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <style>
-    /* ===== DOCUMENTATION-FIRST THEME ===== */
+    /* ===== FITNESS & WELLNESS THEME ===== */
     .form-container {
         max-width: 800px;
         margin: 0 auto;
@@ -184,7 +184,7 @@
     
     .template-cards {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     
@@ -418,13 +418,6 @@
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
-    .btn-primary:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-    
     .btn-danger {
         background: transparent;
         color: #dc3545;
@@ -468,21 +461,6 @@
         margin-top: 4px;
     }
     
-    .error-message {
-        background: rgba(239, 68, 68, 0.06);
-        border: 1px solid rgba(239, 68, 68, 0.15);
-        border-radius: 10px;
-        padding: 12px 16px;
-        margin-bottom: 16px;
-        color: #ef4444;
-        display: none;
-        font-size: 14px;
-    }
-    
-    .error-message.active {
-        display: block;
-    }
-    
     .info-note {
         background: rgba(59, 130, 246, 0.04);
         border: 1px solid rgba(59, 130, 246, 0.1);
@@ -502,71 +480,22 @@
         flex-shrink: 0;
     }
     
-    .milestone-input-container {
-        border: 2px solid var(--border-color);
-        border-radius: 10px;
-        overflow: hidden;
-        transition: border-color 0.2s, box-shadow 0.2s;
+    .badge-fitness {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
     }
     
-    .milestone-input-container:focus-within {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    .milestone-input {
-        width: 100%;
-        padding: 12px 14px;
-        background: var(--bg-primary);
-        border: none;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--text-primary);
-        font-size: 14px;
-        outline: none;
-        font-family: inherit;
-    }
-    
-    .milestone-input::placeholder {
-        color: var(--text-muted);
-    }
-    
-    .milestone-list {
-        padding: 6px;
-        max-height: 160px;
-        overflow-y: auto;
-        background: var(--bg-secondary);
-    }
-    
-    .milestone-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 12px;
-        background: var(--bg-primary);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        margin-bottom: 4px;
-        font-size: 13px;
-    }
-    
-    .milestone-item:last-child {
-        margin-bottom: 0;
-    }
-    
-    .milestone-text {
-        color: var(--text-primary);
-    }
-    
-    .milestone-remove {
-        color: #dc3545;
-        cursor: pointer;
-        padding: 4px 8px;
-        opacity: 0.5;
-        transition: opacity 0.2s;
-    }
-    
-    .milestone-remove:hover {
-        opacity: 1;
+    .badge-wellness {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
     }
     
     @media (max-width: 768px) {
@@ -583,7 +512,7 @@
         }
         
         .template-cards {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
         }
         
         .form-row {
@@ -615,14 +544,6 @@
             padding: 12px 8px;
         }
         
-        .template-card-icon {
-            font-size: 24px;
-        }
-        
-        .template-card-desc {
-            font-size: 10px;
-        }
-        
         .form-card {
             padding: 16px;
         }
@@ -644,9 +565,9 @@
         </h1>
         <p class="form-subtitle">
             {% if is_editing %}
-                Update your journey details
+                Update your fitness or wellness journey
             {% else %}
-                Set up your documentation space
+                Start tracking your fitness or wellness progress
             {% endif %}
         </p>
     </div>
@@ -660,10 +581,6 @@
         {% endfor %}
     </ul>
     {% endif %}
-    
-    <div class="error-message" id="errorMessage">
-        <i class="fas fa-exclamation-circle"></i> <span id="errorText"></span>
-    </div>
     
     <form method="post" class="form-card" id="journeyForm" novalidate>
         {% csrf_token %}
@@ -679,9 +596,9 @@
                 <label for="id_title">Journey Title *</label>
                 <input type="text" name="title" id="id_title" 
                        value="{{ form.title.value|default:'' }}"
-                       placeholder="e.g., My Writing Journey"
+                       placeholder="e.g., 30 Days of Fitness, My Wellness Journey"
                        maxlength="100" required>
-                <p class="form-hint">What are you documenting?</p>
+                <p class="form-hint">What are you tracking?</p>
                 {% if form.title.errors %}
                     <p class="field-error">{{ form.title.errors.0 }}</p>
                 {% endif %}
@@ -690,9 +607,9 @@
             <div class="form-group">
                 <label for="id_description">Description</label>
                 <textarea name="description" id="id_description" 
-                          placeholder="What is this journey about?" 
+                          placeholder="What's your fitness or wellness goal?" 
                           maxlength="500">{{ form.description.value|default:'' }}</textarea>
-                <p class="form-hint">Briefly describe what you're documenting (max 500 characters)</p>
+                <p class="form-hint">Briefly describe what you're tracking (max 500 characters)</p>
                 {% if form.description.errors %}
                     <p class="field-error">{{ form.description.errors.0 }}</p>
                 {% endif %}
@@ -700,26 +617,66 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="id_category">Category</label>
-                    <select name="category" id="id_category">
+                    <label for="id_category">Category *</label>
+                    <select name="category" id="id_category" required>
                         <option value="">Select a category</option>
                         <option value="fitness" {% if form.category.value == 'fitness' %}selected{% endif %}>💪 Fitness</option>
-                        <option value="learning" {% if form.category.value == 'learning' %}selected{% endif %}>📚 Learning</option>
-                        <option value="creative" {% if form.category.value == 'creative' %}selected{% endif %}>🎨 Creative</option>
-                        <option value="business" {% if form.category.value == 'business' %}selected{% endif %}>💼 Business</option>
-                        <option value="personal" {% if form.category.value == 'personal' %}selected{% endif %}>🌱 Personal</option>
-                        <option value="cause" {% if form.category.value == 'cause' %}selected{% endif %}>❤️ Cause</option>
-                        <option value="other" {% if form.category.value == 'other' %}selected{% endif %}>✨ Other</option>
+                        <option value="wellness" {% if form.category.value == 'wellness' %}selected{% endif %}>🧘 Wellness</option>
                     </select>
+                    <p class="form-hint">Choose Fitness for workouts or Wellness for holistic health</p>
                 </div>
                 
                 <div class="form-group">
-                    <label for="id_journey_type">Format *</label>
-                    <select name="journey_type" id="id_journey_type" required>
-                        <option value="daily" {% if form.journey_type.value == 'daily' %}selected{% endif %}>📅 Daily Log</option>
-                        <option value="milestone" {% if form.journey_type.value == 'milestone' %}selected{% endif %}>🏆 Milestone Tracker</option>
+                    <label for="id_journey_type">Format</label>
+                    <select name="journey_type" id="id_journey_type">
+                        <option value="daily" {% if form.journey_type.value == 'daily' or not form.journey_type.value %}selected{% endif %}>📅 Daily Log</option>
                     </select>
+                    <p class="form-hint">Daily logs track progress day by day</p>
                 </div>
+            </div>
+        </div>
+        
+        <!-- ===== GOALS & FOCUS ===== -->
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-bullseye"></i>
+                Goals & Focus
+            </h3>
+            
+            <div id="fitnessGoals" class="form-group">
+                <label for="id_fitness_goal">Fitness Goal</label>
+                <select name="fitness_goal" id="id_fitness_goal">
+                    <option value="">Select your fitness goal</option>
+                    <option value="build_muscle" {% if form.fitness_goal.value == 'build_muscle' %}selected{% endif %}>💪 Build Muscle</option>
+                    <option value="lose_weight" {% if form.fitness_goal.value == 'lose_weight' %}selected{% endif %}>⚖️ Lose Weight</option>
+                    <option value="increase_stamina" {% if form.fitness_goal.value == 'increase_stamina' %}selected{% endif %}>🏃 Increase Stamina</option>
+                    <option value="improve_flexibility" {% if form.fitness_goal.value == 'improve_flexibility' %}selected{% endif %}>🧘 Improve Flexibility</option>
+                    <option value="run_faster" {% if form.fitness_goal.value == 'run_faster' %}selected{% endif %}>🏃 Run Faster</option>
+                    <option value="general_fitness" {% if form.fitness_goal.value == 'general_fitness' %}selected{% endif %}>🏋️ General Fitness</option>
+                </select>
+                <p class="form-hint">What's your main fitness goal?</p>
+            </div>
+            
+            <div id="wellnessFocus" class="form-group" style="display:none;">
+                <label for="id_wellness_focus">Wellness Focus</label>
+                <select name="wellness_focus" id="id_wellness_focus">
+                    <option value="">Select your wellness focus</option>
+                    <option value="mental_health" {% if form.wellness_focus.value == 'mental_health' %}selected{% endif %}>🧠 Mental Health</option>
+                    <option value="better_sleep" {% if form.wellness_focus.value == 'better_sleep' %}selected{% endif %}>😴 Better Sleep</option>
+                    <option value="stress_reduction" {% if form.wellness_focus.value == 'stress_reduction' %}selected{% endif %}>🌿 Stress Reduction</option>
+                    <option value="mindfulness" {% if form.wellness_focus.value == 'mindfulness' %}selected{% endif %}>🧘 Mindfulness</option>
+                    <option value="nutrition" {% if form.wellness_focus.value == 'nutrition' %}selected{% endif %}>🥗 Nutrition</option>
+                    <option value="general_wellness" {% if form.wellness_focus.value == 'general_wellness' %}selected{% endif %}>🌟 General Wellness</option>
+                </select>
+                <p class="form-hint">What's your wellness focus?</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_custom_goal">Custom Goal</label>
+                <input type="text" name="custom_goal" id="id_custom_goal"
+                       value="{{ form.custom_goal.value|default:'' }}"
+                       placeholder="e.g., Run a marathon, Meditate daily, Sleep 8 hours">
+                <p class="form-hint">Tell us your custom goal if none of the above fit</p>
             </div>
         </div>
         
@@ -767,150 +724,51 @@
                 Journey Structure
             </h3>
             
-            <div id="dailyFields">
-                <div class="info-note">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Daily logs follow a calendar. Each day unlocks as time passes.</span>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="id_duration">Duration (Days) *</label>
-                        <input type="number" name="duration" id="id_duration" 
-                               value="{{ form.duration.value|default:'30' }}"
-                               min="1" max="365" required>
-                        <p class="form-hint">1–365 days</p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="id_start_date">Start Date</label>
-                        <input type="datetime-local" name="start_date" id="id_start_date" 
-                               value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
-                        <p class="form-hint">Leave blank to start today</p>
-                    </div>
-                </div>
-                
-                <div class="optional-section">
-                    <button type="button" class="optional-toggle" onclick="toggleOptional(this)">
-                        <i class="fas fa-chevron-down"></i> Already started? Set current day
-                    </button>
-                    <div class="optional-content">
-                        <div class="info-note">
-                            <i class="fas fa-fast-forward"></i>
-                            <span>Enter your current day and we'll unlock all previous days automatically.</span>
-                        </div>
-                        <div class="form-group">
-                            <label for="id_current_day_override">Current Day</label>
-                            <input type="number" name="current_day_override" id="id_current_day_override" 
-                                   value="{{ form.current_day_override.value|default:'' }}"
-                                   min="1" max="365"
-                                   placeholder="e.g., 14">
-                            <p class="form-hint">Leave blank to start from Day 1</p>
-                            {% if form.current_day_override.errors %}
-                                <p class="field-error">{{ form.current_day_override.errors.0 }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+            <div class="info-note">
+                <i class="fas fa-info-circle"></i>
+                <span>Daily logs follow a calendar. Each day unlocks as time passes.</span>
             </div>
             
-            <div id="milestoneFields" style="display: none;">
-                <div class="info-note">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Milestone journeys are flexible — document achievements as they happen.</span>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_duration">Duration (Days) *</label>
+                    <input type="number" name="duration" id="id_duration" 
+                           value="{{ form.duration.value|default:'30' }}"
+                           min="1" max="365" required>
+                    <p class="form-hint">1–365 days</p>
                 </div>
                 
                 <div class="form-group">
-                    <label for="id_milestone_count">Number of Milestones *</label>
-                    <input type="number" name="duration" id="id_milestone_count" 
-                           value="{{ form.duration.value|default:'5' }}"
-                           min="1" max="50" required>
-                    <p class="form-hint">1–50 milestones</p>
+                    <label for="id_start_date">Start Date</label>
+                    <input type="datetime-local" name="start_date" id="id_start_date" 
+                           value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
+                    <p class="form-hint">Leave blank to start today</p>
                 </div>
-                
-                <div class="optional-section">
-                    <button type="button" class="optional-toggle" onclick="toggleOptional(this)">
-                        <i class="fas fa-chevron-down"></i> Name your milestones (optional)
-                    </button>
-                    <div class="optional-content">
-                        <div class="form-group">
-                            <label>Milestone Names</label>
-                            <div class="milestone-input-container">
-                                <input type="text" class="milestone-input" id="milestoneInput" 
-                                       placeholder="e.g., Research, First Draft, Launch..." autocomplete="off">
-                                <div class="milestone-list" id="milestoneList"></div>
-                            </div>
-                            <input type="hidden" name="milestones_input" id="milestonesInput">
-                            <p class="form-hint">Press Enter to add each milestone</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <input type="hidden" name="start_date" id="milestone_start_date" value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}">
             </div>
-        </div>
-        
-        <!-- ===== STYLE (Optional) ===== -->
-        <div class="form-section">
+            
             <div class="optional-section">
                 <button type="button" class="optional-toggle" onclick="toggleOptional(this)">
-                    <i class="fas fa-chevron-down"></i> Display style (optional)
+                    <i class="fas fa-chevron-down"></i> Already started? Set current day
                 </button>
                 <div class="optional-content">
-                    <p class="template-style-intro">
-                        Each style has a unique layout. Defaults to Classic.
-                    </p>
-                    
-                    <div class="template-cards">
-                        <label class="template-card">
-                            <input type="radio" name="template_style" value="default" 
-                                   {% if form.template_style.value == 'default' or not form.template_style.value %}checked{% endif %}
-                                   class="template-style-radio">
-                            <div class="template-card-icon">📱</div>
-                            <div class="template-card-name">Classic</div>
-                            <div class="template-card-desc">Clean, minimal, works for everything</div>
-                        </label>
-                        
-                        <label class="template-card">
-                            <input type="radio" name="template_style" value="fitness"
-                                   {% if form.template_style.value == 'fitness' %}checked{% endif %}
-                                   class="template-style-radio">
-                            <div class="template-card-icon">🏋️</div>
-                            <div class="template-card-name">Fitness</div>
-                            <div class="template-card-desc">Progress gallery, workout theme</div>
-                        </label>
-                        
-                        <label class="template-card">
-                            <input type="radio" name="template_style" value="portfolio"
-                                   {% if form.template_style.value == 'portfolio' %}checked{% endif %}
-                                   class="template-style-radio">
-                            <div class="template-card-icon">💼</div>
-                            <div class="template-card-name">Portfolio</div>
-                            <div class="template-card-desc">Milestone cards, professional look</div>
-                        </label>
-                        
-                        <label class="template-card">
-                            <input type="radio" name="template_style" value="startup"
-                                   {% if form.template_style.value == 'startup' %}checked{% endif %}
-                                   class="template-style-radio">
-                            <div class="template-card-icon">🚀</div>
-                            <div class="template-card-name">Startup</div>
-                            <div class="template-card-desc">Build-in-public, growth theme</div>
-                        </label>
+                    <div class="info-note">
+                        <i class="fas fa-fast-forward"></i>
+                        <span>Enter your current day and we'll unlock all previous days automatically.</span>
                     </div>
-                    
-                    {% if form.template_style.errors %}
-                        <p class="field-error">{{ form.template_style.errors.0 }}</p>
-                    {% endif %}
+                    <div class="form-group">
+                        <label for="id_current_day_override">Current Day</label>
+                        <input type="number" name="current_day_override" id="id_current_day_override" 
+                               value="{{ form.current_day_override.value|default:'' }}"
+                               min="1" max="365"
+                               placeholder="e.g., 14">
+                        <p class="form-hint">Leave blank to start from Day 1</p>
+                        {% if form.current_day_override.errors %}
+                            <p class="field-error">{{ form.current_day_override.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- ===== REMOVED: Social Import Settings ===== -->
-        <!-- All social import fields have been removed -->
-        
-        <!-- ===== REMOVED: Social Share Settings ===== -->
-        <!-- All social share fields have been removed -->
         
         <!-- ===== SETTINGS ===== -->
         <div class="form-section">
@@ -958,7 +816,7 @@
                         <label for="id_tags_input">Tags</label>
                         <input type="text" name="tags_input" id="id_tags_input"
                                value="{{ form.tags_input.value|default:'' }}"
-                               placeholder="writing, personal, growth">
+                               placeholder="fitness, wellness, strength, yoga">
                         <p class="form-hint">Comma separated, up to 10 tags</p>
                     </div>
                 </div>
@@ -1011,6 +869,27 @@
             }
         }
     });
+    
+    // ===== CATEGORY TOGGLE (Fitness vs Wellness) =====
+    const categorySelect = document.getElementById('id_category');
+    const fitnessGoals = document.getElementById('fitnessGoals');
+    const wellnessFocus = document.getElementById('wellnessFocus');
+    
+    function toggleCategoryFields() {
+        if (categorySelect.value === 'fitness') {
+            fitnessGoals.style.display = 'block';
+            wellnessFocus.style.display = 'none';
+        } else if (categorySelect.value === 'wellness') {
+            fitnessGoals.style.display = 'none';
+            wellnessFocus.style.display = 'block';
+        } else {
+            fitnessGoals.style.display = 'block';
+            wellnessFocus.style.display = 'block';
+        }
+    }
+    
+    categorySelect.addEventListener('change', toggleCategoryFields);
+    toggleCategoryFields();
     
     // ===== CLOUDINARY WIDGET =====
     const cloudName = '{{ CLOUDINARY_CLOUD_NAME|default:"demo" }}';
@@ -1072,7 +951,6 @@
         });
         
         document.getElementById('uploadArea').addEventListener('click', () => {
-            document.getElementById('errorMessage').classList.remove('active');
             document.getElementById('uploadProgress').classList.add('active');
             widget.open();
         });
@@ -1092,37 +970,9 @@
         document.getElementById('uploadProgress').classList.remove('active');
     }
     
-    // ===== JOURNEY TYPE TOGGLE =====
-    const journeyTypeSelect = document.getElementById('id_journey_type');
-    const dailyFields = document.getElementById('dailyFields');
-    const milestoneFields = document.getElementById('milestoneFields');
-    const durationInput = document.getElementById('id_duration');
-    const milestoneCountInput = document.getElementById('id_milestone_count');
-    
-    function toggleJourneyTypeFields() {
-        if (journeyTypeSelect.value === 'milestone') {
-            dailyFields.style.display = 'none';
-            milestoneFields.style.display = 'block';
-        } else {
-            dailyFields.style.display = 'block';
-            milestoneFields.style.display = 'none';
-        }
-    }
-    
-    if (durationInput && milestoneCountInput) {
-        durationInput.addEventListener('input', function() {
-            milestoneCountInput.value = this.value;
-        });
-        milestoneCountInput.addEventListener('input', function() {
-            durationInput.value = this.value;
-        });
-    }
-    
-    journeyTypeSelect.addEventListener('change', toggleJourneyTypeFields);
-    toggleJourneyTypeFields();
-    
     // ===== CURRENT DAY OVERRIDE VALIDATION =====
     const currentDayOverride = document.getElementById('id_current_day_override');
+    const durationInput = document.getElementById('id_duration');
     
     if (currentDayOverride && durationInput) {
         currentDayOverride.addEventListener('input', function() {
@@ -1146,121 +996,6 @@
                 currentDayOverride.setCustomValidity('');
             }
         });
-    }
-    
-    // ===== MILESTONE MANAGEMENT =====
-    const milestoneInputField = document.getElementById('milestoneInput');
-    const milestoneListDiv = document.getElementById('milestoneList');
-    const milestonesHiddenInput = document.getElementById('milestonesInput');
-    let milestones = [];
-    
-    try {
-        milestones = {{ form.milestones_input.value|default:'[]'|safe }};
-    } catch(e) {
-        milestones = [];
-    }
-    
-    function renderMilestones() {
-        if (!milestoneListDiv) return;
-        
-        milestoneListDiv.innerHTML = '';
-        milestones.forEach((milestone, index) => {
-            const item = document.createElement('div');
-            item.className = 'milestone-item';
-            item.innerHTML = `
-                <span class="milestone-text">${escapeHtml(milestone)}</span>
-                <span class="milestone-remove" onclick="removeMilestone(${index})">
-                    <i class="fas fa-times"></i>
-                </span>
-            `;
-            milestoneListDiv.appendChild(item);
-        });
-        if (milestonesHiddenInput) {
-            milestonesHiddenInput.value = JSON.stringify(milestones);
-        }
-    }
-    
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
-    function addMilestone(text) {
-        if (text && text.trim() && !milestones.includes(text.trim())) {
-            milestones.push(text.trim());
-            renderMilestones();
-        }
-        if (milestoneInputField) {
-            milestoneInputField.value = '';
-            milestoneInputField.focus();
-        }
-    }
-    
-    function removeMilestone(index) {
-        milestones.splice(index, 1);
-        renderMilestones();
-    }
-    
-    if (milestoneInputField) {
-        milestoneInputField.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addMilestone(this.value);
-            }
-        });
-    }
-    
-    renderMilestones();
-    
-    // Set milestone start date
-    if (journeyTypeSelect.value === 'milestone') {
-        const now = new Date();
-        const formatted = now.toISOString().slice(0, 16);
-        const milestoneDateInput = document.getElementById('milestone_start_date');
-        if (milestoneDateInput && !milestoneDateInput.value) {
-            milestoneDateInput.value = formatted;
-        }
-    }
-    
-    // ===== TEMPLATE STYLE SMART DEFAULTS =====
-    const templateRadios = document.querySelectorAll('.template-style-radio');
-    const categorySelect = document.getElementById('id_category');
-    
-    const templateDefaults = {
-        'fitness': { category: 'fitness', journey_type: 'daily', duration: 30 },
-        'portfolio': { category: 'creative', journey_type: 'milestone', duration: 6 },
-        'startup': { category: 'business', journey_type: 'daily', duration: 30 },
-        'default': { category: '', journey_type: 'daily', duration: 30 },
-    };
-    
-    let userOverrodeCategory = false;
-    let userOverrodeType = false;
-    
-    templateRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const style = this.value;
-            const defaults = templateDefaults[style];
-            
-            if (defaults && !userOverrodeCategory && defaults.category) {
-                categorySelect.value = defaults.category;
-            }
-            if (defaults && !userOverrodeType && defaults.journey_type) {
-                journeyTypeSelect.value = defaults.journey_type;
-                toggleJourneyTypeFields();
-            }
-            if (defaults && defaults.duration) {
-                if (durationInput) durationInput.value = defaults.duration;
-                if (milestoneCountInput) milestoneCountInput.value = defaults.duration;
-            }
-        });
-    });
-    
-    if (categorySelect) {
-        categorySelect.addEventListener('change', () => { userOverrodeCategory = true; });
-    }
-    if (journeyTypeSelect) {
-        journeyTypeSelect.addEventListener('change', () => { userOverrodeType = true; });
     }
 </script>
 

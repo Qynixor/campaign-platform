@@ -19,7 +19,7 @@ User = get_user_model()
 # CORE USER MODELS
 # ============================================================================
 class Profile(models.Model):
-    """User profile for Rallynex — simple and clean"""
+    """User profile for Rallynex — fitness & wellness focused"""
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = CloudinaryField(
@@ -31,7 +31,7 @@ class Profile(models.Model):
     bio = models.TextField(default='', max_length=200, blank=True)
     location = models.CharField(max_length=100, blank=True)
     
-    # Optional social links (just for display)
+    # Optional social links
     website = models.URLField(blank=True)
     twitter = models.CharField(max_length=50, blank=True)
     instagram = models.CharField(max_length=50, blank=True)
@@ -55,6 +55,11 @@ class Profile(models.Model):
     
     def get_total_entries(self):
         return Activity.objects.filter(journey__creator=self).count()
+    
+    def get_current_streak(self):
+        """Calculate current streak across all active journeys"""
+        # FUTURE: Implement streak calculation
+        return 0
 
 
 @receiver(post_save, sender=User)
@@ -63,33 +68,56 @@ def create_user_profile(sender, instance, created, **kwargs):
         Profile.objects.create(user=instance)
 
 
-
-
 # ============================================================================
-# JOURNEY MODEL — Documentation Focus
-# ============================================================================
-# ============================================================================
-# JOURNEY MODEL — Documentation Focus
+# JOURNEY MODEL — Fitness & Wellness Focused
 # ============================================================================
 class Journey(models.Model):
     """
-    A journey is a container for documenting progress over time.
-    Can be daily or milestone-based.
+    A journey is a container for documenting fitness and wellness progress.
+    Daily logs with structured tracking.
     """
     
+    # ===== JOURNEY TYPES =====
     JOURNEY_TYPES = [
         ('daily', 'Daily Journey'),
-        ('milestone', 'Milestone Journey'),
+        # FUTURE: ('milestone', 'Milestone Journey'),
+        # FUTURE: ('challenge', 'Challenge'),
+        # FUTURE: ('build_in_public', 'Build in Public'),
     ]
     
+    # ===== CATEGORIES — FITNESS & WELLNESS ONLY =====
     CATEGORY_CHOICES = [
-        ('fitness', 'Fitness & Wellness'),
-        ('learning', 'Learning & Skills'),
-        ('creative', 'Creative Projects'),
-        ('business', 'Business & Startups'),
-        ('personal', 'Personal Growth'),
-        ('cause', 'Social Cause'),
-        ('other', 'Other'),
+        ('fitness', 'Fitness'),
+        ('wellness', 'Wellness'),
+        # FUTURE: ('nutrition', 'Nutrition'),
+        # FUTURE: ('recovery', 'Recovery'),
+        # FUTURE: ('build_in_public', 'Build in Public'),
+        # FUTURE: ('learning', 'Learning & Skills'),
+        # FUTURE: ('creative', 'Creative Projects'),
+        # FUTURE: ('business', 'Business & Startups'),
+        # FUTURE: ('personal', 'Personal Growth'),
+        # FUTURE: ('cause', 'Social Cause'),
+        # FUTURE: ('other', 'Other'),
+    ]
+    
+    # ===== FITNESS GOALS =====
+    FITNESS_GOALS = [
+        ('build_muscle', 'Build Muscle'),
+        ('lose_weight', 'Lose Weight'),
+        ('increase_stamina', 'Increase Stamina'),
+        ('improve_flexibility', 'Improve Flexibility'),
+        ('run_faster', 'Run Faster'),
+        ('general_fitness', 'General Fitness'),
+    ]
+    
+    # ===== WELLNESS FOCUS =====
+    WELLNESS_FOCUS = [
+        ('mental_health', 'Mental Health'),
+        ('better_sleep', 'Better Sleep'),
+        ('stress_reduction', 'Stress Reduction'),
+        ('mindfulness', 'Mindfulness'),
+        ('nutrition', 'Nutrition'),
+        ('general_wellness', 'General Wellness'),
     ]
     
     PRIVACY_CHOICES = [
@@ -98,12 +126,12 @@ class Journey(models.Model):
         ('public', 'Public — Everyone'),
     ]
     
-    # ==================== TEMPLATE STYLE ====================
+    # ===== TEMPLATE STYLES =====
     TEMPLATE_STYLE_CHOICES = [
-        ('default', 'Classic'),
         ('fitness', 'Fitness'),
-        ('portfolio', 'Portfolio'),
-        ('startup', 'Startup'),
+        # FUTURE: ('wellness', 'Wellness'),
+        # FUTURE: ('minimal', 'Minimal'),
+        # FUTURE: ('build_in_public', 'Build in Public'),
     ]
     
     # ==================== BASIC INFO ====================
@@ -111,35 +139,71 @@ class Journey(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     description = models.TextField(max_length=500, blank=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='personal')
-    journey_type = models.CharField(max_length=20, choices=JOURNEY_TYPES, default='daily')
+    
+    category = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_CHOICES, 
+        default='fitness'
+    )
+    
+    journey_type = models.CharField(
+        max_length=20, 
+        choices=JOURNEY_TYPES, 
+        default='daily'
+    )
+    
+    # ===== GOALS & FOCUS =====
+    fitness_goal = models.CharField(
+        max_length=50,
+        choices=FITNESS_GOALS,
+        blank=True,
+        null=True,
+        help_text="What's your main fitness goal?"
+    )
+    
+    wellness_focus = models.CharField(
+        max_length=50,
+        choices=WELLNESS_FOCUS,
+        blank=True,
+        null=True,
+        help_text="What's your wellness focus?"
+    )
+    
+    custom_goal = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Custom goal if none of the above fit"
+    )
     
     # ==================== VISUALS ====================
     cover_image = CloudinaryField('image', folder='journey_covers', null=True, blank=True)
     
-    # ==================== TEMPLATE STYLE ====================
     template_style = models.CharField(
         max_length=20,
         choices=TEMPLATE_STYLE_CHOICES,
-        default='default',
+        default='fitness',
         help_text="Display style for your journey"
     )
     
     # ==================== STRUCTURE ====================
-    duration = models.PositiveIntegerField(default=30, help_text="Number of days or milestones")
+    duration = models.PositiveIntegerField(
+        default=30, 
+        help_text="Number of days for this fitness/wellness journey"
+    )
     
-    # Manual override for creators already in progress
     current_day_override = models.PositiveIntegerField(
         null=True,
         blank=True,
         help_text="Manually set current day. Overrides calendar calculation."
     )
     
-    # Milestone descriptions (for milestone journeys)
-    milestones = models.JSONField(default=list, blank=True, help_text="List of milestone descriptions")
-    
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
+    
+    # ==================== TARGETS (future expansion) ====================
+    # target_weight = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
+    # target_distance = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    # target_streak = models.PositiveIntegerField(default=0)
     
     # ==================== ANALYTICS ====================
     view_count = models.PositiveIntegerField(default=0)
@@ -152,13 +216,18 @@ class Journey(models.Model):
         default='private'
     )
     
-    # ==================== SETTINGS ====================
-    allow_comments = models.BooleanField(default=False, help_text="Allow public comments")
+    allow_comments = models.BooleanField(
+        default=False, 
+        help_text="Allow public comments"
+    )
     
     # ==================== STATUS ====================
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
-    is_archived = models.BooleanField(default=False, help_text="Journey is complete and archived")
+    is_archived = models.BooleanField(
+        default=False, 
+        help_text="Journey is complete and archived"
+    )
     
     # ==================== TIMESTAMPS ====================
     created_at = models.DateTimeField(auto_now_add=True)
@@ -200,9 +269,6 @@ class Journey(models.Model):
         if self.current_day_override:
             return min(self.current_day_override, self.duration)
         
-        if self.journey_type == 'milestone':
-            return self.activities.count()
-        
         now = timezone.now()
         if now < self.start_date:
             return 0
@@ -215,41 +281,25 @@ class Journey(models.Model):
         if self.duration == 0:
             return 0
         
-        if self.journey_type == 'milestone':
-            completed = self.activities.count()
-            return min(round((completed / self.duration) * 100), 100)
-        
         current = self.get_current_day()
         return min(round((current / self.duration) * 100), 100)
     
     def is_day_locked(self, day_number):
         """Check if a day is locked (future day)"""
-        if self.journey_type == 'daily':
-            current = self.get_current_day()
-            return day_number > current
-        return False
+        current = self.get_current_day()
+        return day_number > current
     
     def get_day_status(self, day_number):
         """Get status of a specific day"""
         has_content = self.activities.filter(day_number_field=day_number).exists()
+        current = self.get_current_day()
         
-        if self.journey_type == 'daily':
-            current = self.get_current_day()
-            
-            if day_number > current:
-                return 'locked'
-            elif day_number == current:
-                return 'current'
-            else:
-                return 'completed' if has_content else 'available'
-        
-        elif self.journey_type == 'milestone':
-            if has_content:
-                return 'completed'
-            else:
-                return 'available'
-        
-        return 'available'
+        if day_number > current:
+            return 'locked'
+        elif day_number == current:
+            return 'current'
+        else:
+            return 'completed' if has_content else 'available'
     
     def get_activity_for_day(self, day_number):
         """Get activity for a specific day"""
@@ -271,34 +321,87 @@ class Journey(models.Model):
     def get_meta_description(self):
         if self.description:
             return self.description[:160]
-        return f"Follow {self.creator.get_display_name()}'s journey: {self.title} on Rallynex"
+        return f"Follow {self.creator.get_display_name()}'s fitness journey: {self.title} on Rallynex"
     
     def get_meta_image(self):
         if self.cover_image:
             return self.cover_image.url
         return None
+    
+    # ===== HELPER METHODS =====
+    
+    def get_total_workouts(self):
+        """Count total workout activities"""
+        return self.activities.filter(
+            activity_type__in=['cardio', 'strength', 'hiit', 'yoga', 'walking', 'running']
+        ).count()
+    
+    def get_total_reflections(self):
+        """Count total reflections"""
+        return self.reflections.count()
+    
+    def get_metrics_summary(self):
+        """Get summary of progress metrics"""
+        metrics = {}
+        for activity in self.activities.all():
+            if activity.progress_metrics:
+                for key, value in activity.progress_metrics.items():
+                    if key not in metrics:
+                        metrics[key] = []
+                    metrics[key].append(value)
+        return metrics
+    
+    def get_streak(self):
+        """Calculate current streak of consecutive days with activity"""
+        # FUTURE: Implement streak calculation
+        return 0
+
 
 # ============================================================================
-# ACTIVITY MODEL — Daily Entries
+# ACTIVITY MODEL — Daily Fitness/Wellness Entries
 # ============================================================================
 
 class Activity(models.Model):
     """
-    Individual entry within a journey.
+    Individual daily entry within a fitness or wellness journey.
     This is where users document their daily progress.
     """
     
+    # ===== MOOD TRACKING =====
     MOOD_CHOICES = [
-        ('excited', 'Excited'),
-        ('motivated', 'Motivated'),
-        ('challenged', 'Challenged'),
-        ('proud', 'Proud'),
-        ('tired', 'Tired'),
-        ('neutral', 'Neutral'),
-        ('unsure', 'Unsure'),
-        ('accomplished', 'Accomplished'),
-        ('struggling', 'Struggling'),
-        ('grateful', 'Grateful'),
+        ('amazing', '🌟 Amazing'),
+        ('great', '💪 Great'),
+        ('good', '👍 Good'),
+        ('okay', '😐 Okay'),
+        ('tired', '😴 Tired'),
+        ('challenged', '💪 Challenged'),
+        ('struggling', '😞 Struggling'),
+        ('proud', '🏆 Proud'),
+        ('grateful', '🙏 Grateful'),
+        ('neutral', '😶 Neutral'),
+    ]
+    
+    # ===== WORKOUT TYPES =====
+    WORKOUT_TYPES = [
+        ('cardio', 'Cardio'),
+        ('strength', 'Strength Training'),
+        ('hiit', 'HIIT'),
+        ('yoga', 'Yoga'),
+        ('pilates', 'Pilates'),
+        ('walking', 'Walking'),
+        ('running', 'Running'),
+        ('cycling', 'Cycling'),
+        ('swimming', 'Swimming'),
+        ('sports', 'Sports'),
+        ('stretching', 'Stretching'),
+        ('other', 'Other'),
+    ]
+    
+    # ===== INTENSITY LEVELS =====
+    INTENSITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
     ]
     
     # ==================== RELATIONSHIPS ====================
@@ -308,6 +411,29 @@ class Activity(models.Model):
     title = models.CharField(max_length=200, blank=True, help_text="Optional title for this entry")
     content = models.TextField(max_length=500, help_text="Your entry content")
     summary = models.TextField(blank=True, help_text="Short summary")
+    
+    # ==================== WORKOUT DETAILS ====================
+    activity_type = models.CharField(
+        max_length=20,
+        choices=WORKOUT_TYPES,
+        blank=True,
+        null=True,
+        help_text="Type of activity"
+    )
+    
+    duration_minutes = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        help_text="Duration in minutes"
+    )
+    
+    intensity = models.CharField(
+        max_length=10,
+        choices=INTENSITY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Intensity level"
+    )
     
     # ==================== MEDIA ====================
     media_file = CloudinaryField(
@@ -328,7 +454,7 @@ class Activity(models.Model):
     # ==================== MOOD & METRICS ====================
     mood = models.CharField(max_length=20, choices=MOOD_CHOICES, blank=True, null=True)
     
-    # Flexible metrics (e.g., {"weight": 75, "distance": 5.2, "pages": 10})
+    # Flexible metrics (e.g., {"weight": 75, "distance": 5.2, "reps": 10, "sleep": 8})
     progress_metrics = models.JSONField(default=dict, blank=True)
     
     # ==================== LOCATION ====================
@@ -349,6 +475,7 @@ class Activity(models.Model):
         indexes = [
             models.Index(fields=['journey', 'day_number_field']),
             models.Index(fields=['journey', 'created_at']),
+            models.Index(fields=['activity_type']),
         ]
         verbose_name_plural = 'Activities'
     
@@ -396,53 +523,104 @@ class Activity(models.Model):
         if self.thumbnail:
             return f'<img src="{self.thumbnail.url}" alt="{self.title or self.content}" style="width:100%;display:block;">'
         return None
-
+    
+    def get_formatted_metrics(self):
+        """Format progress metrics for display"""
+        if not self.progress_metrics:
+            return None
+        return self.progress_metrics
 
 # ============================================================================
-# JOURNAL MODEL — Free-Form Documentation
+# REFLECTION MODEL — Personal Reflections (replaces JournalEntry)
 # ============================================================================
 
-class JournalEntry(models.Model):
+class Reflection(models.Model):
     """
-    Free-form journal entries for users who want to write without 
-    being tied to a specific journey structure.
-    This gives flexibility to people who just want to document.
+    Personal reflections for fitness and wellness.
+    NOT a blog post — this is for personal reflection, gratitude, and mindset.
     """
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='journal_entries')
+    # ===== REFLECTION TYPES =====
+    REFLECTION_TYPES = [
+        ('workout', 'Workout Reflection'),
+        ('nutrition', 'Nutrition Reflection'),
+        ('mental', 'Mental Wellness'),
+        ('recovery', 'Recovery & Sleep'),
+        ('milestone', 'Milestone Celebration'),
+        ('struggle', 'Struggle / Challenge'),
+        ('gratitude', 'Gratitude'),
+        ('general', 'General Reflection'),
+    ]
     
-    # ==================== CONTENT ====================
-    title = models.CharField(max_length=200)
-    content = models.TextField()
+    # ===== MOOD CHOICES =====
+    MOOD_CHOICES = [
+        ('amazing', '🌟 Amazing'),
+        ('good', '👍 Good'),
+        ('okay', '😐 Okay'),
+        ('tired', '😴 Tired'),
+        ('challenged', '💪 Challenged'),
+        ('struggling', '😞 Struggling'),
+        ('proud', '🏆 Proud'),
+        ('grateful', '🙏 Grateful'),
+    ]
     
-    # ==================== MEDIA ====================
-    media_files = models.JSONField(default=list, blank=True)
+    # ==================== RELATIONSHIPS ====================
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reflections')
     
-    # ==================== ORGANIZATION ====================
-    tags = models.JSONField(default=list, blank=True)
-    
-    # ==================== PRIVACY ====================
-    is_private = models.BooleanField(default=True)
-    
-    # ==================== CONTEXT ====================
+    # Optional connections
     related_journey = models.ForeignKey(
         Journey, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
-        related_name='journal_entries'
+        related_name='reflections'
     )
     related_activity = models.ForeignKey(
         Activity,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='journal_entries'
+        related_name='reflections'
     )
     
-    # ==================== MOOD ====================
-    mood = models.CharField(max_length=50, blank=True)
-    location = models.CharField(max_length=200, blank=True)
+    # ==================== CONTENT ====================
+    reflection_type = models.CharField(
+        max_length=20, 
+        choices=REFLECTION_TYPES, 
+        default='general',  # ← ADDED
+        blank=True,         # ← ADDED
+        null=True           # ← ADDED
+    )
+    
+    summary = models.CharField(
+        max_length=100, 
+        help_text="What was this reflection about?"
+    )
+    
+    reflection = models.TextField(
+        max_length=500, 
+        help_text="How did you feel? What did you learn?"
+    )
+    
+    # ==================== MOOD & ENERGY ====================
+    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, null=True, blank=True)
+    energy_level = models.PositiveSmallIntegerField(
+        null=True, 
+        blank=True, 
+        help_text="1-10"
+    )
+    sleep_hours = models.DecimalField(
+        max_digits=3, 
+        decimal_places=1, 
+        null=True, 
+        blank=True
+    )
+    
+    # ==================== PRIVACY ====================
+    is_private = models.BooleanField(
+        default=True, 
+        help_text="Private reflections stay between you and your journey"
+    )
     
     # ==================== TIMESTAMPS ====================
     created_at = models.DateTimeField(auto_now_add=True)
@@ -453,18 +631,19 @@ class JournalEntry(models.Model):
         indexes = [
             models.Index(fields=['user', '-created_at']),
             models.Index(fields=['user', 'related_journey']),
-            models.Index(fields=['user', 'is_private']),
+            models.Index(fields=['reflection_type']),
         ]
+        verbose_name_plural = 'Reflections'
     
     def __str__(self):
-        return f"{self.user.username} - {self.title[:50]}"
+        return f"{self.user.username} - {self.summary[:50]}"
     
     def get_absolute_url(self):
-        return reverse('journal_detail', kwargs={'pk': self.pk})
+        return reverse('reflection_detail', kwargs={'pk': self.pk})
 
 
 # ============================================================================
-# SIMPLIFIED SOCIAL PUBLISHING (Optional Sharing)
+# SOCIAL PUBLISHING (Optional Sharing)
 # ============================================================================
 
 class SocialPublish(models.Model):
@@ -523,8 +702,9 @@ class SocialPublish(models.Model):
 
 
 # ============================================================================
-# NOTIFICATION MODEL (Minimal)
+# NOTIFICATION MODEL
 # ============================================================================
+
 class Notification(models.Model):
     """User notifications — minimal and clean"""
     
@@ -533,6 +713,8 @@ class Notification(models.Model):
         ('follow', 'New Follower'),
         ('milestone', 'Milestone Reached'),
         ('export', 'Export Ready'),
+        # FUTURE: ('streak', 'Streak Milestone'),
+        # FUTURE: ('achievement', 'Achievement Unlocked'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -561,8 +743,9 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.message[:50]}"
 
+
 # ============================================================================
-# COMMENT MODEL (For Journeys and Activities)
+# COMMENT MODEL
 # ============================================================================
 
 class Comment(models.Model):
@@ -593,7 +776,7 @@ class Comment(models.Model):
 
 
 # ============================================================================
-# JOURNEY FOLLOW (Opt-in Following)
+# JOURNEY FOLLOW
 # ============================================================================
 
 class JourneyFollow(models.Model):
@@ -645,7 +828,7 @@ class JourneySave(models.Model):
 
 
 # ============================================================================
-# TAG MODEL (Simple)
+# TAG MODEL
 # ============================================================================
 
 class Tag(models.Model):
@@ -707,6 +890,7 @@ class Export(models.Model):
     format = models.CharField(max_length=20, choices=EXPORT_FORMATS)
     include_media = models.BooleanField(default=True)
     include_comments = models.BooleanField(default=False)
+    include_reflections = models.BooleanField(default=True)
     
     file_url = models.URLField(blank=True)
     file_size = models.PositiveIntegerField(default=0)
@@ -730,7 +914,7 @@ class Export(models.Model):
 
 
 # ============================================================================
-# CONTACT & SUBSCRIBER (Minimal)
+# CONTACT & SUBSCRIBER
 # ============================================================================
 
 class ContactMessage(models.Model):
@@ -741,6 +925,7 @@ class ContactMessage(models.Model):
         ('support', 'Technical Support'),
         ('journey', 'Journey Help'),
         ('export', 'Export Help'),
+        ('feature', 'Feature Request'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -748,7 +933,7 @@ class ContactMessage(models.Model):
     email = models.EmailField()
     subject = models.CharField(max_length=50, choices=SUBJECT_CHOICES, default='general')
     message = models.TextField()
-    ai_response = models.TextField(blank=True, null=True)  # ← Add this
+    ai_response = models.TextField(blank=True, null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -771,6 +956,77 @@ class Subscriber(models.Model):
     
     def __str__(self):
         return self.email
+
+
+# ============================================================================
+# FUTURE MODELS (Commented — Ready for Expansion)
+# ============================================================================
+
+"""
+# FUTURE: Fitness Analytics
+class FitnessAnalytics(models.Model):
+    '''Aggregated analytics for a journey'''
+    journey = models.OneToOneField(Journey, on_delete=models.CASCADE)
+    total_workouts = models.PositiveIntegerField(default=0)
+    total_days_active = models.PositiveIntegerField(default=0)
+    longest_streak = models.PositiveIntegerField(default=0)
+    current_streak = models.PositiveIntegerField(default=0)
+    weight_trend = models.JSONField(default=list)
+    performance_trend = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+# FUTURE: Challenges
+class Challenge(models.Model):
+    '''Group fitness challenges'''
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    duration_days = models.PositiveIntegerField(default=30)
+    participants = models.ManyToManyField(User, through='ChallengeParticipant')
+    is_active = models.BooleanField(default=True)
+
+
+class ChallengeParticipant(models.Model):
+    '''User participation in challenges'''
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    progress = models.PositiveIntegerField(default=0)
+
+
+# FUTURE: Device Integration
+class Integration(models.Model):
+    '''Connect to fitness devices/apps'''
+    PROVIDER_CHOICES = [
+        ('fitbit', 'Fitbit'),
+        ('apple_health', 'Apple Health'),
+        ('google_fit', 'Google Fit'),
+        ('strava', 'Strava'),
+        ('garmin', 'Garmin'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    access_token = models.TextField()
+    refresh_token = models.TextField()
+    last_sync = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+
+# FUTURE: Achievements
+class Achievement(models.Model):
+    '''Gamification achievements'''
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.CharField(max_length=50)
+    points = models.PositiveIntegerField(default=0)
+
+
+class UserAchievement(models.Model):
+    '''User earned achievements'''
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+"""
 
 
 # ============================================================================
@@ -827,3 +1083,9 @@ def check_milestone_notification(sender, instance, created, **kwargs):
                 related_activity=instance,
                 redirect_link=instance.journey.get_absolute_url()
             )
+
+
+@receiver(post_save, sender=Reflection)
+def check_reflection_streak(sender, instance, created, **kwargs):
+    """FUTURE: Check if user has maintained a reflection streak"""
+    pass

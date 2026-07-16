@@ -94,9 +94,7 @@
         color: var(--text-primary);
     }
     
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
+    .form-group select {
         width: 100%;
         padding: 12px 16px;
         background: var(--bg-primary);
@@ -105,11 +103,15 @@
         color: var(--text-primary);
         font-size: 14px;
         transition: border-color 0.2s;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        padding-right: 40px;
+        cursor: pointer;
     }
     
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
+    .form-group select:focus {
         outline: none;
         border-color: var(--accent);
     }
@@ -254,7 +256,6 @@
         transform: scale(0.98);
     }
     
-    /* Success message */
     .success-message {
         background: rgba(34, 197, 94, 0.1);
         border: 1px solid rgba(34, 197, 94, 0.3);
@@ -281,6 +282,61 @@
             opacity: 1;
             transform: translateY(0);
         }
+    }
+    
+    .privacy-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 8px;
+    }
+    
+    .privacy-option:hover {
+        border-color: var(--silver);
+        background: var(--bg-secondary);
+    }
+    
+    .privacy-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    
+    .privacy-option.selected {
+        border-color: var(--accent);
+        background: var(--accent-light);
+    }
+    
+    .privacy-option .privacy-label {
+        flex: 1;
+        cursor: pointer;
+    }
+    
+    .privacy-option .privacy-label strong {
+        display: block;
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    .privacy-option .privacy-label span {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .privacy-option i {
+        font-size: 20px;
+        color: var(--silver);
+    }
+    
+    .privacy-option.selected i {
+        color: var(--accent);
     }
     
     @media (max-width: 768px) {
@@ -340,39 +396,56 @@
             <i class="fas fa-flag-checkered"></i>
             <div class="settings-info-content">
                 <h4>{{ journey.title }}</h4>
-                <p>Configure how your journey appears to followers</p>
+                <p>Configure how your journey appears to others</p>
             </div>
         </div>
         
-        <div class="checkbox-group">
-            <input type="checkbox" name="is_public" id="id_is_public" 
-                   {% if journey.is_public %}checked{% endif %}>
-            <div class="checkbox-info">
-                <label for="id_is_public">🌍 Public Journey</label>
-                <p>When enabled, your journey appears in discovery and search results. Anyone can find and follow it.</p>
+        <!-- ===== PRIVACY SETTINGS ===== -->
+        <div class="form-group">
+            <label>🔒 Privacy</label>
+            
+            <div class="privacy-option {% if journey.privacy_status == 'private' %}selected{% endif %}" onclick="selectPrivacy('private')">
+                <input type="radio" name="privacy_status" value="private" id="privacy_private" 
+                       {% if journey.privacy_status == 'private' %}checked{% endif %}>
+                <div class="privacy-label" onclick="document.getElementById('privacy_private').click()">
+                    <strong>Private</strong>
+                    <span>Only you can view this journey</span>
+                </div>
+                <i class="fas fa-lock"></i>
+            </div>
+            
+            <div class="privacy-option {% if journey.privacy_status == 'unlisted' %}selected{% endif %}" onclick="selectPrivacy('unlisted')">
+                <input type="radio" name="privacy_status" value="unlisted" id="privacy_unlisted"
+                       {% if journey.privacy_status == 'unlisted' %}checked{% endif %}>
+                <div class="privacy-label" onclick="document.getElementById('privacy_unlisted').click()">
+                    <strong>Unlisted</strong>
+                    <span>Anyone with the link can view (not in search)</span>
+                </div>
+                <i class="fas fa-link"></i>
+            </div>
+            
+            <div class="privacy-option {% if journey.privacy_status == 'public' %}selected{% endif %}" onclick="selectPrivacy('public')">
+                <input type="radio" name="privacy_status" value="public" id="privacy_public"
+                       {% if journey.privacy_status == 'public' %}checked{% endif %}>
+                <div class="privacy-label" onclick="document.getElementById('privacy_public').click()">
+                    <strong>Public</strong>
+                    <span>Anyone can find and view this journey</span>
+                </div>
+                <i class="fas fa-globe"></i>
             </div>
         </div>
         
+        <!-- ===== COMMENTS ===== -->
         <div class="checkbox-group">
             <input type="checkbox" name="allow_comments" id="id_allow_comments" 
                    {% if journey.allow_comments %}checked{% endif %}>
             <div class="checkbox-info">
                 <label for="id_allow_comments">💬 Allow Comments</label>
-                <p>Followers can comment on your daily updates and engage with your content.</p>
+                <p>Visitors can comment on your journey entries</p>
             </div>
         </div>
         
-        {% if journey.journey_type == 'daily' %}
-        <div class="checkbox-group">
-            <input type="checkbox" name="show_progress" id="id_show_progress" 
-                   {% if journey.show_progress|default:True %}checked{% endif %}>
-            <div class="checkbox-info">
-                <label for="id_show_progress">📊 Show Progress Bar</label>
-                <p>Display the journey progress bar to followers</p>
-            </div>
-        </div>
-        {% endif %}
-        
+        <!-- ===== DANGER ZONE ===== -->
         <div class="danger-zone">
             <h3>
                 <i class="fas fa-exclamation-triangle"></i>
@@ -398,6 +471,14 @@
 </div>
 
 <script>
+    function selectPrivacy(value) {
+        document.querySelectorAll('.privacy-option').forEach(el => {
+            el.classList.remove('selected');
+        });
+        document.querySelector(`.privacy-option input[value="${value}"]`).closest('.privacy-option').classList.add('selected');
+        document.querySelector(`.privacy-option input[value="${value}"]`).checked = true;
+    }
+    
     // Auto-dismiss success messages after 3 seconds
     document.addEventListener('DOMContentLoaded', function() {
         const successMessages = document.querySelectorAll('.success-message');
