@@ -1,0 +1,742 @@
+<!-- templates/journey/metrics.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Custom Metrics - {{ journey.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metrics-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .metrics-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .metrics-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .metrics-header h1 i {
+        color: var(--accent);
+    }
+    
+    .premium-badge {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    /* Metric Cards Grid */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .metric-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+    
+    .metric-card .metric-icon {
+        font-size: 32px;
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .metric-card .metric-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .metric-card .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 4px 0;
+    }
+    
+    .metric-card .metric-unit {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .metric-card .metric-change {
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    
+    .metric-card .metric-change.positive {
+        color: #10b981;
+    }
+    
+    .metric-card .metric-change.negative {
+        color: #ef4444;
+    }
+    
+    .metric-card .metric-change.stable {
+        color: #f59e0b;
+    }
+    
+    .metric-card .metric-count {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .metric-card .add-metric-btn {
+        width: 100%;
+        padding: 8px;
+        margin-top: 8px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .metric-card .add-metric-btn:hover {
+        background: #2563EB;
+    }
+    
+    /* Empty State */
+    .empty-metrics {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        border: 2px dashed var(--border-color);
+        margin-bottom: 30px;
+    }
+    
+    .empty-metrics .empty-icon {
+        font-size: 48px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 16px;
+    }
+    
+    .empty-metrics h3 {
+        font-size: 20px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .empty-metrics p {
+        color: var(--text-secondary);
+        max-width: 400px;
+        margin: 0 auto 20px;
+    }
+    
+    /* Chart Section */
+    .chart-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 30px;
+    }
+    
+    .chart-section .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .chart-section .chart-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .chart-section .chart-header .chart-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .chart-section .chart-header .chart-controls select,
+    .chart-section .chart-header .chart-controls button {
+        padding: 6px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 13px;
+        cursor: pointer;
+    }
+    
+    .chart-section .chart-header .chart-controls select:focus,
+    .chart-section .chart-header .chart-controls button:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .chart-section .chart-header .chart-controls button:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .chart-container {
+        width: 100%;
+        height: 300px;
+        position: relative;
+    }
+    
+    .chart-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    
+    /* Stats Box */
+    .stats-box {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .stats-box .stat-item {
+        text-align: center;
+    }
+    
+    .stats-box .stat-item .stat-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .stats-box .stat-item .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    /* Add Metric Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 32px;
+        max-width: 400px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    .modal-content .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    
+    .modal-content h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+    
+    .modal-content .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .modal-content .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .modal-content .form-group input,
+    .modal-content .form-group select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .modal-content .form-group input:focus,
+    .modal-content .form-group select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .modal-content .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .modal-content .btn-submit:hover {
+        background: #2563EB;
+    }
+    
+    @media (max-width: 768px) {
+        .metrics-container {
+            padding: 20px 16px;
+        }
+        
+        .metrics-header h1 {
+            font-size: 22px;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .chart-section .chart-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .chart-section .chart-header .chart-controls {
+            justify-content: stretch;
+        }
+        
+        .chart-section .chart-header .chart-controls select {
+            flex: 1;
+        }
+        
+        .stats-box {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .metrics-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .metric-card {
+            padding: 14px;
+        }
+        
+        .metric-card .metric-value {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="metrics-container">
+    
+    <!-- Header -->
+    <div class="metrics-header">
+        <h1>
+            <i class="fas fa-sliders-h"></i>
+            Custom Metrics
+            <span class="premium-badge">
+                <i class="fas fa-crown"></i> Premium
+            </span>
+        </h1>
+        <div>
+            <span style="font-size: 14px; color: var(--text-secondary);">
+                {{ journey.title }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Metrics Grid -->
+    {% if metrics_summary %}
+        <div class="metrics-grid">
+            {% for key, metric in metrics_summary.items %}
+                <div class="metric-card" onclick="window.location.href='?metric={{ key }}'">
+                    <span class="metric-icon">{{ metric.icon }}</span>
+                    <div class="metric-name">{{ metric.label }}</div>
+                    <div class="metric-value">
+                        {{ metric.latest|default:'—' }}
+                        {% if metric.unit %}<span style="font-size:14px;font-weight:400;">{{ metric.unit }}</span>{% endif %}
+                    </div>
+                    <div class="metric-change 
+                        {% if metric.change > 0 %}positive
+                        {% elif metric.change < 0 %}negative
+                        {% else %}stable{% endif %}">
+                        {% if metric.change > 0 %}↑{% elif metric.change < 0 %}↓{% else %}→{% endif %}
+                        {{ metric.change|default:'0' }}
+                    </div>
+                    <div class="metric-count">{{ metric.count }} entries</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-metrics">
+            <div class="empty-icon">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+            <h3>No Custom Metrics Yet</h3>
+            <p>
+                Start tracking your progress by adding custom metrics to your daily entries.
+                Track weight, sleep, mood, energy, and more!
+            </p>
+            <button class="btn btn-primary" onclick="openAddMetric()">
+                <i class="fas fa-plus"></i> Add Your First Metric
+            </button>
+        </div>
+    {% endif %}
+    
+    <!-- Chart Section -->
+    {% if selected_metric and chart_data %}
+        <div class="chart-section">
+            <div class="chart-header">
+                <h3>
+                    <span>{{ chart_data.info.icon|default:'📊' }}</span>
+                    {{ chart_data.info.label|default:selected_metric|title }} Trend
+                </h3>
+                <div class="chart-controls">
+                    <select id="metricSelect" onchange="window.location.href='?metric='+this.value">
+                        {% for metric in available_metrics %}
+                            <option value="{{ metric }}" {% if metric == selected_metric %}selected{% endif %}>
+                                {{ metric_types|get_item:metric|get_item:'label'|default:metric|title }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button onclick="window.location.href='{% url 'journey_metrics' journey.slug %}'">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="metricsChart"></canvas>
+            </div>
+            
+            {% if stats %}
+                <div class="stats-box">
+                    <div class="stat-item">
+                        <div class="stat-label">Entries</div>
+                        <div class="stat-value">{{ stats.count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value">{{ stats.avg|default:'—' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Min</div>
+                        <div class="stat-value">{{ stats.min|default:'—' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Max</div>
+                        <div class="stat-value">{{ stats.max|default:'—' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Change</div>
+                        <div class="stat-value" style="color: {% if stats.change > 0 %}#10b981{% elif stats.change < 0 %}#ef4444{% else %}#f59e0b{% endif %};">
+                            {{ stats.change|default:'0' }}
+                            {% if chart_data.info.unit %}{{ chart_data.info.unit }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Trend</div>
+                        <div class="stat-value">
+                            {% if stats.trend == 'increasing' %}📈 Up{% elif stats.trend == 'decreasing' %}📉 Down{% else %}➡️ Stable{% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    
+    <!-- Back Link -->
+    <div style="text-align: center; margin-top: 12px;">
+        <a href="{% url 'journey_detail' journey.slug %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Back to Journey
+        </a>
+    </div>
+</div>
+
+<!-- Add Metric Modal -->
+<div class="modal-overlay" id="addMetricModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeAddMetric()">×</button>
+        <h3>Add Custom Metric</h3>
+        <form id="addMetricForm">
+            <div class="form-group">
+                <label>Metric Type</label>
+                <select id="metricType" required>
+                    <option value="">Select a metric...</option>
+                    <option value="weight">Weight (kg)</option>
+                    <option value="sleep">Sleep (hours)</option>
+                    <option value="mood">Mood (1-10)</option>
+                    <option value="energy">Energy (1-10)</option>
+                    <option value="stress">Stress (1-10)</option>
+                    <option value="water">Water (glasses)</option>
+                    <option value="steps">Steps</option>
+                    <option value="calories">Calories (kcal)</option>
+                    <option value="heart_rate">Heart Rate (bpm)</option>
+                    <option value="meditation">Meditation (minutes)</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="form-group" id="customMetricGroup" style="display:none;">
+                <label>Custom Metric Name</label>
+                <input type="text" id="customMetricName" placeholder="e.g., Protein Intake">
+            </div>
+            <div class="form-group">
+                <label>Value</label>
+                <input type="number" id="metricValue" step="0.1" required placeholder="Enter value...">
+            </div>
+            <div class="form-group">
+                <label>Day</label>
+                <select id="metricDay">
+                    {% for day in total_days_range %}
+                        <option value="{{ day }}" {% if day == current_day %}selected{% endif %}>
+                            Day {{ day }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-plus"></i> Add Metric
+            </button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let metricsChart = null;
+    
+    // Chart Data
+    const chartData = {{ chart_data|default:'null' }};
+    const metricInfo = {{ selected_metric_info|default:'{}' }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (chartData && chartData.labels && chartData.values) {
+            initChart(chartData);
+        }
+    });
+    
+    function initChart(data) {
+        const ctx = document.getElementById('metricsChart').getContext('2d');
+        
+        if (metricsChart) {
+            metricsChart.destroy();
+        }
+        
+        const color = metricInfo.color || '#3B82F6';
+        
+        metricsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: metricInfo.label || data.metric || 'Value',
+                    data: data.values,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6B7280'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (context.parsed.y !== null) {
+                                    label += ': ' + context.parsed.y;
+                                    if (metricInfo.unit) {
+                                        label += ' ' + metricInfo.unit;
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#9CA3AF'
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#E5E7EB'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#9CA3AF'
+                        },
+                        grid: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#E5E7EB'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Add Metric Functions
+    function openAddMetric() {
+        document.getElementById('addMetricModal').classList.add('active');
+    }
+    
+    function closeAddMetric() {
+        document.getElementById('addMetricModal').classList.remove('active');
+    }
+    
+    document.getElementById('metricType').addEventListener('change', function() {
+        const customGroup = document.getElementById('customMetricGroup');
+        if (this.value === 'custom') {
+            customGroup.style.display = 'block';
+        } else {
+            customGroup.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('addMetricForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const metricType = document.getElementById('metricType').value;
+        const customName = document.getElementById('customMetricName').value;
+        const value = document.getElementById('metricValue').value;
+        const day = document.getElementById('metricDay').value;
+        
+        if (!metricType) {
+            alert('Please select a metric type.');
+            return;
+        }
+        
+        if (!value) {
+            alert('Please enter a value.');
+            return;
+        }
+        
+        const metricKey = metricType === 'custom' ? customName : metricType;
+        
+        if (metricType === 'custom' && !customName) {
+            alert('Please enter a custom metric name.');
+            return;
+        }
+        
+        // Send to server
+        fetch('/api/journey/{{ journey.slug }}/' + day + '/metric/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                metric: metricKey,
+                value: parseFloat(value)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                closeAddMetric();
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error adding metric. Please try again.');
+            console.error(error);
+        });
+    });
+    
+    function getCSRFToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+</script>
+{% endblock %}

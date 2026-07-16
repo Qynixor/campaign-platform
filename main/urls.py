@@ -46,7 +46,6 @@ urlpatterns = [
     path('privacy/', views.privacy_view, name='privacy'),
     path('terms/', views.terms_view, name='terms'),
     path('contact/', views.contact_view, name='contact'),
-    # path('blog/', views.blog_view, name='blog'),  # ← COMMENTED: Blog removed for fitness/wellness focus
 
     # ============================================================================
     # DASHBOARD
@@ -118,8 +117,56 @@ urlpatterns = [
     # ============================================================================
     path('api/toggle-theme/', views.toggle_theme, name='toggle_theme'),
 
-# CORRECT
-path('j/<slug:slug>/', views.journey_detail_view, name='journey_detail'),
+    # ============================================================================
+    # MONETIZATION URLS
+    # ============================================================================
+    
+    # Subscription
+    path('subscription/plans/', views.subscription_plans, name='subscription_plans'),
+    path('subscription/subscribe/<int:plan_id>/', views.subscribe, name='subscribe'),
+    path('subscription/success/', views.subscription_success, name='subscription_success'),
+    path('subscription/cancel/<int:subscription_id>/', views.cancel_subscription, name='cancel_subscription'),
+    
+    # One-Time Purchases
+    path('products/', views.product_list, name='product_list'),
+    path('products/purchase/<int:product_id>/', views.purchase_product, name='purchase_product'),
+    path('products/success/<int:purchase_id>/', views.purchase_success, name='purchase_success'),
+    
+    # Export
+    path('export/request/<int:journey_id>/', views.request_export, name='request_export'),
+    path('export/download/<int:export_id>/', views.export_download, name='export_download'),
+    
+    # Theme
+    path('theme/customize/<int:journey_id>/', views.theme_customization, name='theme_customization'),
+    path('theme/apply/<int:theme_id>/', views.apply_theme, name='apply_theme'),
+    
+    # AI Report
+    path('ai/report/generate/<int:journey_id>/', views.generate_ai_report, name='generate_ai_report'),
+    path('ai/report/view/<int:report_id>/', views.view_ai_report, name='view_ai_report'),
+    
+    # Storage
+    path('storage/dashboard/', views.storage_dashboard, name='storage_dashboard'),
+    
+    # Payment Dashboard
+    path('payments/dashboard/', views.subscription_dashboard, name='subscription_dashboard'),
+    
+    # PayPal Webhook
+    path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
+    # Add to urlpatterns
+
+path('j/<slug:slug>/analytics/', views.journey_analytics, name='journey_analytics'),
+path('j/<slug:slug>/metrics/', views.journey_metrics, name='journey_metrics'),
+path('api/journey/<slug:slug>/<int:day_number>/metric/', views.add_metric_entry, name='add_metric_entry'),
+
+path('j/<slug:slug>/goals/', views.journey_goals, name='journey_goals'),
+path('j/<slug:slug>/goal/create/', views.create_goal, name='create_goal'),
+path('j/<slug:slug>/goal/<int:goal_id>/update/', views.update_goal_progress, name='update_goal_progress'),
+path('j/<slug:slug>/goal/<int:goal_id>/delete/', views.delete_goal, name='delete_goal'),
+# urls.py
+path('j/<slug:slug>/dashboard/', views.journey_dashboard, name='journey_dashboard'),
+# urls.py
+path('j/<slug:slug>/customize/', views.journey_customize, name='journey_customize'),
+
 ]
 
 # ============================================================================

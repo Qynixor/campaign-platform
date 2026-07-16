@@ -630,3 +630,135 @@ class RallynexAdminMixin:
 # To use, inherit from this mixin in your admin classes:
 # class ProfileAdmin(RallynexAdminMixin, admin.ModelAdmin):
 #     ...
+
+
+# admin.py
+
+from django.contrib import admin
+from .models import (
+    SubscriptionPlan,
+    UserSubscription,
+    OneTimeProduct,
+    UserPurchase,
+    PaidJourneyExport,
+    PaidCustomTheme,
+    PaidExtraStorage,
+    PaidAIProgressReport,
+    PaymentTransaction,
+)
+
+
+@admin.register(SubscriptionPlan)
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = ['name', 'plan_type', 'price', 'daily_price', 'is_active']
+    list_filter = ['plan_type', 'is_active']
+    search_fields = ['name']
+    readonly_fields = ['daily_price']
+    fields = [
+        'name', 'plan_type', 'price', 'daily_price', 'paypal_plan_id',
+        'has_advanced_analytics', 'has_custom_metrics', 'has_goals_milestones',
+        'has_progress_charts', 'has_extra_storage', 'has_customization',
+        'storage_limit_mb', 'is_active'
+    ]
+
+
+@admin.register(UserSubscription)
+class UserSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'plan', 'status', 'start_date', 'end_date', 'auto_renew']
+    list_filter = ['status', 'plan', 'auto_renew']
+    search_fields = ['user__username', 'user__email', 'paypal_subscription_id']
+    readonly_fields = ['created_at', 'updated_at']
+    fields = [
+        'user', 'plan', 'paypal_subscription_id', 'paypal_customer_id',
+        'start_date', 'end_date', 'cancel_date', 'status', 'auto_renew',
+        'storage_used_mb', 'created_at', 'updated_at'
+    ]
+
+
+@admin.register(OneTimeProduct)
+class OneTimeProductAdmin(admin.ModelAdmin):
+    list_display = ['name', 'product_type', 'payment_type', 'price_min', 'price_max', 'is_active']
+    list_filter = ['product_type', 'payment_type', 'is_active']
+    search_fields = ['name', 'description']
+    fields = [
+        'name', 'product_type', 'payment_type', 'price_min', 'price_max',
+        'paypal_product_id', 'paypal_plan_id', 'description', 'features',
+        'storage_amount_mb', 'is_active'
+    ]
+
+
+@admin.register(UserPurchase)
+class UserPurchaseAdmin(admin.ModelAdmin):
+    list_display = ['user', 'product', 'amount_paid', 'status', 'purchased_at']
+    list_filter = ['status', 'product', 'purchased_at']
+    search_fields = ['user__username', 'user__email', 'paypal_transaction_id']
+    readonly_fields = ['purchased_at']
+    fields = [
+        'user', 'product', 'paypal_transaction_id', 'amount_paid',
+        'report_data', 'status', 'metadata', 'storage_allocated_mb',
+        'storage_used_mb', 'purchased_at', 'expires_at'
+    ]
+
+
+@admin.register(PaidJourneyExport)
+class PaidJourneyExportAdmin(admin.ModelAdmin):
+    list_display = ['user', 'journey', 'format', 'is_downloaded', 'download_count', 'created_at']
+    list_filter = ['format', 'is_downloaded', 'created_at']
+    search_fields = ['user__username', 'journey__title']
+    readonly_fields = ['created_at', 'download_count']
+    fields = [
+        'user', 'journey', 'purchase', 'format', 'file_url', 'file_size',
+        'include_media', 'include_reflections', 'include_comments',
+        'is_downloaded', 'download_count', 'created_at', 'expires_at', 'downloaded_at'
+    ]
+
+
+@admin.register(PaidCustomTheme)
+class PaidCustomThemeAdmin(admin.ModelAdmin):
+    list_display = ['user', 'name', 'theme_type', 'is_active', 'is_default']
+    list_filter = ['theme_type', 'is_active', 'is_default']
+    search_fields = ['user__username', 'name']
+    fields = [
+        'user', 'purchase', 'name', 'theme_type',
+        'primary_color', 'secondary_color', 'background_color', 'text_color',
+        'cover_image', 'layout_style', 'font_family',
+        'is_active', 'is_default'
+    ]
+
+
+@admin.register(PaidExtraStorage)
+class PaidExtraStorageAdmin(admin.ModelAdmin):
+    list_display = ['user', 'total_mb', 'used_mb', 'is_active', 'expires_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['user__username']
+    fields = [
+        'user', 'purchase', 'total_mb', 'used_mb', 'is_active', 'expires_at'
+    ]
+
+
+@admin.register(PaidAIProgressReport)
+class PaidAIProgressReportAdmin(admin.ModelAdmin):
+    list_display = ['user', 'journey', 'status', 'generated_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['user__username', 'journey__title']
+    readonly_fields = ['created_at', 'updated_at']
+    fields = [
+        'user', 'journey', 'purchase', 'report_title', 'report_content',
+        'summary', 'insights', 'recommendations', 'metrics', 'progress_data',
+        'status', 'error_message', 'generated_at', 'expires_at',
+        'download_count', 'is_downloaded', 'created_at', 'updated_at'
+    ]
+
+
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'amount', 'transaction_type', 'is_successful', 'created_at']
+    list_filter = ['transaction_type', 'is_successful', 'created_at']
+    search_fields = ['user__username', 'paypal_transaction_id']
+    readonly_fields = ['created_at']
+    fields = [
+        'user', 'subscription', 'purchase', 'paypal_transaction_id',
+        'paypal_invoice_id', 'paypal_payer_id', 'amount', 'currency',
+        'transaction_type', 'description', 'metadata', 'is_successful',
+        'error_message', 'created_at'
+    ]

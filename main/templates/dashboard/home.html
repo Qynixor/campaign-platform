@@ -493,6 +493,18 @@
         font-weight: 600;
     }
     
+    .quick-link .premium-badge {
+        margin-left: auto;
+        background: #f59e0b;
+        color: #fff;
+        padding: 1px 8px;
+        border-radius: 20px;
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
     /* Profile Summary */
     .profile-summary {
         text-align: center;
@@ -585,6 +597,77 @@
         color: var(--text-primary);
     }
     
+    /* ===== MONETIZATION STYLES ===== */
+    .subscription-banner {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .subscription-banner .banner-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .subscription-banner .banner-icon {
+        font-size: 32px;
+        color: #f59e0b;
+    }
+    
+    .subscription-banner .banner-text {
+        color: #fff;
+    }
+    
+    .subscription-banner .banner-text h4 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .subscription-banner .banner-text p {
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        opacity: 0.8;
+    }
+    
+    .subscription-banner .banner-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .premium-badge-large {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .premium-feature-tag {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-left: 8px;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    
     /* Responsive */
     @media (max-width: 1024px) {
         .stats-grid {
@@ -632,6 +715,15 @@
         
         .journey-actions {
             margin-left: auto;
+        }
+        
+        .subscription-banner {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .subscription-banner .banner-content {
+            justify-content: center;
         }
     }
     
@@ -689,10 +781,20 @@
             <h1 class="dashboard-title">
                 <span class="greeting-icon"><i class="fas fa-dumbbell"></i></span>
                 Your Fitness Dashboard
+                {% if has_subscription %}
+                    <span class="premium-badge-large">
+                        <i class="fas fa-crown"></i> Premium
+                    </span>
+                {% endif %}
             </h1>
             <p class="dashboard-subtitle">Track your workouts, habits, and wellness journey</p>
         </div>
         <div class="header-actions">
+            {% if has_subscription %}
+                <a href="{% url 'subscription_dashboard' %}" class="btn btn-outline">
+                    <i class="fas fa-credit-card"></i> Billing
+                </a>
+            {% endif %}
             <a href="{% url 'create_reflection' %}" class="btn btn-outline">
                 <i class="fas fa-pen"></i> Reflect
             </a>
@@ -701,6 +803,46 @@
             </a>
         </div>
     </div>
+    
+    <!-- ====== MONETIZATION: SUBSCRIPTION BANNER ====== -->
+    {% if not has_subscription %}
+        <div class="subscription-banner">
+            <div class="banner-content">
+                <div class="banner-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="banner-text">
+                    <h4>🚀 Upgrade to Rallynex Plus</h4>
+                    <p>Get advanced analytics, custom metrics, progress charts & more.</p>
+                </div>
+            </div>
+            <div class="banner-actions">
+                <a href="{% url 'subscription_plans' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-rocket"></i> View Plans
+                </a>
+                <button class="btn btn-outline-light btn-sm" onclick="this.closest('.subscription-banner').style.display='none'">
+                    <i class="fas fa-times"></i> Dismiss
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 16px; padding: 16px 20px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 24px;">✨</span>
+                <div>
+                    <span style="font-weight: 600; color: var(--text-primary);">Premium Active</span>
+                    <span style="color: var(--text-secondary); font-size: 13px; margin-left: 8px;">
+                        You have full access to all features
+                    </span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a href="{% url 'subscription_dashboard' %}" class="btn btn-sm btn-outline" style="font-size: 12px;">
+                    <i class="fas fa-cog"></i> Manage
+                </a>
+            </div>
+        </div>
+    {% endif %}
     
     <!-- ====== STATS ====== -->
     <div class="stats-grid">
@@ -870,6 +1012,29 @@
                     <h4 class="profile-name-large">{{ user.get_full_name|default:user.username }}</h4>
                     <p class="profile-username-large">@{{ user.username }}</p>
                     
+                    <!-- Subscription Status in Profile -->
+                    {% if has_subscription %}
+                        <div style="margin-bottom: 12px;">
+                            <span class="premium-badge-large" style="font-size: 11px;">
+                                <i class="fas fa-crown"></i> Premium Member
+                            </span>
+                            {% if subscription_features %}
+                                <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px;">
+                                    <i class="fas fa-hdd"></i> {{ subscription_features.storage_limit_mb }}MB Storage
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div style="margin-bottom: 12px;">
+                            <span style="background: var(--bg-secondary); color: var(--text-secondary); padding: 2px 12px; border-radius: 12px; font-size: 11px; border: 1px solid var(--border-color);">
+                                Free Account
+                            </span>
+                            <a href="{% url 'subscription_plans' %}" style="display: block; font-size: 12px; color: var(--accent); margin-top: 4px;">
+                                <i class="fas fa-crown"></i> Upgrade to Premium
+                            </a>
+                        </div>
+                    {% endif %}
+                    
                     <div class="profile-actions-row">
                         <a href="{% url 'creator_profile' username=user.username %}" class="btn btn-outline btn-block">
                             <i class="fas fa-user"></i> View Profile
@@ -898,6 +1063,14 @@
                         <span>Reflections</span>
                         <span class="badge">{{ total_reflections|default:0 }}</span>
                     </a>
+                    
+                    {% if has_subscription %}
+                    <a href="{% url 'storage_dashboard' %}" class="quick-link">
+                        <i class="fas fa-hdd"></i>
+                        <span>Storage</span>
+                        <span class="premium-badge">Premium</span>
+                    </a>
+                    {% endif %}
                     
                     <a href="{% url 'create_journey' %}" class="quick-link">
                         <i class="fas fa-plus-circle"></i>
@@ -931,6 +1104,22 @@
                         {% endif %}
                     </a>
                     
+                    <!-- Monetization Quick Links -->
+                    <a href="{% url 'product_list' %}" class="quick-link">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>One-Time Purchases</span>
+                        {% if has_export or has_theme or has_ai_report %}
+                            <span class="badge" style="background: #10b981;">Owned</span>
+                        {% endif %}
+                    </a>
+                    
+                    {% if has_subscription %}
+                    <a href="{% url 'subscription_dashboard' %}" class="quick-link">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Billing & Subscriptions</span>
+                    </a>
+                    {% endif %}
+                    
                     <a href="{% url 'profile_settings' %}" class="quick-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -959,6 +1148,42 @@
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Premium Features Card (shown only to free users) -->
+            {% if not has_subscription %}
+            <div class="dashboard-card" style="border: 1px solid rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.03);">
+                <div class="card-header" style="border-bottom-color: rgba(245, 158, 11, 0.1);">
+                    <h3 class="card-title" style="color: #f59e0b;">
+                        <i class="fas fa-crown" style="color: #f59e0b;"></i> Premium Features
+                    </h3>
+                </div>
+                <div class="card-body" style="padding: 16px 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-chart-line" style="color: #f59e0b; width: 16px;"></i> Advanced Analytics
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-sliders-h" style="color: #f59e0b; width: 16px;"></i> Custom Metrics
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-bullseye" style="color: #f59e0b; width: 16px;"></i> Goals & Milestones
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-chart-pie" style="color: #f59e0b; width: 16px;"></i> Progress Charts
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-hdd" style="color: #f59e0b; width: 16px;"></i> More Storage
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-paint-brush" style="color: #f59e0b; width: 16px;"></i> Customization
+                        </div>
+                    </div>
+                    <a href="{% url 'subscription_plans' %}" class="btn btn-primary btn-sm" style="width: 100%; margin-top: 12px;">
+                        <i class="fas fa-rocket"></i> Upgrade Now - From $4.99/mo
+                    </a>
                 </div>
             </div>
             {% endif %}

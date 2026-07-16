@@ -1,0 +1,332 @@
+<!-- templates/main/product_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}One-Time Purchases | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .products-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 24px;
+    }
+    
+    .products-header {
+        text-align: center;
+        margin-bottom: 48px;
+    }
+    
+    .products-header h1 {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .products-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+    }
+    
+    .product-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 28px 24px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    }
+    
+    .product-card.purchased {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.03);
+    }
+    
+    .product-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+        display: block;
+    }
+    
+    .product-card .product-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .product-card .product-price {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .product-card .product-price small {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--text-secondary);
+    }
+    
+    .product-card .product-description {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 16px;
+    }
+    
+    .product-card .payment-type {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 12px;
+    }
+    
+    .payment-type.one-time {
+        background: rgba(59, 130, 246, 0.12);
+        color: #3B82F6;
+    }
+    
+    .payment-type.monthly {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    .payment-type.per-report {
+        background: rgba(139, 92, 246, 0.12);
+        color: #8b5cf6;
+    }
+    
+    .product-features {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 20px;
+        text-align: left;
+    }
+    
+    .product-features li {
+        padding: 4px 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .product-features li i {
+        color: var(--accent);
+        font-size: 14px;
+        width: 18px;
+    }
+    
+    .product-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .product-btn.btn-primary {
+        background: var(--accent);
+        color: #fff;
+    }
+    
+    .product-btn.btn-primary:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    
+    .product-btn.btn-success {
+        background: #10b981;
+        color: #fff;
+        cursor: default;
+    }
+    
+    .product-btn.btn-success:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .product-btn.btn-outline-secondary {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .product-btn.btn-outline-secondary:hover {
+        background: var(--bg-secondary);
+    }
+    
+    .purchased-badge {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: #10b981;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    @media (max-width: 768px) {
+        .products-container {
+            padding: 24px 16px;
+        }
+        
+        .products-header h1 {
+            font-size: 28px;
+        }
+        
+        .products-grid {
+            grid-template-columns: 1fr;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .product-card .product-price {
+            font-size: 24px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .product-card {
+            padding: 20px 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="products-container">
+    
+    <!-- Header -->
+    <div class="products-header">
+        <h1>One-Time Purchases</h1>
+        <p>Enhance your journey with these add-ons. Pay once, use forever.</p>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="products-grid">
+        {% for product in products %}
+            <div class="product-card {% if product.id in user_purchases %}purchased{% endif %}">
+                
+                <!-- Purchased Badge -->
+                {% if product.id in user_purchases %}
+                    <div class="purchased-badge">
+                        <i class="fas fa-check"></i> Owned
+                    </div>
+                {% endif %}
+                
+                <!-- Icon -->
+                {% if product.product_type == 'export' %}
+                    <span class="product-icon">📄</span>
+                {% elif product.product_type == 'theme' %}
+                    <span class="product-icon">🎨</span>
+                {% elif product.product_type == 'storage' %}
+                    <span class="product-icon">💾</span>
+                {% elif product.product_type == 'ai_report' %}
+                    <span class="product-icon">🤖</span>
+                {% else %}
+                    <span class="product-icon">📦</span>
+                {% endif %}
+                
+                <!-- Name -->
+                <div class="product-name">{{ product.name }}</div>
+                
+                <!-- Price -->
+                <div class="product-price">
+                    ${{ product.get_price_display }}
+                </div>
+                
+                <!-- Payment Type -->
+                <span class="payment-type {{ product.payment_type }}">
+                    {% if product.payment_type == 'one_time' %}
+                        One-Time Payment
+                    {% elif product.payment_type == 'monthly' %}
+                        Monthly Charge
+                    {% elif product.payment_type == 'per_report' %}
+                        Per Report
+                    {% endif %}
+                </span>
+                
+                <!-- Description -->
+                <p class="product-description">{{ product.description|truncatechars:100 }}</p>
+                
+                <!-- Features -->
+                {% if product.features %}
+                    <ul class="product-features">
+                        {% for feature in product.features %}
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                {{ feature }}
+                            </li>
+                        {% empty %}
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                Lifetime access
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                
+                <!-- Button -->
+                {% if product.id in user_purchases %}
+                    <button class="product-btn btn-success" disabled>
+                        <i class="fas fa-check"></i> Already Purchased
+                    </button>
+                {% else %}
+                    <a href="{% url 'purchase_product' product.id %}" class="product-btn btn-primary">
+                        <i class="fas fa-shopping-cart"></i> Purchase Now
+                    </a>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-muted">No products available at the moment.</p>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border-color);">
+        <p style="color: var(--text-secondary); font-size: 14px;">
+            <i class="fas fa-shield-alt"></i> Secure payment via PayPal
+        </p>
+        <p style="color: var(--text-secondary); font-size: 13px;">
+            All purchases are one-time unless marked otherwise.
+            <a href="{% url 'contact' %}" style="color: var(--accent);">Questions?</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

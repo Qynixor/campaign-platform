@@ -450,7 +450,7 @@ class Activity(models.Model):
     # ==================== DAY TRACKING ====================
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
     actual_date = models.DateField(null=True, blank=True, help_text="Actual date of the entry")
-    
+    custom_metrics = models.JSONField(default=dict, blank=True, help_text="Custom metrics like weight, sleep, mood, energy, stress, etc.")   
     # ==================== MOOD & METRICS ====================
     mood = models.CharField(max_length=20, choices=MOOD_CHOICES, blank=True, null=True)
     
@@ -1089,3 +1089,595 @@ def check_milestone_notification(sender, instance, created, **kwargs):
 def check_reflection_streak(sender, instance, created, **kwargs):
     """FUTURE: Check if user has maintained a reflection streak"""
     pass
+
+# ============================================================================
+# MONETIZATION MODELS - PayPal Integration
+# ============================================================================
+
+class SubscriptionPlan(models.Model):
+    """
+    Rallynex Plus subscription plans
+    """
+    PLAN_TYPES = [
+        ('monthly', 'Monthly'),
+        ('annual', 'Annual'),
+    ]
+    
+    name = models.CharField(max_length=50)
+    plan_type = models.CharField(max_length=20, choices=PLAN_TYPES)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    daily_price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    
+    # PayPal details
+    paypal_plan_id = models.CharField(max_length=100, blank=True, help_text="PayPal Plan ID")
+    
+    # Features included
+    has_advanced_analytics = models.BooleanField(default=True)
+    has_custom_metrics = models.BooleanField(default=True)
+    has_goals_milestones = models.BooleanField(default=True)
+    has_progress_charts = models.BooleanField(default=True)
+    has_extra_storage = models.BooleanField(default=True)
+    has_customization = models.BooleanField(default=True)
+    
+    storage_limit_mb = models.PositiveIntegerField(default=500)
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['price']
+    
+    def __str__(self):
+        return f"{self.name} - ${self.price}"
+    
+    def save(self, *args, **kwargs):
+        if self.plan_type == 'monthly':
+            self.daily_price = round(self.price / 30, 2)
+        elif self.plan_type == 'annual':
+            self.daily_price = round(self.price / 365, 2)
+        super().save(*args, **kwargs)
+
+
+class UserSubscription(models.Model):
+    """
+    Active user subscriptions via PayPal
+    """
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('canceled', 'Canceled'),
+        ('expired', 'Expired'),
+        ('pending', 'Pending'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_subscriptions')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT)
+    
+    # PayPal subscription details
+    paypal_subscription_id = models.CharField(max_length=100, blank=True)
+    paypal_customer_id = models.CharField(max_length=100, blank=True)
+    
+    # Subscription dates
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    cancel_date = models.DateTimeField(null=True, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    auto_renew = models.BooleanField(default=True)
+    
+    # Storage tracking
+    storage_used_mb = models.PositiveIntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['paypal_subscription_id']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.plan.name} ({self.status})"
+    
+    def is_active(self):
+        if self.status != 'active':
+            return False
+        if self.end_date and timezone.now() > self.end_date:
+            return False
+        return True
+    
+    def get_features(self):
+        return {
+            'advanced_analytics': self.plan.has_advanced_analytics,
+            'custom_metrics': self.plan.has_custom_metrics,
+            'goals_milestones': self.plan.has_goals_milestones,
+            'progress_charts': self.plan.has_progress_charts,
+            'extra_storage': self.plan.has_extra_storage,
+            'customization': self.plan.has_customization,
+            'storage_limit_mb': self.plan.storage_limit_mb,
+            'storage_used_mb': self.storage_used_mb,
+        }
+
+
+class OneTimeProduct(models.Model):
+    """
+    One-time purchase products
+    """
+    PRODUCT_TYPES = [
+        ('export', 'Export Complete Journey'),
+        ('theme', 'Custom Journey Theme'),
+        ('storage', 'Extra Storage'),
+        ('ai_report', 'AI Progress Report'),
+    ]
+    
+    PAYMENT_TYPES = [
+        ('one_time', 'One-Time Payment'),
+        ('monthly', 'Monthly Charge'),
+        ('per_report', 'Per Report'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    product_type = models.CharField(max_length=20, choices=PRODUCT_TYPES)
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default='one_time')
+    
+    price_min = models.DecimalField(max_digits=6, decimal_places=2)
+    price_max = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    
+    # PayPal
+    paypal_product_id = models.CharField(max_length=100, blank=True)
+    paypal_plan_id = models.CharField(max_length=100, blank=True)
+    
+    description = models.TextField()
+    features = models.JSONField(default=list, blank=True)
+    storage_amount_mb = models.PositiveIntegerField(null=True, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['product_type', 'price_min']
+    
+    def __str__(self):
+        return f"{self.name} (${self.price_min}-${self.price_max})"
+    
+    def get_price_display(self):
+        if self.price_max:
+            return f"${self.price_min} - ${self.price_max}"
+        return f"${self.price_min}"
+
+
+class UserPurchase(models.Model):
+    """
+    Track user one-time purchases via PayPal
+    """
+    STATUS_CHOICES = [
+        ('completed', 'Completed'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_purchases')
+    product = models.ForeignKey(OneTimeProduct, on_delete=models.PROTECT)
+    
+    # PayPal
+    paypal_transaction_id = models.CharField(max_length=100, blank=True)
+    amount_paid = models.DecimalField(max_digits=6, decimal_places=2)
+    
+    # For AI reports
+    report_data = models.JSONField(default=dict, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    metadata = models.JSONField(default=dict, blank=True)
+    
+    # Storage tracking
+    storage_allocated_mb = models.PositiveIntegerField(default=0)
+    storage_used_mb = models.PositiveIntegerField(default=0)
+    
+    purchased_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-purchased_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['product', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name} (${self.amount_paid})"
+    
+    def is_active(self):
+        if self.status != 'completed':
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True
+
+
+class PaidJourneyExport(models.Model):
+    """
+    Export Complete Journey purchases (paid version)
+    """
+    EXPORT_FORMATS = [
+        ('pdf', 'PDF'),
+        ('markdown', 'Markdown'),
+        ('json', 'JSON'),
+        ('html', 'HTML'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_journey_exports')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='paid_export_orders')
+    purchase = models.ForeignKey(UserPurchase, on_delete=models.PROTECT, related_name='paid_export_purchases')
+    
+    format = models.CharField(max_length=20, choices=EXPORT_FORMATS)
+    file_url = models.URLField(max_length=500, blank=True)
+    file_size = models.PositiveIntegerField(default=0)
+    
+    include_media = models.BooleanField(default=True)
+    include_reflections = models.BooleanField(default=True)
+    include_comments = models.BooleanField(default=False)
+    
+    is_downloaded = models.BooleanField(default=False)
+    download_count = models.PositiveIntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    downloaded_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'journey']),
+            models.Index(fields=['purchase']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.journey.title} ({self.format})"
+
+
+# main/models.py - Add this class
+
+class CustomTheme(models.Model):
+    """
+    Custom themes for journeys
+    """
+    THEME_TYPES = [
+        ('default', 'Default'),
+        ('dark', 'Dark'),
+        ('vibrant', 'Vibrant'),
+        ('pastel', 'Pastel'),
+        ('minimal', 'Minimal'),
+        ('nature', 'Nature'),
+        ('ocean', 'Ocean'),
+        ('custom', 'Custom'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='custom_themes')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, null=True, blank=True, related_name='custom_themes')
+    
+    name = models.CharField(max_length=100, default='Custom Theme')
+    theme_type = models.CharField(max_length=20, choices=THEME_TYPES, default='default')
+    
+    # Colors
+    primary_color = models.CharField(max_length=7, default='#3B82F6')
+    secondary_color = models.CharField(max_length=7, default='#6366F1')
+    background_color = models.CharField(max_length=7, default='#FFFFFF')
+    text_color = models.CharField(max_length=7, default='#1F2937')
+    accent_color = models.CharField(max_length=7, default='#3B82F6')
+    
+    # Font & Layout
+    font_family = models.CharField(max_length=50, default='Inter')
+    layout_style = models.CharField(max_length=20, default='modern')
+    
+    # Cover image (optional)
+    cover_image = CloudinaryField('image', folder='theme_covers', null=True, blank=True)
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['journey', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+    
+    def apply_to_journey(self, journey):
+        """Apply this theme to a journey"""
+        journey.theme_settings = {
+            'primary_color': self.primary_color,
+            'secondary_color': self.secondary_color,
+            'background_color': self.background_color,
+            'text_color': self.text_color,
+            'accent_color': self.accent_color,
+            'font_family': self.font_family,
+            'layout_style': self.layout_style,
+            'theme_name': self.name,
+            'cover_image': self.cover_image.url if self.cover_image else None
+        }
+        journey.save()
+        return journey
+
+
+class PaidCustomTheme(models.Model):
+    """
+    Custom Journey Theme purchases (paid version)
+    """
+    THEME_TYPES = [
+        ('dark', 'Dark'),
+        ('light', 'Light'),
+        ('minimal', 'Minimal'),
+        ('vibrant', 'Vibrant'),
+        ('pastel', 'Pastel'),
+        ('custom', 'Custom'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_themes')
+    purchase = models.ForeignKey(UserPurchase, on_delete=models.PROTECT, related_name='paid_theme_purchases')
+    
+    name = models.CharField(max_length=50)
+    theme_type = models.CharField(max_length=20, choices=THEME_TYPES, default='custom')
+    
+    primary_color = models.CharField(max_length=7, default='#3B82F6')
+    secondary_color = models.CharField(max_length=7, default='#6366F1')
+    background_color = models.CharField(max_length=7, default='#FFFFFF')
+    text_color = models.CharField(max_length=7, default='#1F2937')
+    
+    cover_image = CloudinaryField('image', folder='custom_themes', null=True, blank=True)
+    layout_style = models.CharField(max_length=20, default='modern')
+    font_family = models.CharField(max_length=50, default='Inter')
+    
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"
+
+
+class PaidExtraStorage(models.Model):
+    """
+    Extra Storage purchases (paid version)
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_extra_storage')
+    purchase = models.ForeignKey(UserPurchase, on_delete=models.PROTECT, related_name='paid_storage_purchases')
+    
+    total_mb = models.PositiveIntegerField()
+    used_mb = models.PositiveIntegerField(default=0)
+    
+    is_active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.total_mb}MB"
+    
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True
+
+
+class PaidAIProgressReport(models.Model):
+    """
+    AI Progress Report purchases (paid version)
+    """
+    REPORT_STATUS = [
+        ('pending', 'Pending'),
+        ('generating', 'Generating'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_ai_reports')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='paid_ai_report_orders')
+    purchase = models.ForeignKey(UserPurchase, on_delete=models.PROTECT, related_name='paid_ai_report_purchases')
+    
+    report_title = models.CharField(max_length=200)
+    report_content = models.TextField()
+    
+    summary = models.TextField(blank=True)
+    insights = models.JSONField(default=dict, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
+    metrics = models.JSONField(default=dict, blank=True)
+    progress_data = models.JSONField(default=dict, blank=True)
+    
+    status = models.CharField(max_length=20, choices=REPORT_STATUS, default='pending')
+    error_message = models.TextField(blank=True)
+    
+    generated_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    download_count = models.PositiveIntegerField(default=0)
+    is_downloaded = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'journey']),
+            models.Index(fields=['purchase']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.journey.title} Report"
+    
+    def is_valid(self):
+        if self.status != 'completed':
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True
+
+
+class PaymentTransaction(models.Model):
+    """
+    Log all PayPal transactions
+    """
+    TRANSACTION_TYPES = [
+        ('subscription', 'Subscription'),
+        ('purchase', 'One-Time Purchase'),
+        ('refund', 'Refund'),
+        ('failed', 'Failed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_transactions')
+    subscription = models.ForeignKey(UserSubscription, on_delete=models.SET_NULL, null=True, blank=True)
+    purchase = models.ForeignKey(UserPurchase, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # PayPal
+    paypal_transaction_id = models.CharField(max_length=100)
+    paypal_invoice_id = models.CharField(max_length=100, blank=True)
+    paypal_payer_id = models.CharField(max_length=100, blank=True)
+    
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    
+    description = models.CharField(max_length=200)
+    metadata = models.JSONField(default=dict, blank=True)
+    
+    is_successful = models.BooleanField(default=False)
+    error_message = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['paypal_transaction_id']),
+            models.Index(fields=['transaction_type']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - ${self.amount} ({self.transaction_type})"
+
+
+# main/models.py - Add these models
+
+class Goal(models.Model):
+    """User goals for their journey"""
+    
+    GOAL_TYPES = [
+        ('streak', 'Streak Goal'),
+        ('days', 'Days Goal'),
+        ('weight', 'Weight Goal'),
+        ('sleep', 'Sleep Goal'),
+        ('workouts', 'Workouts Goal'),
+        ('custom', 'Custom Goal'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goals')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='goals')
+    
+    goal_type = models.CharField(max_length=20, choices=GOAL_TYPES)
+    target_value = models.FloatField()
+    current_value = models.FloatField(default=0)
+    unit = models.CharField(max_length=20, blank=True, help_text="e.g., kg, km, days, hours")
+    
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    deadline = models.DateTimeField(null=True, blank=True)
+    
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+    
+    def update_progress(self, value):
+        """Update goal progress"""
+        self.current_value = value
+        if self.current_value >= self.target_value and not self.is_completed:
+            self.is_completed = True
+            self.completed_at = timezone.now()
+            # Create milestone notification
+            Notification.objects.create(
+                user=self.user,
+                notification_type='milestone',
+                message=f"🎉 You completed your goal: {self.title}!",
+                related_journey=self.journey,
+                redirect_link=self.journey.get_absolute_url()
+            )
+        self.save()
+    
+    def get_progress_percentage(self):
+        """Get progress percentage"""
+        if self.target_value == 0:
+            return 0
+        return min(round((self.current_value / self.target_value) * 100), 100)
+    
+    def get_days_remaining(self):
+        """Get days remaining until deadline"""
+        if not self.deadline:
+            return None
+        remaining = (self.deadline - timezone.now()).days
+        return max(0, remaining)
+
+
+class Milestone(models.Model):
+    """Milestones achieved in a journey"""
+    
+    MILESTONE_TYPES = [
+        ('first_entry', 'First Entry'),
+        ('streak_3', '3-Day Streak'),
+        ('streak_7', '7-Day Streak'),
+        ('streak_14', '14-Day Streak'),
+        ('streak_30', '30-Day Streak'),
+        ('halfway', 'Halfway Point'),
+        ('complete', 'Journey Complete'),
+        ('custom', 'Custom Milestone'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='milestones')
+    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='milestones')
+    
+    milestone_type = models.CharField(max_length=20, choices=MILESTONE_TYPES)
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, default='🏆')
+    
+    achieved_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-achieved_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"

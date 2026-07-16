@@ -1,0 +1,1029 @@
+<!-- templates/dashboard/activity_form.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if is_editing %}Edit{% else %}Add{% endif %} Entry - {{ journey.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-form-container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 30px 20px 60px;
+    }
+    
+    /* ===== HEADER ===== */
+    .form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+    
+    .form-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    
+    .form-header-left .back-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+        text-decoration: none;
+        font-size: 16px;
+    }
+    
+    .form-header-left .back-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        transform: scale(1.05);
+    }
+    
+    .form-header-left h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-header-left h1 i {
+        color: var(--accent);
+        font-size: 22px;
+    }
+    
+    .form-header .day-badge {
+        background: linear-gradient(135deg, var(--accent), #2563EB);
+        color: #fff;
+        padding: 6px 18px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    
+    .form-header .day-badge i {
+        font-size: 14px;
+    }
+    
+    /* ===== JOURNEY INFO BAR ===== */
+    .journey-info-bar {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 14px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .journey-info-bar .journey-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .journey-info-bar .journey-title i {
+        color: var(--accent);
+        opacity: 0.7;
+    }
+    
+    .journey-info-bar .journey-progress {
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .journey-info-bar .journey-progress .progress-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: inline-block;
+    }
+    
+    /* ===== FORM CARD ===== */
+    .form-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    
+    .form-group {
+        margin-bottom: 22px;
+    }
+    
+    .form-group:last-of-type {
+        margin-bottom: 0;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        letter-spacing: 0.2px;
+    }
+    
+    .form-group label .required {
+        color: #ef4444;
+        margin-left: 2px;
+    }
+    
+    .form-group label .optional {
+        font-weight: 400;
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-left: 4px;
+    }
+    
+    .form-group .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.25s ease;
+        font-family: inherit;
+    }
+    
+    .form-group .form-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+        background: var(--bg-primary);
+    }
+    
+    .form-group .form-control::placeholder {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+    
+    .form-group textarea.form-control {
+        resize: vertical;
+        min-height: 110px;
+        line-height: 1.6;
+    }
+    
+    .form-group select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 40px;
+        cursor: pointer;
+    }
+    
+    .form-group select.form-control option {
+        background: var(--card-bg);
+        color: var(--text-primary);
+    }
+    
+    .form-group .help-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .form-group .help-text i {
+        font-size: 13px;
+        opacity: 0.5;
+    }
+    
+    .form-group .error-text {
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .form-group .error-text i {
+        font-size: 14px;
+    }
+    
+    .form-group .form-control.is-invalid {
+        border-color: #ef4444;
+    }
+    
+    .form-group .form-control.is-invalid:focus {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08);
+    }
+    
+    /* ===== TWO COLUMN LAYOUT ===== */
+    .form-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    /* ===== FILE UPLOAD ===== */
+    .file-upload-wrapper {
+        position: relative;
+        border: 2px dashed var(--border-color);
+        border-radius: 14px;
+        padding: 32px 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: var(--bg-secondary);
+    }
+    
+    .file-upload-wrapper:hover {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.03);
+    }
+    
+    .file-upload-wrapper.dragover {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .file-upload-wrapper .upload-icon {
+        font-size: 36px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 6px;
+        display: block;
+    }
+    
+    .file-upload-wrapper .upload-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+    
+    .file-upload-wrapper .upload-sub {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    
+    .file-upload-wrapper input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .file-preview {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        margin-top: 12px;
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .file-preview .preview-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--bg-primary);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .file-preview .preview-thumb img,
+    .file-preview .preview-thumb video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .file-preview .preview-thumb i {
+        font-size: 20px;
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+    
+    .file-preview .file-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .file-preview .file-info .file-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .file-preview .file-info .file-size {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+    
+    .file-preview .remove-file {
+        color: #ef4444;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px;
+        transition: all 0.2s;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .file-preview .remove-file:hover {
+        background: rgba(239, 68, 68, 0.1);
+        transform: scale(1.1);
+    }
+    
+    /* ===== CUSTOM METRICS ===== */
+    .metrics-section {
+        margin-top: 24px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .metrics-section .metrics-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .metrics-section .metrics-title i {
+        color: var(--accent);
+    }
+    
+    .metrics-section .metrics-title .premium-tag {
+        font-size: 10px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        padding: 2px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .metric-input {
+        background: var(--bg-secondary);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        padding: 10px 14px;
+        transition: all 0.2s;
+    }
+    
+    .metric-input:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.06);
+    }
+    
+    .metric-input label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: block;
+        margin-bottom: 2px;
+    }
+    
+    .metric-input input {
+        width: 100%;
+        padding: 4px 0;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 600;
+        font-family: inherit;
+    }
+    
+    .metric-input input:focus {
+        outline: none;
+    }
+    
+    .metric-input input::placeholder {
+        color: var(--text-muted);
+        font-weight: 400;
+        font-size: 13px;
+    }
+    
+    .metric-input .metric-unit {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 400;
+    }
+    
+    /* Premium Upgrade Banner */
+    .premium-upgrade-banner {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(245, 158, 11, 0.02));
+        border: 1.5px solid rgba(245, 158, 11, 0.15);
+        border-radius: 14px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .premium-upgrade-banner .banner-text {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .premium-upgrade-banner .banner-text i {
+        font-size: 22px;
+        color: #f59e0b;
+    }
+    
+    .premium-upgrade-banner .banner-text strong {
+        color: var(--text-primary);
+    }
+    
+    .premium-upgrade-banner .btn-upgrade {
+        padding: 8px 20px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        border: none;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    
+    .premium-upgrade-banner .btn-upgrade:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+    }
+    
+    /* ===== FORM ACTIONS ===== */
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+    
+    .form-actions .btn {
+        padding: 12px 28px;
+        font-weight: 600;
+        border-radius: 12px;
+        font-size: 15px;
+        transition: all 0.25s ease;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        min-width: 120px;
+    }
+    
+    .form-actions .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        flex: 1;
+    }
+    
+    .form-actions .btn-primary:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    
+    .form-actions .btn-primary:active {
+        transform: translateY(0);
+    }
+    
+    .form-actions .btn-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1.5px solid var(--border-color);
+    }
+    
+    .form-actions .btn-secondary:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-color: var(--silver);
+    }
+    
+    .form-actions .btn-danger {
+        background: #ef4444;
+        color: #fff;
+    }
+    
+    .form-actions .btn-danger:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+    }
+    
+    .form-actions .btn-danger:active {
+        transform: translateY(0);
+    }
+    
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .activity-form-container {
+            padding: 20px 16px 40px;
+        }
+        
+        .form-card {
+            padding: 20px;
+            border-radius: 16px;
+        }
+        
+        .form-header-left h1 {
+            font-size: 20px;
+        }
+        
+        .form-header-left .back-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+        
+        .form-header .day-badge {
+            font-size: 12px;
+            padding: 4px 14px;
+        }
+        
+        .form-row-2 {
+            grid-template-columns: 1fr;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .form-actions .btn {
+            flex: 1 1 100%;
+            min-width: 0;
+        }
+        
+        .journey-info-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 12px 16px;
+        }
+        
+        .premium-upgrade-banner {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .form-card {
+            padding: 16px;
+        }
+        
+        .metrics-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .metric-input {
+            padding: 8px 12px;
+        }
+        
+        .metric-input input {
+            font-size: 14px;
+        }
+        
+        .form-group .form-control {
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+        
+        .file-upload-wrapper {
+            padding: 24px 16px;
+        }
+        
+        .file-upload-wrapper .upload-icon {
+            font-size: 28px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="activity-form-container">
+    
+    <!-- ===== HEADER ===== -->
+    <div class="form-header">
+        <div class="form-header-left">
+            <a href="{% url 'journey_content' slug=journey.slug %}" class="back-btn" title="Back to content">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h1>
+                <i class="fas fa-{% if is_editing %}edit{% else %}plus-circle{% endif %}"></i>
+                {% if is_editing %}Edit{% else %}Add{% endif %} Entry
+            </h1>
+        </div>
+        <span class="day-badge">
+            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i>
+            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_number }}
+        </span>
+    </div>
+    
+    <!-- ===== JOURNEY INFO BAR ===== -->
+    <div class="journey-info-bar">
+        <div class="journey-title">
+            <i class="fas fa-route"></i>
+            {{ journey.title }}
+        </div>
+        <div class="journey-progress">
+            <span class="progress-dot"></span>
+            {{ journey.get_current_day }}/{{ journey.duration }} days · {{ journey.get_progress_percentage }}% complete
+        </div>
+    </div>
+    
+    <!-- ===== FORM ===== -->
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" id="activityForm">
+            {% csrf_token %}
+            
+            <!-- Hidden fields -->
+            {{ form.journey }}
+            {{ form.day_number_field }}
+            
+            <!-- ===== TITLE ===== -->
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}">
+                    {{ form.title.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.title.help_text }}</div>
+                {% endif %}
+                {% if form.title.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.title.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== CONTENT ===== -->
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}">
+                    {{ form.content.label }}
+                    <span class="required">*</span>
+                </label>
+                {{ form.content }}
+                {% if form.content.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.content.help_text }}</div>
+                {% endif %}
+                {% if form.content.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.content.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== ACTIVITY TYPE ===== -->
+            <div class="form-group">
+                <label for="{{ form.activity_type.id_for_label }}">
+                    {{ form.activity_type.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                {{ form.activity_type }}
+                {% if form.activity_type.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.activity_type.help_text }}</div>
+                {% endif %}
+                {% if form.activity_type.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.activity_type.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== DURATION & INTENSITY ===== -->
+            <div class="form-row-2">
+                <div class="form-group">
+                    <label for="{{ form.duration_minutes.id_for_label }}">
+                        {{ form.duration_minutes.label }}
+                        <span class="optional">(optional)</span>
+                    </label>
+                    <div style="position: relative;">
+                        {{ form.duration_minutes }}
+                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none;">min</span>
+                    </div>
+                    {% if form.duration_minutes.help_text %}
+                        <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.duration_minutes.help_text }}</div>
+                    {% endif %}
+                    {% if form.duration_minutes.errors %}
+                        <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.duration_minutes.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.intensity.id_for_label }}">
+                        {{ form.intensity.label }}
+                        <span class="optional">(optional)</span>
+                    </label>
+                    {{ form.intensity }}
+                    {% if form.intensity.help_text %}
+                        <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.intensity.help_text }}</div>
+                    {% endif %}
+                    {% if form.intensity.errors %}
+                        <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.intensity.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- ===== MOOD ===== -->
+            <div class="form-group">
+                <label for="{{ form.mood.id_for_label }}">
+                    {{ form.mood.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                {{ form.mood }}
+                {% if form.mood.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.mood.help_text }}</div>
+                {% endif %}
+                {% if form.mood.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.mood.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== CUSTOM METRICS ===== -->
+            <div class="metrics-section">
+                <div class="metrics-title">
+                    <i class="fas fa-sliders-h"></i>
+                    Custom Metrics
+                    <span class="premium-tag">Premium</span>
+                </div>
+                
+                {% if has_subscription %}
+                    <div class="metrics-grid">
+                        <div class="metric-input">
+                            <label>Weight <span class="metric-unit">kg</span></label>
+                            <input type="number" step="0.1" name="metric_weight" placeholder="0.0"
+                                   value="{{ form.instance.custom_metrics.weight|default:'' }}">
+                        </div>
+                        <div class="metric-input">
+                            <label>Sleep <span class="metric-unit">hrs</span></label>
+                            <input type="number" step="0.5" name="metric_sleep" placeholder="0.0"
+                                   value="{{ form.instance.custom_metrics.sleep|default:'' }}">
+                        </div>
+                        <div class="metric-input">
+                            <label>Mood <span class="metric-unit">1-10</span></label>
+                            <input type="number" step="1" min="1" max="10" name="metric_mood" placeholder="5"
+                                   value="{{ form.instance.custom_metrics.mood|default:'' }}">
+                        </div>
+                        <div class="metric-input">
+                            <label>Energy <span class="metric-unit">1-10</span></label>
+                            <input type="number" step="1" min="1" max="10" name="metric_energy" placeholder="5"
+                                   value="{{ form.instance.custom_metrics.energy|default:'' }}">
+                        </div>
+                        <div class="metric-input">
+                            <label>Stress <span class="metric-unit">1-10</span></label>
+                            <input type="number" step="1" min="1" max="10" name="metric_stress" placeholder="5"
+                                   value="{{ form.instance.custom_metrics.stress|default:'' }}">
+                        </div>
+                        <div class="metric-input">
+                            <label>Water <span class="metric-unit">glasses</span></label>
+                            <input type="number" step="1" name="metric_water" placeholder="0"
+                                   value="{{ form.instance.custom_metrics.water|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+                        <i class="fas fa-info-circle"></i>
+                        Track your progress over time. 
+                        <a href="{% url 'journey_metrics' journey.slug %}" style="color: var(--accent); font-weight: 500; text-decoration: none;">
+                            View all metrics →
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="premium-upgrade-banner">
+                        <div class="banner-text">
+                            <i class="fas fa-crown"></i>
+                            <span>
+                                <strong>Upgrade to Premium</strong> to track custom metrics like 
+                                weight, sleep, mood, energy, and more.
+                            </span>
+                        </div>
+                        <a href="{% url 'subscription_plans' %}" class="btn-upgrade">
+                            <i class="fas fa-rocket"></i> Upgrade Now
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== MEDIA UPLOAD ===== -->
+            <div class="form-group" style="margin-top: 22px;">
+                <label for="{{ form.media_file.id_for_label }}">
+                    {{ form.media_file.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                
+                <div class="file-upload-wrapper" id="fileUploadWrapper">
+                    <span class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></span>
+                    <div class="upload-text">Click or drag to upload a file</div>
+                    <div class="upload-sub">Images, videos, or documents · Max 10MB</div>
+                    {{ form.media_file }}
+                </div>
+                
+                {% if form.instance.media_file %}
+                    <div class="file-preview" id="existingFilePreview">
+                        <div class="preview-thumb">
+                            {% if form.instance.is_video %}
+                                <video src="{{ form.instance.media_file.url }}" muted></video>
+                            {% else %}
+                                <img src="{{ form.instance.media_file.url }}" alt="Media preview">
+                            {% endif %}
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">{{ form.instance.media_file.name|truncatechars:30 }}</div>
+                            <div class="file-size">{{ form.instance.media_file.size|filesizeformat }}</div>
+                        </div>
+                        <span class="remove-file" onclick="document.getElementById('existingFilePreview').style.display='none'; document.getElementById('id_media_file').value='';" title="Remove file">×</span>
+                    </div>
+                {% endif %}
+                
+                {% if form.media_file.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.media_file.help_text }}</div>
+                {% endif %}
+                {% if form.media_file.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.media_file.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== LOCATION ===== -->
+            <div class="form-group">
+                <label for="{{ form.location.id_for_label }}">
+                    {{ form.location.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                <div style="position: relative;">
+                    {{ form.location }}
+                    <i class="fas fa-map-marker-alt" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); opacity: 0.5; pointer-events: none;"></i>
+                </div>
+                {% if form.location.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.location.help_text }}</div>
+                {% endif %}
+                {% if form.location.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.location.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== FORM ACTIONS ===== -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> {% if is_editing %}Update{% else %}Save{% endif %} Entry
+                </button>
+                
+                <a href="{% url 'journey_content' slug=journey.slug %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                
+                {% if is_editing %}
+                    <a href="{% url 'delete_activity' slug=journey.slug day_number=day_number %}" 
+                       class="btn btn-danger"
+                       onclick="return confirm('Delete this entry? This action cannot be undone.')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ===== FILE UPLOAD PREVIEW =====
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('id_media_file');
+        const wrapper = document.getElementById('fileUploadWrapper');
+        
+        if (fileInput && wrapper) {
+            // Drag and drop visual feedback
+            wrapper.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            wrapper.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            wrapper.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            // File selection preview
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Remove existing preview
+                    const existingPreview = document.querySelector('.file-preview:not(#existingFilePreview)');
+                    if (existingPreview) {
+                        existingPreview.remove();
+                    }
+                    
+                    // Hide existing file preview if present
+                    const existingFile = document.getElementById('existingFilePreview');
+                    if (existingFile) {
+                        existingFile.style.display = 'none';
+                    }
+                    
+                    // Create new preview
+                    const preview = document.createElement('div');
+                    preview.className = 'file-preview';
+                    
+                    const isVideo = file.type.startsWith('video/');
+                    const isImage = file.type.startsWith('image/');
+                    
+                    let thumbContent = '';
+                    if (isVideo) {
+                        thumbContent = `<video src="${URL.createObjectURL(file)}" muted></video>`;
+                    } else if (isImage) {
+                        thumbContent = `<img src="${URL.createObjectURL(file)}" alt="Preview">`;
+                    } else {
+                        thumbContent = `<i class="fas fa-file"></i>`;
+                    }
+                    
+                    preview.innerHTML = `
+                        <div class="preview-thumb">
+                            ${thumbContent}
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <span class="remove-file" onclick="this.closest('.file-preview').remove(); document.getElementById('id_media_file').value='';" title="Remove file">×</span>
+                    `;
+                    
+                    wrapper.after(preview);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

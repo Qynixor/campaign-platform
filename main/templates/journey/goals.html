@@ -1,0 +1,698 @@
+<!-- templates/journey/goals.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}Goals & Milestones - {{ journey.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .goals-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .goals-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .goals-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .goals-header h1 i {
+        color: var(--accent);
+    }
+    
+    .premium-badge {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-box {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .stat-box .number {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .stat-box .label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .section-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary-sm {
+        padding: 8px 20px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-primary-sm:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+    }
+    
+    .goal-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+    }
+    
+    .goal-card:hover {
+        border-color: var(--silver);
+    }
+    
+    .goal-card.completed {
+        border-left: 4px solid #10b981;
+        opacity: 0.7;
+    }
+    
+    .goal-card .goal-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .goal-card .goal-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .goal-card .goal-title .goal-type {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--text-secondary);
+        margin-left: 8px;
+    }
+    
+    .goal-card .goal-meta {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .goal-card .goal-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .goal-card .goal-progress {
+        margin-top: 10px;
+    }
+    
+    .goal-card .goal-progress .progress-track {
+        height: 6px;
+        background: var(--bg-secondary);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .goal-card .goal-progress .progress-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+    
+    .goal-card .goal-progress .progress-fill.completed {
+        background: #10b981;
+    }
+    
+    .goal-card .goal-progress .progress-fill.in-progress {
+        background: var(--accent);
+    }
+    
+    .goal-card .goal-progress .progress-text {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    .goal-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .goal-actions .btn-sm {
+        padding: 4px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    
+    .goal-actions .btn-sm:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .goal-actions .btn-sm.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+    }
+    
+    .goal-actions .btn-sm.primary:hover {
+        background: #2563EB;
+    }
+    
+    .goal-actions .btn-sm.danger:hover {
+        background: #ef4444;
+        color: #fff;
+        border-color: #ef4444;
+    }
+    
+    .milestone-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .milestone-item {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .milestone-item:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+    }
+    
+    .milestone-item .icon {
+        font-size: 32px;
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .milestone-item .name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .milestone-item .date {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 2px dashed var(--border-color);
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 40px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state h3 {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 32px;
+        max-width: 450px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    .modal-content .modal-close {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    
+    .modal-content h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+    
+    .modal-content .form-group {
+        margin-bottom: 14px;
+    }
+    
+    .modal-content .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .modal-content .form-group input,
+    .modal-content .form-group select,
+    .modal-content .form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+    }
+    
+    .modal-content .form-group input:focus,
+    .modal-content .form-group select:focus,
+    .modal-content .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .modal-content .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+    
+    .modal-content .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .modal-content .btn-submit:hover {
+        background: #2563EB;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .goals-header h1 {
+            font-size: 22px;
+        }
+        
+        .milestone-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-row {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .milestone-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .goal-card .goal-top {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="goals-container">
+    
+    <!-- Header -->
+    <div class="goals-header">
+        <h1>
+            <i class="fas fa-bullseye"></i>
+            Goals & Milestones
+            <span class="premium-badge">
+                <i class="fas fa-crown"></i> Premium
+            </span>
+        </h1>
+        <div>
+            <span style="font-size: 14px; color: var(--text-secondary);">
+                {{ journey.title }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-box">
+            <div class="number">{{ stats.total }}</div>
+            <div class="label">Total Goals</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ stats.completed }}</div>
+            <div class="label">Completed</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ stats.active }}</div>
+            <div class="label">Active</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ stats.completion_rate }}%</div>
+            <div class="label">Completion Rate</div>
+        </div>
+    </div>
+    
+    <!-- ===== ACTIVE GOALS ===== -->
+    <div class="section-header">
+        <h2><i class="fas fa-play-circle" style="color: var(--accent);"></i> Active Goals</h2>
+        <button class="btn-primary-sm" onclick="openCreateGoal()">
+            <i class="fas fa-plus"></i> New Goal
+        </button>
+    </div>
+    
+    {% if active_goals %}
+        {% for goal in active_goals %}
+            <div class="goal-card">
+                <div class="goal-top">
+                    <div>
+                        <div class="goal-title">
+                            {{ goal.title }}
+                            <span class="goal-type">{{ goal.get_goal_type_display }}</span>
+                        </div>
+                        <div class="goal-meta">
+                            <span><i class="fas fa-bullseye"></i> Target: {{ goal.target_value }} {{ goal.unit }}</span>
+                            <span><i class="fas fa-arrow-right"></i> Current: {{ goal.current_value }} {{ goal.unit }}</span>
+                            {% if goal.deadline %}
+                                <span><i class="fas fa-clock"></i> {{ goal.get_days_remaining }} days left</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="goal-progress">
+                    <div class="progress-track">
+                        <div class="progress-fill in-progress" style="width: {{ goal.get_progress_percentage }}%;"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span>{{ goal.get_progress_percentage }}% complete</span>
+                        <span>{{ goal.current_value }} / {{ goal.target_value }} {{ goal.unit }}</span>
+                    </div>
+                </div>
+                
+                <div class="goal-actions">
+                    <button class="btn-sm primary" onclick="openUpdateProgress('{{ goal.id }}', '{{ goal.title }}', '{{ goal.current_value }}')">
+                        <i class="fas fa-edit"></i> Update Progress
+                    </button>
+                    <form method="post" action="{% url 'delete_goal' journey.slug goal.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-sm danger" onclick="return confirm('Delete this goal?')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-bullseye"></i></div>
+            <h3>No Active Goals</h3>
+            <p>Set your first goal to start tracking your progress!</p>
+            <button class="btn-primary-sm" style="margin-top: 12px;" onclick="openCreateGoal()">
+                <i class="fas fa-plus"></i> Create Goal
+            </button>
+        </div>
+    {% endif %}
+    
+    <!-- ===== COMPLETED GOALS ===== -->
+    {% if completed_goals %}
+        <div class="section-header" style="margin-top: 30px;">
+            <h2><i class="fas fa-check-circle" style="color: #10b981;"></i> Completed Goals</h2>
+        </div>
+        
+        {% for goal in completed_goals %}
+            <div class="goal-card completed">
+                <div class="goal-top">
+                    <div>
+                        <div class="goal-title">
+                            ✅ {{ goal.title }}
+                            <span class="goal-type">{{ goal.get_goal_type_display }}</span>
+                        </div>
+                        <div class="goal-meta">
+                            <span><i class="fas fa-check-circle" style="color: #10b981;"></i> Completed {{ goal.completed_at|timesince }} ago</span>
+                            <span><i class="fas fa-bullseye"></i> Target: {{ goal.target_value }} {{ goal.unit }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="goal-progress">
+                    <div class="progress-track">
+                        <div class="progress-fill completed" style="width: 100%;"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span style="color: #10b981;">✅ Complete!</span>
+                        <span>{{ goal.current_value }} / {{ goal.target_value }} {{ goal.unit }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- ===== MILESTONES ===== -->
+    <div class="section-header" style="margin-top: 30px;">
+        <h2><i class="fas fa-trophy" style="color: #f59e0b;"></i> Milestones</h2>
+        <span style="font-size: 13px; color: var(--text-secondary);">{{ milestones|length }} achieved</span>
+    </div>
+    
+    {% if milestones %}
+        <div class="milestone-grid">
+            {% for milestone in milestones %}
+                <div class="milestone-item">
+                    <span class="icon">{{ milestone.icon }}</span>
+                    <div class="name">{{ milestone.name }}</div>
+                    <div class="date">{{ milestone.achieved_at|date:"M d, Y" }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-trophy"></i></div>
+            <h3>No Milestones Yet</h3>
+            <p>Keep going! Milestones unlock as you make progress.</p>
+        </div>
+    {% endif %}
+    
+    <!-- Back Button -->
+    <div style="margin-top: 30px;">
+        <a href="{% url 'journey_detail' journey.slug %}" class="btn-back" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-weight:600;font-size:14px;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border-color);text-decoration:none;">
+            <i class="fas fa-arrow-left"></i> Back to Journey
+        </a>
+    </div>
+</div>
+
+<!-- ===== CREATE GOAL MODAL ===== -->
+<div class="modal-overlay" id="createGoalModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeCreateGoal()">×</button>
+        <h3>Create New Goal</h3>
+        <form method="post" action="{% url 'create_goal' journey.slug %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Goal Type</label>
+                <select name="goal_type" required>
+                    <option value="">Select type...</option>
+                    <option value="streak">Streak Goal</option>
+                    <option value="days">Days Goal</option>
+                    <option value="weight">Weight Goal</option>
+                    <option value="sleep">Sleep Goal</option>
+                    <option value="workouts">Workouts Goal</option>
+                    <option value="custom">Custom Goal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Goal Title</label>
+                <input type="text" name="title" placeholder="e.g., Lose 5kg" required>
+            </div>
+            <div class="form-group">
+                <label>Target Value</label>
+                <input type="number" name="target_value" step="0.1" placeholder="e.g., 5" required>
+            </div>
+            <div class="form-group">
+                <label>Unit (optional)</label>
+                <input type="text" name="unit" placeholder="e.g., kg, km, days">
+            </div>
+            <div class="form-group">
+                <label>Description (optional)</label>
+                <textarea name="description" placeholder="Describe your goal..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Deadline (optional)</label>
+                <input type="date" name="deadline">
+            </div>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-plus"></i> Create Goal
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== UPDATE PROGRESS MODAL ===== -->
+<div class="modal-overlay" id="updateProgressModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeUpdateProgress()">×</button>
+        <h3>Update Progress</h3>
+        <form method="post" id="updateProgressForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label id="updateGoalTitle">Goal Title</label>
+                <input type="number" name="value" step="0.1" placeholder="Enter current value..." required>
+            </div>
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> Update Progress
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCreateGoal() {
+        document.getElementById('createGoalModal').classList.add('active');
+    }
+    
+    function closeCreateGoal() {
+        document.getElementById('createGoalModal').classList.remove('active');
+    }
+    
+    function openUpdateProgress(goalId, goalTitle, currentValue) {
+        const modal = document.getElementById('updateProgressModal');
+        const form = document.getElementById('updateProgressForm');
+        form.action = '/j/{{ journey.slug }}/goal/' + goalId + '/update/';
+        document.getElementById('updateGoalTitle').textContent = goalTitle + ' (Current: ' + currentValue + ')';
+        modal.classList.add('active');
+    }
+    
+    function closeUpdateProgress() {
+        document.getElementById('updateProgressModal').classList.remove('active');
+    }
+    
+    // Close modals on outside click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

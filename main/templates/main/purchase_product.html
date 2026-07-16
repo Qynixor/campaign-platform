@@ -1,0 +1,365 @@
+<!-- templates/main/purchase_product.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Purchase {{ product.name }} | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .purchase-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .purchase-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .purchase-card .card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+    
+    .purchase-card .card-header h4 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .purchase-card .card-header h4 i {
+        color: var(--accent);
+    }
+    
+    .purchase-card .card-body {
+        padding: 28px;
+    }
+    
+    .product-summary {
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .product-summary .product-icon-large {
+        font-size: 48px;
+        flex-shrink: 0;
+    }
+    
+    .product-summary .product-info {
+        flex: 1;
+    }
+    
+    .product-summary .product-info .name {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .product-summary .product-info .price {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 4px 0;
+    }
+    
+    .product-summary .product-info .price small {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--text-secondary);
+    }
+    
+    .product-summary .product-info .type {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .product-summary .product-info .type i {
+        color: var(--accent);
+    }
+    
+    .info-box {
+        background: rgba(59, 130, 246, 0.06);
+        border: 1px solid rgba(59, 130, 246, 0.12);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .info-box i {
+        color: var(--accent);
+        font-size: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .info-box .info-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .info-box .info-text strong {
+        color: var(--text-primary);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .form-group label .required {
+        color: #ef4444;
+    }
+    
+    .form-group .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    
+    .form-group .form-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-group .form-control select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+    
+    .form-group .help-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .form-group .error-text {
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: 4px;
+    }
+    
+    .form-group .form-control.is-invalid {
+        border-color: #ef4444;
+    }
+    
+    .form-group .form-control.is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    .btn-purchase {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-purchase:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-purchase:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .secure-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .secure-badge i {
+        color: #10b981;
+    }
+    
+    @media (max-width: 480px) {
+        .purchase-container {
+            padding: 20px 16px;
+        }
+        
+        .purchase-card .card-body {
+            padding: 20px;
+        }
+        
+        .product-summary {
+            flex-direction: column;
+            text-align: center;
+            padding: 16px;
+        }
+        
+        .product-summary .product-icon-large {
+            font-size: 40px;
+        }
+        
+        .product-summary .product-info .price {
+            font-size: 22px;
+        }
+        
+        .info-box {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="purchase-container">
+    <div class="purchase-card">
+        
+        <!-- Header -->
+        <div class="card-header">
+            <h4>
+                <i class="fas fa-shopping-cart"></i>
+                Confirm Purchase
+            </h4>
+        </div>
+        
+        <!-- Body -->
+        <div class="card-body">
+            
+            <!-- Product Summary -->
+            <div class="product-summary">
+                <div class="product-icon-large">
+                    {% if product.product_type == 'export' %}
+                        📄
+                    {% elif product.product_type == 'theme' %}
+                        🎨
+                    {% elif product.product_type == 'storage' %}
+                        💾
+                    {% elif product.product_type == 'ai_report' %}
+                        🤖
+                    {% else %}
+                        📦
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <div class="name">{{ product.name }}</div>
+                    <div class="price">
+                        ${{ product.get_price_display }}
+                    </div>
+                    <div class="type">
+                        <i class="fas fa-tag"></i>
+                        {% if product.payment_type == 'one_time' %}
+                            One-Time Payment
+                        {% elif product.payment_type == 'monthly' %}
+                            Monthly Charge
+                        {% elif product.payment_type == 'per_report' %}
+                            Per Report
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <div class="info-text">
+                    <strong>Payment via PayPal</strong><br>
+                    You will be charged <strong>${{ product.price_min }}</strong> 
+                    {% if product.payment_type == 'one_time' %}
+                        as a one-time payment.
+                    {% elif product.payment_type == 'monthly' %}
+                        monthly until canceled.
+                    {% elif product.payment_type == 'per_report' %}
+                        per report generated.
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Form -->
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="required">*</span>
+                            {% endif %}
+                        </label>
+                        
+                        {{ field }}
+                        
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <div class="error-text">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn-purchase">
+                    <i class="fab fa-paypal"></i> Pay with PayPal - ${{ product.price_min }}
+                </button>
+            </form>
+            
+            <!-- Secure Badge -->
+            <div class="secure-badge">
+                <i class="fas fa-lock"></i>
+                Secure payment via PayPal
+                <span style="width: 4px; height: 4px; background: var(--text-muted); border-radius: 50%; display: inline-block;"></span>
+                <i class="fas fa-shield-alt"></i>
+                Money-back guarantee
+            </div>
+            
+            <!-- Back Link -->
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="{% url 'product_list' %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Back to Products
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

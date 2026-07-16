@@ -1,0 +1,547 @@
+<!-- templates/main/generate_ai_report.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Generate AI Report | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .ai-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .ai-card .card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .ai-card .card-header h4 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .ai-card .card-header h4 i {
+        color: var(--accent);
+    }
+    
+    .ai-card .card-body {
+        padding: 28px;
+    }
+    
+    .journey-info {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .journey-info .journey-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+    
+    .journey-info .journey-meta {
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .journey-info .journey-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .journey-info .journey-meta i {
+        color: var(--accent);
+    }
+    
+    .existing-report-alert {
+        background: rgba(16, 185, 129, 0.06);
+        border: 1px solid rgba(16, 185, 129, 0.12);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .existing-report-alert .alert-text {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .existing-report-alert .alert-text i {
+        color: #10b981;
+        font-size: 18px;
+    }
+    
+    .existing-report-alert .alert-text strong {
+        color: var(--text-primary);
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .form-group label .required {
+        color: #ef4444;
+    }
+    
+    .form-group .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: border-color 0.2s;
+        font-family: inherit;
+    }
+    
+    .form-group .form-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-group .form-control textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    .form-group .form-check-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 8px 0;
+    }
+    
+    .form-group .form-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .form-group .form-check:hover {
+        border-color: var(--accent);
+    }
+    
+    .form-group .form-check input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    
+    .form-group .form-check label {
+        margin: 0;
+        font-weight: 400;
+        font-size: 13px;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    
+    .form-group .form-check input[type="checkbox"]:checked + label {
+        color: var(--text-primary);
+    }
+    
+    .form-group .form-check.selected {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .form-group .radio-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .form-group .radio-group .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .form-group .radio-group .radio-option:hover {
+        border-color: var(--accent);
+    }
+    
+    .form-group .radio-group .radio-option input[type="radio"] {
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
+    
+    .form-group .radio-group .radio-option label {
+        margin: 0;
+        font-weight: 400;
+        font-size: 13px;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    
+    .form-group .radio-group .radio-option.selected {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .form-group .help-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .form-group .error-text {
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: 4px;
+    }
+    
+    .info-box {
+        background: rgba(59, 130, 246, 0.06);
+        border: 1px solid rgba(59, 130, 246, 0.12);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .info-box i {
+        color: var(--accent);
+        font-size: 18px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .info-box .info-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .info-box .info-text strong {
+        color: var(--text-primary);
+    }
+    
+    .btn-generate {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-generate:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .btn-generate i {
+        margin-right: 8px;
+    }
+    
+    .btn-view-report {
+        background: #10b981;
+        color: #fff;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-view-report:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        color: #fff;
+    }
+    
+    @media (max-width: 768px) {
+        .ai-container {
+            padding: 24px 16px;
+        }
+        
+        .ai-card .card-body {
+            padding: 20px;
+        }
+        
+        .journey-info {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .journey-info .journey-meta {
+            justify-content: center;
+        }
+        
+        .existing-report-alert {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .form-group .form-check-group {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-group .radio-group {
+            flex-direction: column;
+        }
+        
+        .info-box {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .form-group .form-check {
+            padding: 6px 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-container">
+    <div class="ai-card">
+        
+        <!-- Header -->
+        <div class="card-header">
+            <h4>
+                <i class="fas fa-robot"></i>
+                Generate AI Progress Report
+            </h4>
+            <span class="badge" style="background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                <i class="fas fa-check"></i> Purchased
+            </span>
+        </div>
+        
+        <!-- Body -->
+        <div class="card-body">
+            
+            <!-- Journey Info -->
+            <div class="journey-info">
+                <div class="journey-title">{{ journey.title }}</div>
+                <div class="journey-meta">
+                    <span>
+                        <i class="fas fa-calendar-alt"></i>
+                        Day {{ journey.get_current_day }}/{{ journey.duration }}
+                    </span>
+                    <span>
+                        <i class="fas fa-file-alt"></i>
+                        {{ journey.activities.count }} entries
+                    </span>
+                    <span>
+                        <i class="fas fa-pen-fancy"></i>
+                        {{ journey.reflections.count }} reflections
+                    </span>
+                    <span>
+                        <i class="fas fa-chart-line"></i>
+                        {{ journey.get_progress_percentage }}% complete
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Existing Report Alert -->
+            {% if existing_report and existing_report.is_valid %}
+                <div class="existing-report-alert">
+                    <div class="alert-text">
+                        <i class="fas fa-check-circle"></i>
+                        <span>
+                            <strong>Report Ready!</strong>
+                            Generated {{ existing_report.created_at|timesince }} ago.
+                            {% if existing_report.expires_at %}
+                                Expires: {{ existing_report.expires_at|date:"M d, Y" }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <a href="{% url 'view_ai_report' existing_report.id %}" class="btn-view-report">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+            {% endif %}
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <div class="info-text">
+                    <strong>AI-Powered Insights</strong><br>
+                    Get a comprehensive progress report analyzing your journey, 
+                    highlighting patterns, and providing actionable recommendations.
+                    Generation may take 1-2 minutes.
+                </div>
+            </div>
+            
+            <!-- Form -->
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="required">*</span>
+                            {% endif %}
+                        </label>
+                        
+                        {% if field.field.widget.input_type == 'checkbox' and field.name == 'include_sections' %}
+                            <div class="form-check-group">
+                                {{ field }}
+                            </div>
+                        {% elif field.field.widget.input_type == 'radio' %}
+                            <div class="radio-group">
+                                {{ field }}
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <div class="error-text">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn-generate">
+                    <i class="fas fa-robot"></i> Generate AI Report
+                </button>
+            </form>
+            
+            <!-- Back Link -->
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="{% url 'journey_detail' journey.slug %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Back to Journey
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Checkbox styling
+    document.querySelectorAll('.form-check-group input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const parent = this.closest('.form-check');
+            if (parent) {
+                if (this.checked) {
+                    parent.classList.add('selected');
+                } else {
+                    parent.classList.remove('selected');
+                }
+            }
+        });
+        
+        // Initialize state
+        if (checkbox.checked) {
+            const parent = checkbox.closest('.form-check');
+            if (parent) {
+                parent.classList.add('selected');
+            }
+        }
+    });
+    
+    // Radio styling
+    document.querySelectorAll('.radio-group input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const group = this.closest('.radio-group');
+            group.querySelectorAll('.radio-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            const parent = this.closest('.radio-option');
+            if (parent) {
+                parent.classList.add('selected');
+            }
+        });
+        
+        // Initialize state
+        if (radio.checked) {
+            const parent = radio.closest('.radio-option');
+            if (parent) {
+                parent.classList.add('selected');
+            }
+        }
+    });
+</script>
+{% endblock %}

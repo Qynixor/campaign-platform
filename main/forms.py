@@ -938,3 +938,303 @@ class NewsletterSignupForm(forms.Form):
             'placeholder': 'your@email.com'
         })
     )
+
+
+
+# forms.py
+
+from django import forms
+from django.contrib.auth import get_user_model
+from .models import (
+    SubscriptionPlan,
+    UserSubscription,
+    OneTimeProduct,
+    UserPurchase,
+    PaidJourneyExport,
+    PaidCustomTheme,
+    PaidExtraStorage,
+    PaidAIProgressReport,
+)
+
+User = get_user_model()
+
+
+class SubscriptionPlanForm(forms.ModelForm):
+    class Meta:
+        model = SubscriptionPlan
+        fields = [
+            'name', 'plan_type', 'price', 'paypal_plan_id',
+            'has_advanced_analytics', 'has_custom_metrics', 'has_goals_milestones',
+            'has_progress_charts', 'has_extra_storage', 'has_customization',
+            'storage_limit_mb', 'is_active'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'plan_type': forms.Select(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'paypal_plan_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'storage_limit_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+
+class UserSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = UserSubscription
+        fields = [
+            'user', 'plan', 'paypal_subscription_id', 'paypal_customer_id',
+            'start_date', 'end_date', 'cancel_date', 'status', 'auto_renew',
+            'storage_used_mb'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'plan': forms.Select(attrs={'class': 'form-control'}),
+            'paypal_subscription_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'paypal_customer_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'start_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'end_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'cancel_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'storage_used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+
+class OneTimeProductForm(forms.ModelForm):
+    class Meta:
+        model = OneTimeProduct
+        fields = [
+            'name', 'product_type', 'payment_type', 'price_min', 'price_max',
+            'paypal_product_id', 'paypal_plan_id', 'description', 'features',
+            'storage_amount_mb', 'is_active'
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'product_type': forms.Select(attrs={'class': 'form-control'}),
+            'payment_type': forms.Select(attrs={'class': 'form-control'}),
+            'price_min': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'price_max': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'paypal_product_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'paypal_plan_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'features': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'storage_amount_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+
+class UserPurchaseForm(forms.ModelForm):
+    class Meta:
+        model = UserPurchase
+        fields = [
+            'user', 'product', 'paypal_transaction_id', 'amount_paid',
+            'report_data', 'status', 'metadata', 'storage_allocated_mb',
+            'storage_used_mb', 'expires_at'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'product': forms.Select(attrs={'class': 'form-control'}),
+            'paypal_transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'report_data': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'metadata': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'storage_allocated_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+            'storage_used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+class PaidJourneyExportForm(forms.ModelForm):
+    class Meta:
+        model = PaidJourneyExport
+        fields = [
+            'user', 'journey', 'purchase', 'format', 'file_url', 'file_size',
+            'include_media', 'include_reflections', 'include_comments',
+            'is_downloaded', 'expires_at'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'journey': forms.Select(attrs={'class': 'form-control'}),
+            'purchase': forms.Select(attrs={'class': 'form-control'}),
+            'format': forms.Select(attrs={'class': 'form-control'}),
+            'file_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'file_size': forms.NumberInput(attrs={'class': 'form-control'}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+class PaidCustomThemeForm(forms.ModelForm):
+    class Meta:
+        model = PaidCustomTheme
+        fields = [
+            'user', 'purchase', 'name', 'theme_type',
+            'primary_color', 'secondary_color', 'background_color', 'text_color',
+            'cover_image', 'layout_style', 'font_family',
+            'is_active', 'is_default'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'purchase': forms.Select(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'theme_type': forms.Select(attrs={'class': 'form-control'}),
+            'primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'background_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'text_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'layout_style': forms.TextInput(attrs={'class': 'form-control'}),
+            'font_family': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class PaidExtraStorageForm(forms.ModelForm):
+    class Meta:
+        model = PaidExtraStorage
+        fields = [
+            'user', 'purchase', 'total_mb', 'used_mb', 'is_active', 'expires_at'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'purchase': forms.Select(attrs={'class': 'form-control'}),
+            'total_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+            'used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+class PaidAIProgressReportForm(forms.ModelForm):
+    class Meta:
+        model = PaidAIProgressReport
+        fields = [
+            'user', 'journey', 'purchase', 'report_title', 'report_content',
+            'summary', 'insights', 'recommendations', 'metrics', 'progress_data',
+            'status', 'error_message', 'expires_at'
+        ]
+        widgets = {
+            'user': forms.Select(attrs={'class': 'form-control'}),
+            'journey': forms.Select(attrs={'class': 'form-control'}),
+            'purchase': forms.Select(attrs={'class': 'form-control'}),
+            'report_title': forms.TextInput(attrs={'class': 'form-control'}),
+            'report_content': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'insights': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'recommendations': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'metrics': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'progress_data': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'error_message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+# ============================================================================
+# FRONTEND FORMS FOR USERS
+# ============================================================================
+
+class SubscribeForm(forms.Form):
+    """Form for users to subscribe to Rallynex Plus"""
+    plan_id = forms.ModelChoiceField(
+        queryset=SubscriptionPlan.objects.filter(is_active=True),
+        widget=forms.RadioSelect,
+        empty_label=None
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['plan_id'].label = "Select Plan"
+        self.fields['plan_id'].help_text = "Choose your subscription plan"
+
+
+class PurchaseProductForm(forms.Form):
+    """Form for users to purchase one-time products"""
+    product_id = forms.ModelChoiceField(
+        queryset=OneTimeProduct.objects.filter(is_active=True),
+        widget=forms.RadioSelect,
+        empty_label=None
+    )
+    
+    # Additional fields for specific products
+    journey_id = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text="Select journey for export or report"
+    )
+    
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product_id'].label = "Select Product"
+        
+        # Filter journeys for the user
+        self.fields['journey_id'].queryset = user.profile.journeys.filter(is_active=True)
+        
+        # Show journey field only when needed
+        product_type = self.data.get('product_id')
+        if product_type:
+            product = OneTimeProduct.objects.filter(id=product_type).first()
+            if product and product.product_type in ['export', 'ai_report']:
+                self.fields['journey_id'].required = True
+            else:
+                self.fields['journey_id'].widget = forms.HiddenInput()
+                self.fields['journey_id'].required = False
+
+
+class ExportRequestForm(forms.ModelForm):
+    """Form for requesting a journey export"""
+    class Meta:
+        model = PaidJourneyExport
+        fields = ['format', 'include_media', 'include_reflections', 'include_comments']
+        widgets = {
+            'format': forms.Select(attrs={'class': 'form-control'}),
+            'include_media': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'include_reflections': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'include_comments': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'include_media': 'Include Media Files',
+            'include_reflections': 'Include Reflections',
+            'include_comments': 'Include Comments',
+        }
+
+
+class ThemeCustomizationForm(forms.ModelForm):
+    """Form for customizing a journey theme"""
+    class Meta:
+        model = PaidCustomTheme
+        fields = ['name', 'theme_type', 'primary_color', 'secondary_color', 
+                  'background_color', 'text_color', 'layout_style', 'font_family']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'theme_type': forms.Select(attrs={'class': 'form-control'}),
+            'primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'background_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'text_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'layout_style': forms.Select(attrs={'class': 'form-control'}),
+            'font_family': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class AICustomizationForm(forms.Form):
+    """Form for AI report customization"""
+    report_title = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter report title'})
+    )
+    include_sections = forms.MultipleChoiceField(
+        choices=[
+            ('summary', 'Summary'),
+            ('insights', 'Key Insights'),
+            ('recommendations', 'Recommendations'),
+            ('metrics', 'Detailed Metrics'),
+            ('progress', 'Progress Analysis'),
+        ],
+        widget=forms.CheckboxSelectMultiple,
+        initial=['summary', 'insights', 'recommendations']
+    )
+    report_style = forms.ChoiceField(
+        choices=[
+            ('detailed', 'Detailed'),
+            ('concise', 'Concise'),
+            ('visual', 'Visual Focus'),
+        ],
+        widget=forms.RadioSelect,
+        initial='detailed'
+    )

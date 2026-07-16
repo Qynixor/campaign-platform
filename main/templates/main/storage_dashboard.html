@@ -1,0 +1,576 @@
+<!-- templates/main/storage_dashboard.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Storage Dashboard | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .storage-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .storage-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .storage-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .storage-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+    }
+    
+    .storage-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+    
+    .storage-card .card-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .storage-card .card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .storage-card .card-header h5 i {
+        color: var(--accent);
+    }
+    
+    .storage-card .card-body {
+        padding: 24px;
+    }
+    
+    /* Storage Usage Circle */
+    .storage-usage {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .storage-circle-container {
+        position: relative;
+        width: 180px;
+        height: 180px;
+    }
+    
+    .storage-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .storage-circle svg {
+        transform: rotate(-90deg);
+    }
+    
+    .storage-circle .circle-bg {
+        fill: none;
+        stroke: var(--border-color);
+        stroke-width: 8;
+    }
+    
+    .storage-circle .circle-fill {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 8;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease;
+    }
+    
+    .storage-circle .circle-fill.warning {
+        stroke: #f59e0b;
+    }
+    
+    .storage-circle .circle-fill.danger {
+        stroke: #ef4444;
+    }
+    
+    .storage-center-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .storage-center-text .percentage {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .storage-center-text .label {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .storage-stats {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .storage-stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+    }
+    
+    .storage-stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .storage-stat-item .stat-label {
+        color: var(--text-secondary);
+    }
+    
+    .storage-stat-item .stat-value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .storage-stat-item .stat-value.text-success {
+        color: #10b981;
+    }
+    
+    .storage-stat-item .stat-value.text-warning {
+        color: #f59e0b;
+    }
+    
+    .storage-stat-item .stat-value.text-danger {
+        color: #ef4444;
+    }
+    
+    /* Storage List */
+    .storage-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .storage-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .storage-list-item .item-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .storage-list-item .item-info .item-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .storage-list-item .item-info .item-icon i {
+        font-size: 16px;
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+    
+    .storage-list-item .item-info .item-details .item-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .storage-list-item .item-info .item-details .item-sub {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .storage-list-item .item-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .storage-list-item .item-status .badge-status {
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .badge-status.active {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .badge-status.expired {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+    
+    .badge-status.pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    .storage-list-item .item-status .storage-amount {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .btn-purchase-storage {
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-purchase-storage:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        color: #fff;
+    }
+    
+    .empty-storage-state {
+        text-align: center;
+        padding: 30px 20px;
+    }
+    
+    .empty-storage-state .empty-icon {
+        font-size: 40px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .empty-storage-state h6 {
+        font-size: 16px;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-storage-state p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    .subscription-storage-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 12px 0;
+    }
+    
+    .subscription-storage-info .sub-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .subscription-storage-info .sub-info i {
+        color: var(--accent);
+    }
+    
+    .subscription-storage-info .sub-info strong {
+        color: var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .storage-container {
+            padding: 24px 16px;
+        }
+        
+        .storage-usage {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .storage-stats {
+            width: 100%;
+        }
+        
+        .storage-header h1 {
+            font-size: 26px;
+        }
+        
+        .storage-circle-container {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .storage-circle {
+            width: 150px;
+            height: 150px;
+        }
+        
+        .storage-center-text .percentage {
+            font-size: 28px;
+        }
+        
+        .storage-list-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .storage-list-item .item-status {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .storage-circle-container {
+            width: 130px;
+            height: 130px;
+        }
+        
+        .storage-circle {
+            width: 130px;
+            height: 130px;
+        }
+        
+        .storage-center-text .percentage {
+            font-size: 24px;
+        }
+        
+        .storage-card .card-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="storage-container">
+    
+    <!-- Header -->
+    <div class="storage-header">
+        <h1><i class="fas fa-hdd" style="color: var(--accent);"></i> Storage Dashboard</h1>
+        <p>Manage your storage usage and purchase extra space</p>
+    </div>
+    
+    <!-- Storage Usage -->
+    <div class="storage-card">
+        <div class="card-header">
+            <h5><i class="fas fa-chart-pie"></i> Storage Usage</h5>
+            {% if has_subscription %}
+                <span class="badge" style="background: #10b981; color: #fff; padding: 4px 12px; border-radius: 20px;">
+                    <i class="fas fa-crown"></i> Premium
+                </span>
+            {% else %}
+                <a href="{% url 'subscription_plans' %}" class="btn btn-sm btn-primary" style="font-size: 12px; padding: 4px 12px;">
+                    <i class="fas fa-crown"></i> Upgrade for More Storage
+                </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="storage-usage">
+                <!-- Circle -->
+                <div class="storage-circle-container">
+                    <div class="storage-circle">
+                        <svg width="180" height="180" viewBox="0 0 180 180">
+                            <circle class="circle-bg" cx="90" cy="90" r="76" />
+                            <circle class="circle-fill {% if percentage_used > 80 %}danger{% elif percentage_used > 60 %}warning{% endif %}" 
+                                    cx="90" cy="90" r="76" 
+                                    stroke-dasharray="477.52" 
+                                    stroke-dashoffset="{{ 477.52|floatformat:0|add:'-'|add:percentage_used|floatformat:0|add:'*'|add:'4.7752'|floatformat:0 }}" />
+                        </svg>
+                        <div class="storage-center-text">
+                            <div class="percentage">{{ percentage_used|floatformat:0 }}%</div>
+                            <div class="label">Used</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="storage-stats">
+                    <div class="storage-stat-item">
+                        <span class="stat-label">Total Storage</span>
+                        <span class="stat-value">{{ total_storage }}MB</span>
+                    </div>
+                    <div class="storage-stat-item">
+                        <span class="stat-label">Used</span>
+                        <span class="stat-value {% if percentage_used > 80 %}text-danger{% elif percentage_used > 60 %}text-warning{% else %}text-success{% endif %}">
+                            {{ used_storage }}MB
+                        </span>
+                    </div>
+                    <div class="storage-stat-item">
+                        <span class="stat-label">Available</span>
+                        <span class="stat-value text-success">{{ available_storage }}MB</span>
+                    </div>
+                    {% if subscription %}
+                        <div class="storage-stat-item">
+                            <span class="stat-label">Subscription Storage</span>
+                            <span class="stat-value">+{{ subscription.plan.storage_limit_mb }}MB</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subscription Storage Info -->
+    {% if subscription %}
+        <div class="storage-card">
+            <div class="card-header">
+                <h5><i class="fas fa-crown" style="color: #f59e0b;"></i> Premium Storage</h5>
+            </div>
+            <div class="card-body">
+                <div class="subscription-storage-info">
+                    <div class="sub-info">
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                        <span><strong>{{ subscription.plan.name }}</strong> includes <strong>{{ subscription.plan.storage_limit_mb }}MB</strong> extra storage</span>
+                    </div>
+                    <div class="sub-info">
+                        <i class="fas fa-clock"></i>
+                        <span>Renews: {{ subscription.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    <a href="{% url 'subscription_dashboard' %}" class="btn btn-sm btn-outline" style="margin-left: auto; font-size: 12px;">
+                        Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Extra Storage Purchases -->
+    <div class="storage-card">
+        <div class="card-header">
+            <h5><i class="fas fa-shopping-bag"></i> Extra Storage Purchases</h5>
+            <a href="{% url 'product_list' %}" class="btn-purchase-storage" style="padding: 6px 16px; font-size: 13px;">
+                <i class="fas fa-plus"></i> Purchase More
+            </a>
+        </div>
+        <div class="card-body">
+            {% if extra_storage %}
+                {% for storage in extra_storage %}
+                    <div class="storage-list-item">
+                        <div class="item-info">
+                            <div class="item-icon">
+                                <i class="fas fa-hdd"></i>
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">{{ storage.total_mb }}MB Storage</div>
+                                <div class="item-sub">
+                                    Purchased: {{ storage.created_at|date:"M d, Y" }}
+                                    {% if storage.expires_at %}
+                                        · Expires: {{ storage.expires_at|date:"M d, Y" }}
+                                    {% else %}
+                                        · Never expires
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-status">
+                            <span class="storage-amount">{{ storage.used_mb }}MB / {{ storage.total_mb }}MB used</span>
+                            <span class="badge-status {% if storage.is_valid %}active{% else %}expired{% endif %}">
+                                {% if storage.is_valid %}Active{% else %}Expired{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-storage-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <h6>No Extra Storage Purchased</h6>
+                    <p>Purchase extra storage to upload more media to your journeys.</p>
+                    <a href="{% url 'product_list' %}" class="btn-purchase-storage">
+                        <i class="fas fa-plus"></i> Purchase Extra Storage
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Storage Tips -->
+    <div class="storage-card" style="border-color: rgba(59, 130, 246, 0.2); background: rgba(59, 130, 246, 0.03);">
+        <div class="card-header" style="border-bottom-color: rgba(59, 130, 246, 0.1);">
+            <h5 style="color: var(--accent);"><i class="fas fa-lightbulb"></i> Storage Tips</h5>
+        </div>
+        <div class="card-body" style="padding: 16px 24px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: var(--text-secondary);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Compress images before uploading
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Delete unused media files
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Upgrade to Premium for more storage
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Purchase extra storage for large journeys
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Back Link -->
+    <div style="text-align: center; margin-top: 12px;">
+        <a href="{% url 'dashboard' %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

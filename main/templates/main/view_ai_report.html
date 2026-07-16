@@ -1,0 +1,558 @@
+<!-- templates/main/view_ai_report.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Progress Report | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .report-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .report-card .card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .report-card .card-header h4 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .report-card .card-header h4 i {
+        color: var(--accent);
+    }
+    
+    .report-card .card-body {
+        padding: 28px;
+    }
+    
+    .report-status-badge {
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .report-status-badge.completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .report-status-badge.generating {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        animation: pulse 1.5s ease infinite;
+    }
+    
+    .report-status-badge.failed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .report-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--text-secondary);
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+    }
+    
+    .report-meta span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .report-meta i {
+        color: var(--accent);
+        opacity: 0.7;
+    }
+    
+    /* Generating State */
+    .generating-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .generating-state .spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .generating-state h5 {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .generating-state p {
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+    
+    .generating-state .btn-refresh {
+        margin-top: 16px;
+        padding: 10px 24px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .generating-state .btn-refresh:hover {
+        border-color: var(--accent);
+        background: var(--bg-tertiary);
+    }
+    
+    /* Failed State */
+    .failed-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    .failed-state .error-icon {
+        font-size: 56px;
+        color: #ef4444;
+        margin-bottom: 16px;
+    }
+    
+    .failed-state h5 {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .failed-state p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        max-width: 400px;
+        margin: 0 auto 16px;
+    }
+    
+    /* Report Content */
+    .report-section {
+        margin-bottom: 28px;
+    }
+    
+    .report-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .report-section .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .report-section .section-title i {
+        color: var(--accent);
+        opacity: 0.8;
+    }
+    
+    .report-section .section-content {
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px 24px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .report-section .section-content p {
+        margin-bottom: 12px;
+    }
+    
+    .report-section .section-content p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .report-section .section-content ul {
+        padding-left: 20px;
+        margin: 8px 0;
+    }
+    
+    .report-section .section-content ul li {
+        margin-bottom: 6px;
+    }
+    
+    /* Insights Grid */
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    
+    .insight-item {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .insight-item .insight-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .insight-item .insight-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    /* Recommendations */
+    .recommendation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .recommendation-item:last-child {
+        border-bottom: none;
+    }
+    
+    .recommendation-item .rec-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    
+    .recommendation-item .rec-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+    
+    .report-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .report-actions .btn {
+        flex: 1;
+        min-width: 140px;
+        padding: 12px 20px;
+        font-weight: 600;
+        border-radius: 12px;
+        font-size: 14px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-download-report {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .btn-download-report:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        color: #fff;
+    }
+    
+    .btn-new-report {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+    
+    .btn-new-report:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    .btn-back-journey {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+    
+    .btn-back-journey:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    @media (max-width: 768px) {
+        .report-container {
+            padding: 24px 16px;
+        }
+        
+        .report-card .card-body {
+            padding: 20px;
+        }
+        
+        .report-meta {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .insights-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .report-actions .btn {
+            flex: 1 1 100%;
+        }
+        
+        .report-section .section-content {
+            padding: 16px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .insights-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .report-card .card-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-card">
+        
+        <!-- Header -->
+        <div class="card-header">
+            <h4>
+                <i class="fas fa-robot"></i>
+                {{ report.report_title }}
+            </h4>
+            <span class="report-status-badge {{ report.status }}">
+                <i class="fas fa-{% if report.status == 'completed' %}check-circle{% elif report.status == 'generating' %}spinner fa-spin{% else %}exclamation-circle{% endif %}"></i>
+                {{ report.get_status_display }}
+            </span>
+        </div>
+        
+        <!-- Body -->
+        <div class="card-body">
+            
+            <!-- Report Meta -->
+            <div class="report-meta">
+                <span>
+                    <i class="fas fa-route"></i>
+                    {{ report.journey.title }}
+                </span>
+                <span>
+                    <i class="fas fa-calendar-alt"></i>
+                    Generated: {{ report.generated_at|date:"M d, Y H:i"|default:"Pending..." }}
+                </span>
+                {% if report.expires_at %}
+                <span>
+                    <i class="fas fa-clock"></i>
+                    Expires: {{ report.expires_at|date:"M d, Y" }}
+                </span>
+                {% endif %}
+                <span>
+                    <i class="fas fa-download"></i>
+                    Downloaded: {{ report.download_count }} time{{ report.download_count|pluralize }}
+                </span>
+            </div>
+            
+            <!-- ===== GENERATING STATE ===== -->
+            {% if report.status == 'generating' %}
+                <div class="generating-state">
+                    <div class="spinner"></div>
+                    <h5>Generating Your Report...</h5>
+                    <p>
+                        Our AI is analyzing your journey data and creating insights.
+                        This usually takes 1-2 minutes.
+                    </p>
+                    <button class="btn-refresh" onclick="location.reload()">
+                        <i class="fas fa-sync"></i> Refresh Status
+                    </button>
+                </div>
+            
+            <!-- ===== FAILED STATE ===== -->
+            {% elif report.status == 'failed' %}
+                <div class="failed-state">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h5>Report Generation Failed</h5>
+                    <p>{{ report.error_message|default:"An unexpected error occurred while generating your report." }}</p>
+                    <a href="{% url 'generate_ai_report' report.journey.id %}" class="btn btn-primary">
+                        <i class="fas fa-redo"></i> Retry Generation
+                    </a>
+                </div>
+            
+            <!-- ===== COMPLETED STATE ===== -->
+            {% else %}
+                
+                <!-- Summary -->
+                {% if report.summary %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-align-left"></i>
+                            Executive Summary
+                        </div>
+                        <div class="section-content">
+                            {{ report.summary|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Full Report Content -->
+                {% if report.report_content %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-file-alt"></i>
+                            Full Report
+                        </div>
+                        <div class="section-content">
+                            {{ report.report_content|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Insights -->
+                {% if report.insights %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-chart-line"></i>
+                            Key Insights
+                        </div>
+                        <div class="insights-grid">
+                            {% for key, value in report.insights.items %}
+                                <div class="insight-item">
+                                    <div class="insight-value">{{ value }}</div>
+                                    <div class="insight-label">{{ key|title|replace:"_| " }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Recommendations -->
+                {% if report.recommendations %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-lightbulb"></i>
+                            Recommendations
+                        </div>
+                        <div class="section-content" style="padding: 8px 20px;">
+                            {% for recommendation in report.recommendations %}
+                                <div class="recommendation-item">
+                                    <span class="rec-icon">💡</span>
+                                    <span class="rec-text">{{ recommendation }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Metrics -->
+                {% if report.metrics %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Progress Metrics
+                        </div>
+                        <div class="insights-grid">
+                            {% for key, value in report.metrics.items %}
+                                <div class="insight-item">
+                                    <div class="insight-value">{{ value }}</div>
+                                    <div class="insight-label">{{ key|title|replace:"_| " }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Progress Data -->
+                {% if report.progress_data %}
+                    <div class="report-section">
+                        <div class="section-title">
+                            <i class="fas fa-chart-pie"></i>
+                            Progress Analysis
+                        </div>
+                        <div class="section-content">
+                            {{ report.progress_data|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="report-actions">
+                    <button class="btn btn-download-report" onclick="alert('In production, this would download the report.')">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <a href="{% url 'generate_ai_report' report.journey.id %}" class="btn btn-new-report">
+                        <i class="fas fa-redo"></i> Generate New
+                    </a>
+                    <a href="{% url 'journey_detail' report.journey.slug %}" class="btn btn-back-journey">
+                        <i class="fas fa-arrow-left"></i> Back to Journey
+                    </a>
+                </div>
+                
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

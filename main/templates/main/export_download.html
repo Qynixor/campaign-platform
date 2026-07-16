@@ -1,0 +1,333 @@
+<!-- templates/main/export_download.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Export Ready | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .download-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 60px 20px 40px;
+        text-align: center;
+    }
+    
+    .download-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 48px 32px;
+    }
+    
+    .download-icon {
+        font-size: 72px;
+        color: var(--accent);
+        margin-bottom: 16px;
+        animation: bounce 1s ease infinite;
+    }
+    
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+    
+    .download-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .download-subtitle {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+    
+    .export-details {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+        text-align: left;
+        border: 1px solid var(--border-color);
+    }
+    
+    .export-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .export-details .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .export-details .detail-row .label {
+        color: var(--text-secondary);
+    }
+    
+    .export-details .detail-row .value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .export-details .detail-row .value.text-success {
+        color: #10b981;
+    }
+    
+    .export-details .detail-row .value.text-warning {
+        color: #f59e0b;
+    }
+    
+    .btn-group-download {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 8px;
+    }
+    
+    .btn-group-download .btn {
+        flex: 1;
+        min-width: 160px;
+        padding: 14px 24px;
+        font-weight: 600;
+        border-radius: 12px;
+        font-size: 16px;
+    }
+    
+    .btn-download-main {
+        background: #10b981;
+        color: #fff;
+        border: none;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-download-main:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        color: #fff;
+    }
+    
+    .btn-download-main i {
+        font-size: 18px;
+    }
+    
+    .btn-download-main:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .btn-download-secondary {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-download-secondary:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    .expiry-alert {
+        background: rgba(245, 158, 11, 0.06);
+        border: 1px solid rgba(245, 158, 11, 0.12);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin: 16px 0 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .expiry-alert i {
+        color: #f59e0b;
+        font-size: 18px;
+    }
+    
+    .expiry-alert strong {
+        color: var(--text-primary);
+    }
+    
+    .file-info {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin: 16px 0;
+        flex-wrap: wrap;
+    }
+    
+    .file-info .info-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .file-info .info-item i {
+        color: var(--accent);
+    }
+    
+    @media (max-width: 768px) {
+        .download-container {
+            padding: 40px 16px 30px;
+        }
+        
+        .download-card {
+            padding: 32px 20px;
+        }
+        
+        .download-title {
+            font-size: 24px;
+        }
+        
+        .download-icon {
+            font-size: 56px;
+        }
+        
+        .btn-group-download .btn {
+            flex: 1 1 100%;
+        }
+        
+        .export-details .detail-row {
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .file-info {
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="download-container">
+    <div class="download-card">
+        
+        <!-- Icon -->
+        <div class="download-icon">
+            <i class="fas fa-file-export"></i>
+        </div>
+        
+        <!-- Title -->
+        <h1 class="download-title">Export Ready! 🎉</h1>
+        <p class="download-subtitle">
+            Your journey export has been generated and is ready for download.
+        </p>
+        
+        <!-- Export Details -->
+        <div class="export-details">
+            <div class="detail-row">
+                <span class="label">Journey</span>
+                <span class="value">{{ export.journey.title }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Format</span>
+                <span class="value">{{ export.get_format_display }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">File Size</span>
+                <span class="value">
+                    {% if export.file_size %}
+                        {{ export.file_size|filesizeformat }}
+                    {% else %}
+                        <span class="text-warning">Processing...</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Generated</span>
+                <span class="value">{{ export.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Expires</span>
+                <span class="value">
+                    {{ export.expires_at|date:"M d, Y" }}
+                    ({{ export.expires_at|timeuntil }})
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Status</span>
+                <span class="value text-success">
+                    <i class="fas fa-check-circle"></i> Ready
+                </span>
+            </div>
+        </div>
+        
+        <!-- File Info -->
+        <div class="file-info">
+            <span class="info-item">
+                <i class="fas fa-check-circle"></i>
+                Includes: 
+                {% if export.include_media %}Media, {% endif %}
+                {% if export.include_reflections %}Reflections, {% endif %}
+                {% if export.include_comments %}Comments{% endif %}
+                {% if not export.include_media and not export.include_reflections and not export.include_comments %}
+                    Content Only
+                {% endif %}
+            </span>
+            <span class="info-item">
+                <i class="fas fa-download"></i>
+                Downloaded {{ export.download_count }} time{{ export.download_count|pluralize }}
+            </span>
+        </div>
+        
+        <!-- Expiry Alert -->
+        <div class="expiry-alert">
+            <i class="fas fa-clock"></i>
+            <span>
+                <strong>Download soon!</strong>
+                This export will expire in {{ export.expires_at|timeuntil }}.
+            </span>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="btn-group-download">
+            <a href="#" class="btn btn-download-main" onclick="alert('In production, this would download the file.')">
+                <i class="fas fa-download"></i> Download Export
+            </a>
+            <a href="{% url 'journey_detail' export.journey.slug %}" class="btn btn-download-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Journey
+            </a>
+        </div>
+        
+        <!-- Request New -->
+        <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+            <i class="fas fa-sync"></i>
+            Need a different format? 
+            <a href="{% url 'request_export' export.journey.id %}" style="color: var(--accent);">
+                Request new export
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

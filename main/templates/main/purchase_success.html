@@ -1,0 +1,376 @@
+<!-- templates/main/purchase_success.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Purchase Successful! | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 60px 20px 40px;
+        text-align: center;
+    }
+    
+    .success-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 48px 32px;
+    }
+    
+    .success-icon {
+        font-size: 72px;
+        color: #10b981;
+        margin-bottom: 16px;
+        animation: scaleIn 0.6s ease;
+    }
+    
+    @keyframes scaleIn {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.2);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .success-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .success-subtitle {
+        font-size: 16px;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+    
+    .purchase-details {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+        text-align: left;
+        border: 1px solid var(--border-color);
+    }
+    
+    .purchase-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .purchase-details .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .purchase-details .detail-row .label {
+        color: var(--text-secondary);
+    }
+    
+    .purchase-details .detail-row .value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .purchase-details .detail-row .value.text-success {
+        color: #10b981;
+    }
+    
+    .product-icon-large {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .next-steps {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 24px 0;
+        text-align: left;
+    }
+    
+    .next-steps h6 {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .next-steps ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .next-steps ul li {
+        padding: 6px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .next-steps ul li i {
+        color: var(--accent);
+        width: 18px;
+        font-size: 14px;
+    }
+    
+    .btn-group-success {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 8px;
+    }
+    
+    .btn-group-success .btn {
+        flex: 1;
+        min-width: 160px;
+        padding: 12px 24px;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+    
+    .confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        overflow: hidden;
+    }
+    
+    .confetti-piece {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        top: -10px;
+        animation: confettiFall linear forwards;
+    }
+    
+    @keyframes confettiFall {
+        0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .success-container {
+            padding: 40px 16px 30px;
+        }
+        
+        .success-card {
+            padding: 32px 20px;
+        }
+        
+        .success-title {
+            font-size: 24px;
+        }
+        
+        .btn-group-success .btn {
+            flex: 1 1 100%;
+        }
+        
+        .purchase-details .detail-row {
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .success-icon {
+            font-size: 56px;
+        }
+        
+        .product-icon-large {
+            font-size: 40px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-card">
+        
+        <!-- Success Icon -->
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <!-- Title -->
+        <h1 class="success-title">Purchase Successful! 🎉</h1>
+        <p class="success-subtitle">
+            You have successfully purchased <strong>{{ purchase.product.name }}</strong>
+        </p>
+        
+        <!-- Product Icon -->
+        <span class="product-icon-large">
+            {% if purchase.product.product_type == 'export' %}
+                📄
+            {% elif purchase.product.product_type == 'theme' %}
+                🎨
+            {% elif purchase.product.product_type == 'storage' %}
+                💾
+            {% elif purchase.product.product_type == 'ai_report' %}
+                🤖
+            {% else %}
+                📦
+            {% endif %}
+        </span>
+        
+        <!-- Purchase Details -->
+        <div class="purchase-details">
+            <div class="detail-row">
+                <span class="label">Product</span>
+                <span class="value">{{ purchase.product.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Amount Paid</span>
+                <span class="value">${{ purchase.amount_paid }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Payment Type</span>
+                <span class="value">
+                    {% if purchase.product.payment_type == 'one_time' %}
+                        One-Time
+                    {% elif purchase.product.payment_type == 'monthly' %}
+                        Monthly
+                    {% elif purchase.product.payment_type == 'per_report' %}
+                        Per Report
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Purchase Date</span>
+                <span class="value">{{ purchase.purchased_at|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Status</span>
+                <span class="value text-success">
+                    <i class="fas fa-check-circle"></i> Completed
+                </span>
+            </div>
+        </div>
+        
+        <!-- Next Steps -->
+        <div class="next-steps">
+            <h6><i class="fas fa-rocket" style="color: var(--accent);"></i> What's Next?</h6>
+            <ul>
+                {% if purchase.product.product_type == 'export' %}
+                    <li>
+                        <i class="fas fa-file-export"></i>
+                        Go to your journey and request an export
+                    </li>
+                    <li>
+                        <i class="fas fa-download"></i>
+                        Download your journey in your preferred format
+                    </li>
+                {% elif purchase.product.product_type == 'theme' %}
+                    <li>
+                        <i class="fas fa-palette"></i>
+                        Customize your journey with your new theme
+                    </li>
+                    <li>
+                        <i class="fas fa-paint-brush"></i>
+                        Choose colors, fonts, and layout
+                    </li>
+                {% elif purchase.product.product_type == 'storage' %}
+                    <li>
+                        <i class="fas fa-hdd"></i>
+                        You now have {{ purchase.product.storage_amount_mb }}MB extra storage
+                    </li>
+                    <li>
+                        <i class="fas fa-upload"></i>
+                        Upload more media to your journeys
+                    </li>
+                {% elif purchase.product.product_type == 'ai_report' %}
+                    <li>
+                        <i class="fas fa-robot"></i>
+                        Generate an AI progress report for any journey
+                    </li>
+                    <li>
+                        <i class="fas fa-chart-line"></i>
+                        Get insights and recommendations
+                    </li>
+                {% else %}
+                    <li>
+                        <i class="fas fa-check"></i>
+                        Your purchase has been applied to your account
+                    </li>
+                {% endif %}
+                <li>
+                    <i class="fas fa-envelope"></i>
+                    Check your email for confirmation receipt
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="btn-group-success">
+            <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+            </a>
+            <a href="{% url 'product_list' %}" class="btn btn-outline">
+                <i class="fas fa-shopping-bag"></i> Browse More
+            </a>
+        </div>
+        
+        <!-- Billing Info -->
+        <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+            <i class="fas fa-info-circle"></i>
+            A confirmation receipt has been sent to your email address.
+        </div>
+    </div>
+</div>
+
+<!-- Confetti Animation -->
+<div class="confetti" id="confetti"></div>
+
+<script>
+    // Simple confetti effect
+    document.addEventListener('DOMContentLoaded', function() {
+        const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+        const container = document.getElementById('confetti');
+        
+        for (let i = 0; i < 50; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = Math.random() * 100 + '%';
+            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.width = (Math.random() * 8 + 4) + 'px';
+            piece.style.height = (Math.random() * 8 + 4) + 'px';
+            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+            piece.style.animationDelay = (Math.random() * 2) + 's';
+            container.appendChild(piece);
+        }
+        
+        // Remove confetti after animation
+        setTimeout(() => {
+            container.style.display = 'none';
+        }, 4000);
+    });
+</script>
+{% endblock %}

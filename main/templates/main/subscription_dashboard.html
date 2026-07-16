@@ -1,0 +1,704 @@
+<!-- templates/main/subscription_dashboard.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Dashboard | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .billing-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .billing-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    
+    .billing-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .billing-header p {
+        font-size: 16px;
+        color: var(--text-secondary);
+    }
+    
+    .billing-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+    
+    .billing-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .billing-card .card-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .billing-card .card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .billing-card .card-header h5 i {
+        color: var(--accent);
+    }
+    
+    .billing-card .card-body {
+        padding: 24px;
+    }
+    
+    /* Subscription Status */
+    .subscription-status {
+        text-align: center;
+        padding: 20px 0;
+    }
+    
+    .subscription-status .status-icon {
+        font-size: 56px;
+        margin-bottom: 12px;
+    }
+    
+    .subscription-status .status-icon.active {
+        color: #10b981;
+    }
+    
+    .subscription-status .status-icon.inactive {
+        color: var(--text-muted);
+    }
+    
+    .subscription-status .plan-name {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .subscription-status .plan-price {
+        font-size: 18px;
+        color: var(--text-secondary);
+        margin: 4px 0;
+    }
+    
+    .subscription-status .plan-price strong {
+        color: var(--text-primary);
+    }
+    
+    .subscription-status .status-badge {
+        display: inline-block;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+    
+    .status-badge.active {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .status-badge.inactive {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+    
+    .status-badge.pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    .subscription-details {
+        margin-top: 16px;
+        text-align: left;
+    }
+    
+    .subscription-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+    }
+    
+    .subscription-details .detail-row:last-child {
+        border-bottom: none;
+    }
+    
+    .subscription-details .detail-row .label {
+        color: var(--text-secondary);
+    }
+    
+    .subscription-details .detail-row .value {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .subscription-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+    
+    .subscription-actions .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 16px;
+        font-weight: 600;
+        border-radius: 10px;
+        font-size: 14px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-upgrade {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .btn-upgrade:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        color: #fff;
+    }
+    
+    .btn-cancel {
+        background: transparent;
+        color: #ef4444;
+        border: 1px solid #ef4444;
+        transition: all 0.2s;
+    }
+    
+    .btn-cancel:hover {
+        background: #ef4444;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+    }
+    
+    .btn-manage {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+    
+    .btn-manage:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+    
+    .btn-primary-billing {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary-billing:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        color: #fff;
+    }
+    
+    /* Purchase History */
+    .purchase-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .purchase-item:last-child {
+        border-bottom: none;
+    }
+    
+    .purchase-item .purchase-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .purchase-item .purchase-info .purchase-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+    }
+    
+    .purchase-item .purchase-info .purchase-icon i {
+        font-size: 16px;
+        color: var(--text-secondary);
+        opacity: 0.7;
+    }
+    
+    .purchase-item .purchase-info .purchase-details .purchase-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .purchase-item .purchase-info .purchase-details .purchase-date {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    .purchase-item .purchase-amount {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 15px;
+    }
+    
+    .purchase-item .purchase-status {
+        font-size: 12px;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .purchase-status.completed {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
+    }
+    
+    .purchase-status.pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    .purchase-status.failed {
+        background: rgba(239, 68, 68, 0.12);
+        color: #ef4444;
+    }
+    
+    /* Quick Stats */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .quick-stat {
+        text-align: center;
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .quick-stat .stat-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .quick-stat .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 30px 20px;
+    }
+    
+    .empty-state .empty-icon {
+        font-size: 40px;
+        color: var(--text-muted);
+        opacity: 0.3;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state h6 {
+        font-size: 16px;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .empty-state p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+    }
+    
+    @media (max-width: 768px) {
+        .billing-container {
+            padding: 24px 16px;
+        }
+        
+        .billing-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .quick-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .billing-header h1 {
+            font-size: 26px;
+        }
+        
+        .subscription-actions .btn {
+            flex: 1 1 100%;
+        }
+        
+        .purchase-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .purchase-item .purchase-amount {
+            align-self: flex-end;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .quick-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .subscription-status .plan-name {
+            font-size: 18px;
+        }
+        
+        .subscription-details .detail-row {
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="billing-container">
+    
+    <!-- Header -->
+    <div class="billing-header">
+        <h1><i class="fas fa-credit-card" style="color: var(--accent);"></i> Payment Dashboard</h1>
+        <p>Manage your subscriptions, purchases, and billing</p>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="quick-stat">
+            <div class="stat-number">{{ recent_purchases|length }}</div>
+            <div class="stat-label">Total Purchases</div>
+        </div>
+        <div class="quick-stat">
+            <div class="stat-number">
+                {% if subscription %}
+                    <i class="fas fa-check-circle" style="color: #10b981; font-size: 20px;"></i>
+                {% else %}
+                    <i class="fas fa-times-circle" style="color: #ef4444; font-size: 20px;"></i>
+                {% endif %}
+            </div>
+            <div class="stat-label">Subscription Status</div>
+        </div>
+        <div class="quick-stat">
+            <div class="stat-number">{{ storage_info.total }}MB</div>
+            <div class="stat-label">Total Storage</div>
+        </div>
+    </div>
+    
+    <!-- Billing Grid -->
+    <div class="billing-grid">
+        
+        <!-- Subscription Card -->
+        <div class="billing-card">
+            <div class="card-header">
+                <h5><i class="fas fa-crown" style="color: #f59e0b;"></i> Subscription</h5>
+                {% if subscription %}
+                    <span class="status-badge active">
+                        <i class="fas fa-check-circle"></i> Active
+                    </span>
+                {% else %}
+                    <span class="status-badge inactive">
+                        <i class="fas fa-times-circle"></i> Inactive
+                    </span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if subscription %}
+                    <div class="subscription-status">
+                        <div class="status-icon active">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="plan-name">{{ subscription.plan.name }}</div>
+                        <div class="plan-price">
+                            <strong>${{ subscription.plan.price }}</strong>
+                            /{{ subscription.plan.get_plan_type_display }}
+                        </div>
+                        <div class="subscription-details">
+                            <div class="detail-row">
+                                <span class="label">Status</span>
+                                <span class="value" style="color: #10b981;">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Started</span>
+                                <span class="value">{{ subscription.start_date|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Renews</span>
+                                <span class="value">{{ subscription.end_date|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Time Remaining</span>
+                                <span class="value">{{ subscription.end_date|timeuntil }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Auto-Renew</span>
+                                <span class="value">
+                                    {% if subscription.auto_renew %}
+                                        <i class="fas fa-check-circle" style="color: #10b981;"></i> Enabled
+                                    {% else %}
+                                        <i class="fas fa-times-circle" style="color: #ef4444;"></i> Disabled
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Storage</span>
+                                <span class="value">{{ subscription.plan.storage_limit_mb }}MB</span>
+                            </div>
+                        </div>
+                        <div class="subscription-actions">
+                            <a href="{% url 'cancel_subscription' subscription.id %}" class="btn btn-cancel">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <a href="{% url 'subscription_plans' %}" class="btn btn-manage">
+                                <i class="fas fa-sync"></i> Change Plan
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="subscription-status">
+                        <div class="status-icon inactive">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="plan-name" style="color: var(--text-secondary);">No Active Subscription</div>
+                        <div class="plan-price" style="font-size: 14px;">
+                            Upgrade to Rallynex Plus for premium features
+                        </div>
+                        <div class="subscription-actions" style="justify-content: center;">
+                            <a href="{% url 'subscription_plans' %}" class="btn btn-upgrade">
+                                <i class="fas fa-rocket"></i> View Plans
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Storage Card -->
+        <div class="billing-card">
+            <div class="card-header">
+                <h5><i class="fas fa-hdd"></i> Storage</h5>
+                <span class="badge" style="background: var(--accent); color: #fff; padding: 2px 12px; border-radius: 12px; font-size: 12px;">
+                    {{ storage_info.total }}MB
+                </span>
+            </div>
+            <div class="card-body">
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary);">
+                        <span>Used: {{ storage_info.used }}MB</span>
+                        <span>Available: {{ storage_info.total|add:storage_info.used|default:storage_info.total }}MB</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; margin-top: 4px;">
+                        <div style="height: 100%; background: var(--accent); border-radius: 4px; width: {% if storage_info.total > 0 %}{{ storage_info.used|divisibleby:storage_info.total|floatformat:0 }}{% else %}0{% endif %}%;"></div>
+                    </div>
+                </div>
+                
+                {% if subscription %}
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); padding: 8px 12px; background: rgba(16, 185, 129, 0.06); border-radius: 8px; margin-bottom: 12px;">
+                        <i class="fas fa-crown" style="color: #f59e0b;"></i>
+                        <span><strong>{{ subscription.plan.storage_limit_mb }}MB</strong> included with your plan</span>
+                    </div>
+                {% endif %}
+                
+                <a href="{% url 'storage_dashboard' %}" class="btn btn-manage" style="width: 100%; justify-content: center;">
+                    <i class="fas fa-chart-pie"></i> Manage Storage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Purchases -->
+    <div class="billing-card">
+        <div class="card-header">
+            <h5><i class="fas fa-shopping-bag"></i> Recent Purchases</h5>
+            <a href="{% url 'product_list' %}" class="btn btn-sm btn-primary-billing" style="font-size: 12px; padding: 4px 16px;">
+                <i class="fas fa-plus"></i> New Purchase
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_purchases %}
+                {% for purchase in recent_purchases %}
+                    <div class="purchase-item">
+                        <div class="purchase-info">
+                            <div class="purchase-icon">
+                                {% if purchase.product.product_type == 'export' %}
+                                    <i class="fas fa-file-export"></i>
+                                {% elif purchase.product.product_type == 'theme' %}
+                                    <i class="fas fa-palette"></i>
+                                {% elif purchase.product.product_type == 'storage' %}
+                                    <i class="fas fa-hdd"></i>
+                                {% elif purchase.product.product_type == 'ai_report' %}
+                                    <i class="fas fa-robot"></i>
+                                {% else %}
+                                    <i class="fas fa-box"></i>
+                                {% endif %}
+                            </div>
+                            <div class="purchase-details">
+                                <div class="purchase-name">{{ purchase.product.name }}</div>
+                                <div class="purchase-date">{{ purchase.purchased_at|date:"M d, Y H:i" }}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span class="purchase-amount">${{ purchase.amount_paid }}</span>
+                            <span class="purchase-status {{ purchase.status }}">
+                                {{ purchase.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <h6>No Purchases Yet</h6>
+                    <p>Browse our one-time products to enhance your journey.</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-primary-billing">
+                        <i class="fas fa-shopping-cart"></i> Browse Products
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- AI Reports -->
+    {% if ai_reports %}
+        <div class="billing-card">
+            <div class="card-header">
+                <h5><i class="fas fa-robot"></i> AI Progress Reports</h5>
+                <a href="{% url 'product_list' %}" class="btn btn-sm btn-primary-billing" style="font-size: 12px; padding: 4px 16px;">
+                    <i class="fas fa-plus"></i> Generate New
+                </a>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    {% for report in ai_reports|slice:":6" %}
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                <strong style="font-size: 14px; color: var(--text-primary);">{{ report.report_title|truncatechars:25 }}</strong>
+                                <span class="badge-status {% if report.status == 'completed' %}active{% elif report.status == 'generating' %}pending{% else %}expired{% endif %}" 
+                                      style="font-size: 10px; padding: 2px 8px;">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                {{ report.journey.title|truncatechars:20 }}
+                                <span style="margin: 0 4px;">·</span>
+                                {{ report.created_at|timesince }} ago
+                            </div>
+                            {% if report.status == 'completed' %}
+                                <a href="{% url 'view_ai_report' report.id %}" style="font-size: 12px; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 6px;">
+                                    <i class="fas fa-eye"></i> View Report
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">
+                            No AI reports generated yet.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Recent Exports -->
+    {% if recent_exports %}
+        <div class="billing-card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-export"></i> Recent Exports</h5>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    {% for export in recent_exports|slice:":6" %}
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px;">
+                            <div style="font-weight: 500; font-size: 14px; color: var(--text-primary);">
+                                {{ export.journey.title|truncatechars:20 }}
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                {{ export.get_format_display }} · {{ export.created_at|timesince }} ago
+                            </div>
+                            {% if export.is_valid %}
+                                <a href="{% url 'export_download' export.id %}" style="font-size: 12px; color: var(--accent); text-decoration: none; display: inline-block; margin-top: 4px;">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            {% else %}
+                                <span style="font-size: 12px; color: #ef4444;">
+                                    <i class="fas fa-clock"></i> Expired
+                                </span>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">
+                            No exports yet.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Back Link -->
+    <div style="text-align: center; margin-top: 12px;">
+        <a href="{% url 'dashboard' %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

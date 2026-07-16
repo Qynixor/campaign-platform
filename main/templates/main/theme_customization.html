@@ -1,0 +1,523 @@
+<!-- templates/main/theme_customization.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customize Theme | Rallynex{% endblock %}
+
+{% block extra_css %}
+<style>
+    .theme-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .theme-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .theme-card .card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .theme-card .card-header h4 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .theme-card .card-header h4 i {
+        color: var(--accent);
+    }
+    
+    .theme-card .card-body {
+        padding: 28px;
+    }
+    
+    .journey-info {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .journey-info .journey-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+    
+    .journey-info .theme-status {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    
+    .journey-info .theme-status i {
+        color: #10b981;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+    }
+    
+    .form-group label .required {
+        color: #ef4444;
+    }
+    
+    .form-group .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+    
+    .form-group .form-control:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-group .form-control select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+    }
+    
+    .form-group .help-text {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
+    .form-group .error-text {
+        font-size: 13px;
+        color: #ef4444;
+        margin-top: 4px;
+    }
+    
+    .color-input-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .color-input-group input[type="color"] {
+        width: 44px;
+        height: 44px;
+        padding: 2px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        background: var(--bg-secondary);
+    }
+    
+    .color-input-group input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 2px;
+    }
+    
+    .color-input-group input[type="color"]::-webkit-color-swatch {
+        border-radius: 4px;
+        border: none;
+    }
+    
+    .color-input-group .color-hex {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-family: monospace;
+    }
+    
+    .color-preview-box {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 24px 0;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .color-preview-box h6 {
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    
+    .color-preview-box .preview-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .color-preview-box .preview-row .preview-color {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        border: 2px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .color-preview-box .preview-row .preview-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+    
+    .btn-save-theme {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.2s;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-save-theme:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-save-theme:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .theme-presets {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .theme-preset {
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--bg-secondary);
+    }
+    
+    .theme-preset:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+    
+    .theme-preset.active {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.05);
+    }
+    
+    .theme-preset .preset-colors {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin-bottom: 6px;
+    }
+    
+    .theme-preset .preset-colors span {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+    }
+    
+    .theme-preset .preset-name {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+    
+    @media (max-width: 768px) {
+        .theme-container {
+            padding: 24px 16px;
+        }
+        
+        .theme-card .card-body {
+            padding: 20px;
+        }
+        
+        .theme-presets {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .journey-info {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .theme-presets {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .color-input-group {
+            flex-wrap: wrap;
+        }
+        
+        .color-preview-box .preview-row {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="theme-container">
+    <div class="theme-card">
+        
+        <!-- Header -->
+        <div class="card-header">
+            <h4>
+                <i class="fas fa-palette"></i>
+                Customize Theme
+            </h4>
+            <span class="badge" style="background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px;">
+                <i class="fas fa-check"></i> Purchased
+            </span>
+        </div>
+        
+        <!-- Body -->
+        <div class="card-body">
+            
+            <!-- Journey Info -->
+            <div class="journey-info">
+                <div class="journey-title">{{ journey.title }}</div>
+                <div class="theme-status">
+                    <i class="fas fa-paint-brush"></i>
+                    {% if theme.is_default %}
+                        Default Theme Applied
+                    {% else %}
+                        Custom Theme Active
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Theme Presets -->
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 500; font-size: 14px; color: var(--text-primary); margin-bottom: 8px; display: block;">
+                    Quick Presets
+                </label>
+                <div class="theme-presets">
+                    <div class="theme-preset active" data-preset="default" onclick="applyPreset('default')">
+                        <div class="preset-colors">
+                            <span style="background: #3B82F6;"></span>
+                            <span style="background: #6366F1;"></span>
+                            <span style="background: #FFFFFF;"></span>
+                            <span style="background: #1F2937;"></span>
+                        </div>
+                        <span class="preset-name">Default</span>
+                    </div>
+                    <div class="theme-preset" data-preset="dark" onclick="applyPreset('dark')">
+                        <div class="preset-colors">
+                            <span style="background: #8B5CF6;"></span>
+                            <span style="background: #6D28D9;"></span>
+                            <span style="background: #1F2937;"></span>
+                            <span style="background: #F3F4F6;"></span>
+                        </div>
+                        <span class="preset-name">Dark</span>
+                    </div>
+                    <div class="theme-preset" data-preset="vibrant" onclick="applyPreset('vibrant')">
+                        <div class="preset-colors">
+                            <span style="background: #EF4444;"></span>
+                            <span style="background: #F59E0B;"></span>
+                            <span style="background: #FEF2F2;"></span>
+                            <span style="background: #1F2937;"></span>
+                        </div>
+                        <span class="preset-name">Vibrant</span>
+                    </div>
+                    <div class="theme-preset" data-preset="pastel" onclick="applyPreset('pastel')">
+                        <div class="preset-colors">
+                            <span style="background: #F472B6;"></span>
+                            <span style="background: #60A5FA;"></span>
+                            <span style="background: #FDF2F8;"></span>
+                            <span style="background: #4B5563;"></span>
+                        </div>
+                        <span class="preset-name">Pastel</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form -->
+            <form method="post" id="themeForm">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.field.required %}
+                                <span class="required">*</span>
+                            {% endif %}
+                        </label>
+                        
+                        {% if field.field.widget.input_type == 'color' %}
+                            <div class="color-input-group">
+                                {{ field }}
+                                <span class="color-hex" id="{{ field.id_for_label }}_hex">
+                                    {{ field.value|default:'#000000' }}
+                                </span>
+                            </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <div class="error-text">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <!-- Live Preview -->
+                <div class="color-preview-box" id="previewBox">
+                    <h6>Live Preview</h6>
+                    <div class="preview-row">
+                        <div class="preview-color" id="previewColor1" style="background: #3B82F6;"></div>
+                        <div class="preview-color" id="previewColor2" style="background: #6366F1;"></div>
+                        <div class="preview-color" id="previewColor3" style="background: #FFFFFF; border-color: #ddd;"></div>
+                        <div class="preview-color" id="previewColor4" style="background: #1F2937;"></div>
+                        <span class="preview-text">Your theme colors will appear here</span>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-save-theme">
+                    <i class="fas fa-save"></i> Save Theme
+                </button>
+            </form>
+            
+            <!-- Back Link -->
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="{% url 'journey_detail' journey.slug %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Back to Journey
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Live color preview
+    document.querySelectorAll('input[type="color"]').forEach(input => {
+        input.addEventListener('input', function() {
+            // Update hex display
+            const hexDisplay = document.getElementById(this.id + '_hex');
+            if (hexDisplay) {
+                hexDisplay.textContent = this.value;
+            }
+            
+            // Update preview
+            const previewId = this.id.replace('id_', 'preview');
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.style.background = this.value;
+            }
+        });
+    });
+    
+    // Apply preset
+    function applyPreset(preset) {
+        // Remove active class from all presets
+        document.querySelectorAll('.theme-preset').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // Add active class to selected
+        const selected = document.querySelector(`.theme-preset[data-preset="${preset}"]`);
+        if (selected) {
+            selected.classList.add('active');
+        }
+        
+        const presets = {
+            'default': {
+                primary: '#3B82F6',
+                secondary: '#6366F1',
+                background: '#FFFFFF',
+                text: '#1F2937'
+            },
+            'dark': {
+                primary: '#8B5CF6',
+                secondary: '#6D28D9',
+                background: '#1F2937',
+                text: '#F3F4F6'
+            },
+            'vibrant': {
+                primary: '#EF4444',
+                secondary: '#F59E0B',
+                background: '#FEF2F2',
+                text: '#1F2937'
+            },
+            'pastel': {
+                primary: '#F472B6',
+                secondary: '#60A5FA',
+                background: '#FDF2F8',
+                text: '#4B5563'
+            }
+        };
+        
+        const colors = presets[preset];
+        if (colors) {
+            document.getElementById('id_primary_color').value = colors.primary;
+            document.getElementById('id_secondary_color').value = colors.secondary;
+            document.getElementById('id_background_color').value = colors.background;
+            document.getElementById('id_text_color').value = colors.text;
+            
+            // Update hex displays
+            document.querySelectorAll('input[type="color"]').forEach(input => {
+                const hexDisplay = document.getElementById(input.id + '_hex');
+                if (hexDisplay) {
+                    hexDisplay.textContent = input.value;
+                }
+            });
+            
+            // Update preview
+            document.getElementById('previewColor1').style.background = colors.primary;
+            document.getElementById('previewColor2').style.background = colors.secondary;
+            document.getElementById('previewColor3').style.background = colors.background;
+            document.getElementById('previewColor4').style.background = colors.text;
+        }
+    }
+</script>
+{% endblock %}
