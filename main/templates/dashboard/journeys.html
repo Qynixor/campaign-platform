@@ -5,44 +5,158 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       MY JOURNEYS - PROFESSIONAL
+       ============================================ */
+    
     .main-content-wrapper {
         padding: 40px 0;
+        background: var(--bg-primary);
+        min-height: calc(100vh - 200px);
     }
     
     .journeys-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 30px 20px;
+        padding: 0 24px;
     }
     
+    /* ----- Header ----- */
     .journeys-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
         flex-wrap: wrap;
         gap: 20px;
     }
     
+    .journeys-header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
     .journeys-title {
-        font-size: 28px;
+        font-size: 30px;
         font-weight: 700;
         color: var(--text-primary);
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .journeys-title i {
+        color: var(--accent);
+        font-size: 28px;
+        opacity: 0.8;
+    }
+    
+    .journeys-title .count-badge {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        padding: 2px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
     }
     
     .journeys-subtitle {
         color: var(--text-secondary);
+        font-size: 15px;
+        font-weight: 400;
+        padding-left: 40px;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .header-actions .btn {
+        padding: 10px 24px;
         font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* ----- Stats Summary ----- */
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    
+    .summary-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px 24px;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .summary-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .summary-card:hover::before {
+        opacity: 1;
+    }
+    
+    .summary-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    }
+    
+    .summary-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    
+    .summary-label {
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 500;
         margin-top: 4px;
     }
     
+    .summary-card .summary-icon {
+        font-size: 20px;
+        color: var(--accent);
+        opacity: 0.6;
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    /* ----- Filter Tabs ----- */
     .filter-tabs {
         display: flex;
         gap: 8px;
         margin-bottom: 24px;
+        flex-wrap: wrap;
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 16px;
-        flex-wrap: wrap;
     }
     
     .filter-tab {
@@ -54,7 +168,17 @@
         font-weight: 500;
         cursor: pointer;
         border-radius: 30px;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    /* Icon styles - black/dark */
+    .filter-tab i {
+        font-size: 14px;
+        color: var(--text-primary);
+        transition: color 0.2s ease;
     }
     
     .filter-tab:hover {
@@ -62,11 +186,44 @@
         background: var(--bg-secondary);
     }
     
+    .filter-tab:hover i {
+        color: var(--text-primary);
+    }
+    
     .filter-tab.active {
         background: var(--accent);
         color: #fff;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
     }
     
+    .filter-tab.active i {
+        color: #fff !important;
+    }
+    
+    .filter-tab .tab-count {
+        font-size: 11px;
+        background: var(--bg-secondary);
+        padding: 1px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    
+    .filter-tab.active .tab-count {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+    }
+    
+    /* Dark mode support for icons */
+    [data-theme="dark"] .filter-tab i {
+        color: #e5e7eb;
+    }
+    
+    [data-theme="dark"] .filter-tab.active i {
+        color: #fff !important;
+    }
+    
+    /* ----- Journey List ----- */
     .journey-list {
         display: flex;
         flex-direction: column;
@@ -77,24 +234,47 @@
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         border-radius: 16px;
-        padding: 24px;
+        padding: 20px 24px;
         display: flex;
         align-items: center;
         gap: 24px;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         cursor: pointer;
+        position: relative;
+    }
+    
+    .journey-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 0 4px 4px 0;
+        background: var(--accent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .journey-item:hover::before {
+        opacity: 1;
     }
     
     .journey-item:hover {
         border-color: var(--accent);
-        background: var(--bg-secondary);
         transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    }
+    
+    .journey-item.milestone-item::before {
+        background: #8b5cf6;
     }
     
     .journey-item.milestone-item:hover {
         border-color: #8b5cf6;
     }
     
+    /* ----- Journey Cover ----- */
     .journey-cover {
         width: 100px;
         height: 100px;
@@ -106,30 +286,39 @@
         align-items: center;
         justify-content: center;
         position: relative;
+        border: 1px solid var(--border-color);
     }
     
     .journey-cover img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform 0.3s ease;
     }
     
-    .journey-cover i {
-        font-size: 40px;
+    .journey-item:hover .journey-cover img {
+        transform: scale(1.05);
+    }
+    
+    .journey-cover .cover-placeholder {
+        font-size: 36px;
         color: var(--text-muted);
+        opacity: 0.3;
     }
     
     .journey-type-indicator {
         position: absolute;
-        bottom: 6px;
-        right: 6px;
-        width: 24px;
-        height: 24px;
+        bottom: -2px;
+        right: -2px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 12px;
+        border: 2px solid var(--card-bg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     
     .journey-type-indicator.daily {
@@ -142,6 +331,7 @@
         color: #fff;
     }
     
+    /* ----- Journey Info ----- */
     .journey-info {
         flex: 1;
         min-width: 200px;
@@ -149,95 +339,125 @@
     
     .journey-name {
         font-size: 18px;
-        font-weight: 700;
+        font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 6px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
-        color: var(--text-primary);
     }
     
-    .journey-type-badge {
-        display: inline-block;
-        padding: 4px 10px;
+    .journey-name a {
+        color: inherit;
+        text-decoration: none;
+    }
+    
+    .journey-name a:hover {
+        color: var(--accent);
+    }
+    
+    /* Badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
         border-radius: 30px;
         font-size: 11px;
         font-weight: 600;
+        letter-spacing: 0.02em;
     }
     
-    .type-daily {
+    .badge-type {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .badge-type.daily {
         background: rgba(59, 130, 246, 0.1);
         color: var(--accent);
-        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-color: rgba(59, 130, 246, 0.2);
     }
     
-    .type-milestone {
+    .badge-type.milestone {
         background: rgba(139, 92, 246, 0.1);
         color: #8b5cf6;
-        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-color: rgba(139, 92, 246, 0.2);
     }
     
-    .journey-status {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 30px;
-        font-size: 11px;
-        font-weight: 600;
+    .badge-status {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
     }
     
-    .status-active {
+    .badge-status.active {
         background: rgba(34, 197, 94, 0.1);
         color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-color: rgba(34, 197, 94, 0.2);
     }
     
-    .status-draft {
+    .badge-status.draft {
         background: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-color: rgba(245, 158, 11, 0.2);
     }
     
-    .status-completed {
+    .badge-status.completed {
         background: rgba(59, 130, 246, 0.1);
         color: var(--accent);
-        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-color: rgba(59, 130, 246, 0.2);
     }
     
-    .status-private {
+    .badge-status.private {
         background: rgba(107, 114, 128, 0.1);
         color: #6b7280;
-        border: 1px solid rgba(107, 114, 128, 0.3);
+        border-color: rgba(107, 114, 128, 0.2);
     }
     
-    .status-public {
+    .badge-status.public {
         background: rgba(59, 130, 246, 0.1);
         color: var(--accent);
-        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-color: rgba(59, 130, 246, 0.2);
     }
     
-    .status-unlisted {
+    .badge-status.unlisted {
         background: rgba(245, 158, 11, 0.1);
         color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        border-color: rgba(245, 158, 11, 0.2);
     }
     
+    .badge i {
+        font-size: 11px;
+    }
+    
+    /* Journey Meta */
     .journey-meta {
         display: flex;
         gap: 20px;
         color: var(--text-secondary);
         font-size: 13px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         flex-wrap: wrap;
     }
     
-    .journey-meta i {
-        margin-right: 4px;
-        color: var(--text-muted);
+    .journey-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     
+    .journey-meta i {
+        font-size: 13px;
+        color: var(--text-muted);
+        opacity: 0.6;
+    }
+    
+    /* Progress */
     .journey-progress {
-        max-width: 300px;
+        max-width: 350px;
     }
     
     .progress-header {
@@ -245,189 +465,258 @@
         justify-content: space-between;
         font-size: 12px;
         color: var(--text-secondary);
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
     
     .progress-bar {
         height: 6px;
         background: var(--bg-tertiary);
-        border-radius: 3px;
+        border-radius: 4px;
         overflow: hidden;
     }
     
     .progress-fill {
         height: 100%;
-        background: var(--accent);
-        border-radius: 3px;
-        transition: width 0.3s ease;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6);
+        border-radius: 4px;
+        transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
     
     .progress-bar.milestone .progress-fill {
-        background: #8b5cf6;
+        background: linear-gradient(90deg, #8b5cf6, #a78bfa);
     }
     
+    /* Stats */
     .journey-stats {
         display: flex;
-        gap: 24px;
-        margin-top: 12px;
+        gap: 20px;
+        margin-top: 10px;
         flex-wrap: wrap;
     }
     
     .journey-stat {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         color: var(--text-secondary);
         font-size: 13px;
     }
     
     .journey-stat i {
+        font-size: 13px;
         color: var(--text-muted);
+        opacity: 0.6;
     }
     
+    /* ----- Actions ----- */
     .journey-actions {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-shrink: 0;
         flex-wrap: wrap;
+        margin-left: auto;
     }
     
     .action-btn {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
         background: var(--bg-secondary);
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: var(--text-secondary);
-        transition: all 0.2s;
-        border: none;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
         cursor: pointer;
         text-decoration: none;
+        font-size: 14px;
     }
     
     .action-btn:hover {
         background: var(--bg-tertiary);
         color: var(--text-primary);
+        border-color: var(--border-color);
         transform: translateY(-2px);
     }
     
     .action-btn.danger:hover {
-        background: rgba(239, 68, 68, 0.1);
+        background: rgba(239, 68, 68, 0.08);
         color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.2);
     }
     
+    .action-btn i {
+        font-size: 14px;
+    }
+    
+    /* ----- Empty State ----- */
     .empty-state {
         text-align: center;
         padding: 80px 20px;
         background: var(--card-bg);
-        border: 1px solid var(--border-color);
+        border: 2px dashed var(--border-color);
         border-radius: 20px;
     }
     
     .empty-state i {
         font-size: 64px;
         color: var(--text-muted);
+        opacity: 0.3;
         margin-bottom: 20px;
+        display: block;
     }
     
     .empty-state h3 {
-        font-size: 20px;
-        margin-bottom: 12px;
+        font-size: 22px;
+        font-weight: 600;
         color: var(--text-primary);
+        margin-bottom: 8px;
     }
     
     .empty-state p {
         color: var(--text-secondary);
-        margin-bottom: 24px;
+        font-size: 15px;
+        max-width: 400px;
+        margin: 0 auto 24px;
+        line-height: 1.6;
     }
     
-    .stats-summary {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 30px;
+    .empty-state .btn {
+        padding: 12px 28px;
+        font-size: 15px;
+        font-weight: 600;
     }
     
-    .summary-card {
+    /* ----- Pagination ----- */
+    .pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .pagination-btn {
+        padding: 10px 20px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 20px;
-        text-align: center;
-        transition: all 0.2s;
+        border-radius: 10px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
     
-    .summary-card:hover {
+    .pagination-btn:hover {
         border-color: var(--accent);
+        background: var(--bg-secondary);
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     
-    .summary-value {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 4px;
+    .pagination-current {
+        padding: 10px 20px;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+    
+    .pagination-current strong {
         color: var(--text-primary);
     }
     
-    .summary-label {
-        color: var(--text-secondary);
-        font-size: 13px;
-    }
-    
+    /* ============================================
+       MODAL
+       ============================================ */
     .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
         z-index: 1000;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
+        padding: 20px;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
     
     .modal-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         border-radius: 20px;
-        padding: 32px;
-        max-width: 400px;
-        width: 90%;
+        padding: 40px;
+        max-width: 420px;
+        width: 100%;
         text-align: center;
-        animation: modalSlideIn 0.3s ease;
+        animation: slideUp 0.3s ease;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     }
     
-    @keyframes modalSlideIn {
+    @keyframes slideUp {
         from {
             opacity: 0;
-            transform: translateY(-20px);
+            transform: translateY(20px) scale(0.95);
         }
         to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
         }
     }
     
-    .modal-card i {
+    .modal-card .modal-icon {
         font-size: 48px;
-        margin-bottom: 16px;
         color: #ef4444;
+        margin-bottom: 16px;
+        display: block;
     }
     
     .modal-card h3 {
-        font-size: 20px;
-        margin-bottom: 12px;
+        font-size: 22px;
+        font-weight: 700;
         color: var(--text-primary);
+        margin-bottom: 8px;
     }
     
     .modal-card p {
         color: var(--text-secondary);
-        margin-bottom: 24px;
-        line-height: 1.5;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+    
+    .modal-card .modal-warning {
+        color: #ef4444;
+        font-size: 14px;
+        background: rgba(239, 68, 68, 0.06);
+        padding: 10px 16px;
+        border-radius: 10px;
+        margin: 12px 0 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .modal-actions {
@@ -437,22 +726,34 @@
         flex-wrap: wrap;
     }
     
+    .modal-actions .btn {
+        padding: 12px 28px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 30px;
+        min-width: 120px;
+    }
+    
     .btn-danger {
         background: #ef4444;
         color: #fff;
         border: none;
-        padding: 12px 24px;
-        border-radius: 12px;
-        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .btn-danger:hover {
         background: #dc2626;
         transform: scale(1.02);
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
     }
     
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
     @media (max-width: 1024px) {
         .stats-summary {
             grid-template-columns: repeat(2, 1fr);
@@ -461,30 +762,37 @@
     
     @media (max-width: 768px) {
         .main-content-wrapper {
-            padding: 20px 0;
+            padding: 24px 0;
         }
         
         .journeys-container {
-            padding: 20px 16px;
+            padding: 0 16px;
         }
         
         .journeys-title {
             font-size: 24px;
         }
         
+        .journeys-subtitle {
+            padding-left: 0;
+            font-size: 14px;
+        }
+        
         .journey-item {
             flex-direction: column;
             align-items: flex-start;
+            padding: 16px;
         }
         
         .journey-cover {
             width: 100%;
-            height: 180px;
+            height: 160px;
         }
         
         .journey-actions {
             width: 100%;
             justify-content: flex-end;
+            margin-left: 0;
         }
         
         .stats-summary {
@@ -497,21 +805,44 @@
         }
         
         .summary-value {
-            font-size: 24px;
+            font-size: 22px;
         }
         
         .filter-tabs {
             justify-content: center;
+            gap: 6px;
+        }
+        
+        .filter-tab {
+            font-size: 13px;
+            padding: 6px 14px;
         }
         
         .journey-progress {
             max-width: 100%;
         }
+        
+        .modal-card {
+            padding: 28px 20px;
+        }
     }
     
     @media (max-width: 480px) {
+        .journeys-title {
+            font-size: 20px;
+        }
+        
         .stats-summary {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .summary-value {
+            font-size: 20px;
+        }
+        
+        .summary-label {
+            font-size: 11px;
         }
         
         .journey-name {
@@ -520,11 +851,12 @@
         
         .journey-meta {
             gap: 12px;
-            font-size: 11px;
+            font-size: 12px;
         }
         
         .journey-stats {
-            gap: 16px;
+            gap: 12px;
+            font-size: 12px;
         }
         
         .modal-actions {
@@ -533,6 +865,16 @@
         
         .modal-actions .btn {
             width: 100%;
+            justify-content: center;
+        }
+        
+        .pagination {
+            flex-wrap: wrap;
+        }
+        
+        .pagination-btn {
+            padding: 8px 16px;
+            font-size: 13px;
         }
     }
 </style>
@@ -542,48 +884,68 @@
 <div class="main-content-wrapper">
     <div class="journeys-container">
         
-        {# Header #}
+        <!-- ===== HEADER ===== -->
         <div class="journeys-header">
-            <div>
-                <h1 class="journeys-title">🚀 My Journeys</h1>
-                <p class="journeys-subtitle">Manage and track all your journeys in one place</p>
+            <div class="journeys-header-left">
+                <h1 class="journeys-title">
+                    <i class="fas fa-route"></i>
+                    My Build Journeys
+                    <span class="count-badge">{{ journeys|length }}</span>
+                </h1>
+                <p class="journeys-subtitle">Manage and track all your build in public journeys</p>
             </div>
-            <a href="{% url 'create_journey' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> New Journey
-            </a>
+            <div class="header-actions">
+                <a href="{% url 'create_journey' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Journey
+                </a>
+            </div>
         </div>
         
-        {# Stats Summary #}
+        <!-- ===== STATS SUMMARY ===== -->
         {% if journeys %}
         <div class="stats-summary">
             <div class="summary-card">
+                <span class="summary-icon"><i class="fas fa-route"></i></span>
                 <div class="summary-value">{{ journeys|length }}</div>
                 <div class="summary-label">Total Journeys</div>
             </div>
             <div class="summary-card">
+                <span class="summary-icon"><i class="fas fa-play-circle"></i></span>
                 <div class="summary-value">{{ active_count|default:0 }}</div>
                 <div class="summary-label">Active</div>
             </div>
             <div class="summary-card">
+                <span class="summary-icon"><i class="fas fa-eye"></i></span>
                 <div class="summary-value">{{ total_views|default:0 }}</div>
                 <div class="summary-label">Total Views</div>
             </div>
             <div class="summary-card">
+                <span class="summary-icon"><i class="fas fa-users"></i></span>
                 <div class="summary-value">{{ total_followers|default:0 }}</div>
-                <div class="summary-label">Total Followers</div>
+                <div class="summary-label">Followers</div>
             </div>
         </div>
         {% endif %}
         
-        {# Filter Tabs #}
+        <!-- ===== FILTER TABS ===== -->
         <div class="filter-tabs">
-            <button class="filter-tab active" onclick="filterJourneys('all')">📋 All Journeys</button>
-            <button class="filter-tab" onclick="filterJourneys('active')">▶️ Active</button>
-            <button class="filter-tab" onclick="filterJourneys('completed')">✅ Completed</button>
-            <button class="filter-tab" onclick="filterJourneys('draft')">✏️ Draft</button>
+            <button class="filter-tab active" onclick="filterJourneys('all')">
+                <i class="fas fa-list"></i> All
+                <span class="tab-count">{{ journeys|length }}</span>
+            </button>
+            <button class="filter-tab" onclick="filterJourneys('active')">
+                <i class="fas fa-play-circle"></i> Active
+                <span class="tab-count">{{ active_count|default:0 }}</span>
+            </button>
+            <button class="filter-tab" onclick="filterJourneys('completed')">
+                <i class="fas fa-check-circle"></i> Completed
+            </button>
+            <button class="filter-tab" onclick="filterJourneys('draft')">
+                <i class="fas fa-pen"></i> Draft
+            </button>
         </div>
         
-        {# Journey List #}
+        <!-- ===== JOURNEY LIST ===== -->
         {% if journeys %}
         <div class="journey-list">
             {% for journey in journeys %}
@@ -591,69 +953,67 @@
                  data-status="{% if not journey.is_active %}draft{% elif journey.get_current_day >= journey.duration %}completed{% else %}active{% endif %}" 
                  onclick="window.location.href='{% url 'journey_detail' slug=journey.slug %}'">
                 
-                {# Cover #}
+                <!-- Cover -->
                 <div class="journey-cover">
                     {% if journey.cover_image %}
                         <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                     {% else %}
-                        <i class="fas fa-flag-checkered"></i>
+                        <span class="cover-placeholder">
+                            <i class="fas fa-{% if journey.journey_type == 'startup' %}rocket{% elif journey.journey_type == 'product' %}box{% else %}flag-checkered{% endif %}"></i>
+                        </span>
                     {% endif %}
                     <span class="journey-type-indicator {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
                         <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
                     </span>
                 </div>
                 
-                {# Info #}
+                <!-- Info -->
                 <div class="journey-info">
                     <div class="journey-name">
-                        {{ journey.title }}
+                        <a href="{% url 'journey_detail' slug=journey.slug %}">{{ journey.title }}</a>
                         
-                        {# Journey Type Badge #}
-                        <span class="journey-type-badge {% if journey.journey_type == 'milestone' %}type-milestone{% else %}type-daily{% endif %}">
+                        <!-- Journey Type Badge -->
+                        <span class="badge badge-type {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
                             <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
-                            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Daily{% endif %}
+                            {{ journey.get_journey_type_display|truncatechars:12 }}
                         </span>
                         
-                        {# Status Badge #}
+                        <!-- Status Badge -->
                         {% if not journey.is_active %}
-                            <span class="journey-status status-draft"><i class="fas fa-pen"></i> Draft</span>
+                            <span class="badge badge-status draft"><i class="fas fa-pen"></i> Draft</span>
                         {% elif journey.get_current_day >= journey.duration %}
-                            <span class="journey-status status-completed"><i class="fas fa-check-circle"></i> Completed</span>
+                            <span class="badge badge-status completed"><i class="fas fa-check-circle"></i> Done</span>
                         {% else %}
-                            <span class="journey-status status-active"><i class="fas fa-play-circle"></i> Active</span>
+                            <span class="badge badge-status active"><i class="fas fa-play-circle"></i> Active</span>
                         {% endif %}
                         
-                        {# ===== FIXED: Privacy Badge ===== #}
+                        <!-- Privacy Badge -->
                         {% if journey.privacy_status == 'private' %}
-                            <span class="journey-status status-private"><i class="fas fa-lock"></i> Private</span>
+                            <span class="badge badge-status private"><i class="fas fa-lock"></i> Private</span>
                         {% elif journey.privacy_status == 'public' %}
-                            <span class="journey-status status-public"><i class="fas fa-globe"></i> Public</span>
+                            <span class="badge badge-status public"><i class="fas fa-globe"></i> Public</span>
                         {% elif journey.privacy_status == 'unlisted' %}
-                            <span class="journey-status status-unlisted"><i class="fas fa-link"></i> Unlisted</span>
+                            <span class="badge badge-status unlisted"><i class="fas fa-link"></i> Unlisted</span>
                         {% endif %}
                     </div>
                     
                     <div class="journey-meta">
                         <span><i class="fas fa-tag"></i> {{ journey.get_category_display }}</span>
                         {% if journey.start_date %}
-                        <span><i class="fas fa-calendar-alt"></i> Started {{ journey.start_date|date:"M d, Y" }}</span>
+                        <span><i class="fas fa-calendar-alt"></i> {{ journey.start_date|date:"M d, Y" }}</span>
                         {% endif %}
                         <span>
                             <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}clock{% endif %}"></i> 
-                            {{ journey.duration }} {% if journey.journey_type == 'milestone' %}milestones{% else %}days{% endif %}
+                            {{ journey.duration }} days
                         </span>
                     </div>
                     
                     <div class="journey-progress">
                         <div class="progress-header">
                             <span>
-                                {% if journey.journey_type == 'milestone' %}
-                                    {{ journey.get_current_day }}/{{ journey.duration }} Milestones
-                                {% else %}
-                                    Day {{ journey.get_current_day }} of {{ journey.duration }}
-                                {% endif %}
+                                Day {{ journey.get_current_day }} of {{ journey.duration }}
                             </span>
-                            <span>{{ journey.get_progress_percentage }}% Complete</span>
+                            <span>{{ journey.get_progress_percentage }}%</span>
                         </div>
                         <div class="progress-bar {% if journey.journey_type == 'milestone' %}milestone{% endif %}">
                             <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
@@ -662,23 +1022,23 @@
                     
                     <div class="journey-stats">
                         <span class="journey-stat">
-                            <i class="fas fa-users"></i> {{ journey.followers.count }} followers
+                            <i class="fas fa-users"></i> {{ journey.followers.count }}
                         </span>
                         <span class="journey-stat">
-                            <i class="fas fa-eye"></i> {{ journey.view_count }} views
+                            <i class="fas fa-eye"></i> {{ journey.view_count }}
                         </span>
                         <span class="journey-stat">
-                            <i class="fas fa-file-alt"></i> {{ journey.activities.count }} entries
+                            <i class="fas fa-file-alt"></i> {{ journey.activities.count }} builds
                         </span>
                     </div>
                 </div>
                 
-                {# Actions #}
+                <!-- Actions -->
                 <div class="journey-actions" onclick="event.stopPropagation()">
                     <a href="{% url 'journey_content' slug=journey.slug %}" class="action-btn" title="Manage Content">
                         <i class="fas fa-images"></i>
                     </a>
-                    <a href="{% url 'create_activity' slug=journey.slug %}" class="action-btn" title="Add Entry">
+                    <a href="{% url 'create_activity' slug=journey.slug %}" class="action-btn" title="Add Build Log">
                         <i class="fas fa-plus-circle"></i>
                     </a>
                     <a href="{% url 'edit_journey' slug=journey.slug %}" class="action-btn" title="Edit Journey">
@@ -695,9 +1055,9 @@
             {% endfor %}
         </div>
         
-        {# Pagination #}
+        <!-- ===== PAGINATION ===== -->
         {% if journeys.has_other_pages %}
-        <div class="pagination" style="margin-top: 30px;">
+        <div class="pagination">
             {% if journeys.has_previous %}
                 <a href="?page={{ journeys.previous_page_number }}{% if status %}&status={{ status }}{% endif %}" class="pagination-btn">
                     <i class="fas fa-chevron-left"></i> Previous
@@ -705,7 +1065,7 @@
             {% endif %}
             
             <span class="pagination-current">
-                Page {{ journeys.number }} of {{ journeys.paginator.num_pages }}
+                Page <strong>{{ journeys.number }}</strong> of <strong>{{ journeys.paginator.num_pages }}</strong>
             </span>
             
             {% if journeys.has_next %}
@@ -714,43 +1074,14 @@
                 </a>
             {% endif %}
         </div>
-        
-        <style>
-            .pagination {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 16px;
-                margin-top: 30px;
-            }
-            
-            .pagination-btn {
-                padding: 10px 20px;
-                background: var(--card-bg);
-                border: 1px solid var(--border-color);
-                border-radius: 10px;
-                color: var(--text-primary);
-                text-decoration: none;
-                transition: all 0.2s;
-            }
-            
-            .pagination-btn:hover {
-                border-color: var(--accent);
-                background: var(--bg-secondary);
-            }
-            
-            .pagination-current {
-                padding: 10px 20px;
-                color: var(--text-secondary);
-            }
-        </style>
         {% endif %}
         
         {% else %}
+        <!-- ===== EMPTY STATE ===== -->
         <div class="empty-state">
-            <i class="fas fa-flag-checkered"></i>
-            <h3>No journeys yet</h3>
-            <p>Create your first journey to start organizing your content and building your following.</p>
+            <i class="fas fa-rocket"></i>
+            <h3>No build journeys yet</h3>
+            <p>Start your first build in public journey and share your story with the community.</p>
             <a href="{% url 'create_journey' %}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Create Your First Journey
             </a>
@@ -760,13 +1091,15 @@
     </div>
 </div>
 
-{# Delete Confirmation Modal #}
-<div class="modal-overlay" id="deleteModal" style="display: none;">
+<!-- ===== DELETE CONFIRMATION MODAL ===== -->
+<div class="modal-overlay" id="deleteModal">
     <div class="modal-card">
-        <i class="fas fa-triangle-exclamation"></i>
+        <span class="modal-icon"><i class="fas fa-triangle-exclamation"></i></span>
         <h3>Delete Journey?</h3>
-        <p>Are you sure you want to delete "<span id="deleteJourneyTitle"></span>"?</p>
-        <p style="color: #ef4444; font-size: 13px;"><i class="fas fa-exclamation-circle"></i> This action cannot be undone.</p>
+        <p>Are you sure you want to delete "<strong id="deleteJourneyTitle"></strong>"?</p>
+        <div class="modal-warning">
+            <i class="fas fa-exclamation-circle"></i> This action cannot be undone.
+        </div>
         <div class="modal-actions">
             <button class="btn-secondary" onclick="hideDeleteModal()">
                 <i class="fas fa-times"></i> Cancel
@@ -782,6 +1115,7 @@
 </div>
 
 <script>
+    // ===== FILTER JOURNEYS =====
     function filterJourneys(status) {
         const clickedBtn = event.currentTarget;
         
@@ -802,11 +1136,21 @@
             }
         });
         
+        // Update URL with filter parameter
+        const url = new URL(window.location);
+        if (status === 'all') {
+            url.searchParams.delete('status');
+        } else {
+            url.searchParams.set('status', status);
+        }
+        window.history.replaceState({}, '', url);
+        
+        // Show/hide empty state for filter
         const journeyList = document.querySelector('.journey-list');
-        const emptyMessage = document.querySelector('.empty-state-filter');
+        const emptyState = document.querySelector('.empty-state-filter');
         
         if (visibleCount === 0) {
-            if (!emptyMessage && journeyList) {
+            if (!emptyState && journeyList) {
                 const msg = document.createElement('div');
                 msg.className = 'empty-state empty-state-filter';
                 msg.innerHTML = `
@@ -816,11 +1160,12 @@
                 `;
                 journeyList.parentNode.insertBefore(msg, journeyList.nextSibling);
             }
-        } else if (emptyMessage) {
-            emptyMessage.remove();
+        } else if (emptyState) {
+            emptyState.remove();
         }
     }
     
+    // ===== DELETE CONFIRMATION =====
     function confirmDelete(slug, title) {
         const modal = document.getElementById('deleteModal');
         const form = document.getElementById('deleteForm');
@@ -830,26 +1175,29 @@
             form.action = `/dashboard/journeys/${slug}/delete/`;
         }
         titleSpan.textContent = title;
-        modal.style.display = 'flex';
+        modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
     
     function hideDeleteModal() {
         const modal = document.getElementById('deleteModal');
-        modal.style.display = 'none';
+        modal.classList.remove('active');
         document.body.style.overflow = '';
     }
     
+    // ===== MODAL CLOSE ON BACKGROUND CLICK =====
     document.getElementById('deleteModal').addEventListener('click', function(e) {
         if (e.target === this) hideDeleteModal();
     });
     
+    // ===== ESC KEY CLOSE =====
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             hideDeleteModal();
         }
     });
     
+    // ===== DOM CONTENT LOADED =====
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const statusFilter = urlParams.get('status');
@@ -860,6 +1208,12 @@
                 filterBtn.click();
             }
         }
+        
+        console.log('📋 My Journeys page loaded');
+        console.log('📊 Total journeys: {{ journeys|length }}');
+        console.log('📈 Active: {{ active_count|default:0 }}');
+        console.log('👁️ Views: {{ total_views|default:0 }}');
+        console.log('👥 Followers: {{ total_followers|default:0 }}');
     });
 </script>
 
