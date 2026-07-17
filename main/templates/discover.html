@@ -5,25 +5,25 @@
 {% block title %}Discover Journeys | Rallynex{% endblock %}
 
 {% block meta_title %}
-    {% if request.GET.q %}
-        Search: "{{ request.GET.q }}" | Discover | Rallynex
-    {% elif request.GET.category %}
-        {{ request.GET.category|title }} Journeys | Discover | Rallynex
+    {% if search_query %}
+        Search: "{{ search_query }}" | Discover | Rallynex
+    {% elif selected_category %}
+        {{ selected_category|title }} Journeys | Discover | Rallynex
     {% else %}
         Discover Journeys | Rallynex
     {% endif %}
 {% endblock %}
 
 {% block meta_description %}
-    {% if request.GET.q %}
-        Find "{{ request.GET.q }}" build in public journeys on Rallynex.
-    {% elif request.GET.category == 'product' %}
+    {% if search_query %}
+        Find "{{ search_query }}" build in public journeys on Rallynex.
+    {% elif selected_category == 'product' %}
         Discover product journeys and build in public. Track progress on Rallynex.
-    {% elif request.GET.category == 'startup' %}
+    {% elif selected_category == 'startup' %}
         Explore startup journeys and founder stories. Find inspiration on Rallynex.
-    {% elif request.GET.category == 'development' %}
+    {% elif selected_category == 'development' %}
         Discover development journeys and coding projects. Learn from builders on Rallynex.
-    {% elif request.GET.category == 'marketing' %}
+    {% elif selected_category == 'marketing' %}
         Find marketing journeys and growth experiments. See what works on Rallynex.
     {% else %}
         Discover public build in public journeys on Rallynex. Find daily logs, progress tracking, and community reflections.
@@ -909,7 +909,7 @@
                             name="q" 
                             id="searchInput"
                             placeholder="Search journeys, builders, or topics..." 
-                            value="{{ request.GET.q|default:'' }}"
+                            value="{{ search_query|default:'' }}"
                             aria-label="Search"
                         >
                         <div class="search-actions">
@@ -922,31 +922,44 @@
                         </div>
                     </div>
                     
-                    <!-- Hidden filters preserved -->
-                    {% for key, value in request.GET.items %}
-                        {% if key != 'q' and key != 'page' and key != 'sort' %}
-                            <input type="hidden" name="{{ key }}" value="{{ value }}">
-                        {% endif %}
-                    {% endfor %}
+                    <!-- Preserve all filter parameters -->
+                    {% if selected_category %}
+                        <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% endif %}
+                    {% if selected_journey_type %}
+                        <input type="hidden" name="journey_type" value="{{ selected_journey_type }}">
+                    {% endif %}
+                    {% if selected_sort %}
+                        <input type="hidden" name="sort" value="{{ selected_sort }}">
+                    {% endif %}
                 </form>
             </div>
             
-            <!-- Filter Chips -->
+            <!-- Filter Chips - SIMPLIFIED AND WORKING -->
             <div class="filter-chips">
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-created_at" 
-                   class="filter-chip {% if not request.GET.sort or request.GET.sort == '-created_at' %}active{% endif %}">
+                <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_journey_type %}journey_type={{ selected_journey_type }}&{% endif %}sort=-created_at" 
+                   class="filter-chip {% if selected_sort == '-created_at' or not selected_sort %}active{% endif %}">
                     <i class="fas fa-clock chip-icon"></i> Newest
                 </a>
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-view_count" 
-                   class="filter-chip {% if request.GET.sort == '-view_count' %}active{% endif %}">
+                <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_journey_type %}journey_type={{ selected_journey_type }}&{% endif %}sort=-view_count" 
+                   class="filter-chip {% if selected_sort == '-view_count' %}active{% endif %}">
                     <i class="fas fa-fire chip-icon"></i> Trending
                 </a>
-                <a href="?{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}sort=-follower_count" 
-                   class="filter-chip {% if request.GET.sort == '-follower_count' %}active{% endif %}">
+                <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_journey_type %}journey_type={{ selected_journey_type }}&{% endif %}sort=-follower_count" 
+                   class="filter-chip {% if selected_sort == '-follower_count' %}active{% endif %}">
                     <i class="fas fa-users chip-icon"></i> Most Followed
                 </a>
                 
-                {% if request.GET.category or request.GET.q or request.GET.journey_type %}
+                <!-- Clear Sort -->
+                {% if selected_sort %}
+                    <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_journey_type %}journey_type={{ selected_journey_type }}&{% endif %}" 
+                       class="filter-chip" style="border-color: var(--error); color: var(--error);">
+                        <i class="fas fa-times"></i> Clear Sort
+                    </a>
+                {% endif %}
+                
+                <!-- Clear All Filters -->
+                {% if search_query or selected_category or selected_journey_type %}
                     <a href="{% url 'discover' %}" class="filter-chip" style="border-color: var(--error); color: var(--error);">
                         <i class="fas fa-times"></i> Clear All
                     </a>
@@ -966,8 +979,22 @@
             <div class="results-count">
                 <i class="fas fa-route" style="color: var(--accent);"></i>
                 <strong>{{ total_count }}</strong> journey{{ total_count|pluralize }} found
-                {% if request.GET.q %}
-                    <span style="color: var(--text-muted);">for "<strong>{{ request.GET.q }}</strong>"</span>
+                {% if search_query %}
+                    <span style="color: var(--text-muted);">for "<strong>{{ search_query }}</strong>"</span>
+                {% endif %}
+                {% if selected_category %}
+                    <span style="color: var(--text-muted);">in <strong>{{ selected_category|title }}</strong></span>
+                {% endif %}
+                {% if selected_journey_type %}
+                    <span style="color: var(--text-muted);">as <strong>{{ selected_journey_type|title }}</strong></span>
+                {% endif %}
+                {% if selected_sort %}
+                    <span style="color: var(--text-muted);">sorted by <strong>
+                        {% if selected_sort == '-created_at' %}Newest{% endif %}
+                        {% if selected_sort == '-view_count' %}Views{% endif %}
+                        {% if selected_sort == '-follower_count' %}Followers{% endif %}
+                        {% if selected_sort == 'title' %}Title{% endif %}
+                    </strong></span>
                 {% endif %}
             </div>
             
@@ -982,23 +1009,27 @@
                 </div>
                 
                 <form method="get" id="sortForm">
-                    {% for key, value in request.GET.items %}
-                        {% if key != 'sort' and key != 'page' %}
-                            <input type="hidden" name="{{ key }}" value="{{ value }}">
-                        {% endif %}
-                    {% endfor %}
+                    {% if search_query %}
+                        <input type="hidden" name="q" value="{{ search_query }}">
+                    {% endif %}
+                    {% if selected_category %}
+                        <input type="hidden" name="category" value="{{ selected_category }}">
+                    {% endif %}
+                    {% if selected_journey_type %}
+                        <input type="hidden" name="journey_type" value="{{ selected_journey_type }}">
+                    {% endif %}
                     <select name="sort" class="sort-select-modern" onchange="this.form.submit()">
-                        <option value="-created_at" {% if not request.GET.sort or request.GET.sort == '-created_at' %}selected{% endif %}>
-                            Newest First
+                        <option value="-created_at" {% if selected_sort == '-created_at' or not selected_sort %}selected{% endif %}>
+                            🕐 Newest First
                         </option>
-                        <option value="-view_count" {% if request.GET.sort == '-view_count' %}selected{% endif %}>
-                            Most Viewed
+                        <option value="-view_count" {% if selected_sort == '-view_count' %}selected{% endif %}>
+                            🔥 Most Viewed
                         </option>
-                        <option value="-follower_count" {% if request.GET.sort == '-follower_count' %}selected{% endif %}>
-                            Most Followed
+                        <option value="-follower_count" {% if selected_sort == '-follower_count' %}selected{% endif %}>
+                            👥 Most Followed
                         </option>
-                        <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>
-                            Title A-Z
+                        <option value="title" {% if selected_sort == 'title' %}selected{% endif %}>
+                            🔤 Title A-Z
                         </option>
                     </select>
                 </form>
@@ -1104,7 +1135,7 @@
         {% if journeys.has_other_pages %}
         <div class="pagination-modern" style="margin-top: 40px;">
             {% if journeys.has_previous %}
-                <a href="?page={{ journeys.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                <a href="?page={{ journeys.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_journey_type %}&journey_type={{ selected_journey_type }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" aria-label="Previous">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             {% else %}
@@ -1115,14 +1146,14 @@
                 {% if journeys.number == num %}
                     <span class="current">{{ num }}</span>
                 {% elif num > journeys.number|add:'-3' and num < journeys.number|add:'3' %}
-                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_journey_type %}&journey_type={{ selected_journey_type }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
                         {{ num }}
                     </a>
                 {% endif %}
             {% endfor %}
             
             {% if journeys.has_next %}
-                <a href="?page={{ journeys.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                <a href="?page={{ journeys.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_journey_type %}&journey_type={{ selected_journey_type }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}" aria-label="Next">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             {% else %}
@@ -1148,8 +1179,8 @@
             </span>
             <h3>No build journeys found</h3>
             <p>
-                {% if request.GET.q %}
-                    We couldn't find anything matching "<strong>{{ request.GET.q }}</strong>". 
+                {% if search_query %}
+                    We couldn't find anything matching "<strong>{{ search_query }}</strong>". 
                     Try adjusting your search terms.
                 {% else %}
                     No public build in public journeys yet. Be the first to share!
@@ -1195,7 +1226,17 @@
                 searchInput.value = '';
                 this.classList.remove('visible');
                 searchInput.focus();
-                document.getElementById('searchForm').submit();
+                
+                // Preserve other filters when clearing search
+                const form = document.getElementById('searchForm');
+                const hiddenInputs = form.querySelectorAll('input[type="hidden"]');
+                hiddenInputs.forEach(input => {
+                    if (input.name !== 'q') {
+                        const clone = input.cloneNode(true);
+                        form.appendChild(clone);
+                    }
+                });
+                form.submit();
             });
         }
         
@@ -1238,6 +1279,10 @@
         });
         
         console.log('🔍 Discover page initialized');
+        console.log('📄 Search query: "{{ search_query }}"');
+        console.log('📂 Category: "{{ selected_category }}"');
+        console.log('🏷️ Journey Type: "{{ selected_journey_type }}"');
+        console.log('📊 Sort: "{{ selected_sort }}"');
         console.log('📄 Current page: {{ journeys.number|default:1 }}');
         console.log('📊 Total pages: {{ journeys.paginator.num_pages|default:1 }}');
         console.log('📦 Journeys on this page: {{ journeys|length|default:0 }}');

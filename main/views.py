@@ -189,36 +189,56 @@ def landing_view(request):
 
 def discover_view(request):
     """Browse and discover public journeys"""
-    form = JourneySearchForm(request.GET)
+    # Get parameters
+    search_query = request.GET.get('q', '').strip()
+    selected_category = request.GET.get('category', '')
+    selected_journey_type = request.GET.get('journey_type', '')
+    selected_sort = request.GET.get('sort', '-created_at')
     
+    # Base queryset
     journeys = Journey.objects.filter(
         privacy_status='public', 
         is_active=True
     ).select_related('creator__user').prefetch_related('activities')
     
-    q = request.GET.get('q', '')
-    if q:
+    # Apply search
+    if search_query:
         journeys = journeys.filter(
-            Q(title__icontains=q) |
-            Q(description__icontains=q) |
-            Q(creator__user__username__icontains=q)
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(creator__user__username__icontains=search_query)
         )
     
-    category = request.GET.get('category')
-    if category:
-        journeys = journeys.filter(category=category)
+    # Apply category
+    if selected_category:
+        journeys = journeys.filter(category=selected_category)
     
-    journey_type = request.GET.get('journey_type')
-    if journey_type:
-        journeys = journeys.filter(journey_type=journey_type)
+    # Apply journey type
+    if selected_journey_type:
+        journeys = journeys.filter(journey_type=selected_journey_type)
     
-    sort = request.GET.get('sort', '-created_at')
-    allowed_sorts = ['-created_at', 'created_at', 'title', '-title', '-view_count', 'view_count', '-follower_count']
-    if sort in allowed_sorts:
-        journeys = journeys.order_by(sort)
+    # ✅ THIS IS WHERE THE SORT HAPPENS
+    sort_mapping = {
+        '-created_at': '-created_at',
+        'created_at': 'created_at',
+        '-view_count': '-view_count',
+        'view_count': 'view_count',
+        '-follower_count': '-follower_count',
+        'follower_count': 'follower_count',
+        'title': 'title',
+        '-title': '-title',
+    }
+    
+    if selected_sort in sort_mapping:
+        journeys = journeys.order_by(sort_mapping[selected_sort])
     else:
         journeys = journeys.order_by('-created_at')
     
+    # Log the sort for debugging
+    print(f"📊 Sorting by: {selected_sort}")
+    print(f"📊 Total journeys: {journeys.count()}")
+    
+    # Pagination
     paginator = Paginator(journeys, 12)
     page = request.GET.get('page', 1)
     
@@ -228,14 +248,18 @@ def discover_view(request):
         journeys_page = paginator.page(1)
     
     context = {
-        'form': form,
         'journeys': journeys_page,
+        'total_count': journeys.count(),
+        'search_query': search_query,
+        'selected_category': selected_category,
+        'selected_journey_type': selected_journey_type,
+        'selected_sort': selected_sort,  # ← THIS MUST BE HERE
         'categories': Journey.CATEGORY_CHOICES,
         'journey_types': Journey.JOURNEY_TYPES,
-        'total_count': journeys.count(),
     }
     
     return render(request, 'discover.html', context)
+
 
 
 def journey_detail_view(request, slug):
