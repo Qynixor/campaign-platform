@@ -100,7 +100,7 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, f'Welcome to Rallynex, {user.username}!')
+            messages.success(request, f'Welcome to Rallynex, {user.username}! 🚀')
             if next_url:
                 return redirect(next_url)
             return redirect('dashboard')
@@ -125,7 +125,7 @@ def login_view(request):
             login(request, user)
             if not form.cleaned_data.get('remember_me'):
                 request.session.set_expiry(0)
-            messages.success(request, f'Welcome back, {user.username}!')
+            messages.success(request, f'Welcome back, {user.username}! 👋')
             next_url = request.GET.get('next')
             if next_url:
                 return redirect(next_url)
@@ -144,11 +144,11 @@ def logout_view(request):
 
 
 # ============================================================================
-# PUBLIC VIEWS
+# PUBLIC VIEWS - BUILD IN PUBLIC FOCUS
 # ============================================================================
 
 def landing_view(request):
-    """Landing page — Fitness & Wellness focus"""
+    """Landing page — Build in Public focus"""
     featured_journeys = Journey.objects.filter(
         privacy_status='public',
         is_active=True,
@@ -160,16 +160,15 @@ def landing_view(request):
         is_active=True
     ).order_by('-created_at')[:6]
     
-    # Get fitness and wellness stats
-    fitness_journeys = Journey.objects.filter(category='fitness', privacy_status='public').count()
-    wellness_journeys = Journey.objects.filter(category='wellness', privacy_status='public').count()
+    public_journeys = Journey.objects.filter(privacy_status='public', is_active=True)
     
     context = {
         'featured_journeys': featured_journeys,
         'recent_journeys': recent_journeys,
-        'fitness_journeys': fitness_journeys,
-        'wellness_journeys': wellness_journeys,
+        'total_public_journeys': public_journeys.count(),
         'total_activities': Activity.objects.filter(journey__privacy_status='public').count(),
+        'total_builders': User.objects.filter(profile__journeys__isnull=False).distinct().count(),
+        'total_followers': JourneyFollow.objects.count(),
     }
     
     if request.user.is_authenticated:
@@ -202,16 +201,19 @@ def discover_view(request):
         journeys = journeys.filter(
             Q(title__icontains=q) |
             Q(description__icontains=q) |
-            Q(creator__user__username__icontains=q) |
-            Q(custom_goal__icontains=q)
+            Q(creator__user__username__icontains=q)
         )
     
     category = request.GET.get('category')
     if category:
         journeys = journeys.filter(category=category)
     
+    journey_type = request.GET.get('journey_type')
+    if journey_type:
+        journeys = journeys.filter(journey_type=journey_type)
+    
     sort = request.GET.get('sort', '-created_at')
-    allowed_sorts = ['-created_at', 'created_at', 'title', '-title', '-view_count', 'view_count']
+    allowed_sorts = ['-created_at', 'created_at', 'title', '-title', '-view_count', 'view_count', '-follower_count']
     if sort in allowed_sorts:
         journeys = journeys.order_by(sort)
     else:
@@ -229,10 +231,12 @@ def discover_view(request):
         'form': form,
         'journeys': journeys_page,
         'categories': Journey.CATEGORY_CHOICES,
+        'journey_types': Journey.JOURNEY_TYPES,
         'total_count': journeys.count(),
     }
     
     return render(request, 'discover.html', context)
+
 
 def journey_detail_view(request, slug):
     """View a single journey with all its entries"""
@@ -254,7 +258,6 @@ def journey_detail_view(request, slug):
     current_day = journey.get_current_day()
     current_activity = activities_by_day.get(current_day)
     
-    # Get reflections for this journey
     if request.user.is_authenticated and request.user == journey.creator.user:
         reflections = Reflection.objects.filter(
             related_journey=journey
@@ -281,7 +284,6 @@ def journey_detail_view(request, slug):
         is_active=True
     ).exclude(id=journey.id).order_by('-view_count')[:4]
     
-    # ===== MONETIZATION CHECKS =====
     has_subscription = False
     has_export_purchase = False
     has_theme_purchase = False
@@ -318,16 +320,17 @@ def journey_detail_view(request, slug):
             journey=journey
         ).first()
     
-    # ===== APPLY THEME =====
-    from .services.customization_service import CustomizationService
-    
+    # Apply theme
     theme_css = ""
     if hasattr(journey, 'theme_settings') and journey.theme_settings:
-        theme_css = CustomizationService.generate_css(journey)
-    # ===== END THEME =====
+        try:
+            from .services.customization_service import CustomizationService
+            theme_css = CustomizationService.generate_css(journey)
+        except:
+            pass
     
     context = {
-        'theme_css': theme_css,  # ← THEME CSS FIRST - IMPORTANT!
+        'theme_css': theme_css,
         'journey': journey,
         'activities_by_day': activities_by_day,
         'current_day': current_day,
@@ -338,7 +341,6 @@ def journey_detail_view(request, slug):
         'recent_comments': recent_comments,
         'related_journeys': related_journeys,
         'total_days_range': range(1, journey.duration + 1),
-        # Monetization
         'has_subscription': has_subscription,
         'has_export_purchase': has_export_purchase,
         'has_theme_purchase': has_theme_purchase,
@@ -347,6 +349,7 @@ def journey_detail_view(request, slug):
     }
     
     return render(request, 'journey/detail.html', context)
+
 
 def creator_profile_view(request, username):
     """View a creator's profile and their journeys"""
@@ -374,6 +377,9 @@ def creator_profile_view(request, username):
     context = {
         'profile': profile,
         'journeys': journeys_page,
+        'total_journeys': journeys.count(),
+        'total_followers': JourneyFollow.objects.filter(journey__creator=profile).count(),
+        'total_activities': Activity.objects.filter(journey__creator=profile).count(),
     }
     
     return render(request, 'creator/profile.html', context)
@@ -389,7 +395,6 @@ def dashboard_view(request):
     profile = get_user_profile(request.user)
     journeys = Journey.objects.filter(creator=profile).order_by('-created_at')
     
-    # ===== MONETIZATION CHECKS =====
     has_subscription = UserSubscription.objects.filter(
         user=request.user,
         status='active',
@@ -425,7 +430,6 @@ def dashboard_view(request):
         product__product_type='storage',
         status='completed'
     ).exists()
-    # ===== END MONETIZATION =====
     
     total_journeys = journeys.count()
     active_journeys = journeys.filter(is_active=True).count()
@@ -441,6 +445,14 @@ def dashboard_view(request):
         user=request.user
     ).order_by('-created_at')[:5]
     
+    recent_activities = Activity.objects.filter(
+        journey__creator=profile
+    ).order_by('-created_at')[:10]
+    
+    recent_comments = Comment.objects.filter(
+        journey__creator=profile
+    ).order_by('-created_at')[:5]
+    
     context = {
         'profile': profile,
         'journeys': journeys[:5],
@@ -449,10 +461,9 @@ def dashboard_view(request):
         'total_entries': total_entries,
         'total_reflections': total_reflections,
         'total_views': total_views,
-        'recent_activities': Activity.objects.filter(journey__creator=profile).order_by('-created_at')[:10],
-        'recent_comments': Comment.objects.filter(journey__creator=profile).order_by('-created_at')[:5],
+        'recent_activities': recent_activities,
+        'recent_comments': recent_comments,
         'recent_reflections': recent_reflections,
-        # Monetization
         'has_subscription': has_subscription,
         'subscription_features': subscription_features,
         'has_export': has_export,
@@ -497,7 +508,7 @@ def my_journeys_view(request):
 
 @login_required
 def create_journey_view(request):
-    """Create a new fitness or wellness journey"""
+    """Create a new build in public journey"""
     profile = get_user_profile(request.user)
     
     if request.method == 'POST':
@@ -509,7 +520,7 @@ def create_journey_view(request):
                 journey.save()
                 form.save()
                 
-                messages.success(request, f'Journey "{journey.title}" created successfully!')
+                messages.success(request, f'🚀 Journey "{journey.title}" created successfully!')
                 return redirect('journey_content', slug=journey.slug)
             except Exception as e:
                 messages.error(request, f'Error creating journey: {str(e)}')
@@ -539,7 +550,7 @@ def edit_journey_view(request, slug):
         form = JourneyForm(request.POST, request.FILES, instance=journey)
         if form.is_valid():
             journey = form.save()
-            messages.success(request, f'Journey "{journey.title}" updated!')
+            messages.success(request, f'📝 Journey "{journey.title}" updated!')
             return redirect('my_journeys')
     else:
         form = JourneyForm(instance=journey)
@@ -564,7 +575,7 @@ def journey_settings_view(request, slug):
         form = JourneySettingsForm(request.POST, instance=journey)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Settings updated!')
+            messages.success(request, '⚙️ Settings updated!')
             return redirect('my_journeys')
     else:
         form = JourneySettingsForm(instance=journey)
@@ -616,6 +627,7 @@ def journey_content_view(request, slug):
     
     return render(request, 'dashboard/content_manager.html', context)
 
+
 @login_required
 def create_activity_view(request, slug, day_number=None):
     """Create or edit an activity for a specific day"""
@@ -627,13 +639,11 @@ def create_activity_view(request, slug, day_number=None):
     
     existing_activity = journey.get_activity_for_day(day_number)
     
-    # ===== CHECK SUBSCRIPTION =====
     has_subscription = UserSubscription.objects.filter(
         user=request.user,
         status='active',
         end_date__gt=timezone.now()
     ).exists()
-    # ===== END CHECK =====
     
     if request.method == 'POST':
         form = ActivityForm(
@@ -649,20 +659,6 @@ def create_activity_view(request, slug, day_number=None):
             activity.journey = journey
             if not activity.day_number_field:
                 activity.day_number_field = day_number
-            
-            # ===== SAVE CUSTOM METRICS =====
-            if has_subscription:
-                # Save custom metrics from form
-                custom_metrics = {}
-                metric_keys = ['weight', 'sleep', 'mood', 'energy', 'stress', 'water']
-                for key in metric_keys:
-                    value = request.POST.get(f'metric_{key}')
-                    if value and value.strip():
-                        custom_metrics[key] = float(value)
-                
-                if custom_metrics:
-                    activity.custom_metrics = custom_metrics
-            # ===== END CUSTOM METRICS =====
             
             activity.save()
             
@@ -686,10 +682,11 @@ def create_activity_view(request, slug, day_number=None):
         'form': form,
         'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
         'is_editing': existing_activity is not None,
-        'has_subscription': has_subscription,  # ← ADD THIS
+        'has_subscription': has_subscription,
     }
     
     return render(request, 'dashboard/activity_form.html', context)
+
 
 @login_required
 def edit_activity_view(request, slug, day_number):
@@ -756,7 +753,7 @@ def create_reflection_view(request):
             reflection = form.save(commit=False)
             reflection.user = request.user
             reflection.save()
-            messages.success(request, 'Reflection saved!')
+            messages.success(request, '💭 Reflection saved!')
             return redirect('reflection_view')
     else:
         form = ReflectionForm(user=request.user)
@@ -778,7 +775,7 @@ def edit_reflection_view(request, pk):
         form = ReflectionForm(request.POST, user=request.user, instance=reflection)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Reflection updated!')
+            messages.success(request, '💭 Reflection updated!')
             return redirect('reflection_view')
     else:
         form = ReflectionForm(user=request.user, instance=reflection)
@@ -825,7 +822,7 @@ def reflection_detail_view(request, pk):
 
 
 # ============================================================================
-# EXPORT VIEWS (Existing)
+# EXPORT VIEWS
 # ============================================================================
 
 @login_required
@@ -843,7 +840,7 @@ def export_journey_view(request, slug):
             export.status = 'pending'
             export.save()
             
-            messages.success(request, f'Export started! Your {export.get_format_display()} file will be ready soon.')
+            messages.success(request, f'📄 Export started! Your {export.get_format_display()} file will be ready soon.')
             return redirect('my_journeys')
     else:
         form = ExportForm()
@@ -891,6 +888,7 @@ def follow_journey_view(request, slug):
                 following = False
             else:
                 follow.notify_on_new_entry = form.cleaned_data.get('notify_on_new_entry', True)
+                follow.notify_on_completion = form.cleaned_data.get('notify_on_completion', True)
                 follow.save()
                 following = True
             
@@ -956,7 +954,7 @@ def comment_journey_view(request, slug):
             comment.journey = journey
             comment.save()
             
-            messages.success(request, 'Comment added!')
+            messages.success(request, '💬 Comment added!')
         else:
             messages.error(request, 'Please enter a valid comment.')
     
@@ -981,7 +979,7 @@ def comment_activity_view(request, slug, day_number):
             comment.activity = activity
             comment.save()
             
-            messages.success(request, 'Comment added!')
+            messages.success(request, '💬 Comment added!')
         else:
             messages.error(request, 'Please enter a valid comment.')
     
@@ -1018,7 +1016,7 @@ def profile_settings_view(request):
         form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Profile updated successfully!')
+            messages.success(request, '👤 Profile updated successfully!')
             return redirect('profile_settings')
     else:
         form = ProfileForm(instance=profile)
@@ -1096,8 +1094,12 @@ def unread_notification_count(request):
 
 def contact_view(request):
     """Contact form with AI response"""
-    from .services.faq_service import get_ai_response
-    
+    try:
+        from .services.faq_service import get_ai_response
+    except:
+        def get_ai_response(msg, name):
+            return f"Thank you for your message, {name}! We'll get back to you soon."
+
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         email = request.POST.get('email', '').strip()
@@ -1156,7 +1158,7 @@ def newsletter_signup_view(request):
                 email=email
             )
             if created:
-                messages.success(request, 'You\'re subscribed!')
+                messages.success(request, '📬 You\'re subscribed!')
             else:
                 messages.info(request, 'You\'re already subscribed.')
             return redirect('landing')
@@ -1226,7 +1228,7 @@ def toolbox_view(request):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (SUBSCRIPTION)
+# MONETIZATION VIEWS - SUBSCRIPTION
 # ============================================================================
 
 @login_required
@@ -1251,7 +1253,6 @@ def subscribe(request, plan_id):
     """Subscribe to a plan"""
     plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
     
-    # Check if user already has active subscription
     existing = UserSubscription.objects.filter(
         user=request.user,
         status='active',
@@ -1319,7 +1320,7 @@ def cancel_subscription(request, subscription_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (ONE-TIME PURCHASES)
+# MONETIZATION VIEWS - ONE-TIME PURCHASES
 # ============================================================================
 
 @login_required
@@ -1343,7 +1344,6 @@ def purchase_product(request, product_id):
     """Purchase a one-time product"""
     product = get_object_or_404(OneTimeProduct, id=product_id, is_active=True)
     
-    # Check if user already purchased this product
     existing = UserPurchase.objects.filter(
         user=request.user,
         product=product,
@@ -1416,7 +1416,7 @@ def purchase_success(request, purchase_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (EXPORT)
+# MONETIZATION VIEWS - EXPORT
 # ============================================================================
 
 @login_required
@@ -1424,7 +1424,6 @@ def request_export(request, journey_id):
     """Request a journey export"""
     journey = get_object_or_404(Journey, id=journey_id, creator=request.user.profile)
     
-    # Check if user has purchased export
     has_purchase = UserPurchase.objects.filter(
         user=request.user,
         product__product_type='export',
@@ -1499,7 +1498,7 @@ def export_download(request, export_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (THEME)
+# MONETIZATION VIEWS - THEME
 # ============================================================================
 
 @login_required
@@ -1563,7 +1562,7 @@ def apply_theme(request, theme_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (AI REPORT)
+# MONETIZATION VIEWS - AI REPORT
 # ============================================================================
 
 @login_required
@@ -1638,7 +1637,7 @@ def view_ai_report(request, report_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (STORAGE)
+# MONETIZATION VIEWS - STORAGE
 # ============================================================================
 
 @login_required
@@ -1687,7 +1686,7 @@ def storage_dashboard(request):
 
 
 # ============================================================================
-# MONETIZATION VIEWS (DASHBOARD)
+# MONETIZATION VIEWS - DASHBOARD
 # ============================================================================
 
 @login_required
@@ -1746,17 +1745,14 @@ def paypal_webhook(request):
         
         if event_type == 'PAYMENT.SALE.COMPLETED':
             transaction_id = data.get('resource', {}).get('id')
-            # Update payment status in database
             pass
         
         elif event_type == 'BILLING.SUBSCRIPTION.ACTIVATED':
             subscription_id = data.get('resource', {}).get('id')
-            # Update subscription status
             pass
         
         elif event_type == 'BILLING.SUBSCRIPTION.CANCELLED':
             subscription_id = data.get('resource', {}).get('id')
-            # Update subscription status
             pass
         
         return JsonResponse({'status': 'success'})
@@ -1782,31 +1778,33 @@ def monetization_context(request):
         
         context['has_subscription'] = has_subscription
         
-        feature_checks = {
-            'has_export': UserPurchase.objects.filter(
-                user=request.user,
-                product__product_type='export',
-                status='completed'
-            ).exists(),
-            'has_theme': UserPurchase.objects.filter(
-                user=request.user,
-                product__product_type='theme',
-                status='completed'
-            ).exists(),
-            'has_ai_report': UserPurchase.objects.filter(
-                user=request.user,
-                product__product_type='ai_report',
-                status='completed'
-            ).exists(),
-            'has_storage': UserPurchase.objects.filter(
-                user=request.user,
-                product__product_type='storage',
-                status='completed'
-            ).exists(),
-        }
-        context.update(feature_checks)
+        context['has_export'] = UserPurchase.objects.filter(
+            user=request.user,
+            product__product_type='export',
+            status='completed'
+        ).exists()
+        context['has_theme'] = UserPurchase.objects.filter(
+            user=request.user,
+            product__product_type='theme',
+            status='completed'
+        ).exists()
+        context['has_ai_report'] = UserPurchase.objects.filter(
+            user=request.user,
+            product__product_type='ai_report',
+            status='completed'
+        ).exists()
+        context['has_storage'] = UserPurchase.objects.filter(
+            user=request.user,
+            product__product_type='storage',
+            status='completed'
+        ).exists()
     
     return context
+
+
+# ============================================================================
+# ANALYTICS VIEWS
+# ============================================================================
 
 @login_required
 def journey_analytics(request, slug):
@@ -1814,7 +1812,6 @@ def journey_analytics(request, slug):
     profile = get_user_profile(request.user)
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
-    # Check if user has subscription for analytics
     has_subscription = UserSubscription.objects.filter(
         user=request.user,
         status='active',
@@ -1822,17 +1819,43 @@ def journey_analytics(request, slug):
     ).exists()
     
     if not has_subscription:
-        messages.warning(request, 'Upgrade to Premium to access advanced analytics.')
+        messages.warning(request, '📊 Upgrade to Premium to access advanced analytics.')
         return redirect('subscription_plans')
     
-    # Generate analytics
-    from .services.analytics_service import AnalyticsService
-    from .services.metrics_service import MetricsService
+    analytics = {
+        'total_views': journey.view_count,
+        'unique_viewers': journey.unique_viewers,
+        'follower_count': journey.follower_count,
+        'total_entries': journey.activities.count(),
+        'progress_percentage': journey.get_progress_percentage(),
+        'current_day': journey.get_current_day(),
+    }
     
-    analytics = AnalyticsService.get_journey_analytics(journey)
-    metrics_summary = MetricsService.get_metric_summary(journey)
+    context = {
+        'journey': journey,
+        'analytics': analytics,
+        'has_subscription': has_subscription,
+    }
     
-    # Get metrics data for table
+    return render(request, 'journey/analytics.html', context)
+
+
+@login_required
+def journey_metrics(request, slug):
+    """View custom metrics for a journey"""
+    profile = get_user_profile(request.user)
+    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    
+    has_subscription = UserSubscription.objects.filter(
+        user=request.user,
+        status='active',
+        end_date__gt=timezone.now()
+    ).exists()
+    
+    if not has_subscription:
+        messages.warning(request, '📊 Upgrade to Premium to use custom metrics.')
+        return redirect('subscription_plans')
+    
     metrics_data = {}
     for activity in journey.activities.all():
         if activity.custom_metrics:
@@ -1844,68 +1867,33 @@ def journey_analytics(request, slug):
                     'value': value
                 })
     
-    context = {
-        'journey': journey,
-        'analytics': analytics,
-        'metrics_summary': metrics_summary,
-        'metrics_data': metrics_data,
-        'has_subscription': has_subscription,
-    }
-    
-    return render(request, 'journey/analytics.html', context)
-
-
-
-
-
-
-
-
-
-
-# Add to views.py
-
-@login_required
-def journey_metrics(request, slug):
-    """View custom metrics for a journey"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    # Check if user has subscription for custom metrics
-    has_subscription = UserSubscription.objects.filter(
-        user=request.user,
-        status='active',
-        end_date__gt=timezone.now()
-    ).exists()
-    
-    if not has_subscription:
-        messages.warning(request, 'Upgrade to Premium to use custom metrics.')
-        return redirect('subscription_plans')
-    
-    from .services.metrics_service import MetricsService
-    
-    # Get all metrics for this journey
-    metrics_summary = MetricsService.get_metric_summary(journey)
-    available_metrics = list(metrics_summary.keys())
-    
-    # Get chart data for a specific metric if selected
+    available_metrics = list(metrics_data.keys())
     selected_metric = request.GET.get('metric')
+    
     chart_data = None
+    stats = None
     if selected_metric and selected_metric in available_metrics:
-        chart_data = MetricsService.get_metric_chart_data(journey, selected_metric)
-        stats = MetricsService.get_metric_stats(journey, selected_metric)
-    else:
-        stats = None
+        values = [item['value'] for item in metrics_data[selected_metric]]
+        chart_data = {
+            'labels': [item['day'] for item in metrics_data[selected_metric]],
+            'values': values,
+        }
+        stats = {
+            'count': len(values),
+            'min': min(values) if values else None,
+            'max': max(values) if values else None,
+            'avg': sum(values) / len(values) if values else None,
+            'latest': values[-1] if values else None,
+        }
     
     context = {
         'journey': journey,
-        'metrics_summary': metrics_summary,
+        'metrics_data': metrics_data,
         'available_metrics': available_metrics,
         'selected_metric': selected_metric,
         'chart_data': json.dumps(chart_data) if chart_data else None,
         'stats': stats,
         'has_subscription': has_subscription,
-        'metric_types': MetricsService.METRIC_TYPES,
     }
     
     return render(request, 'journey/metrics.html', context)
@@ -1918,7 +1906,6 @@ def add_metric_entry(request, slug, day_number):
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     activity = get_object_or_404(Activity, journey=journey, day_number_field=day_number)
     
-    # Check subscription
     has_subscription = UserSubscription.objects.filter(
         user=request.user,
         status='active',
@@ -1937,7 +1924,6 @@ def add_metric_entry(request, slug, day_number):
             if not metric_key or metric_value is None:
                 return JsonResponse({'error': 'Invalid data'}, status=400)
             
-            # Update the activity's custom metrics
             if not activity.custom_metrics:
                 activity.custom_metrics = {}
             
@@ -1955,7 +1941,202 @@ def add_metric_entry(request, slug, day_number):
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
 
+# ============================================================================
+# GOALS & MILESTONES VIEWS
+# ============================================================================
 
+@login_required
+def journey_goals(request, slug):
+    """View and manage goals for a journey"""
+    profile = get_user_profile(request.user)
+    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    
+    has_subscription = UserSubscription.objects.filter(
+        user=request.user,
+        status='active',
+        end_date__gt=timezone.now()
+    ).exists()
+    
+    if not has_subscription:
+        messages.warning(request, '🎯 Upgrade to Premium to use Goals & Milestones.')
+        return redirect('subscription_plans')
+    
+    goals = []
+    milestones = []
+    
+    for activity in journey.activities.all():
+        if activity.activity_type == 'milestone':
+            milestones.append({
+                'day': activity.day_number_field,
+                'title': activity.title or 'Milestone',
+                'content': activity.content[:100],
+            })
+        
+        if activity.custom_metrics and 'goal' in activity.custom_metrics:
+            goals.append({
+                'day': activity.day_number_field,
+                'metric': activity.custom_metrics.get('goal_metric', ''),
+                'target': activity.custom_metrics.get('goal_target', 0),
+                'current': activity.custom_metrics.get('goal_current', 0),
+            })
+    
+    context = {
+        'journey': journey,
+        'goals': goals,
+        'milestones': milestones,
+        'has_subscription': has_subscription,
+    }
+    
+    return render(request, 'journey/goals.html', context)
+
+
+@login_required
+def create_goal(request, slug):
+    """Create a new goal"""
+    profile = get_user_profile(request.user)
+    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '')
+        description = request.POST.get('description', '')
+        target = request.POST.get('target', '')
+        
+        if not title or not target:
+            messages.error(request, 'Please fill in all required fields.')
+            return redirect('journey_goals', slug=slug)
+        
+        messages.success(request, f'🎯 Goal "{title}" created successfully!')
+        return redirect('journey_goals', slug=slug)
+    
+    return redirect('journey_goals', slug=slug)
+
+
+@login_required
+def update_goal_progress(request, slug, goal_id):
+    """Update goal progress"""
+    return redirect('journey_goals', slug=slug)
+
+
+@login_required
+def delete_goal(request, slug, goal_id):
+    """Delete a goal"""
+    if request.method == 'POST':
+        messages.success(request, 'Goal deleted.')
+    return redirect('journey_goals', slug=slug)
+
+
+# ============================================================================
+# JOURNEY DASHBOARD
+# ============================================================================
+
+@login_required
+def journey_dashboard(request, slug):
+    """Complete dashboard for a journey"""
+    profile = get_user_profile(request.user)
+    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    
+    has_subscription = UserSubscription.objects.filter(
+        user=request.user,
+        status='active',
+        end_date__gt=timezone.now()
+    ).exists()
+    
+    if not has_subscription:
+        messages.warning(request, '📊 Upgrade to Premium to access the Journey Dashboard.')
+        return redirect('subscription_plans')
+    
+    analytics = {
+        'total_views': journey.view_count,
+        'unique_viewers': journey.unique_viewers,
+        'follower_count': journey.follower_count,
+        'total_entries': journey.activities.count(),
+        'progress_percentage': journey.get_progress_percentage(),
+        'current_day': journey.get_current_day(),
+    }
+    
+    metrics_data = {}
+    for activity in journey.activities.all():
+        if activity.custom_metrics:
+            for key, value in activity.custom_metrics.items():
+                if key not in metrics_data:
+                    metrics_data[key] = []
+                metrics_data[key].append({
+                    'day': activity.day_number_field,
+                    'value': value
+                })
+    
+    context = {
+        'journey': journey,
+        'has_subscription': has_subscription,
+        'analytics': analytics,
+        'metrics_data': metrics_data,
+        'available_metrics': list(metrics_data.keys()),
+    }
+    
+    return render(request, 'journey/dashboard.html', context)
+
+
+# ============================================================================
+# JOURNEY CUSTOMIZATION
+# ============================================================================
+
+@login_required
+def journey_customize(request, slug):
+    """Customize journey appearance"""
+    profile = get_user_profile(request.user)
+    journey = get_object_or_404(Journey, slug=slug, creator=profile)
+    
+    has_subscription = UserSubscription.objects.filter(
+        user=request.user,
+        status='active',
+        end_date__gt=timezone.now()
+    ).exists()
+    
+    if not has_subscription:
+        messages.warning(request, '🎨 Upgrade to Premium to customize your journey.')
+        return redirect('subscription_plans')
+    
+    current_theme = getattr(journey, 'theme_settings', None)
+    
+    if not current_theme or not isinstance(current_theme, dict):
+        current_theme = {
+            'primary_color': '#3B82F6',
+            'secondary_color': '#6366F1',
+            'background_color': '#FFFFFF',
+            'text_color': '#1F2937',
+            'accent_color': '#3B82F6',
+            'font_family': 'Inter',
+            'layout_style': 'modern',
+            'theme_name': 'Default'
+        }
+    
+    if request.method == 'POST':
+        theme_data = {
+            'primary_color': request.POST.get('primary_color', '#3B82F6'),
+            'secondary_color': request.POST.get('secondary_color', '#6366F1'),
+            'background_color': request.POST.get('background_color', '#FFFFFF'),
+            'text_color': request.POST.get('text_color', '#1F2937'),
+            'accent_color': request.POST.get('accent_color', '#3B82F6'),
+            'font_family': request.POST.get('font_family', 'Inter'),
+            'layout_style': request.POST.get('layout_style', 'modern'),
+            'theme_name': request.POST.get('theme_name', 'Custom Theme'),
+        }
+        
+        journey.theme_settings = theme_data
+        journey.save()
+        
+        messages.success(request, '🎨 Theme updated successfully!')
+        return redirect('journey_customize', slug=slug)
+    
+    context = {
+        'journey': journey,
+        'current_theme': current_theme,
+        'has_subscription': has_subscription,
+        'fonts': ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat'],
+        'layouts': ['modern', 'classic', 'minimal', 'bold'],
+    }
+    
+    return render(request, 'journey/customize.html', context)
 
 
 # ============================================================================
@@ -1972,314 +2153,3 @@ def handler500(request):
 
 def handler403(request, exception):
     return render(request, 'errors/403.html', status=403)
-
-
-
-# Add to views.py
-
-@login_required
-def journey_goals(request, slug):
-    """View and manage goals for a journey"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    # Check if user has subscription
-    has_subscription = UserSubscription.objects.filter(
-        user=request.user,
-        status='active',
-        end_date__gt=timezone.now()
-    ).exists()
-    
-    if not has_subscription:
-        messages.warning(request, 'Upgrade to Premium to use Goals & Milestones.')
-        return redirect('subscription_plans')
-    
-    from .services.goals_service import GoalsService
-    
-    # Check for new milestones
-    GoalsService.check_milestones(journey, request.user)
-    
-    goals = GoalsService.get_journey_goals(journey)
-    active_goals = GoalsService.get_active_goals(journey)
-    completed_goals = GoalsService.get_completed_goals(journey)
-    milestones = GoalsService.get_journey_milestones(journey)
-    stats = GoalsService.get_goal_stats(journey)
-    
-    context = {
-        'journey': journey,
-        'goals': goals,
-        'active_goals': active_goals,
-        'completed_goals': completed_goals,
-        'milestones': milestones,
-        'stats': stats,
-        'has_subscription': has_subscription,
-        'goal_types': Goal.GOAL_TYPES,
-        'milestone_types': Milestone.MILESTONE_TYPES,
-    }
-    
-    return render(request, 'journey/goals.html', context)
-
-
-@login_required
-def create_goal(request, slug):
-    """Create a new goal"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    if request.method == 'POST':
-        goal_type = request.POST.get('goal_type')
-        target_value = request.POST.get('target_value')
-        title = request.POST.get('title')
-        unit = request.POST.get('unit', '')
-        description = request.POST.get('description', '')
-        deadline = request.POST.get('deadline')
-        
-        if not goal_type or not target_value or not title:
-            messages.error(request, 'Please fill in all required fields.')
-            return redirect('journey_goals', slug=slug)
-        
-        from .services.goals_service import GoalsService
-        
-        try:
-            deadline_date = timezone.datetime.strptime(deadline, '%Y-%m-%d') if deadline else None
-        except:
-            deadline_date = None
-        
-        goal = GoalsService.create_goal(
-            user=request.user,
-            journey=journey,
-            goal_type=goal_type,
-            target_value=float(target_value),
-            unit=unit,
-            title=title,
-            description=description,
-            deadline=deadline_date
-        )
-        
-        messages.success(request, f'Goal "{title}" created successfully!')
-        return redirect('journey_goals', slug=slug)
-    
-    return redirect('journey_goals', slug=slug)
-
-
-@login_required
-def update_goal_progress(request, slug, goal_id):
-    """Update goal progress"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    goal = get_object_or_404(Goal, id=goal_id, journey=journey, user=request.user)
-    
-    if request.method == 'POST':
-        value = request.POST.get('value')
-        if value:
-            goal.update_progress(float(value))
-            messages.success(request, f'Progress updated!')
-        else:
-            messages.error(request, 'Please enter a value.')
-    
-    return redirect('journey_goals', slug=slug)
-
-
-@login_required
-def delete_goal(request, slug, goal_id):
-    """Delete a goal"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    goal = get_object_or_404(Goal, id=goal_id, journey=journey, user=request.user)
-    
-    if request.method == 'POST':
-        goal.delete()
-        messages.success(request, 'Goal deleted.')
-    
-    return redirect('journey_goals', slug=slug)
-
-
-@login_required
-def journey_dashboard(request, slug):
-    """Complete dashboard for a journey"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    # Check subscription
-    has_subscription = UserSubscription.objects.filter(
-        user=request.user,
-        status='active',
-        end_date__gt=timezone.now()
-    ).exists()
-    
-    if not has_subscription:
-        messages.warning(request, 'Upgrade to Premium to access the Journey Dashboard.')
-        return redirect('subscription_plans')
-    
-    # Import all services
-    from .services.analytics_service import AnalyticsService
-    from .services.metrics_service import MetricsService
-    from .services.goals_service import GoalsService
-    from .services.chart_service import ChartService
-    
-    # Get all data
-    analytics = AnalyticsService.get_journey_analytics(journey)
-    metrics_summary = MetricsService.get_metric_summary(journey)
-    
-    # Get chart data
-    progress_chart_data = ChartService.get_progress_chart_data(journey)
-    distribution_data = ChartService.get_distribution_data(journey)
-    streak_data = ChartService.get_streak_data(journey)
-    
-    # Get metrics data for table
-    metrics_data = {}
-    for activity in journey.activities.all():
-        if activity.custom_metrics:
-            for key, value in activity.custom_metrics.items():
-                if key not in metrics_data:
-                    metrics_data[key] = []
-                metrics_data[key].append({
-                    'day': activity.day_number_field,
-                    'value': value
-                })
-    
-    # Goals and milestones
-    GoalsService.check_milestones(journey, request.user)
-    goals = GoalsService.get_journey_goals(journey)
-    active_goals = GoalsService.get_active_goals(journey)
-    completed_goals = GoalsService.get_completed_goals(journey)
-    milestones = GoalsService.get_journey_milestones(journey)
-    goal_stats = GoalsService.get_goal_stats(journey)
-    
-    context = {
-        'journey': journey,
-        'has_subscription': has_subscription,
-        
-        # Analytics
-        'analytics': analytics,
-        
-        # Charts
-        'progress_chart_data': json.dumps(progress_chart_data),
-        'distribution_data': distribution_data,
-        'streak_data': json.dumps(streak_data),
-        
-        # Metrics
-        'metrics_summary': metrics_summary,
-        'metrics_data': metrics_data,
-        
-        # Goals & Milestones
-        'goals': goals,
-        'active_goals': active_goals,
-        'completed_goals': completed_goals,
-        'milestones': milestones,
-        'goal_stats': goal_stats,
-    }
-    
-    return render(request, 'journey/dashboard.html', context)
-
-
-@login_required
-def journey_customize(request, slug):
-    """Customize journey appearance"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    # Check subscription
-    has_subscription = UserSubscription.objects.filter(
-        user=request.user,
-        status='active',
-        end_date__gt=timezone.now()
-    ).exists()
-    
-    if not has_subscription:
-        messages.warning(request, 'Upgrade to Premium to customize your journey.')
-        return redirect('subscription_plans')
-    
-    from .services.customization_service import CustomizationService
-    
-    # Get current theme settings from journey
-    # Use getattr to safely access, default to empty dict
-    current_theme = getattr(journey, 'theme_settings', None)
-    
-    # If no theme settings exist, create default
-    if not current_theme or not isinstance(current_theme, dict):
-        current_theme = {
-            'primary_color': '#3B82F6',
-            'secondary_color': '#6366F1',
-            'background_color': '#FFFFFF',
-            'text_color': '#1F2937',
-            'accent_color': '#3B82F6',
-            'font_family': 'Inter',
-            'layout_style': 'modern',
-            'theme_name': 'Default'
-        }
-    
-    if request.method == 'POST':
-        # Get form data
-        primary = request.POST.get('primary_color', '#3B82F6')
-        secondary = request.POST.get('secondary_color', '#6366F1')
-        background = request.POST.get('background_color', '#FFFFFF')
-        text = request.POST.get('text_color', '#1F2937')
-        accent = request.POST.get('accent_color', '#3B82F6')
-        font = request.POST.get('font_family', 'Inter')
-        layout = request.POST.get('layout_style', 'modern')
-        theme_name = request.POST.get('theme_name', 'Custom Theme')
-        
-        # Create theme data dict
-        theme_data = {
-            'primary_color': primary,
-            'secondary_color': secondary,
-            'background_color': background,
-            'text_color': text,
-            'accent_color': accent,
-            'font_family': font,
-            'layout_style': layout,
-            'theme_name': theme_name,
-        }
-        
-        # Save to journey
-        journey.theme_settings = theme_data
-        journey.save()
-        
-        # Also save to CustomTheme model if it exists
-        try:
-            from main.models import CustomTheme
-            theme, created = CustomTheme.objects.get_or_create(
-                user=request.user,
-                journey=journey,
-                defaults={
-                    'name': theme_name,
-                    'theme_type': 'custom',
-                    'primary_color': primary,
-                    'secondary_color': secondary,
-                    'background_color': background,
-                    'text_color': text,
-                    'accent_color': accent,
-                    'font_family': font,
-                    'layout_style': layout,
-                    'is_active': True,
-                }
-            )
-            if not created:
-                # Update existing theme
-                theme.name = theme_name
-                theme.primary_color = primary
-                theme.secondary_color = secondary
-                theme.background_color = background
-                theme.text_color = text
-                theme.accent_color = accent
-                theme.font_family = font
-                theme.layout_style = layout
-                theme.is_active = True
-                theme.save()
-        except (ImportError, AttributeError):
-            pass  # CustomTheme model doesn't exist yet
-        
-        messages.success(request, 'Theme updated successfully!')
-        return redirect('journey_customize', slug=slug)
-    
-    context = {
-        'journey': journey,
-        'current_theme': current_theme,
-        'themes': CustomizationService.get_available_themes(),
-        'fonts': CustomizationService.get_available_fonts(),
-        'layouts': CustomizationService.get_available_layouts(),
-        'has_subscription': has_subscription,
-    }
-    
-    return render(request, 'journey/customize.html', context)

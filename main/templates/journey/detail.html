@@ -6,13 +6,13 @@
 
 {% block meta_title %}{{ journey.title }}{% if journey.subtitle %} - {{ journey.subtitle }}{% endif %}{% endblock %}
 
-{% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Tracking fitness and wellness progress on Rallynex." }}{% endblock %}
+{% block meta_description %}{{ journey.description|striptags|truncatewords:30|default:"Documenting a build in public journey on Rallynex." }}{% endblock %}
 
-{% block meta_keywords %}{{ journey.title }}, fitness, wellness, daily log, progress tracking, rallynex{% endblock %}
+{% block meta_keywords %}{{ journey.title }}, build in public, product development, startup journey, rallynex{% endblock %}
 
 {% block og_title %}{{ journey.title }} | Rallynex{% endblock %}
 
-{% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Tracking fitness and wellness progress on Rallynex." }}{% endblock %}
+{% block og_description %}{{ journey.description|striptags|truncatewords:35|default:"Documenting a build in public journey on Rallynex." }}{% endblock %}
 
 {% block og_image %}
     {% if journey.cover_image %}
@@ -395,7 +395,7 @@
         margin: 6px 12px;
     }
     
-    /* ===== GOALS & FOCUS BADGES ===== */
+    /* ===== GOALS & FOCUS BADGES - BUILD IN PUBLIC ===== */
     .goals-focus-section {
         display: flex;
         flex-wrap: wrap;
@@ -415,20 +415,39 @@
         gap: 4px;
     }
     
-    .goal-badge.fitness {
-        background: var(--accent-light);
-        color: var(--accent);
+    .goal-badge.product {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
     }
     
-    .goal-badge.wellness {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
+    .goal-badge.startup {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
     }
     
     .goal-badge.custom {
         background: var(--bg-secondary);
         color: var(--text-secondary);
         border: 1px solid var(--border-color);
+    }
+    
+    .goal-badge.github {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+    
+    .goal-badge.category {
+        background: rgba(236, 72, 153, 0.1);
+        color: #ec4899;
+    }
+    
+    .goal-badge a {
+        color: inherit;
+        text-decoration: none;
+    }
+    
+    .goal-badge a:hover {
+        text-decoration: underline;
     }
     
     /* ===== PATH VISUAL ===== */
@@ -1289,7 +1308,7 @@
         }
     }
     
-    /* ===== FITNESS GALLERY ===== */
+    /* ===== GALLERY ===== */
     .gallery-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -2382,20 +2401,26 @@
             </div>
         </div>
         
-        <!-- Goals & Focus Badges -->
-        {% if journey.fitness_goal or journey.wellness_focus or journey.custom_goal %}
+        <!-- Goals & Focus Badges - Build in Public -->
+        {% if journey.product_stage or journey.product_url or journey.github_url or journey.category %}
         <div class="goals-focus-section">
             <span class="goal-badge" style="background:transparent;color:var(--text-muted);font-size:11px;padding:3px 0;">
-                <i class="fas fa-bullseye" style="color:var(--silver);"></i>
+                <i class="fas fa-rocket" style="color:var(--silver);"></i>
             </span>
-            {% if journey.fitness_goal %}
-                <span class="goal-badge fitness">💪 {{ journey.get_fitness_goal_display }}</span>
+            {% if journey.product_stage %}
+                <span class="goal-badge product">🚀 {{ journey.product_stage }}</span>
             {% endif %}
-            {% if journey.wellness_focus %}
-                <span class="goal-badge wellness">🧘 {{ journey.get_wellness_focus_display }}</span>
+            {% if journey.product_url %}
+                <span class="goal-badge custom">🔗 <a href="{{ journey.product_url }}" target="_blank" onclick="event.stopPropagation();">Product</a></span>
             {% endif %}
-            {% if journey.custom_goal %}
-                <span class="goal-badge custom">🎯 {{ journey.custom_goal }}</span>
+            {% if journey.github_url %}
+                <span class="goal-badge github">💻 <a href="{{ journey.github_url }}" target="_blank" onclick="event.stopPropagation();">GitHub</a></span>
+            {% endif %}
+            {% if journey.category %}
+                <span class="goal-badge category">📂 {{ journey.get_category_display }}</span>
+            {% endif %}
+            {% if journey.journey_type %}
+                <span class="goal-badge" style="background:rgba(236,72,153,0.1);color:#ec4899;">🏷️ {{ journey.get_journey_type_display }}</span>
             {% endif %}
         </div>
         {% endif %}
@@ -2409,7 +2434,7 @@
         <div class="hero-stats">
             <div class="hero-stat">
                 <div class="value">{{ current_day }}</div>
-                <div class="label">{% if journey.journey_type == 'milestone' %}Done{% else %}Days{% endif %}</div>
+                <div class="label">Days</div>
             </div>
             <div class="hero-stat">
                 <div class="value">{{ journey.duration }}</div>
@@ -2417,7 +2442,7 @@
             </div>
             <div class="hero-stat">
                 <div class="value">{{ journey.activities.count }}</div>
-                <div class="label">Entries</div>
+                <div class="label">Builds</div>
             </div>
         </div>
     </div>
@@ -2427,14 +2452,24 @@
     <div class="template-banner">
         <div class="inner">
             <div class="title">
-                {% if journey.journey_type == 'milestone' %}
-                    🏆 Milestone {{ current_day }} of {{ journey.duration }}
+                {% if journey.journey_type == 'startup' %}
+                    🏢 Startup Journey — Day {{ current_day }} of {{ journey.duration }}
                 {% else %}
-                    Day {{ current_day }} of {{ journey.duration }}
+                    🚀 Build Day {{ current_day }} of {{ journey.duration }}
                 {% endif %}
             </div>
             <div class="sub">
-                {% if journey.template_style == 'fitness' %}Keep pushing. Every day counts.{% elif journey.template_style == 'portfolio' %}Building proof, one milestone at a time.{% elif journey.template_style == 'startup' %}Building in public. Shipping every day.{% endif %}
+                {% if journey.template_style == 'build_in_public' %}
+                    Building in public. Shipping every day.
+                {% elif journey.template_style == 'product' %}
+                    Focus on the product. Ship often.
+                {% elif journey.template_style == 'startup' %}
+                    Building in public. Sharing everything.
+                {% elif journey.template_style == 'minimal' %}
+                    Clean. Simple. Focused.
+                {% else %}
+                    Documenting the journey.
+                {% endif %}
             </div>
         </div>
     </div>
@@ -2444,7 +2479,7 @@
     <div class="progress-section">
         <div class="progress-header">
             <span>Progress</span>
-            <span>{% if journey.journey_type == 'milestone' %}{{ activities_by_day|length }}{% else %}{{ current_day }}{% endif %}/{{ journey.duration }} · {{ journey.get_progress_percentage }}%</span>
+            <span>{{ current_day }}/{{ journey.duration }} · {{ journey.get_progress_percentage }}%</span>
         </div>
         <div class="progress-track">
             <div class="progress-fill" style="width: {{ journey.get_progress_percentage }}%;"></div>
@@ -2476,7 +2511,7 @@
         <div class="stat-card">
             <i class="fas fa-file-alt"></i>
             <div class="value">{{ journey.activities.count }}</div>
-            <div class="label">Entries</div>
+            <div class="label">Builds</div>
         </div>
         <div class="stat-card">
             <i class="fas fa-eye"></i>
@@ -2508,13 +2543,15 @@
     </div>
     
     <!-- ================================================ -->
-    <!-- DEFAULT: Horizontal Strip -->
+    <!-- TEMPLATE STYLES - Build in Public Focus -->
     <!-- ================================================ -->
-    {% if journey.template_style == 'default' or not journey.template_style %}
+    
+    <!-- BUILD IN PUBLIC: Horizontal Strip (Default) -->
+    {% if journey.template_style == 'build_in_public' or journey.template_style == 'default' or not journey.template_style %}
     <div class="cinematic-strip">
         <div class="strip-header">
             <i class="fas fa-film"></i>
-            <h3>{% if journey.journey_type == 'milestone' %}All Milestones{% else %}All Days{% endif %}</h3>
+            <h3>Build Timeline</h3>
             <span>Swipe →</span>
         </div>
         <div class="day-strip" id="dayStrip">
@@ -2535,14 +2572,14 @@
                         {% else %}
                             <div style="width:100%;height:100%;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-direction:column;">
                                 <span style="font-size:20px;font-weight:700;color:var(--text-muted);">{{ day_num }}</span>
-                                <span style="font-size:8px;color:var(--text-muted);">{% if journey.journey_type == 'milestone' %}MILESTONE{% else %}DAY{% endif %}</span>
+                                <span style="font-size:8px;color:var(--text-muted);">DAY</span>
                             </div>
                         {% endif %}
                         
                         {% if activity %}<div class="check-badge"><i class="fas fa-check"></i></div>{% endif %}
                         
                         <div class="strip-overlay">
-                            <span class="strip-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
+                            <span class="strip-day-number">Day {{ day_num }}</span>
                             <span class="strip-day-status">{% if activity %}Done{% else %}Open{% endif %}</span>
                         </div>
                     </div>
@@ -2556,20 +2593,17 @@
             <button class="scroll-btn" onclick="scrollStrip(200)"><i class="fas fa-chevron-right"></i></button>
         </div>
     </div>
-    {% endif %}
     
-    <!-- ================================================ -->
-    <!-- FITNESS: Gallery -->
-    <!-- ================================================ -->
-    {% if journey.template_style == 'fitness' %}
+    <!-- PRODUCT: Gallery Grid -->
+    {% elif journey.template_style == 'product' %}
     <div style="padding:0 20px 12px;display:flex;align-items:center;gap:6px;">
         <i class="fas fa-th" style="color:var(--silver);font-size:13px;"></i>
-        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">{% if journey.journey_type == 'milestone' %}Milestone Gallery{% else %}Progress Gallery{% endif %}</h3>
+        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">Product Gallery</h3>
     </div>
-    <div class="gallery-grid" id="fitnessGallery">
+    <div class="gallery-grid" id="productGallery">
         {% for day_num in total_days_range %}
             {% with activity=activities_by_day|get_item:day_num %}
-            <div class="gallery-item fitness-item {% if forloop.counter > 12 %}hidden-item{% endif %}" 
+            <div class="gallery-item product-item {% if forloop.counter > 12 %}hidden-item{% endif %}" 
                  onclick="openModal({{ day_num }})" 
                  style="{% if forloop.counter > 12 %}display:none;{% endif %}">
                 {% if activity and activity.get_display_html %}
@@ -2589,85 +2623,30 @@
                 {% endif %}
                 {% if activity %}<div class="gallery-check"><i class="fas fa-check"></i></div>{% endif %}
                 <div class="gallery-item-overlay">
-                    <span class="gallery-day-number">{% if journey.journey_type == 'milestone' %}M{{ day_num }}{% else %}Day {{ day_num }}{% endif %}</span>
+                    <span class="gallery-day-number">Day {{ day_num }}</span>
                 </div>
             </div>
             {% endwith %}
         {% endfor %}
     </div>
     {% if total_days_range|length > 12 %}
-    <button class="show-more-btn" onclick="showMoreFitness()" id="fitnessShowMoreBtn">
-        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} {% if journey.journey_type == 'milestone' %}Milestones{% else %}Days{% endif %}
+    <button class="show-more-btn" onclick="showMoreProduct()" id="productShowMoreBtn">
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Days
     </button>
     {% endif %}
-    {% endif %}
     
-    <!-- ================================================ -->
-    <!-- PORTFOLIO: Cards -->
-    <!-- ================================================ -->
-    {% if journey.template_style == 'portfolio' %}
-    <div style="padding:0 20px 12px;display:flex;align-items:center;gap:6px;">
-        <i class="fas fa-briefcase" style="color:var(--silver);font-size:13px;"></i>
-        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">{% if journey.journey_type == 'milestone' %}Project Milestones{% else %}Daily Updates{% endif %}</h3>
-    </div>
-    <div class="portfolio-list" id="portfolioList">
-        {% for day_num in total_days_range %}
-            {% with activity=activities_by_day|get_item:day_num %}
-            <div class="portfolio-card portfolio-item {% if activity %}completed{% endif %} {% if forloop.counter > 5 %}hidden-item{% endif %}" 
-                 onclick="openModal({{ day_num }})"
-                 style="{% if forloop.counter > 5 %}display:none;{% endif %}">
-                <div class="portfolio-card-thumb">
-                    {% if activity and activity.get_display_html %}
-                        {{ activity.get_display_html|safe }}
-                    {% elif activity and activity.media_file %}
-                        {% if activity.is_video %}
-                            <video src="{{ activity.media_file.url }}" muted></video>
-                        {% else %}
-                            <img src="{{ activity.media_file.url }}" alt="">
-                        {% endif %}
-                    {% elif activity and activity.thumbnail %}
-                        <img src="{{ activity.thumbnail.url }}" alt="">
-                    {% else %}
-                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);color:var(--text-muted);">
-                            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-alt{% endif %}"></i>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="portfolio-card-info">
-                    <div class="portfolio-card-title">
-                        {% if activity %}{{ activity.content|truncatechars:40 }}{% else %}{% if journey.journey_type == 'milestone' %}Milestone {{ day_num }}{% else %}Day {{ day_num }}{% endif %}{% endif %}
-                    </div>
-                    <div class="portfolio-card-meta">
-                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_num }} of {{ journey.duration }}
-                        {% if activity %} · ✅ Complete{% else %} · ⏳ Pending{% endif %}
-                    </div>
-                </div>
-                <div class="portfolio-card-arrow"><i class="fas fa-chevron-right"></i></div>
-            </div>
-            {% endwith %}
-        {% endfor %}
-    </div>
-    {% if total_days_range|length > 5 %}
-    <button class="show-more-btn" onclick="showMorePortfolio()" id="portfolioShowMoreBtn">
-        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} {% if journey.journey_type == 'milestone' %}Milestones{% else %}Days{% endif %}
-    </button>
-    {% endif %}
-    {% endif %}
-    
-    <!-- ================================================ -->
     <!-- STARTUP: Roadmap -->
-    <!-- ================================================ -->
-    {% if journey.template_style == 'startup' %}
+    {% elif journey.template_style == 'startup' %}
     <div style="padding:0 20px 12px;display:flex;align-items:center;gap:6px;">
         <i class="fas fa-rocket" style="color:var(--silver);font-size:13px;"></i>
-        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">{% if journey.journey_type == 'milestone' %}Milestone Roadmap{% else %}Launch Roadmap{% endif %}</h3>
+        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">Startup Roadmap</h3>
     </div>
     <div class="roadmap" id="startupRoadmap">
         <div class="roadmap-line"></div>
         <div class="roadmap-line-progress" style="height: {{ journey.get_progress_percentage }}%;"></div>
         {% for day_num in total_days_range %}
             {% with activity=activities_by_day|get_item:day_num %}
-            <div class="roadmap-item roadmap-milestone {% if activity %}completed{% elif day_num == current_day and journey.journey_type == 'daily' %}current{% else %}locked{% endif %} {% if forloop.counter > 8 %}hidden-item{% endif %}" 
+            <div class="roadmap-item roadmap-milestone {% if activity %}completed{% elif day_num == current_day %}current{% else %}locked{% endif %} {% if forloop.counter > 8 %}hidden-item{% endif %}" 
                  onclick="openModal({{ day_num }})"
                  style="{% if forloop.counter > 8 %}display:none;{% endif %}">
                 <div class="roadmap-dot"></div>
@@ -2693,12 +2672,12 @@
                         {% if activity %}
                             {{ activity.content|truncatechars:50 }}
                         {% else %}
-                            {% if journey.journey_type == 'milestone' %}Milestone {{ day_num }}{% else %}Day {{ day_num }}{% endif %}
+                            Day {{ day_num }}
                         {% endif %}
                     </div>
                     <div class="roadmap-meta">
-                        {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_num }} of {{ journey.duration }}
-                        {% if activity %} · ✅ Complete{% elif day_num == current_day and journey.journey_type == 'daily' %} · 🚀 In Progress{% else %} · 🔒 Locked{% endif %}
+                        Day {{ day_num }} of {{ journey.duration }}
+                        {% if activity %} · ✅ Complete{% elif day_num == current_day %} · 🚀 In Progress{% else %} · 🔒 Locked{% endif %}
                     </div>
                 </div>
             </div>
@@ -2707,7 +2686,56 @@
     </div>
     {% if total_days_range|length > 8 %}
     <button class="show-more-btn" onclick="showMoreStartup()" id="startupShowMoreBtn">
-        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} {% if journey.journey_type == 'milestone' %}Milestones{% else %}Days{% endif %}
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Days
+    </button>
+    {% endif %}
+    
+    <!-- MINIMAL: Simple List -->
+    {% elif journey.template_style == 'minimal' %}
+    <div style="padding:0 20px 12px;display:flex;align-items:center;gap:6px;">
+        <i class="fas fa-list" style="color:var(--silver);font-size:13px;"></i>
+        <h3 style="font-size:13px;font-weight:600;color:var(--text-primary);">Build Log</h3>
+    </div>
+    <div class="portfolio-list" id="minimalList">
+        {% for day_num in total_days_range %}
+            {% with activity=activities_by_day|get_item:day_num %}
+            <div class="portfolio-card portfolio-item {% if activity %}completed{% endif %} {% if forloop.counter > 5 %}hidden-item{% endif %}" 
+                 onclick="openModal({{ day_num }})"
+                 style="{% if forloop.counter > 5 %}display:none;{% endif %}">
+                <div class="portfolio-card-thumb">
+                    {% if activity and activity.get_display_html %}
+                        {{ activity.get_display_html|safe }}
+                    {% elif activity and activity.media_file %}
+                        {% if activity.is_video %}
+                            <video src="{{ activity.media_file.url }}" muted></video>
+                        {% else %}
+                            <img src="{{ activity.media_file.url }}" alt="">
+                        {% endif %}
+                    {% elif activity and activity.thumbnail %}
+                        <img src="{{ activity.thumbnail.url }}" alt="">
+                    {% else %}
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg-secondary);color:var(--text-muted);">
+                            <i class="fas fa-code"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="portfolio-card-info">
+                    <div class="portfolio-card-title">
+                        {% if activity %}{{ activity.content|truncatechars:40 }}{% else %}Day {{ day_num }}{% endif %}
+                    </div>
+                    <div class="portfolio-card-meta">
+                        Day {{ day_num }} of {{ journey.duration }}
+                        {% if activity %} · ✅ Complete{% else %} · ⏳ Pending{% endif %}
+                    </div>
+                </div>
+                <div class="portfolio-card-arrow"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+    </div>
+    {% if total_days_range|length > 5 %}
+    <button class="show-more-btn" onclick="showMoreMinimal()" id="minimalShowMoreBtn">
+        <i class="fas fa-chevron-down"></i> Show All {{ total_days_range|length }} Days
     </button>
     {% endif %}
     {% endif %}
@@ -2731,18 +2759,18 @@
                 {% else %}
                     <div style="display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;width:100%;">
                         <i class="fas fa-pen-to-square" style="font-size:36px;opacity:0.3;"></i>
-                        <span style="font-size:14px;text-align:center;padding:0 20px;">{{ current_activity.content|default:"No content yet" }}</span>
+                        <span style="font-size:14px;text-align:center;padding:0 20px;">{{ current_activity.content|default:"No build log yet" }}</span>
                     </div>
                 {% endif %}
             {% else %}
                 <div style="display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:16px;width:100%;padding:40px;">
                     <i class="fas fa-plus-circle" style="font-size:36px;opacity:0.3;"></i>
-                    <p style="color:var(--text-secondary);font-size:15px;font-weight:500;">No content yet</p>
+                    <p style="color:var(--text-secondary);font-size:15px;font-weight:500;">No build log yet</p>
                     <p style="color:var(--text-muted);font-size:13px;text-align:center;max-width:300px;">
                         {% if user == journey.creator.user %}
-                            Tap the <strong>+</strong> button to add your first entry
+                            Tap the <strong>+</strong> button to share your first build log
                         {% else %}
-                            Check back soon for updates
+                            Check back soon for build updates
                         {% endif %}
                     </p>
                 </div>
@@ -2753,22 +2781,22 @@
     <div class="current-day-info" id="dynamicInfoContainer" onclick="goToCurrentDisplayedDay()">
         <div class="info-badge" id="dynamicBadge">
             <span class="badge" id="dynamicDayBadge">
-                {% if journey.journey_type == 'milestone' %}MILESTONE {{ current_day }}{% else %}DAY {{ current_day }}{% endif %}
+                DAY {{ current_day }}
             </span>
         </div>
-        <h3 class="info-title" id="dynamicTitle">{{ current_activity.content|default:"No content yet" }}</h3>
+        <h3 class="info-title" id="dynamicTitle">{{ current_activity.content|default:"No build log yet" }}</h3>
         
         <div id="dynamicEditLink">
             {% if user == journey.creator.user %}
             <a href="{% url 'create_activity_day' slug=journey.slug day_number=current_day %}" class="edit-link" onclick="event.stopPropagation();">
-                <i class="fas fa-pen"></i> Edit this {% if journey.journey_type == 'milestone' %}milestone{% else %}day{% endif %}
+                <i class="fas fa-pen"></i> Edit this day
             </a>
             {% endif %}
         </div>
         
         <div class="info-actions" id="dynamicActions">
             <button class="info-action" onclick="event.stopPropagation(); scrollToComments()">
-                <i class="far fa-comment"></i> <span id="dynamicCommentCount">{{ current_activity.get_comment_count|default:0 }}</span>
+                <i class="far fa-comment"></i> <span id="dynamicCommentCount">{{ current_activity.comments.count|default:0 }}</span>
             </button>
             {% if user == journey.creator.user %}
             <a href="{% url 'journey_content' slug=journey.slug %}" class="info-action" style="text-decoration:none;">
@@ -2802,21 +2830,27 @@
             {% for reflection in reflections %}
             <a href="{% url 'reflection_detail' pk=reflection.pk %}" class="reflection-item">
                 <div class="item-top">
-                    <span class="item-mood">{{ reflection.mood|default:"📝" }}</span>
+                    <span class="item-mood">
+                        {% if reflection.reflection_type == 'learning' %}📚
+                        {% elif reflection.reflection_type == 'challenge' %}💪
+                        {% elif reflection.reflection_type == 'milestone' %}🏆
+                        {% elif reflection.reflection_type == 'mistake' %}💡
+                        {% elif reflection.reflection_type == 'gratitude' %}🙏
+                        {% elif reflection.reflection_type == 'future' %}🔮
+                        {% else %}📝
+                        {% endif %}
+                    </span>
                     <div class="item-content">
                         <div class="item-summary">{{ reflection.summary }}</div>
                         <div class="item-reflection">{{ reflection.reflection|truncatechars:80 }}</div>
                         <div class="item-meta">
                             <span>{{ reflection.created_at|timesince }} ago</span>
-                            {% if reflection.energy_level %}
-                                <span>⚡ {{ reflection.energy_level }}/10</span>
-                            {% endif %}
-                            {% if reflection.sleep_hours %}
-                                <span>😴 {{ reflection.sleep_hours }}h</span>
-                            {% endif %}
                             <span class="privacy-tag">
                                 {% if reflection.is_private %}🔒 Private{% else %}🌍 Public{% endif %}
                             </span>
+                            {% if reflection.related_journey %}
+                                <span class="privacy-tag">📂 {{ reflection.related_journey.title|truncatechars:20 }}</span>
+                            {% endif %}
                         </div>
                     </div>
                     <i class="fas fa-chevron-right item-arrow"></i>
@@ -2882,7 +2916,7 @@
                         {% endif %}
                     </div>
                     <div class="comment-input-group">
-                        <textarea id="commentContent" placeholder="Write a comment..." rows="1"></textarea>
+                        <textarea id="commentContent" placeholder="Share your thoughts..." rows="1"></textarea>
                         <div class="comment-submit-wrapper">
                             <button type="submit" class="comment-submit-btn" id="commentSubmitBtn">
                                 <i class="fas fa-paper-plane"></i> Post
@@ -2906,7 +2940,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            <span class="modal-day" id="modalDay">Day 1</span>
+            <span class="modal-day" id="modalDay">Build Day 1</span>
         </div>
         <div class="modal-media" id="modalMedia">
             <div class="modal-spinner" id="modalSpinner">
@@ -3075,7 +3109,7 @@
         svg.innerHTML = '';
         
         const totalNodes = totalDays;
-        const completed = journeyType === 'milestone' ? Object.keys(activitiesData).filter(key => activitiesData[key] && activitiesData[key].id).length : currentDay;
+        const completed = currentDay;
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const progressColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#3b82f6';
         
@@ -3122,9 +3156,7 @@
         
         let nodesToShow = totalNodes <= 8 ? nodePositions : [nodePositions[0], ...nodePositions.filter((_,i) => i%Math.floor(totalNodes/7)===0).slice(1), nodePositions[totalNodes-1]];
         nodesToShow.forEach(pos => {
-            let status = journeyType === 'milestone' 
-                ? (pos.day <= completed ? 'completed' : 'available')
-                : (pos.day <= completed ? 'completed' : (pos.day === completed+1 ? 'current' : 'locked'));
+            let status = pos.day <= completed ? 'completed' : (pos.day === completed+1 ? 'current' : 'locked');
             const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
             c.setAttribute('r', status === 'current' ? '8' : '6');
@@ -3147,7 +3179,7 @@
             if (status === 'current') labelColor = isLight ? '#111827' : '#f9fafb';
             if (status === 'completed') labelColor = '#22c55e';
             t.setAttribute('fill', labelColor);
-            t.textContent = journeyType==='milestone' ? 'M'+pos.day : (pos.day===1?'START':(pos.day===totalNodes?'END':'Day'+pos.day));
+            t.textContent = pos.day===1?'START':(pos.day===totalNodes?'END':'D'+pos.day);
             svg.appendChild(t);
         });
     }
@@ -3161,9 +3193,9 @@
         
         document.getElementById('commentActivityId').value = activity.id;
         
-        const badgeText = journeyType === 'milestone' ? `MILESTONE ${day}` : `DAY ${day}`;
+        const badgeText = `DAY ${day}`;
         document.getElementById('dynamicDayBadge').textContent = badgeText;
-        document.getElementById('dynamicTitle').textContent = activity.content || (journeyType === 'milestone' ? `Milestone ${day}` : `Day ${day}`);
+        document.getElementById('dynamicTitle').textContent = activity.content || `Day ${day}`;
         document.getElementById('dynamicCommentCount').textContent = activity.commentCount;
         
         updateHeroMedia(activity);
@@ -3205,7 +3237,7 @@
             heroContainer.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--text-muted);background:var(--bg-secondary);flex-direction:column;gap:12px;width:100%;">
                     <i class="fas fa-pen-to-square" style="font-size:36px;opacity:0.3;"></i>
-                    <span style="font-size:14px;text-align:center;padding:0 20px;">${activity.content || (journeyType === 'milestone' ? `Milestone ${currentlyDisplayedDay}` : `Day ${currentlyDisplayedDay}`)}</span>
+                    <span style="font-size:14px;text-align:center;padding:0 20px;">${activity.content || `Day ${currentlyDisplayedDay}`}</span>
                 </div>
             `;
         }
@@ -3232,17 +3264,19 @@
         if(el) el.textContent = (Math.round(p*(totalDays-1))+1)+'/'+totalDays; 
     }
     
-    function showMoreFitness() {
-        document.querySelectorAll('#fitnessGallery .hidden-item').forEach(el => el.style.display = 'block');
-        document.getElementById('fitnessShowMoreBtn').style.display = 'none';
+    function showMoreProduct() {
+        document.querySelectorAll('#productGallery .hidden-item').forEach(el => el.style.display = 'block');
+        document.getElementById('productShowMoreBtn').style.display = 'none';
     }
-    function showMorePortfolio() {
-        document.querySelectorAll('#portfolioList .hidden-item').forEach(el => el.style.display = 'flex');
-        document.getElementById('portfolioShowMoreBtn').style.display = 'none';
-    }
+    
     function showMoreStartup() {
         document.querySelectorAll('#startupRoadmap .hidden-item').forEach(el => el.style.display = 'flex');
         document.getElementById('startupShowMoreBtn').style.display = 'none';
+    }
+    
+    function showMoreMinimal() {
+        document.querySelectorAll('#minimalList .hidden-item').forEach(el => el.style.display = 'flex');
+        document.getElementById('minimalShowMoreBtn').style.display = 'none';
     }
     
     function openModal(day) {
@@ -3263,7 +3297,7 @@
         showFullscreenLoader();
         
         updateDisplayedDay(day);
-        document.getElementById('modalDay').textContent = (journeyType === 'milestone' ? 'Milestone ' : 'Day ') + day;
+        document.getElementById('modalDay').textContent = 'Build Day ' + day;
         document.getElementById('modalCaption').textContent = a.content || 'No description';
         document.getElementById('commentActivityId').value = a.id;
         

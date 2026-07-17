@@ -34,6 +34,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        flex-wrap: wrap;
     }
     
     .dashboard-title .greeting-icon {
@@ -220,12 +221,20 @@
         border: 2px solid var(--card-bg);
     }
     
-    .journey-type-dot.daily {
+    .journey-type-dot.build {
         background: var(--accent);
     }
     
-    .journey-type-dot.milestone {
+    .journey-type-dot.product {
         background: #8b5cf6;
+    }
+    
+    .journey-type-dot.startup {
+        background: #f59e0b;
+    }
+    
+    .journey-type-dot.side {
+        background: #10b981;
     }
     
     .journey-info {
@@ -258,14 +267,24 @@
         letter-spacing: 0.3px;
     }
     
-    .journey-type-tag.daily {
+    .journey-type-tag.build {
         background: rgba(59, 130, 246, 0.12);
         color: var(--accent);
     }
     
-    .journey-type-tag.milestone {
+    .journey-type-tag.product {
         background: rgba(139, 92, 246, 0.12);
         color: #8b5cf6;
+    }
+    
+    .journey-type-tag.startup {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+    }
+    
+    .journey-type-tag.side {
+        background: rgba(16, 185, 129, 0.12);
+        color: #10b981;
     }
     
     .journey-meta {
@@ -409,26 +428,6 @@
         font-size: 14px;
         color: var(--text-secondary);
         opacity: 0.6;
-    }
-    
-    .activity-icon.milestone-icon {
-        background: rgba(139, 92, 246, 0.08);
-        border-color: rgba(139, 92, 246, 0.15);
-    }
-    
-    .activity-icon.milestone-icon i {
-        color: #8b5cf6;
-        opacity: 0.8;
-    }
-    
-    .activity-icon.daily-icon {
-        background: rgba(59, 130, 246, 0.08);
-        border-color: rgba(59, 130, 246, 0.15);
-    }
-    
-    .activity-icon.daily-icon i {
-        color: var(--accent);
-        opacity: 0.8;
     }
     
     .activity-content {
@@ -779,15 +778,15 @@
     <div class="dashboard-header">
         <div>
             <h1 class="dashboard-title">
-                <span class="greeting-icon"><i class="fas fa-dumbbell"></i></span>
-                Your Fitness Dashboard
+                <span class="greeting-icon"><i class="fas fa-rocket"></i></span>
+                Your Builder Dashboard
                 {% if has_subscription %}
                     <span class="premium-badge-large">
                         <i class="fas fa-crown"></i> Premium
                     </span>
                 {% endif %}
             </h1>
-            <p class="dashboard-subtitle">Track your workouts, habits, and wellness journey</p>
+            <p class="dashboard-subtitle">Track your build in public journey, product progress, and startup milestones</p>
         </div>
         <div class="header-actions">
             {% if has_subscription %}
@@ -813,7 +812,7 @@
                 </div>
                 <div class="banner-text">
                     <h4>🚀 Upgrade to Rallynex Plus</h4>
-                    <p>Get advanced analytics, custom metrics, progress charts & more.</p>
+                    <p>Get advanced analytics, custom metrics, progress charts, exports & more.</p>
                 </div>
             </div>
             <div class="banner-actions">
@@ -858,7 +857,7 @@
             <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
             <div class="stat-content">
                 <div class="stat-value">{{ total_entries|default:0 }}</div>
-                <div class="stat-label">Daily Logs</div>
+                <div class="stat-label">Daily Build Logs</div>
             </div>
         </div>
         
@@ -888,7 +887,7 @@
             <!-- Your Journeys -->
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-route"></i> Your Journeys</h3>
+                    <h3 class="card-title"><i class="fas fa-route"></i> Your Build Journeys</h3>
                     <a href="{% url 'my_journeys' %}" class="card-link">View All →</a>
                 </div>
                 <div class="card-body">
@@ -899,16 +898,16 @@
                                 {% if journey.cover_image %}
                                     <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                                 {% else %}
-                                    <i class="fas fa-route"></i>
+                                    <i class="fas fa-rocket"></i>
                                 {% endif %}
-                                <span class="journey-type-dot daily"></span>
+                                <span class="journey-type-dot {% if journey.journey_type == 'build_in_public' %}build{% elif journey.journey_type == 'product' %}product{% elif journey.journey_type == 'startup' %}startup{% else %}side{% endif %}"></span>
                             </a>
                             
                             <div class="journey-info">
                                 <a href="{% url 'journey_detail' slug=journey.slug %}" class="journey-title-link">
                                     {{ journey.title }}
-                                    <span class="journey-type-tag daily">
-                                        {{ journey.get_category_display }}
+                                    <span class="journey-type-tag {% if journey.journey_type == 'build_in_public' %}build{% elif journey.journey_type == 'product' %}product{% elif journey.journey_type == 'startup' %}startup{% else %}side{% endif %}">
+                                        {{ journey.get_journey_type_display }}
                                     </span>
                                     <span class="journey-privacy-tag {{ journey.privacy_status }}">
                                         <i class="fas fa-{% if journey.privacy_status == 'private' %}lock{% elif journey.privacy_status == 'public' %}globe{% else %}link{% endif %}"></i>
@@ -922,6 +921,9 @@
                                     </span>
                                     <span><i class="fas fa-eye"></i> {{ journey.view_count|default:0 }}</span>
                                     <span><i class="fas fa-heart"></i> {{ journey.followers.count|default:0 }}</span>
+                                    {% if journey.product_url %}
+                                        <span><i class="fas fa-link"></i> <a href="{{ journey.product_url }}" target="_blank" style="color: var(--text-secondary);">Product</a></span>
+                                    {% endif %}
                                 </div>
                                 <div class="journey-progress-mini">
                                     <div class="progress-bar-mini">
@@ -936,7 +938,7 @@
                                 <a href="{% url 'journey_content' slug=journey.slug %}" class="btn-icon" title="Manage Logs">
                                     <i class="fas fa-list-ul"></i>
                                 </a>
-                                <a href="{% url 'create_activity' slug=journey.slug %}" class="btn-icon" title="Add Log">
+                                <a href="{% url 'create_activity' slug=journey.slug %}" class="btn-icon" title="Add Build Log">
                                     <i class="fas fa-plus-circle"></i>
                                 </a>
                             </div>
@@ -944,9 +946,9 @@
                         {% endfor %}
                     {% else %}
                         <div class="empty-state">
-                            <i class="fas fa-route empty-icon"></i>
-                            <h4>No journeys yet</h4>
-                            <p>Start tracking your fitness or wellness journey today.</p>
+                            <i class="fas fa-rocket empty-icon"></i>
+                            <h4>No build journeys yet</h4>
+                            <p>Start documenting your product building journey today.</p>
                             <a href="{% url 'create_journey' %}" class="btn btn-primary">Create Your First Journey</a>
                         </div>
                     {% endif %}
@@ -957,13 +959,13 @@
             {% if recent_activities %}
             <div class="dashboard-card">
                 <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-history"></i> Recent Logs</h3>
+                    <h3 class="card-title"><i class="fas fa-history"></i> Recent Build Logs</h3>
                 </div>
                 <div class="card-body">
                     {% for activity in recent_activities %}
                     <div class="activity-item">
-                        <div class="activity-icon daily-icon">
-                            <i class="fas fa-pencil-alt"></i>
+                        <div class="activity-icon">
+                            <i class="fas fa-code"></i>
                         </div>
                         <div class="activity-content">
                             <p class="activity-text">
@@ -973,6 +975,11 @@
                                     Day {{ activity.day_number_field }}
                                 {% endif %}
                                 in <a href="{% url 'journey_detail' slug=activity.journey.slug %}">{{ activity.journey.title }}</a>
+                                {% if activity.activity_type %}
+                                    <span style="font-size: 11px; color: var(--text-muted);">
+                                        ({{ activity.get_activity_type_display }})
+                                    </span>
+                                {% endif %}
                             </p>
                             <span class="activity-time">
                                 {{ activity.created_at|timesince }} ago
@@ -988,7 +995,7 @@
             <div class="reflection-prompt">
                 <span class="prompt-text">
                     <i class="fas fa-pen-fancy"></i>
-                    <span>How did you feel today? <strong>Reflect</strong> on your progress.</span>
+                    <span>What did you learn today? <strong>Reflect</strong> on your build journey.</span>
                 </span>
                 <a href="{% url 'create_reflection' %}" class="btn btn-primary btn-sm">
                     <i class="fas fa-pen"></i> Reflect Now
@@ -1064,12 +1071,27 @@
                         <span class="badge">{{ total_reflections|default:0 }}</span>
                     </a>
                     
+                    <!-- ✅ FIXED: Only show analytics if there's a journey -->
+                    {% if has_subscription and journeys %}
+                        <a href="{% url 'journey_analytics' slug=journeys.0.slug %}" class="quick-link">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics</span>
+                            <span class="premium-badge">Premium</span>
+                        </a>
+                    {% elif has_subscription %}
+                        <a href="#" class="quick-link" style="opacity: 0.5; cursor: not-allowed;">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Analytics (Create a journey first)</span>
+                            <span class="premium-badge">Premium</span>
+                        </a>
+                    {% endif %}
+                    
                     {% if has_subscription %}
-                    <a href="{% url 'storage_dashboard' %}" class="quick-link">
-                        <i class="fas fa-hdd"></i>
-                        <span>Storage</span>
-                        <span class="premium-badge">Premium</span>
-                    </a>
+                        <a href="{% url 'storage_dashboard' %}" class="quick-link">
+                            <i class="fas fa-hdd"></i>
+                            <span>Storage</span>
+                            <span class="premium-badge">Premium</span>
+                        </a>
                     {% endif %}
                     
                     <a href="{% url 'create_journey' %}" class="quick-link">
@@ -1078,12 +1100,10 @@
                     </a>
                     
                     {% if journeys|length > 0 %}
-                        {% with first_journey=journeys|first %}
-                        <a href="{% url 'create_activity' slug=first_journey.slug %}" class="quick-link">
+                        <a href="{% url 'create_activity' slug=journeys.0.slug %}" class="quick-link">
                             <i class="fas fa-file-alt"></i>
-                            <span>Add Daily Log</span>
+                            <span>Add Build Log</span>
                         </a>
-                        {% endwith %}
                     {% else %}
                         <a href="{% url 'create_journey' %}" class="quick-link">
                             <i class="fas fa-file-alt"></i>
@@ -1179,6 +1199,12 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
                             <i class="fas fa-paint-brush" style="color: #f59e0b; width: 16px;"></i> Customization
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-file-export" style="color: #f59e0b; width: 16px;"></i> PDF Exports
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
+                            <i class="fas fa-robot" style="color: #f59e0b; width: 16px;"></i> AI Progress Reports
                         </div>
                     </div>
                     <a href="{% url 'subscription_plans' %}" class="btn btn-primary btn-sm" style="width: 100%; margin-top: 12px;">

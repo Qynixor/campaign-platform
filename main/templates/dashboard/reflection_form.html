@@ -13,6 +13,8 @@
     
     .form-header {
         margin-bottom: 30px;
+        padding: 20px 0 10px 24px;
+        border-left: 4px solid var(--accent);
     }
     
     .form-header h1 {
@@ -33,7 +35,8 @@
     .form-header .subtitle {
         color: var(--text-secondary);
         font-size: 14px;
-        margin-top: 4px;
+        margin-top: 6px;
+        line-height: 1.5;
     }
     
     .form-card {
@@ -229,8 +232,17 @@
             padding: 20px 16px 80px;
         }
         
+        .form-header {
+            padding: 16px 0 10px 16px;
+            border-left-width: 3px;
+        }
+        
         .form-header h1 {
             font-size: 22px;
+        }
+        
+        .form-header .subtitle {
+            font-size: 13px;
         }
         
         .form-card {
@@ -255,6 +267,26 @@
             margin-right: 0;
         }
     }
+    
+    @media (max-width: 480px) {
+        .form-header {
+            padding: 12px 0 8px 12px;
+            border-left-width: 2px;
+        }
+        
+        .form-header h1 {
+            font-size: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .form-header h1 i {
+            font-size: 20px;
+        }
+        
+        .form-header .subtitle {
+            font-size: 12px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -271,7 +303,7 @@
             {% if is_editing %}
                 Update your reflection
             {% else %}
-                Reflect on your fitness and wellness journey
+                Reflect on your build journey — what you learned, overcame, or achieved
             {% endif %}
         </p>
     </div>
@@ -294,7 +326,7 @@
             <label for="id_summary">Summary <span class="required">*</span></label>
             <input type="text" name="summary" id="id_summary" 
                    value="{{ form.summary.value|default:'' }}"
-                   placeholder="e.g., Felt strong during today's workout"
+                   placeholder="e.g., Learned about user onboarding"
                    maxlength="100" required>
             <div class="help-text">A short summary of what this reflection is about (max 100 chars)</div>
             {% if form.summary.errors %}
@@ -306,9 +338,9 @@
         <div class="form-group">
             <label for="id_reflection">Reflection <span class="required">*</span></label>
             <textarea name="reflection" id="id_reflection" rows="5" 
-                      placeholder="How did you feel? What did you learn from today's experience?" 
+                      placeholder="What did you learn? What challenges did you overcome? What's next?" 
                       maxlength="500" required>{{ form.reflection.value|default:'' }}</textarea>
-            <div class="help-text">Write your thoughts and feelings (max 500 chars)</div>
+            <div class="help-text">Write your thoughts and learnings (max 500 chars)</div>
             {% if form.reflection.errors %}
                 <div class="error-text">{{ form.reflection.errors.0 }}</div>
             {% endif %}
@@ -316,16 +348,29 @@
         
         <!-- ===== REFLECTION TYPE ===== -->
         <div class="form-group">
-            <label for="id_reflection_type">Reflection Type <span class="required">*</span></label>
+            <label for="id_reflection_type">Reflection Type</label>
             <select name="reflection_type" id="id_reflection_type">
-                <option value="workout" {% if form.reflection_type.value == 'workout' %}selected{% endif %}>💪 Workout Reflection</option>
-                <option value="nutrition" {% if form.reflection_type.value == 'nutrition' %}selected{% endif %}>🥗 Nutrition Reflection</option>
-                <option value="mental" {% if form.reflection_type.value == 'mental' %}selected{% endif %}>🧠 Mental Wellness</option>
-                <option value="recovery" {% if form.reflection_type.value == 'recovery' %}selected{% endif %}>😴 Recovery & Sleep</option>
-                <option value="milestone" {% if form.reflection_type.value == 'milestone' %}selected{% endif %}>🏆 Milestone Celebration</option>
-                <option value="struggle" {% if form.reflection_type.value == 'struggle' %}selected{% endif %}>😞 Struggle / Challenge</option>
-                <option value="gratitude" {% if form.reflection_type.value == 'gratitude' %}selected{% endif %}>🙏 Gratitude</option>
-                <option value="general" {% if form.reflection_type.value == 'general' or not form.reflection_type.value %}selected{% endif %}>📝 General Reflection</option>
+                <option value="general" {% if form.reflection_type.value == 'general' or not form.reflection_type.value %}selected{% endif %}>
+                    📝 General Reflection
+                </option>
+                <option value="learning" {% if form.reflection_type.value == 'learning' %}selected{% endif %}>
+                    📚 Key Learning
+                </option>
+                <option value="challenge" {% if form.reflection_type.value == 'challenge' %}selected{% endif %}>
+                    💪 Challenge Overcome
+                </option>
+                <option value="milestone" {% if form.reflection_type.value == 'milestone' %}selected{% endif %}>
+                    🏆 Milestone Celebration
+                </option>
+                <option value="mistake" {% if form.reflection_type.value == 'mistake' %}selected{% endif %}>
+                    💡 Mistake / Lesson
+                </option>
+                <option value="gratitude" {% if form.reflection_type.value == 'gratitude' %}selected{% endif %}>
+                    🙏 Gratitude
+                </option>
+                <option value="future" {% if form.reflection_type.value == 'future' %}selected{% endif %}>
+                    🔮 Future Vision
+                </option>
             </select>
             <div class="help-text">What type of reflection is this?</div>
             {% if form.reflection_type.errors %}
@@ -333,68 +378,39 @@
             {% endif %}
         </div>
         
-        <!-- ===== MOOD & ENERGY ===== -->
-        <div class="form-row">
-            <div class="form-group">
-                <label for="id_mood">Mood</label>
-                <select name="mood" id="id_mood">
-                    <option value="">Select your mood</option>
-                    <option value="amazing" {% if form.mood.value == 'amazing' %}selected{% endif %}>🌟 Amazing</option>
-                    <option value="good" {% if form.mood.value == 'good' %}selected{% endif %}>👍 Good</option>
-                    <option value="okay" {% if form.mood.value == 'okay' %}selected{% endif %}>😐 Okay</option>
-                    <option value="tired" {% if form.mood.value == 'tired' %}selected{% endif %}>😴 Tired</option>
-                    <option value="challenged" {% if form.mood.value == 'challenged' %}selected{% endif %}>💪 Challenged</option>
-                    <option value="struggling" {% if form.mood.value == 'struggling' %}selected{% endif %}>😞 Struggling</option>
-                    <option value="proud" {% if form.mood.value == 'proud' %}selected{% endif %}>🏆 Proud</option>
-                    <option value="grateful" {% if form.mood.value == 'grateful' %}selected{% endif %}>🙏 Grateful</option>
-                </select>
-                <div class="help-text">How are you feeling?</div>
-                {% if form.mood.errors %}
-                    <div class="error-text">{{ form.mood.errors.0 }}</div>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label for="id_energy_level">Energy Level</label>
-                <input type="number" name="energy_level" id="id_energy_level"
-                       value="{{ form.energy_level.value|default:'' }}"
-                       placeholder="1-10"
-                       min="1" max="10">
-                <div class="help-text">Rate your energy on a scale of 1-10</div>
-                {% if form.energy_level.errors %}
-                    <div class="error-text">{{ form.energy_level.errors.0 }}</div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- ===== SLEEP HOURS ===== -->
-        <div class="form-group">
-            <label for="id_sleep_hours">Sleep Hours</label>
-            <input type="number" name="sleep_hours" id="id_sleep_hours"
-                   value="{{ form.sleep_hours.value|default:'' }}"
-                   placeholder="7.5"
-                   step="0.5" min="0" max="24">
-            <div class="help-text">How many hours of sleep did you get?</div>
-            {% if form.sleep_hours.errors %}
-                <div class="error-text">{{ form.sleep_hours.errors.0 }}</div>
-            {% endif %}
-        </div>
-        
         <!-- ===== RELATED JOURNEY ===== -->
         <div class="form-group">
             <label for="id_related_journey">Related Journey</label>
             <select name="related_journey" id="id_related_journey">
-                <option value="">None</option>
+                <option value="">None — Just a standalone reflection</option>
                 {% for journey in form.fields.related_journey.queryset %}
                     <option value="{{ journey.pk }}" 
                             {% if form.related_journey.value == journey.pk %}selected{% endif %}>
-                        {{ journey.title }}
+                        🚀 {{ journey.title }}
                     </option>
                 {% endfor %}
             </select>
-            <div class="help-text">Link this reflection to one of your journeys</div>
+            <div class="help-text">Link this reflection to one of your build journeys</div>
             {% if form.related_journey.errors %}
                 <div class="error-text">{{ form.related_journey.errors.0 }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- ===== RELATED ACTIVITY ===== -->
+        <div class="form-group">
+            <label for="id_related_activity">Related Activity</label>
+            <select name="related_activity" id="id_related_activity">
+                <option value="">None — Just a standalone reflection</option>
+                {% for activity in form.fields.related_activity.queryset %}
+                    <option value="{{ activity.pk }}" 
+                            {% if form.related_activity.value == activity.pk %}selected{% endif %}>
+                        📅 Day {{ activity.day_number_field }} - {{ activity.title|default:activity.content|truncatechars:30 }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="help-text">Link this reflection to a specific daily build log</div>
+            {% if form.related_activity.errors %}
+                <div class="error-text">{{ form.related_activity.errors.0 }}</div>
             {% endif %}
         </div>
         
@@ -402,8 +418,8 @@
         <div class="form-group">
             <div class="checkbox-group">
                 <input type="checkbox" name="is_private" id="id_is_private" 
-                       {% if form.is_private.value or not form.is_private.value %}checked{% endif %}>
-                <label for="id_is_private">🔒 Private</label>
+                       {% if form.is_private.value != False %}checked{% endif %}>
+                <label for="id_is_private">🔒 Keep this reflection private</label>
             </div>
             <div class="help-text">Private reflections are only visible to you</div>
             {% if form.is_private.errors %}

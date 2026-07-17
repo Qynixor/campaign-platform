@@ -19,7 +19,7 @@ User = get_user_model()
 # CORE USER MODELS
 # ============================================================================
 class Profile(models.Model):
-    """User profile for Rallynex — fitness & wellness focused"""
+    """User profile for Rallynex — Product Builders & Creators"""
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     image = CloudinaryField(
@@ -31,10 +31,11 @@ class Profile(models.Model):
     bio = models.TextField(default='', max_length=200, blank=True)
     location = models.CharField(max_length=100, blank=True)
     
-    # Optional social links
+    # Social links for builders
     website = models.URLField(blank=True)
     twitter = models.CharField(max_length=50, blank=True)
-    instagram = models.CharField(max_length=50, blank=True)
+    linkedin = models.CharField(max_length=50, blank=True)
+    github = models.CharField(max_length=50, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -56,10 +57,8 @@ class Profile(models.Model):
     def get_total_entries(self):
         return Activity.objects.filter(journey__creator=self).count()
     
-    def get_current_streak(self):
-        """Calculate current streak across all active journeys"""
-        # FUTURE: Implement streak calculation
-        return 0
+    def get_follower_count(self):
+        return JourneyFollow.objects.filter(journey__creator=self).count()
 
 
 @receiver(post_save, sender=User)
@@ -69,55 +68,34 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 
 # ============================================================================
-# JOURNEY MODEL — Fitness & Wellness Focused
+# JOURNEY MODEL — Build in Public Focused
 # ============================================================================
 class Journey(models.Model):
     """
-    A journey is a container for documenting fitness and wellness progress.
-    Daily logs with structured tracking.
+    A journey is a container for documenting product building progress.
+    Daily logs tracking wins, failures, learnings, and milestones.
     """
     
     # ===== JOURNEY TYPES =====
     JOURNEY_TYPES = [
-        ('daily', 'Daily Journey'),
-        # FUTURE: ('milestone', 'Milestone Journey'),
-        # FUTURE: ('challenge', 'Challenge'),
-        # FUTURE: ('build_in_public', 'Build in Public'),
+        ('build_in_public', 'Build in Public'),
+        ('product', 'Product Journey'),
+        ('startup', 'Startup Journey'),
+        ('side_project', 'Side Project'),
     ]
     
-    # ===== CATEGORIES — FITNESS & WELLNESS ONLY =====
+    # ===== CATEGORIES — PRODUCT BUILDING =====
     CATEGORY_CHOICES = [
-        ('fitness', 'Fitness'),
-        ('wellness', 'Wellness'),
-        # FUTURE: ('nutrition', 'Nutrition'),
-        # FUTURE: ('recovery', 'Recovery'),
-        # FUTURE: ('build_in_public', 'Build in Public'),
-        # FUTURE: ('learning', 'Learning & Skills'),
-        # FUTURE: ('creative', 'Creative Projects'),
-        # FUTURE: ('business', 'Business & Startups'),
-        # FUTURE: ('personal', 'Personal Growth'),
-        # FUTURE: ('cause', 'Social Cause'),
-        # FUTURE: ('other', 'Other'),
-    ]
-    
-    # ===== FITNESS GOALS =====
-    FITNESS_GOALS = [
-        ('build_muscle', 'Build Muscle'),
-        ('lose_weight', 'Lose Weight'),
-        ('increase_stamina', 'Increase Stamina'),
-        ('improve_flexibility', 'Improve Flexibility'),
-        ('run_faster', 'Run Faster'),
-        ('general_fitness', 'General Fitness'),
-    ]
-    
-    # ===== WELLNESS FOCUS =====
-    WELLNESS_FOCUS = [
-        ('mental_health', 'Mental Health'),
-        ('better_sleep', 'Better Sleep'),
-        ('stress_reduction', 'Stress Reduction'),
-        ('mindfulness', 'Mindfulness'),
-        ('nutrition', 'Nutrition'),
-        ('general_wellness', 'General Wellness'),
+        ('product', 'Product'),
+        ('marketing', 'Marketing'),
+        ('fundraising', 'Fundraising'),
+        ('hiring', 'Hiring & Team'),
+        ('development', 'Development'),
+        ('design', 'Design'),
+        ('sales', 'Sales'),
+        ('learning', 'Learning & Skills'),
+        ('personal', 'Personal Growth'),
+        ('other', 'Other'),
     ]
     
     PRIVACY_CHOICES = [
@@ -128,10 +106,10 @@ class Journey(models.Model):
     
     # ===== TEMPLATE STYLES =====
     TEMPLATE_STYLE_CHOICES = [
-        ('fitness', 'Fitness'),
-        # FUTURE: ('wellness', 'Wellness'),
-        # FUTURE: ('minimal', 'Minimal'),
-        # FUTURE: ('build_in_public', 'Build in Public'),
+        ('build_in_public', 'Build in Public'),
+        ('minimal', 'Minimal'),
+        ('product', 'Product Journey'),
+        ('startup', 'Startup Journey'),
     ]
     
     # ==================== BASIC INFO ====================
@@ -143,52 +121,39 @@ class Journey(models.Model):
     category = models.CharField(
         max_length=20, 
         choices=CATEGORY_CHOICES, 
-        default='fitness'
+        default='product'
     )
     
     journey_type = models.CharField(
         max_length=20, 
         choices=JOURNEY_TYPES, 
-        default='daily'
+        default='build_in_public'
     )
     
-    # ===== GOALS & FOCUS =====
-    fitness_goal = models.CharField(
+    # ===== BUILD IN PUBLIC METRICS =====
+    product_stage = models.CharField(
         max_length=50,
-        choices=FITNESS_GOALS,
         blank=True,
-        null=True,
-        help_text="What's your main fitness goal?"
+        help_text="e.g., Idea, MVP, Beta, Launch, Growth, Scale"
     )
     
-    wellness_focus = models.CharField(
-        max_length=50,
-        choices=WELLNESS_FOCUS,
-        blank=True,
-        null=True,
-        help_text="What's your wellness focus?"
-    )
+    product_url = models.URLField(blank=True, help_text="Link to your product")
+    github_url = models.URLField(blank=True, help_text="Link to your GitHub repo")
     
-    custom_goal = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Custom goal if none of the above fit"
-    )
-    
-    # ==================== VISUALS ====================
+    # ===== VISUALS ====================
     cover_image = CloudinaryField('image', folder='journey_covers', null=True, blank=True)
     
     template_style = models.CharField(
         max_length=20,
         choices=TEMPLATE_STYLE_CHOICES,
-        default='fitness',
+        default='build_in_public',
         help_text="Display style for your journey"
     )
     
     # ==================== STRUCTURE ====================
     duration = models.PositiveIntegerField(
         default=30, 
-        help_text="Number of days for this fitness/wellness journey"
+        help_text="Number of days for this journey"
     )
     
     current_day_override = models.PositiveIntegerField(
@@ -200,25 +165,27 @@ class Journey(models.Model):
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
     
-    # ==================== TARGETS (future expansion) ====================
-    # target_weight = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
-    # target_distance = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    # target_streak = models.PositiveIntegerField(default=0)
+    # ==================== COMMUNITY ====================
+    allow_comments = models.BooleanField(
+        default=True, 
+        help_text="Allow public comments"
+    )
+    
+    allow_followers = models.BooleanField(
+        default=True,
+        help_text="Allow others to follow your journey"
+    )
     
     # ==================== ANALYTICS ====================
     view_count = models.PositiveIntegerField(default=0)
     unique_viewers = models.PositiveIntegerField(default=0)
+    follower_count = models.PositiveIntegerField(default=0)
     
     # ==================== PRIVACY ====================
     privacy_status = models.CharField(
         max_length=20,
         choices=PRIVACY_CHOICES,
         default='private'
-    )
-    
-    allow_comments = models.BooleanField(
-        default=False, 
-        help_text="Allow public comments"
     )
     
     # ==================== STATUS ====================
@@ -259,7 +226,7 @@ class Journey(models.Model):
         if not self.start_date:
             self.start_date = timezone.now()
         
-        if self.duration and self.journey_type == 'daily':
+        if self.duration and self.journey_type in ['build_in_public', 'product', 'startup', 'side_project']:
             self.end_date = self.start_date + datetime.timedelta(days=self.duration)
         
         super().save(*args, **kwargs)
@@ -321,7 +288,7 @@ class Journey(models.Model):
     def get_meta_description(self):
         if self.description:
             return self.description[:160]
-        return f"Follow {self.creator.get_display_name()}'s fitness journey: {self.title} on Rallynex"
+        return f"Follow {self.creator.get_display_name()}'s build in public journey: {self.title} on Rallynex"
     
     def get_meta_image(self):
         if self.cover_image:
@@ -329,79 +296,65 @@ class Journey(models.Model):
         return None
     
     # ===== HELPER METHODS =====
-    
-    def get_total_workouts(self):
-        """Count total workout activities"""
-        return self.activities.filter(
-            activity_type__in=['cardio', 'strength', 'hiit', 'yoga', 'walking', 'running']
-        ).count()
+    def get_total_entries(self):
+        """Count total activity entries"""
+        return self.activities.count()
     
     def get_total_reflections(self):
         """Count total reflections"""
         return self.reflections.count()
     
-    def get_metrics_summary(self):
-        """Get summary of progress metrics"""
-        metrics = {}
-        for activity in self.activities.all():
-            if activity.progress_metrics:
-                for key, value in activity.progress_metrics.items():
-                    if key not in metrics:
-                        metrics[key] = []
-                    metrics[key].append(value)
-        return metrics
+    def get_log_count(self):
+        """Get total number of logs"""
+        return self.activities.count()
     
-    def get_streak(self):
-        """Calculate current streak of consecutive days with activity"""
-        # FUTURE: Implement streak calculation
-        return 0
+    def get_building_days(self):
+        """Get number of days since start"""
+        if not self.start_date:
+            return 0
+        return (timezone.now() - self.start_date).days
+    
+    def update_follower_count(self):
+        """Update follower count"""
+        self.follower_count = self.followers.count()
+        self.save(update_fields=['follower_count'])
 
 
 # ============================================================================
-# ACTIVITY MODEL — Daily Fitness/Wellness Entries
+# ACTIVITY MODEL — Daily Build in Public Entries
 # ============================================================================
 
 class Activity(models.Model):
     """
-    Individual daily entry within a fitness or wellness journey.
-    This is where users document their daily progress.
+    Individual daily entry within a build in public journey.
+    This is where users document their daily product progress.
     """
     
-    # ===== MOOD TRACKING =====
-    MOOD_CHOICES = [
-        ('amazing', '🌟 Amazing'),
-        ('great', '💪 Great'),
-        ('good', '👍 Good'),
-        ('okay', '😐 Okay'),
-        ('tired', '😴 Tired'),
-        ('challenged', '💪 Challenged'),
-        ('struggling', '😞 Struggling'),
-        ('proud', '🏆 Proud'),
-        ('grateful', '🙏 Grateful'),
-        ('neutral', '😶 Neutral'),
+    # ===== ACTIVITY TYPES =====
+    ACTIVITY_TYPES = [
+        ('ship', '🚀 Ship / Launch'),
+        ('milestone', '🏆 Milestone'),
+        ('learning', '📚 Learning'),
+        ('failure', '💥 Failure / Setback'),
+        ('win', '🎉 Win'),
+        ('progress', '📈 Progress'),
+        ('reflection', '💭 Reflection'),
+        ('experiment', '🧪 Experiment'),
+        ('feedback', '💬 Feedback'),
     ]
     
-    # ===== WORKOUT TYPES =====
-    WORKOUT_TYPES = [
-        ('cardio', 'Cardio'),
-        ('strength', 'Strength Training'),
-        ('hiit', 'HIIT'),
-        ('yoga', 'Yoga'),
-        ('pilates', 'Pilates'),
-        ('walking', 'Walking'),
-        ('running', 'Running'),
-        ('cycling', 'Cycling'),
-        ('swimming', 'Swimming'),
-        ('sports', 'Sports'),
-        ('stretching', 'Stretching'),
+    # ===== PRODUCT AREAS =====
+    PRODUCT_AREAS = [
+        ('frontend', 'Frontend'),
+        ('backend', 'Backend'),
+        ('design', 'Design'),
+        ('marketing', 'Marketing'),
+        ('sales', 'Sales'),
+        ('fundraising', 'Fundraising'),
+        ('hiring', 'Hiring'),
+        ('community', 'Community'),
+        ('product', 'Product'),
         ('other', 'Other'),
-    ]
-    
-    # ===== INTENSITY LEVELS =====
-    INTENSITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
     ]
     
     # ==================== RELATIONSHIPS ====================
@@ -409,30 +362,32 @@ class Activity(models.Model):
     
     # ==================== CONTENT ====================
     title = models.CharField(max_length=200, blank=True, help_text="Optional title for this entry")
-    content = models.TextField(max_length=500, help_text="Your entry content")
+    content = models.TextField(max_length=500, help_text="What did you build, learn, or ship today?")
     summary = models.TextField(blank=True, help_text="Short summary")
     
-    # ==================== WORKOUT DETAILS ====================
+    # ==================== ACTIVITY METADATA ====================
     activity_type = models.CharField(
         max_length=20,
-        choices=WORKOUT_TYPES,
-        blank=True,
-        null=True,
-        help_text="Type of activity"
+        choices=ACTIVITY_TYPES,
+        default='progress',
+        help_text="What type of activity is this?"
     )
     
-    duration_minutes = models.PositiveIntegerField(
+    product_area = models.CharField(
+        max_length=20,
+        choices=PRODUCT_AREAS,
+        blank=True,
+        null=True,
+        help_text="Which area of your product does this relate to?"
+    )
+    
+    # ==================== BUILD METRICS ====================
+    hours_spent = models.DecimalField(
+        max_digits=4, 
+        decimal_places=1, 
         null=True, 
         blank=True,
-        help_text="Duration in minutes"
-    )
-    
-    intensity = models.CharField(
-        max_length=10,
-        choices=INTENSITY_CHOICES,
-        blank=True,
-        null=True,
-        help_text="Intensity level"
+        help_text="Hours spent working on this"
     )
     
     # ==================== MEDIA ====================
@@ -450,15 +405,9 @@ class Activity(models.Model):
     # ==================== DAY TRACKING ====================
     day_number_field = models.PositiveIntegerField(default=1, db_index=True)
     actual_date = models.DateField(null=True, blank=True, help_text="Actual date of the entry")
-    custom_metrics = models.JSONField(default=dict, blank=True, help_text="Custom metrics like weight, sleep, mood, energy, stress, etc.")   
-    # ==================== MOOD & METRICS ====================
-    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, blank=True, null=True)
     
-    # Flexible metrics (e.g., {"weight": 75, "distance": 5.2, "reps": 10, "sleep": 8})
-    progress_metrics = models.JSONField(default=dict, blank=True)
-    
-    # ==================== LOCATION ====================
-    location = models.CharField(max_length=200, blank=True)
+    # ==================== METRICS ====================
+    custom_metrics = models.JSONField(default=dict, blank=True, help_text="Custom metrics like users, revenue, followers, etc.")
     
     # ==================== STATUS ====================
     is_draft = models.BooleanField(default=False)
@@ -476,6 +425,7 @@ class Activity(models.Model):
             models.Index(fields=['journey', 'day_number_field']),
             models.Index(fields=['journey', 'created_at']),
             models.Index(fields=['activity_type']),
+            models.Index(fields=['product_area']),
         ]
         verbose_name_plural = 'Activities'
     
@@ -524,11 +474,20 @@ class Activity(models.Model):
             return f'<img src="{self.thumbnail.url}" alt="{self.title or self.content}" style="width:100%;display:block;">'
         return None
     
-    def get_formatted_metrics(self):
-        """Format progress metrics for display"""
-        if not self.progress_metrics:
-            return None
-        return self.progress_metrics
+    def get_icon_for_type(self):
+        """Get emoji icon for activity type"""
+        icons = {
+            'ship': '🚀',
+            'milestone': '🏆',
+            'learning': '📚',
+            'failure': '💥',
+            'win': '🎉',
+            'progress': '📈',
+            'reflection': '💭',
+            'experiment': '🧪',
+            'feedback': '💬',
+        }
+        return icons.get(self.activity_type, '📝')
 
 # ============================================================================
 # REFLECTION MODEL — Personal Reflections (replaces JournalEntry)
@@ -536,32 +495,19 @@ class Activity(models.Model):
 
 class Reflection(models.Model):
     """
-    Personal reflections for fitness and wellness.
-    NOT a blog post — this is for personal reflection, gratitude, and mindset.
+    Personal reflections for product building journey.
+    NOT a blog post — this is for personal reflection, lessons learned, and mindset.
     """
     
     # ===== REFLECTION TYPES =====
     REFLECTION_TYPES = [
-        ('workout', 'Workout Reflection'),
-        ('nutrition', 'Nutrition Reflection'),
-        ('mental', 'Mental Wellness'),
-        ('recovery', 'Recovery & Sleep'),
+        ('learning', 'Key Learning'),
+        ('challenge', 'Challenge Overcome'),
         ('milestone', 'Milestone Celebration'),
-        ('struggle', 'Struggle / Challenge'),
+        ('mistake', 'Mistake/Lesson'),
         ('gratitude', 'Gratitude'),
+        ('future', 'Future Vision'),
         ('general', 'General Reflection'),
-    ]
-    
-    # ===== MOOD CHOICES =====
-    MOOD_CHOICES = [
-        ('amazing', '🌟 Amazing'),
-        ('good', '👍 Good'),
-        ('okay', '😐 Okay'),
-        ('tired', '😴 Tired'),
-        ('challenged', '💪 Challenged'),
-        ('struggling', '😞 Struggling'),
-        ('proud', '🏆 Proud'),
-        ('grateful', '🙏 Grateful'),
     ]
     
     # ==================== RELATIONSHIPS ====================
@@ -587,9 +533,7 @@ class Reflection(models.Model):
     reflection_type = models.CharField(
         max_length=20, 
         choices=REFLECTION_TYPES, 
-        default='general',  # ← ADDED
-        blank=True,         # ← ADDED
-        null=True           # ← ADDED
+        default='general'
     )
     
     summary = models.CharField(
@@ -599,21 +543,7 @@ class Reflection(models.Model):
     
     reflection = models.TextField(
         max_length=500, 
-        help_text="How did you feel? What did you learn?"
-    )
-    
-    # ==================== MOOD & ENERGY ====================
-    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, null=True, blank=True)
-    energy_level = models.PositiveSmallIntegerField(
-        null=True, 
-        blank=True, 
-        help_text="1-10"
-    )
-    sleep_hours = models.DecimalField(
-        max_digits=3, 
-        decimal_places=1, 
-        null=True, 
-        blank=True
+        help_text="What did you learn? How did you feel?"
     )
     
     # ==================== PRIVACY ====================
@@ -654,9 +584,11 @@ class SocialPublish(models.Model):
     
     PLATFORM_CHOICES = [
         ('twitter', 'Twitter/X'),
-        ('instagram', 'Instagram'),
         ('linkedin', 'LinkedIn'),
-        ('facebook', 'Facebook'),
+        ('github', 'GitHub'),
+        ('devto', 'Dev.to'),
+        ('hashnode', 'Hashnode'),
+        ('medium', 'Medium'),
     ]
     
     STATUS_CHOICES = [
@@ -713,8 +645,8 @@ class Notification(models.Model):
         ('follow', 'New Follower'),
         ('milestone', 'Milestone Reached'),
         ('export', 'Export Ready'),
-        # FUTURE: ('streak', 'Streak Milestone'),
-        # FUTURE: ('achievement', 'Achievement Unlocked'),
+        ('like', 'Like on Your Post'),
+        ('share', 'Someone Shared Your Journey'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -751,7 +683,6 @@ class Notification(models.Model):
 class Comment(models.Model):
     """
     Comments on journeys and activities.
-    Turned off by default for privacy.
     """
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
@@ -760,6 +691,7 @@ class Comment(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)
     
     content = models.TextField(max_length=500)
+    is_liked = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -875,6 +807,7 @@ class Export(models.Model):
         ('markdown', 'Markdown'),
         ('json', 'JSON'),
         ('html', 'HTML'),
+        ('csv', 'CSV'),
     ]
     
     STATUS_CHOICES = [
@@ -889,7 +822,7 @@ class Export(models.Model):
     
     format = models.CharField(max_length=20, choices=EXPORT_FORMATS)
     include_media = models.BooleanField(default=True)
-    include_comments = models.BooleanField(default=False)
+    include_comments = models.BooleanField(default=True)
     include_reflections = models.BooleanField(default=True)
     
     file_url = models.URLField(blank=True)
@@ -926,6 +859,7 @@ class ContactMessage(models.Model):
         ('journey', 'Journey Help'),
         ('export', 'Export Help'),
         ('feature', 'Feature Request'),
+        ('build_in_public', 'Build in Public Help'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -959,138 +893,6 @@ class Subscriber(models.Model):
 
 
 # ============================================================================
-# FUTURE MODELS (Commented — Ready for Expansion)
-# ============================================================================
-
-"""
-# FUTURE: Fitness Analytics
-class FitnessAnalytics(models.Model):
-    '''Aggregated analytics for a journey'''
-    journey = models.OneToOneField(Journey, on_delete=models.CASCADE)
-    total_workouts = models.PositiveIntegerField(default=0)
-    total_days_active = models.PositiveIntegerField(default=0)
-    longest_streak = models.PositiveIntegerField(default=0)
-    current_streak = models.PositiveIntegerField(default=0)
-    weight_trend = models.JSONField(default=list)
-    performance_trend = models.JSONField(default=list)
-    updated_at = models.DateTimeField(auto_now=True)
-
-
-# FUTURE: Challenges
-class Challenge(models.Model):
-    '''Group fitness challenges'''
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    duration_days = models.PositiveIntegerField(default=30)
-    participants = models.ManyToManyField(User, through='ChallengeParticipant')
-    is_active = models.BooleanField(default=True)
-
-
-class ChallengeParticipant(models.Model):
-    '''User participation in challenges'''
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
-    joined_at = models.DateTimeField(auto_now_add=True)
-    progress = models.PositiveIntegerField(default=0)
-
-
-# FUTURE: Device Integration
-class Integration(models.Model):
-    '''Connect to fitness devices/apps'''
-    PROVIDER_CHOICES = [
-        ('fitbit', 'Fitbit'),
-        ('apple_health', 'Apple Health'),
-        ('google_fit', 'Google Fit'),
-        ('strava', 'Strava'),
-        ('garmin', 'Garmin'),
-    ]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
-    access_token = models.TextField()
-    refresh_token = models.TextField()
-    last_sync = models.DateTimeField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-
-
-# FUTURE: Achievements
-class Achievement(models.Model):
-    '''Gamification achievements'''
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    icon = models.CharField(max_length=50)
-    points = models.PositiveIntegerField(default=0)
-
-
-class UserAchievement(models.Model):
-    '''User earned achievements'''
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
-    earned_at = models.DateTimeField(auto_now_add=True)
-"""
-
-
-# ============================================================================
-# SIGNALS
-# ============================================================================
-
-@receiver(post_save, sender=JourneyFollow)
-def create_follow_notification(sender, instance, created, **kwargs):
-    """Create notification when someone follows a journey"""
-    if created:
-        Notification.objects.create(
-            user=instance.journey.creator.user,
-            notification_type='follow',
-            message=f"{instance.user.username} started following your journey '{instance.journey.title}'.",
-            related_journey=instance.journey,
-            redirect_link=instance.journey.get_absolute_url()
-        )
-
-
-@receiver(post_save, sender=Comment)
-def create_comment_notification(sender, instance, created, **kwargs):
-    """Create notification when someone comments"""
-    if created:
-        target_user = None
-        if instance.journey:
-            target_user = instance.journey.creator.user
-        elif instance.activity:
-            target_user = instance.activity.journey.creator.user
-        
-        if target_user and target_user != instance.user:
-            Notification.objects.create(
-                user=target_user,
-                notification_type='comment',
-                message=f"{instance.user.username} commented on your journey.",
-                related_journey=instance.journey,
-                related_activity=instance.activity,
-                redirect_link=instance.journey.get_absolute_url() if instance.journey else instance.activity.get_absolute_url()
-            )
-
-
-@receiver(post_save, sender=Activity)
-def check_milestone_notification(sender, instance, created, **kwargs):
-    """Check if journey hit a milestone (25%, 50%, 75%, 100%)"""
-    if created:
-        progress = instance.journey.get_progress_percentage()
-        milestones = [25, 50, 75, 100]
-        
-        if progress in milestones:
-            Notification.objects.create(
-                user=instance.journey.creator.user,
-                notification_type='milestone',
-                message=f"🎉 Your journey '{instance.journey.title}' is {progress}% complete!",
-                related_journey=instance.journey,
-                related_activity=instance,
-                redirect_link=instance.journey.get_absolute_url()
-            )
-
-
-@receiver(post_save, sender=Reflection)
-def check_reflection_streak(sender, instance, created, **kwargs):
-    """FUTURE: Check if user has maintained a reflection streak"""
-    pass
-
-# ============================================================================
 # MONETIZATION MODELS - PayPal Integration
 # ============================================================================
 
@@ -1118,6 +920,8 @@ class SubscriptionPlan(models.Model):
     has_progress_charts = models.BooleanField(default=True)
     has_extra_storage = models.BooleanField(default=True)
     has_customization = models.BooleanField(default=True)
+    has_social_sharing = models.BooleanField(default=True)
+    has_export_features = models.BooleanField(default=True)
     
     storage_limit_mb = models.PositiveIntegerField(default=500)
     is_active = models.BooleanField(default=True)
@@ -1196,6 +1000,8 @@ class UserSubscription(models.Model):
             'progress_charts': self.plan.has_progress_charts,
             'extra_storage': self.plan.has_extra_storage,
             'customization': self.plan.has_customization,
+            'social_sharing': self.plan.has_social_sharing,
+            'export_features': self.plan.has_export_features,
             'storage_limit_mb': self.plan.storage_limit_mb,
             'storage_used_mb': self.storage_used_mb,
         }
@@ -1210,6 +1016,7 @@ class OneTimeProduct(models.Model):
         ('theme', 'Custom Journey Theme'),
         ('storage', 'Extra Storage'),
         ('ai_report', 'AI Progress Report'),
+        ('social_pack', 'Social Media Pack'),
     ]
     
     PAYMENT_TYPES = [
@@ -1307,6 +1114,7 @@ class PaidJourneyExport(models.Model):
         ('markdown', 'Markdown'),
         ('json', 'JSON'),
         ('html', 'HTML'),
+        ('csv', 'CSV'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_journey_exports')
@@ -1319,7 +1127,8 @@ class PaidJourneyExport(models.Model):
     
     include_media = models.BooleanField(default=True)
     include_reflections = models.BooleanField(default=True)
-    include_comments = models.BooleanField(default=False)
+    include_comments = models.BooleanField(default=True)
+    include_metrics = models.BooleanField(default=True)
     
     is_downloaded = models.BooleanField(default=False)
     download_count = models.PositiveIntegerField(default=0)
@@ -1338,8 +1147,6 @@ class PaidJourneyExport(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.journey.title} ({self.format})"
 
-
-# main/models.py - Add this class
 
 class CustomTheme(models.Model):
     """
@@ -1584,100 +1391,59 @@ class PaymentTransaction(models.Model):
         return f"{self.user.username} - ${self.amount} ({self.transaction_type})"
 
 
-# main/models.py - Add these models
+# ============================================================================
+# SIGNALS
+# ============================================================================
 
-class Goal(models.Model):
-    """User goals for their journey"""
-    
-    GOAL_TYPES = [
-        ('streak', 'Streak Goal'),
-        ('days', 'Days Goal'),
-        ('weight', 'Weight Goal'),
-        ('sleep', 'Sleep Goal'),
-        ('workouts', 'Workouts Goal'),
-        ('custom', 'Custom Goal'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='goals')
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='goals')
-    
-    goal_type = models.CharField(max_length=20, choices=GOAL_TYPES)
-    target_value = models.FloatField()
-    current_value = models.FloatField(default=0)
-    unit = models.CharField(max_length=20, blank=True, help_text="e.g., kg, km, days, hours")
-    
-    title = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    deadline = models.DateTimeField(null=True, blank=True)
-    
-    is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.user.username} - {self.title}"
-    
-    def update_progress(self, value):
-        """Update goal progress"""
-        self.current_value = value
-        if self.current_value >= self.target_value and not self.is_completed:
-            self.is_completed = True
-            self.completed_at = timezone.now()
-            # Create milestone notification
+@receiver(post_save, sender=JourneyFollow)
+def create_follow_notification(sender, instance, created, **kwargs):
+    """Create notification when someone follows a journey"""
+    if created:
+        Notification.objects.create(
+            user=instance.journey.creator.user,
+            notification_type='follow',
+            message=f"{instance.user.username} started following your journey '{instance.journey.title}'.",
+            related_journey=instance.journey,
+            redirect_link=instance.journey.get_absolute_url()
+        )
+        # Update follower count
+        instance.journey.update_follower_count()
+
+
+@receiver(post_save, sender=Comment)
+def create_comment_notification(sender, instance, created, **kwargs):
+    """Create notification when someone comments"""
+    if created:
+        target_user = None
+        if instance.journey:
+            target_user = instance.journey.creator.user
+        elif instance.activity:
+            target_user = instance.activity.journey.creator.user
+        
+        if target_user and target_user != instance.user:
             Notification.objects.create(
-                user=self.user,
-                notification_type='milestone',
-                message=f"🎉 You completed your goal: {self.title}!",
-                related_journey=self.journey,
-                redirect_link=self.journey.get_absolute_url()
+                user=target_user,
+                notification_type='comment',
+                message=f"{instance.user.username} commented on your journey.",
+                related_journey=instance.journey,
+                related_activity=instance.activity,
+                redirect_link=instance.journey.get_absolute_url() if instance.journey else instance.activity.get_absolute_url()
             )
-        self.save()
-    
-    def get_progress_percentage(self):
-        """Get progress percentage"""
-        if self.target_value == 0:
-            return 0
-        return min(round((self.current_value / self.target_value) * 100), 100)
-    
-    def get_days_remaining(self):
-        """Get days remaining until deadline"""
-        if not self.deadline:
-            return None
-        remaining = (self.deadline - timezone.now()).days
-        return max(0, remaining)
 
 
-class Milestone(models.Model):
-    """Milestones achieved in a journey"""
-    
-    MILESTONE_TYPES = [
-        ('first_entry', 'First Entry'),
-        ('streak_3', '3-Day Streak'),
-        ('streak_7', '7-Day Streak'),
-        ('streak_14', '14-Day Streak'),
-        ('streak_30', '30-Day Streak'),
-        ('halfway', 'Halfway Point'),
-        ('complete', 'Journey Complete'),
-        ('custom', 'Custom Milestone'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='milestones')
-    journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='milestones')
-    
-    milestone_type = models.CharField(max_length=20, choices=MILESTONE_TYPES)
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, default='🏆')
-    
-    achieved_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-achieved_at']
-    
-    def __str__(self):
-        return f"{self.user.username} - {self.name}"
+@receiver(post_save, sender=Activity)
+def check_milestone_notification(sender, instance, created, **kwargs):
+    """Check if journey hit a milestone (25%, 50%, 75%, 100%)"""
+    if created:
+        progress = instance.journey.get_progress_percentage()
+        milestones = [25, 50, 75, 100]
+        
+        if progress in milestones:
+            Notification.objects.create(
+                user=instance.journey.creator.user,
+                notification_type='milestone',
+                message=f"🎉 Your journey '{instance.journey.title}' is {progress}% complete!",
+                related_journey=instance.journey,
+                related_activity=instance,
+                redirect_link=instance.journey.get_absolute_url()
+            )

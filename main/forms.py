@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
-from django.core.validators import URLValidator, EmailValidator
 from django.core.exceptions import ValidationError
 from cloudinary.forms import CloudinaryFileField
 from .models import (
@@ -10,7 +9,7 @@ from .models import (
     ContactMessage, Subscriber
 )
 import re
-from datetime import timedelta
+import json
 from django.utils import timezone
 
 User = get_user_model()
@@ -117,11 +116,11 @@ class LoginForm(AuthenticationForm):
 
 
 # ============================================================================
-# PROFILE FORMS
+# PROFILE FORMS — Builder Profile
 # ============================================================================
 
 class ProfileForm(forms.ModelForm):
-    """Edit profile information"""
+    """Edit profile information for builders"""
     
     image = CloudinaryFileField(
         required=False,
@@ -144,7 +143,7 @@ class ProfileForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'Tell us about your fitness journey...',
+            'placeholder': 'Tell us about your building journey... What are you working on?',
             'rows': 3
         })
     )
@@ -162,7 +161,7 @@ class ProfileForm(forms.ModelForm):
         required=False,
         widget=forms.URLInput(attrs={
             'class': 'form-input',
-            'placeholder': 'https://yourwebsite.com'
+            'placeholder': 'https://yourproduct.com'
         })
     )
     
@@ -175,18 +174,27 @@ class ProfileForm(forms.ModelForm):
         })
     )
     
-    instagram = forms.CharField(
+    linkedin = forms.CharField(
         max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': '@username'
+            'placeholder': 'LinkedIn URL or username'
+        })
+    )
+    
+    github = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'GitHub username'
         })
     )
     
     class Meta:
         model = Profile
-        fields = ['image', 'bio', 'location', 'website', 'twitter', 'instagram']
+        fields = ['image', 'bio', 'location', 'website', 'twitter', 'linkedin', 'github']
     
     def clean_twitter(self):
         username = self.cleaned_data.get('twitter', '')
@@ -194,24 +202,36 @@ class ProfileForm(forms.ModelForm):
             username = '@' + username
         return username
     
-    def clean_instagram(self):
-        username = self.cleaned_data.get('instagram', '')
-        if username and not username.startswith('@'):
-            username = '@' + username
+    def clean_linkedin(self):
+        username = self.cleaned_data.get('linkedin', '')
+        if username:
+            if 'linkedin.com/in/' in username:
+                username = username.split('linkedin.com/in/')[-1].split('/')[0]
+            if not username.startswith('@'):
+                username = '@' + username
+        return username
+    
+    def clean_github(self):
+        username = self.cleaned_data.get('github', '')
+        if username:
+            username = username.replace('@', '')
+            if 'github.com/' in username:
+                username = username.split('github.com/')[-1].split('/')[0]
         return username
 
+
 # ============================================================================
-# JOURNEY FORMS — Fitness & Wellness Focus
+# JOURNEY FORMS — Build in Public Focus
 # ============================================================================
 
 class JourneyForm(forms.ModelForm):
-    """Create/Edit a fitness or wellness journey"""
+    """Create/Edit a build in public journey"""
     
     title = forms.CharField(
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'e.g., 30 Days of Fitness, My Wellness Journey',
+            'placeholder': 'e.g., Building SaaS Product X, My Startup Journey',
             'autofocus': True
         })
     )
@@ -221,8 +241,16 @@ class JourneyForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'What\'s your fitness or wellness goal? What are you tracking?',
+            'placeholder': 'What are you building? Why does it matter? Share your vision...',
             'rows': 4
+        })
+    )
+    
+    journey_type = forms.ChoiceField(
+        choices=Journey.JOURNEY_TYPES,
+        initial='build_in_public',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
         })
     )
     
@@ -233,31 +261,32 @@ class JourneyForm(forms.ModelForm):
         })
     )
     
-    fitness_goal = forms.ChoiceField(
-        choices=Journey.FITNESS_GOALS,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        }),
-        help_text="What's your main fitness goal?"
-    )
-    
-    wellness_focus = forms.ChoiceField(
-        choices=Journey.WELLNESS_FOCUS,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        }),
-        help_text="What's your wellness focus?"
-    )
-    
-    custom_goal = forms.CharField(
-        max_length=200,
+    product_stage = forms.CharField(
+        max_length=50,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'Or tell us your custom goal...'
-        })
+            'placeholder': 'e.g., Idea, MVP, Beta, Launch, Growth'
+        }),
+        help_text="What stage is your product at?"
+    )
+    
+    product_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://yourproduct.com'
+        }),
+        help_text="Link to your product"
+    )
+    
+    github_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'https://github.com/your-repo'
+        }),
+        help_text="Link to your GitHub repository"
     )
     
     cover_image = CloudinaryFileField(
@@ -285,7 +314,8 @@ class JourneyForm(forms.ModelForm):
             'placeholder': '30',
             'min': 1,
             'max': 365
-        })
+        }),
+        help_text="Number of days for this journey"
     )
     
     current_day_override = forms.IntegerField(
@@ -317,11 +347,20 @@ class JourneyForm(forms.ModelForm):
     
     allow_comments = forms.BooleanField(
         required=False,
-        initial=False,
+        initial=True,
         widget=forms.CheckboxInput(attrs={
             'class': 'form-checkbox'
         }),
-        help_text="Allow other users to comment on your journey"
+        help_text="Allow other builders to comment on your journey"
+    )
+    
+    allow_followers = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        }),
+        help_text="Allow others to follow your journey"
     )
     
     template_style = forms.ChoiceField(
@@ -329,8 +368,7 @@ class JourneyForm(forms.ModelForm):
         widget=forms.RadioSelect(attrs={
             'class': 'template-style-radio'
         }),
-        initial='fitness',
-        required=False,  # ← ADD THIS
+        initial='build_in_public',
         label='Display Style',
         help_text='How your journey looks to visitors'
     )
@@ -340,7 +378,7 @@ class JourneyForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'fitness, wellness, strength, yoga'
+            'placeholder': 'saas, startup, product, marketing, fundraising'
         }),
         help_text="Separate tags with commas (max 10)"
     )
@@ -348,21 +386,21 @@ class JourneyForm(forms.ModelForm):
     class Meta:
         model = Journey
         fields = [
-            'title', 'description', 'category', 'fitness_goal', 'wellness_focus', 'custom_goal',
-            'cover_image', 'duration', 'current_day_override', 'start_date',
-            'privacy_status', 'allow_comments', 'template_style'
+            'title', 'description', 'journey_type', 'category', 'product_stage',
+            'product_url', 'github_url', 'cover_image', 'duration', 
+            'current_day_override', 'start_date', 'privacy_status', 
+            'allow_comments', 'allow_followers', 'template_style'
         ]
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Ensure template_style always has a value
         if not self.initial.get('template_style'):
-            self.initial['template_style'] = 'fitness'
+            self.initial['template_style'] = 'build_in_public'
         
         if self.instance and self.instance.pk:
             self.fields['current_day_override'].initial = self.instance.current_day_override
-            self.fields['template_style'].initial = self.instance.template_style or 'fitness'
+            self.fields['template_style'].initial = self.instance.template_style or 'build_in_public'
             
             tags = self.instance.journeytag_set.all()
             if tags.exists():
@@ -387,26 +425,16 @@ class JourneyForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
-        fitness_goal = cleaned_data.get('fitness_goal')
-        wellness_focus = cleaned_data.get('wellness_focus')
-        category = cleaned_data.get('category')
         
-        # Set default template_style if not provided
         if not cleaned_data.get('template_style'):
-            cleaned_data['template_style'] = 'fitness'
-        
-        if category == 'fitness' and not fitness_goal and not cleaned_data.get('custom_goal'):
-            self.add_error('fitness_goal', 'Please select a fitness goal or add a custom goal.')
-        
-        if category == 'wellness' and not wellness_focus and not cleaned_data.get('custom_goal'):
-            self.add_error('wellness_focus', 'Please select a wellness focus or add a custom goal.')
+            cleaned_data['template_style'] = 'build_in_public'
         
         return cleaned_data
     
     def save(self, commit=True):
         journey = super().save(commit=False)
         journey.current_day_override = self.cleaned_data.get('current_day_override')
-        journey.template_style = self.cleaned_data.get('template_style', 'fitness')
+        journey.template_style = self.cleaned_data.get('template_style', 'build_in_public')
         
         if commit:
             journey.save()
@@ -421,31 +449,33 @@ class JourneyForm(forms.ModelForm):
         
         return journey
 
+
 class JourneySettingsForm(forms.ModelForm):
     """Quick settings update for existing journey"""
     
     class Meta:
         model = Journey
-        fields = ['privacy_status', 'allow_comments']
+        fields = ['privacy_status', 'allow_comments', 'allow_followers']
         widgets = {
             'privacy_status': forms.Select(attrs={'class': 'form-select'}),
             'allow_comments': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
+            'allow_followers': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
 
 
 # ============================================================================
-# ACTIVITY FORMS — Daily Fitness/Wellness Entries
+# ACTIVITY FORMS — Daily Build in Public Entries
 # ============================================================================
 
 class ActivityForm(forms.ModelForm):
-    """Create/Edit a daily fitness or wellness entry"""
+    """Create/Edit a daily build in public entry"""
     
     title = forms.CharField(
         max_length=200,
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'Optional title for this entry'
+            'placeholder': 'Optional: What did you ship today?'
         })
     )
     
@@ -453,7 +483,7 @@ class ActivityForm(forms.ModelForm):
         max_length=500,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': "What did you do today? Share your workout, nutrition, or wellness progress...",
+            'placeholder': "What did you build today? What did you learn? What challenges did you face?",
             'rows': 4
         })
     )
@@ -463,38 +493,43 @@ class ActivityForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'A short summary of this entry',
+            'placeholder': 'A short summary of today\'s progress',
             'rows': 2
         })
     )
     
     activity_type = forms.ChoiceField(
-        choices=Activity.WORKOUT_TYPES,
+        choices=Activity.ACTIVITY_TYPES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select'
         }),
-        help_text="What type of activity did you do?"
+        help_text="What type of activity was this?"
     )
     
-    duration_minutes = forms.IntegerField(
+    # ✅ FIXED: Changed from PRODUCT_AREA to PRODUCT_AREAS (plural)
+    product_area = forms.ChoiceField(
+        choices=Activity.PRODUCT_AREAS,  # ← FIXED HERE
         required=False,
-        min_value=1,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        help_text="Which area of your product does this relate to?"
+    )
+    
+    hours_spent = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_value=24,
+        decimal_places=1,
         widget=forms.NumberInput(attrs={
             'class': 'form-input',
-            'placeholder': '30',
-            'min': 1
+            'placeholder': 'e.g., 3.5',
+            'step': '0.5',
+            'min': 0,
+            'max': 24
         }),
-        help_text="Duration in minutes"
-    )
-    
-    intensity = forms.ChoiceField(
-        choices=Activity.INTENSITY_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        }),
-        help_text="How intense was it?"
+        help_text="Hours spent working on this today"
     )
     
     media_file = CloudinaryFileField(
@@ -517,7 +552,7 @@ class ActivityForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'Caption for your media'
+            'placeholder': 'Caption for your media (screenshot, demo video, etc.)'
         })
     )
     
@@ -530,36 +565,18 @@ class ActivityForm(forms.ModelForm):
         required=False,
         widget=forms.DateInput(attrs={
             'class': 'form-input',
-            'type': 'date',
-            'placeholder': 'YYYY-MM-DD'
+            'type': 'date'
         }),
         help_text="The actual date of this entry"
     )
     
-    mood = forms.ChoiceField(
-        choices=Activity.MOOD_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    progress_metrics = forms.CharField(
+    custom_metrics = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-input',
-            'placeholder': 'e.g., {"weight": 75, "distance": 5.2, "reps": 10}'
+            'placeholder': '{"users": 150, "revenue": 1000, "followers": 50}'
         }),
-        help_text="JSON format: {'metric_name': value}"
-    )
-    
-    location = forms.CharField(
-        max_length=200,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-input',
-            'placeholder': 'Where did this happen? (e.g., Gym, Park, Home)'
-        })
+        help_text="Custom metrics like users, revenue, followers (JSON format)"
     )
     
     is_draft = forms.BooleanField(
@@ -567,15 +584,16 @@ class ActivityForm(forms.ModelForm):
         initial=False,
         widget=forms.CheckboxInput(attrs={
             'class': 'form-checkbox'
-        })
+        }),
+        help_text="Save as draft without publishing"
     )
     
     class Meta:
         model = Activity
         fields = [
-            'title', 'content', 'summary', 'activity_type', 'duration_minutes', 'intensity',
-            'media_file', 'media_caption', 'day_number_field', 'actual_date',
-            'mood', 'progress_metrics', 'location', 'is_draft'
+            'title', 'content', 'summary', 'activity_type', 'product_area',
+            'hours_spent', 'media_file', 'media_caption', 'day_number_field', 
+            'actual_date', 'custom_metrics', 'is_draft'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -587,22 +605,21 @@ class ActivityForm(forms.ModelForm):
             self.fields['day_number_field'].initial = self.day_number
         
         if self.journey:
-            if self.journey.category == 'fitness':
-                self.fields['content'].widget.attrs['placeholder'] = f"What did you do for fitness on Day {self.day_number}? Share your workout, progress, and how you felt..."
-            else:
-                self.fields['content'].widget.attrs['placeholder'] = f"How was your wellness practice on Day {self.day_number}? Share your mindfulness, nutrition, or recovery..."
+            self.fields['content'].widget.attrs['placeholder'] = (
+                f"What did you build on Day {self.day_number} of {self.journey.title}? "
+                f"Share your progress, learnings, and challenges..."
+            )
     
     def clean_content(self):
         content = self.cleaned_data.get('content', '')
         if not content.strip():
-            raise ValidationError('Please write something about this day.')
+            raise ValidationError('Please share what you built or learned today.')
         return content
     
-    def clean_progress_metrics(self):
-        metrics = self.cleaned_data.get('progress_metrics', '')
+    def clean_custom_metrics(self):
+        metrics = self.cleaned_data.get('custom_metrics', '')
         if metrics:
             try:
-                import json
                 return json.loads(metrics)
             except json.JSONDecodeError:
                 raise ValidationError('Please enter valid JSON format.')
@@ -626,7 +643,7 @@ class ActivityForm(forms.ModelForm):
                     existing = existing.exclude(pk=self.instance.pk)
                 
                 if existing.exists():
-                    raise ValidationError(f"Day {day_number} already has content.")
+                    raise ValidationError(f"Day {day_number} already has an entry.")
         
         return cleaned_data
     
@@ -646,11 +663,11 @@ class ActivityForm(forms.ModelForm):
 
 
 # ============================================================================
-# REFLECTION FORMS (Replaces JournalEntry)
+# REFLECTION FORMS — Personal Reflections on Building
 # ============================================================================
 
 class ReflectionForm(forms.ModelForm):
-    """Personal reflection form for fitness & wellness"""
+    """Personal reflection form for builders"""
     
     summary = forms.CharField(
         max_length=100,
@@ -665,7 +682,7 @@ class ReflectionForm(forms.ModelForm):
         max_length=500,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'How did you feel? What did you learn from today\'s experience?',
+            'placeholder': 'What did you learn? What challenges did you overcome? What\'s next?',
             'rows': 5
         })
     )
@@ -675,42 +692,6 @@ class ReflectionForm(forms.ModelForm):
         widget=forms.Select(attrs={
             'class': 'form-select'
         })
-    )
-    
-    mood = forms.ChoiceField(
-        choices=Reflection.MOOD_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        })
-    )
-    
-    energy_level = forms.IntegerField(
-        required=False,
-        min_value=1,
-        max_value=10,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': '1-10',
-            'min': 1,
-            'max': 10
-        }),
-        help_text="Rate your energy on a scale of 1-10"
-    )
-    
-    sleep_hours = forms.DecimalField(
-        required=False,
-        min_value=0,
-        max_value=24,
-        decimal_places=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-input',
-            'placeholder': '7.5',
-            'step': '0.5',
-            'min': 0,
-            'max': 24
-        }),
-        help_text="How many hours of sleep did you get?"
     )
     
     related_journey = forms.ModelChoiceField(
@@ -743,9 +724,8 @@ class ReflectionForm(forms.ModelForm):
     class Meta:
         model = Reflection
         fields = [
-            'summary', 'reflection', 'reflection_type', 'mood',
-            'energy_level', 'sleep_hours', 'related_journey', 'related_activity',
-            'is_private'
+            'summary', 'reflection', 'reflection_type', 
+            'related_journey', 'related_activity', 'is_private'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -777,7 +757,7 @@ class CommentForm(forms.ModelForm):
         max_length=500,
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'Add a comment...',
+            'placeholder': 'Share your thoughts or encouragement...',
             'rows': 2
         })
     )
@@ -785,6 +765,34 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['content']
+
+
+# ============================================================================
+# FOLLOW FORM
+# ============================================================================
+
+class FollowForm(forms.ModelForm):
+    """Follow a journey"""
+    
+    notify_on_new_entry = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    notify_on_completion = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-checkbox'
+        })
+    )
+    
+    class Meta:
+        model = JourneyFollow
+        fields = ['notify_on_new_entry', 'notify_on_completion']
 
 
 # ============================================================================
@@ -832,26 +840,6 @@ class ExportForm(forms.ModelForm):
 
 
 # ============================================================================
-# FOLLOW FORM
-# ============================================================================
-
-class FollowForm(forms.ModelForm):
-    """Follow a journey"""
-    
-    notify_on_new_entry = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-checkbox'
-        })
-    )
-    
-    class Meta:
-        model = JourneyFollow
-        fields = ['notify_on_new_entry']
-
-
-# ============================================================================
 # SEARCH FORM
 # ============================================================================
 
@@ -860,9 +848,10 @@ class JourneySearchForm(forms.Form):
     
     SORT_CHOICES = [
         ('-created_at', 'Newest'),
-        ('title', 'Title A-Z'),
         ('-updated_at', 'Recently Updated'),
         ('-view_count', 'Most Viewed'),
+        ('-follower_count', 'Most Followed'),
+        ('title', 'Title A-Z'),
     ]
     
     q = forms.CharField(
@@ -875,6 +864,14 @@ class JourneySearchForm(forms.Form):
     
     category = forms.ChoiceField(
         choices=[('', 'All Categories')] + Journey.CATEGORY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        })
+    )
+    
+    journey_type = forms.ChoiceField(
+        choices=[('', 'All Types')] + Journey.JOURNEY_TYPES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select'
@@ -923,7 +920,7 @@ class ContactForm(forms.Form):
     message = forms.CharField(
         widget=forms.Textarea(attrs={
             'class': 'form-textarea',
-            'placeholder': 'How can we help you with your fitness or wellness journey?',
+            'placeholder': 'How can we help you with your Build in Public journey?',
             'rows': 6
         })
     )
@@ -940,204 +937,22 @@ class NewsletterSignupForm(forms.Form):
     )
 
 
-
-# forms.py
-
-from django import forms
-from django.contrib.auth import get_user_model
-from .models import (
-    SubscriptionPlan,
-    UserSubscription,
-    OneTimeProduct,
-    UserPurchase,
-    PaidJourneyExport,
-    PaidCustomTheme,
-    PaidExtraStorage,
-    PaidAIProgressReport,
-)
-
-User = get_user_model()
-
-
-class SubscriptionPlanForm(forms.ModelForm):
-    class Meta:
-        model = SubscriptionPlan
-        fields = [
-            'name', 'plan_type', 'price', 'paypal_plan_id',
-            'has_advanced_analytics', 'has_custom_metrics', 'has_goals_milestones',
-            'has_progress_charts', 'has_extra_storage', 'has_customization',
-            'storage_limit_mb', 'is_active'
-        ]
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'plan_type': forms.Select(attrs={'class': 'form-control'}),
-            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'paypal_plan_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'storage_limit_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-
-
-class UserSubscriptionForm(forms.ModelForm):
-    class Meta:
-        model = UserSubscription
-        fields = [
-            'user', 'plan', 'paypal_subscription_id', 'paypal_customer_id',
-            'start_date', 'end_date', 'cancel_date', 'status', 'auto_renew',
-            'storage_used_mb'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'plan': forms.Select(attrs={'class': 'form-control'}),
-            'paypal_subscription_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'paypal_customer_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'start_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'end_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'cancel_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'storage_used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-
-
-class OneTimeProductForm(forms.ModelForm):
-    class Meta:
-        model = OneTimeProduct
-        fields = [
-            'name', 'product_type', 'payment_type', 'price_min', 'price_max',
-            'paypal_product_id', 'paypal_plan_id', 'description', 'features',
-            'storage_amount_mb', 'is_active'
-        ]
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'product_type': forms.Select(attrs={'class': 'form-control'}),
-            'payment_type': forms.Select(attrs={'class': 'form-control'}),
-            'price_min': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'price_max': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'paypal_product_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'paypal_plan_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'features': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'storage_amount_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-
-
-class UserPurchaseForm(forms.ModelForm):
-    class Meta:
-        model = UserPurchase
-        fields = [
-            'user', 'product', 'paypal_transaction_id', 'amount_paid',
-            'report_data', 'status', 'metadata', 'storage_allocated_mb',
-            'storage_used_mb', 'expires_at'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'product': forms.Select(attrs={'class': 'form-control'}),
-            'paypal_transaction_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'report_data': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'metadata': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'storage_allocated_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-            'storage_used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-        }
-
-
-class PaidJourneyExportForm(forms.ModelForm):
-    class Meta:
-        model = PaidJourneyExport
-        fields = [
-            'user', 'journey', 'purchase', 'format', 'file_url', 'file_size',
-            'include_media', 'include_reflections', 'include_comments',
-            'is_downloaded', 'expires_at'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'journey': forms.Select(attrs={'class': 'form-control'}),
-            'purchase': forms.Select(attrs={'class': 'form-control'}),
-            'format': forms.Select(attrs={'class': 'form-control'}),
-            'file_url': forms.URLInput(attrs={'class': 'form-control'}),
-            'file_size': forms.NumberInput(attrs={'class': 'form-control'}),
-            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-        }
-
-
-class PaidCustomThemeForm(forms.ModelForm):
-    class Meta:
-        model = PaidCustomTheme
-        fields = [
-            'user', 'purchase', 'name', 'theme_type',
-            'primary_color', 'secondary_color', 'background_color', 'text_color',
-            'cover_image', 'layout_style', 'font_family',
-            'is_active', 'is_default'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'purchase': forms.Select(attrs={'class': 'form-control'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'theme_type': forms.Select(attrs={'class': 'form-control'}),
-            'primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
-            'secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
-            'background_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
-            'text_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
-            'layout_style': forms.TextInput(attrs={'class': 'form-control'}),
-            'font_family': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-
-class PaidExtraStorageForm(forms.ModelForm):
-    class Meta:
-        model = PaidExtraStorage
-        fields = [
-            'user', 'purchase', 'total_mb', 'used_mb', 'is_active', 'expires_at'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'purchase': forms.Select(attrs={'class': 'form-control'}),
-            'total_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-            'used_mb': forms.NumberInput(attrs={'class': 'form-control'}),
-            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-        }
-
-
-class PaidAIProgressReportForm(forms.ModelForm):
-    class Meta:
-        model = PaidAIProgressReport
-        fields = [
-            'user', 'journey', 'purchase', 'report_title', 'report_content',
-            'summary', 'insights', 'recommendations', 'metrics', 'progress_data',
-            'status', 'error_message', 'expires_at'
-        ]
-        widgets = {
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'journey': forms.Select(attrs={'class': 'form-control'}),
-            'purchase': forms.Select(attrs={'class': 'form-control'}),
-            'report_title': forms.TextInput(attrs={'class': 'form-control'}),
-            'report_content': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
-            'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'insights': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'recommendations': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'metrics': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'progress_data': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'error_message': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'expires_at': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-        }
-
-
 # ============================================================================
-# FRONTEND FORMS FOR USERS
+# MONETIZATION FORMS - FRONTEND USER FORMS
 # ============================================================================
 
 class SubscribeForm(forms.Form):
     """Form for users to subscribe to Rallynex Plus"""
     plan_id = forms.ModelChoiceField(
-        queryset=SubscriptionPlan.objects.filter(is_active=True),
+        queryset=None,  # Will be set in __init__
         widget=forms.RadioSelect,
         empty_label=None
     )
     
     def __init__(self, *args, **kwargs):
+        from .models import SubscriptionPlan
         super().__init__(*args, **kwargs)
+        self.fields['plan_id'].queryset = SubscriptionPlan.objects.filter(is_active=True)
         self.fields['plan_id'].label = "Select Plan"
         self.fields['plan_id'].help_text = "Choose your subscription plan"
 
@@ -1145,12 +960,11 @@ class SubscribeForm(forms.Form):
 class PurchaseProductForm(forms.Form):
     """Form for users to purchase one-time products"""
     product_id = forms.ModelChoiceField(
-        queryset=OneTimeProduct.objects.filter(is_active=True),
+        queryset=None,  # Will be set in __init__
         widget=forms.RadioSelect,
         empty_label=None
     )
     
-    # Additional fields for specific products
     journey_id = forms.ModelChoiceField(
         queryset=None,
         required=False,
@@ -1159,26 +973,36 @@ class PurchaseProductForm(forms.Form):
     )
     
     def __init__(self, user, *args, **kwargs):
+        from .models import OneTimeProduct
         super().__init__(*args, **kwargs)
+        
+        self.fields['product_id'].queryset = OneTimeProduct.objects.filter(is_active=True)
         self.fields['product_id'].label = "Select Product"
         
-        # Filter journeys for the user
-        self.fields['journey_id'].queryset = user.profile.journeys.filter(is_active=True)
+        if user and user.is_authenticated:
+            try:
+                self.fields['journey_id'].queryset = user.profile.journeys.filter(is_active=True)
+            except:
+                pass
         
         # Show journey field only when needed
-        product_type = self.data.get('product_id')
-        if product_type:
-            product = OneTimeProduct.objects.filter(id=product_type).first()
-            if product and product.product_type in ['export', 'ai_report']:
-                self.fields['journey_id'].required = True
-            else:
-                self.fields['journey_id'].widget = forms.HiddenInput()
-                self.fields['journey_id'].required = False
+        product_id = self.data.get('product_id') if self.data else None
+        if product_id:
+            try:
+                product = OneTimeProduct.objects.filter(id=product_id).first()
+                if product and product.product_type in ['export', 'ai_report']:
+                    self.fields['journey_id'].required = True
+                else:
+                    self.fields['journey_id'].widget = forms.HiddenInput()
+                    self.fields['journey_id'].required = False
+            except:
+                pass
 
 
 class ExportRequestForm(forms.ModelForm):
     """Form for requesting a journey export"""
     class Meta:
+        from .models import PaidJourneyExport
         model = PaidJourneyExport
         fields = ['format', 'include_media', 'include_reflections', 'include_comments']
         widgets = {
@@ -1197,6 +1021,7 @@ class ExportRequestForm(forms.ModelForm):
 class ThemeCustomizationForm(forms.ModelForm):
     """Form for customizing a journey theme"""
     class Meta:
+        from .models import PaidCustomTheme
         model = PaidCustomTheme
         fields = ['name', 'theme_type', 'primary_color', 'secondary_color', 
                   'background_color', 'text_color', 'layout_style', 'font_family']
