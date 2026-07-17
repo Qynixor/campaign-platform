@@ -1,11 +1,14 @@
-<!-- templates/dashboard/activity_form.html -->
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{% if is_editing %}Edit{% else %}Add{% endif %} Entry - {{ journey.title }}{% endblock %}
+{% block title %}{% if is_editing %}Edit{% else %}Add{% endif %} Build Log - {{ journey.title }}{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       ACTIVITY FORM - BUILD IN PUBLIC
+       ============================================ */
+    
     .activity-form-container {
         max-width: 720px;
         margin: 0 auto;
@@ -382,7 +385,7 @@
         transform: scale(1.1);
     }
     
-    /* ===== CUSTOM METRICS ===== */
+    /* ===== CUSTOM METRICS - BUILD IN PUBLIC ===== */
     .metrics-section {
         margin-top: 24px;
         padding-top: 22px;
@@ -686,12 +689,12 @@
             </a>
             <h1>
                 <i class="fas fa-{% if is_editing %}edit{% else %}plus-circle{% endif %}"></i>
-                {% if is_editing %}Edit{% else %}Add{% endif %} Entry
+                {% if is_editing %}Edit{% else %}Add{% endif %} Build Log
             </h1>
         </div>
         <span class="day-badge">
-            <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag-checkered{% else %}calendar-day{% endif %}"></i>
-            {% if journey.journey_type == 'milestone' %}Milestone{% else %}Day{% endif %} {{ day_number }}
+            <i class="fas fa-calendar-day"></i>
+            Day {{ day_number }}
         </span>
     </div>
     
@@ -722,7 +725,10 @@
                     {{ form.title.label }}
                     <span class="optional">(optional)</span>
                 </label>
-                {{ form.title }}
+                <input type="text" name="title" id="{{ form.title.id_for_label }}" 
+                       class="form-control"
+                       placeholder="e.g., Shipped v1.2 — user dashboard"
+                       value="{{ form.title.value|default:'' }}" maxlength="200">
                 {% if form.title.help_text %}
                     <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.title.help_text }}</div>
                 {% endif %}
@@ -737,7 +743,10 @@
                     {{ form.content.label }}
                     <span class="required">*</span>
                 </label>
-                {{ form.content }}
+                <textarea name="content" id="{{ form.content.id_for_label }}" 
+                          class="form-control" 
+                          placeholder="What did you build today? What did you learn? What challenges did you face?" 
+                          rows="5" maxlength="500" required>{{ form.content.value|default:'' }}</textarea>
                 {% if form.content.help_text %}
                     <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.content.help_text }}</div>
                 {% endif %}
@@ -752,7 +761,18 @@
                     {{ form.activity_type.label }}
                     <span class="optional">(optional)</span>
                 </label>
-                {{ form.activity_type }}
+                <select name="activity_type" id="{{ form.activity_type.id_for_label }}" class="form-control">
+                    <option value="">Select activity type</option>
+                    <option value="ship" {% if form.activity_type.value == 'ship' %}selected{% endif %}>🚀 Ship / Launch</option>
+                    <option value="milestone" {% if form.activity_type.value == 'milestone' %}selected{% endif %}>🏆 Milestone</option>
+                    <option value="learning" {% if form.activity_type.value == 'learning' %}selected{% endif %}>📚 Learning</option>
+                    <option value="failure" {% if form.activity_type.value == 'failure' %}selected{% endif %}>💥 Failure / Setback</option>
+                    <option value="win" {% if form.activity_type.value == 'win' %}selected{% endif %}>🎉 Win</option>
+                    <option value="progress" {% if form.activity_type.value == 'progress' %}selected{% endif %}>📈 Progress</option>
+                    <option value="reflection" {% if form.activity_type.value == 'reflection' %}selected{% endif %}>💭 Reflection</option>
+                    <option value="experiment" {% if form.activity_type.value == 'experiment' %}selected{% endif %}>🧪 Experiment</option>
+                    <option value="feedback" {% if form.activity_type.value == 'feedback' %}selected{% endif %}>💬 Feedback</option>
+                </select>
                 {% if form.activity_type.help_text %}
                     <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.activity_type.help_text }}</div>
                 {% endif %}
@@ -761,59 +781,59 @@
                 {% endif %}
             </div>
             
-            <!-- ===== DURATION & INTENSITY ===== -->
-            <div class="form-row-2">
-                <div class="form-group">
-                    <label for="{{ form.duration_minutes.id_for_label }}">
-                        {{ form.duration_minutes.label }}
-                        <span class="optional">(optional)</span>
-                    </label>
-                    <div style="position: relative;">
-                        {{ form.duration_minutes }}
-                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none;">min</span>
-                    </div>
-                    {% if form.duration_minutes.help_text %}
-                        <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.duration_minutes.help_text }}</div>
-                    {% endif %}
-                    {% if form.duration_minutes.errors %}
-                        <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.duration_minutes.errors|join:", " }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label for="{{ form.intensity.id_for_label }}">
-                        {{ form.intensity.label }}
-                        <span class="optional">(optional)</span>
-                    </label>
-                    {{ form.intensity }}
-                    {% if form.intensity.help_text %}
-                        <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.intensity.help_text }}</div>
-                    {% endif %}
-                    {% if form.intensity.errors %}
-                        <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.intensity.errors|join:", " }}</div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- ===== MOOD ===== -->
+            <!-- ===== PRODUCT AREA ===== -->
             <div class="form-group">
-                <label for="{{ form.mood.id_for_label }}">
-                    {{ form.mood.label }}
+                <label for="{{ form.product_area.id_for_label }}">
+                    {{ form.product_area.label }}
                     <span class="optional">(optional)</span>
                 </label>
-                {{ form.mood }}
-                {% if form.mood.help_text %}
-                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.mood.help_text }}</div>
+                <select name="product_area" id="{{ form.product_area.id_for_label }}" class="form-control">
+                    <option value="">Select product area</option>
+                    <option value="frontend" {% if form.product_area.value == 'frontend' %}selected{% endif %}>🎨 Frontend</option>
+                    <option value="backend" {% if form.product_area.value == 'backend' %}selected{% endif %}>⚙️ Backend</option>
+                    <option value="design" {% if form.product_area.value == 'design' %}selected{% endif %}>🖌️ Design</option>
+                    <option value="marketing" {% if form.product_area.value == 'marketing' %}selected{% endif %}>📊 Marketing</option>
+                    <option value="sales" {% if form.product_area.value == 'sales' %}selected{% endif %}>💰 Sales</option>
+                    <option value="fundraising" {% if form.product_area.value == 'fundraising' %}selected{% endif %}>🏦 Fundraising</option>
+                    <option value="hiring" {% if form.product_area.value == 'hiring' %}selected{% endif %}>👥 Hiring</option>
+                    <option value="community" {% if form.product_area.value == 'community' %}selected{% endif %}>🌐 Community</option>
+                    <option value="product" {% if form.product_area.value == 'product' %}selected{% endif %}>📱 Product</option>
+                    <option value="other" {% if form.product_area.value == 'other' %}selected{% endif %}>🔧 Other</option>
+                </select>
+                {% if form.product_area.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.product_area.help_text }}</div>
                 {% endif %}
-                {% if form.mood.errors %}
-                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.mood.errors|join:", " }}</div>
+                {% if form.product_area.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.product_area.errors|join:", " }}</div>
                 {% endif %}
             </div>
             
-            <!-- ===== CUSTOM METRICS ===== -->
+            <!-- ===== HOURS SPENT ===== -->
+            <div class="form-group">
+                <label for="{{ form.hours_spent.id_for_label }}">
+                    {{ form.hours_spent.label }}
+                    <span class="optional">(optional)</span>
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="hours_spent" id="{{ form.hours_spent.id_for_label }}" 
+                           class="form-control" 
+                           placeholder="e.g., 3.5" 
+                           step="0.5" min="0" max="24"
+                           value="{{ form.hours_spent.value|default:'' }}">
+                    <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none;">hrs</span>
+                </div>
+                {% if form.hours_spent.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.hours_spent.help_text }}</div>
+                {% endif %}
+                {% if form.hours_spent.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.hours_spent.errors|join:", " }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- ===== CUSTOM METRICS - BUILD IN PUBLIC ===== -->
             <div class="metrics-section">
                 <div class="metrics-title">
-                    <i class="fas fa-sliders-h"></i>
+                    <i class="fas fa-chart-line"></i>
                     Custom Metrics
                     <span class="premium-tag">Premium</span>
                 </div>
@@ -821,40 +841,40 @@
                 {% if has_subscription %}
                     <div class="metrics-grid">
                         <div class="metric-input">
-                            <label>Weight <span class="metric-unit">kg</span></label>
-                            <input type="number" step="0.1" name="metric_weight" placeholder="0.0"
-                                   value="{{ form.instance.custom_metrics.weight|default:'' }}">
+                            <label>Users <span class="metric-unit">#</span></label>
+                            <input type="number" name="metric_users" placeholder="0"
+                                   value="{{ form.instance.custom_metrics.users|default:'' }}">
                         </div>
                         <div class="metric-input">
-                            <label>Sleep <span class="metric-unit">hrs</span></label>
-                            <input type="number" step="0.5" name="metric_sleep" placeholder="0.0"
-                                   value="{{ form.instance.custom_metrics.sleep|default:'' }}">
+                            <label>Revenue <span class="metric-unit">$</span></label>
+                            <input type="number" step="0.01" name="metric_revenue" placeholder="0.00"
+                                   value="{{ form.instance.custom_metrics.revenue|default:'' }}">
                         </div>
                         <div class="metric-input">
-                            <label>Mood <span class="metric-unit">1-10</span></label>
-                            <input type="number" step="1" min="1" max="10" name="metric_mood" placeholder="5"
-                                   value="{{ form.instance.custom_metrics.mood|default:'' }}">
+                            <label>Followers <span class="metric-unit">#</span></label>
+                            <input type="number" name="metric_followers" placeholder="0"
+                                   value="{{ form.instance.custom_metrics.followers|default:'' }}">
                         </div>
                         <div class="metric-input">
-                            <label>Energy <span class="metric-unit">1-10</span></label>
-                            <input type="number" step="1" min="1" max="10" name="metric_energy" placeholder="5"
-                                   value="{{ form.instance.custom_metrics.energy|default:'' }}">
+                            <label>Conversion <span class="metric-unit">%</span></label>
+                            <input type="number" step="0.1" name="metric_conversion" placeholder="0.0"
+                                   value="{{ form.instance.custom_metrics.conversion|default:'' }}">
                         </div>
                         <div class="metric-input">
-                            <label>Stress <span class="metric-unit">1-10</span></label>
-                            <input type="number" step="1" min="1" max="10" name="metric_stress" placeholder="5"
-                                   value="{{ form.instance.custom_metrics.stress|default:'' }}">
+                            <label>Churn <span class="metric-unit">%</span></label>
+                            <input type="number" step="0.1" name="metric_churn" placeholder="0.0"
+                                   value="{{ form.instance.custom_metrics.churn|default:'' }}">
                         </div>
                         <div class="metric-input">
-                            <label>Water <span class="metric-unit">glasses</span></label>
-                            <input type="number" step="1" name="metric_water" placeholder="0"
-                                   value="{{ form.instance.custom_metrics.water|default:'' }}">
+                            <label>Custom <span class="metric-unit">#</span></label>
+                            <input type="text" name="metric_custom" placeholder="e.g., 150"
+                                   value="{{ form.instance.custom_metrics.custom|default:'' }}">
                         </div>
                     </div>
                     
                     <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
                         <i class="fas fa-info-circle"></i>
-                        Track your progress over time. 
+                        Track your product metrics over time. 
                         <a href="{% url 'journey_metrics' journey.slug %}" style="color: var(--accent); font-weight: 500; text-decoration: none;">
                             View all metrics →
                         </a>
@@ -865,7 +885,7 @@
                             <i class="fas fa-crown"></i>
                             <span>
                                 <strong>Upgrade to Premium</strong> to track custom metrics like 
-                                weight, sleep, mood, energy, and more.
+                                users, revenue, followers, and more.
                             </span>
                         </div>
                         <a href="{% url 'subscription_plans' %}" class="btn-upgrade">
@@ -886,7 +906,7 @@
                     <span class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></span>
                     <div class="upload-text">Click or drag to upload a file</div>
                     <div class="upload-sub">Images, videos, or documents · Max 10MB</div>
-                    {{ form.media_file }}
+                    <input type="file" name="media_file" id="{{ form.media_file.id_for_label }}" class="form-control">
                 </div>
                 
                 {% if form.instance.media_file %}
@@ -914,28 +934,28 @@
                 {% endif %}
             </div>
             
-            <!-- ===== LOCATION ===== -->
+            <!-- ===== MEDIA CAPTION ===== -->
             <div class="form-group">
-                <label for="{{ form.location.id_for_label }}">
-                    {{ form.location.label }}
+                <label for="{{ form.media_caption.id_for_label }}">
+                    {{ form.media_caption.label }}
                     <span class="optional">(optional)</span>
                 </label>
-                <div style="position: relative;">
-                    {{ form.location }}
-                    <i class="fas fa-map-marker-alt" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); opacity: 0.5; pointer-events: none;"></i>
-                </div>
-                {% if form.location.help_text %}
-                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.location.help_text }}</div>
+                <input type="text" name="media_caption" id="{{ form.media_caption.id_for_label }}" 
+                       class="form-control"
+                       placeholder="Caption for your media (screenshot, demo video, etc.)"
+                       value="{{ form.media_caption.value|default:'' }}" maxlength="200">
+                {% if form.media_caption.help_text %}
+                    <div class="help-text"><i class="fas fa-info-circle"></i> {{ form.media_caption.help_text }}</div>
                 {% endif %}
-                {% if form.location.errors %}
-                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.location.errors|join:", " }}</div>
+                {% if form.media_caption.errors %}
+                    <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ form.media_caption.errors|join:", " }}</div>
                 {% endif %}
             </div>
             
             <!-- ===== FORM ACTIONS ===== -->
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> {% if is_editing %}Update{% else %}Save{% endif %} Entry
+                    <i class="fas fa-save"></i> {% if is_editing %}Update{% else %}Save{% endif %} Build Log
                 </button>
                 
                 <a href="{% url 'journey_content' slug=journey.slug %}" class="btn btn-secondary">
@@ -945,7 +965,7 @@
                 {% if is_editing %}
                     <a href="{% url 'delete_activity' slug=journey.slug day_number=day_number %}" 
                        class="btn btn-danger"
-                       onclick="return confirm('Delete this entry? This action cannot be undone.')">
+                       onclick="return confirm('Delete this build log? This action cannot be undone.')">
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 {% endif %}
