@@ -462,7 +462,6 @@ class JourneySettingsForm(forms.ModelForm):
             'allow_followers': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
 
-
 # ============================================================================
 # ACTIVITY FORMS — Daily Build in Public Entries
 # ============================================================================
@@ -507,9 +506,8 @@ class ActivityForm(forms.ModelForm):
         help_text="What type of activity was this?"
     )
     
-    # ✅ FIXED: Changed from PRODUCT_AREA to PRODUCT_AREAS (plural)
     product_area = forms.ChoiceField(
-        choices=Activity.PRODUCT_AREAS,  # ← FIXED HERE
+        choices=Activity.PRODUCT_AREAS,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select'
@@ -588,12 +586,34 @@ class ActivityForm(forms.ModelForm):
         help_text="Save as draft without publishing"
     )
     
+    # ✅ Source URL field
+    source_url = forms.URLField(
+        required=False,
+        widget=forms.HiddenInput(),  # Hidden because users don't need to see it
+        initial=''
+    )
+    
+    # ✅ View count field (required by database)
+    view_count = forms.IntegerField(
+        required=False,
+        initial=0,
+        widget=forms.HiddenInput()
+    )
+    
+    # ✅ Unique viewers field (if exists in model)
+    unique_viewers = forms.IntegerField(
+        required=False,
+        initial=0,
+        widget=forms.HiddenInput()
+    )
+    
     class Meta:
         model = Activity
         fields = [
             'title', 'content', 'summary', 'activity_type', 'product_area',
             'hours_spent', 'media_file', 'media_caption', 'day_number_field', 
-            'actual_date', 'custom_metrics', 'is_draft'
+            'actual_date', 'custom_metrics', 'is_draft', 'source_url', 
+            'view_count', 'unique_viewers'
         ]
     
     def __init__(self, *args, **kwargs):
@@ -609,6 +629,14 @@ class ActivityForm(forms.ModelForm):
                 f"What did you build on Day {self.day_number} of {self.journey.title}? "
                 f"Share your progress, learnings, and challenges..."
             )
+        
+        # ✅ Set initial values for hidden fields
+        if self.instance and self.instance.pk:
+            self.fields['view_count'].initial = self.instance.view_count if hasattr(self.instance, 'view_count') else 0
+            self.fields['unique_viewers'].initial = self.instance.unique_viewers if hasattr(self.instance, 'unique_viewers') else 0
+        else:
+            self.fields['view_count'].initial = 0
+            self.fields['unique_viewers'].initial = 0
     
     def clean_content(self):
         content = self.cleaned_data.get('content', '')
@@ -624,6 +652,24 @@ class ActivityForm(forms.ModelForm):
             except json.JSONDecodeError:
                 raise ValidationError('Please enter valid JSON format.')
         return {}
+    
+    def clean_source_url(self):
+        source_url = self.cleaned_data.get('source_url', '')
+        if source_url is None:
+            return ''
+        return source_url
+    
+    def clean_view_count(self):
+        view_count = self.cleaned_data.get('view_count', 0)
+        if view_count is None:
+            return 0
+        return view_count
+    
+    def clean_unique_viewers(self):
+        unique_viewers = self.cleaned_data.get('unique_viewers', 0)
+        if unique_viewers is None:
+            return 0
+        return unique_viewers
     
     def clean(self):
         cleaned_data = super().clean()
@@ -655,6 +701,27 @@ class ActivityForm(forms.ModelForm):
         
         if self.day_number and not activity.day_number_field:
             activity.day_number_field = self.day_number
+        
+        # ✅ Ensure source_url is never None
+        if hasattr(activity, 'source_url'):
+            if activity.source_url is None or activity.source_url == '':
+                activity.source_url = ''
+        
+        # ✅ Force set view_count to 0 if None
+        if hasattr(activity, 'view_count'):
+            if activity.view_count is None:
+                activity.view_count = 0
+        
+        # ✅ Force set unique_viewers to 0 if None
+        if hasattr(activity, 'unique_viewers'):
+            if activity.unique_viewers is None:
+                activity.unique_viewers = 0
+        
+        # ✅ Set published_at if it exists and is None
+        if hasattr(activity, 'published_at'):
+            if activity.published_at is None:
+                from django.utils import timezone
+                activity.published_at = timezone.now()
         
         if commit:
             activity.save()

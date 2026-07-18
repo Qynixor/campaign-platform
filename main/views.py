@@ -650,8 +650,6 @@ def journey_content_view(request, slug):
     }
     
     return render(request, 'dashboard/content_manager.html', context)
-
-
 @login_required
 def create_activity_view(request, slug, day_number=None):
     """Create or edit an activity for a specific day"""
@@ -666,7 +664,7 @@ def create_activity_view(request, slug, day_number=None):
     has_subscription = UserSubscription.objects.filter(
         user=request.user,
         status='active',
-        end_date__gt=timezone.now()
+        end_date__gt=timezone.now()  # ✅ timezone is already imported at the top
     ).exists()
     
     if request.method == 'POST':
@@ -679,15 +677,38 @@ def create_activity_view(request, slug, day_number=None):
         )
         
         if form.is_valid():
-            activity = form.save(commit=False)
-            activity.journey = journey
-            if not activity.day_number_field:
-                activity.day_number_field = day_number
-            
-            activity.save()
-            
-            messages.success(request, f'✅ Entry saved for Day {day_number}!')
-            return redirect('journey_content', slug=slug)
+            try:
+                activity = form.save(commit=False)
+                activity.journey = journey
+                if not activity.day_number_field:
+                    activity.day_number_field = day_number
+                
+                # ✅ Set default values for all required fields
+                # Source URL
+                if not getattr(activity, 'source_url', None):
+                    activity.source_url = ''
+                
+                # View count
+                if not getattr(activity, 'view_count', None):
+                    activity.view_count = 0
+                
+                # Unique viewers (if exists)
+                if hasattr(activity, 'unique_viewers') and activity.unique_viewers is None:
+                    activity.unique_viewers = 0
+                
+                # Published at (if exists)
+                if hasattr(activity, 'published_at') and activity.published_at is None:
+                    activity.published_at = timezone.now()  # ✅ Use timezone directly
+                
+                activity.save()
+                
+                messages.success(request, f'✅ Entry saved for Day {day_number}!')
+                return redirect('journey_content', slug=slug)
+            except Exception as e:
+                messages.error(request, f'Error saving entry: {str(e)}')
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Activity save error: {e}", exc_info=True)
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -710,8 +731,6 @@ def create_activity_view(request, slug, day_number=None):
     }
     
     return render(request, 'dashboard/activity_form.html', context)
-
-
 @login_required
 def edit_activity_view(request, slug, day_number):
     """Edit an existing activity"""

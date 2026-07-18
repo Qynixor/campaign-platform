@@ -389,7 +389,13 @@ class Activity(models.Model):
         blank=True,
         help_text="Hours spent working on this"
     )
-    
+    # ===== SOURCE URL =====
+    source_url = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True,
+        help_text="Original source URL if imported"
+    )    
     # ==================== MEDIA ====================
     media_file = CloudinaryField(
         'file', 
