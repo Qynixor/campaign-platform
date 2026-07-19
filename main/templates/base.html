@@ -212,6 +212,60 @@
     }
     
     /* ============================================
+       PAGE LOADING PROGRESS BAR
+       ============================================ */
+    
+    .loading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: transparent;
+        z-index: 99999;
+        pointer-events: none;
+    }
+    
+    .loading-progress .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), #8b5cf6, var(--accent));
+        background-size: 200% 100%;
+        border-radius: 0 2px 2px 0;
+        transition: width 0.3s ease;
+        animation: shimmer 1.5s ease-in-out infinite;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    
+    .loading-progress.loading .progress-bar {
+        width: 100%;
+        animation: shimmer 1.5s ease-in-out infinite, loadingPulse 1s ease-in-out infinite;
+    }
+    
+    .loading-progress.done .progress-bar {
+        width: 100%;
+        background: var(--success);
+        animation: none;
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+    
+    .loading-progress.hide {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    @keyframes loadingPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    /* ============================================
        CONTAINER
        ============================================ */
     
@@ -1171,6 +1225,13 @@
 </head>
 <body>
     
+    <!-- ============================================
+       PAGE LOADING PROGRESS BAR
+    ============================================ -->
+    <div class="loading-progress" id="loadingProgress">
+        <div class="progress-bar" id="loadingProgressBar"></div>
+    </div>
+    
     <!-- Offline Indicator -->
     <div class="offline-indicator" id="offlineIndicator">
         <i class="fas fa-wifi-slash"></i> You're offline. Some features may be unavailable.
@@ -1393,6 +1454,137 @@
        SCRIPTS
     ============================================ -->
     <script>
+        // ============================================
+        // PAGE LOADING PROGRESS BAR
+        // ============================================
+        
+        (function() {
+            const progressContainer = document.getElementById('loadingProgress');
+            const progressBar = document.getElementById('loadingProgressBar');
+            
+            if (!progressContainer || !progressBar) return;
+            
+            let isComplete = false;
+            let longLoadTimer = null;
+            
+            function startProgress() {
+                isComplete = false;
+                progressContainer.className = 'loading-progress';
+                progressContainer.style.opacity = '1';
+                progressBar.style.width = '0%';
+                
+                // Quick jump to 70%
+                setTimeout(() => {
+                    if (!isComplete) {
+                        progressBar.style.width = '70%';
+                    }
+                }, 50);
+                
+                // Slow to 85%
+                setTimeout(() => {
+                    if (!isComplete) {
+                        progressBar.style.width = '85%';
+                    }
+                }, 300);
+            }
+            
+            function completeProgress() {
+                if (isComplete) return;
+                isComplete = true;
+                
+                clearTimeout(longLoadTimer);
+                
+                // Complete the bar
+                progressBar.style.width = '100%';
+                progressContainer.className = 'loading-progress done';
+                
+                // Hide after animation
+                setTimeout(() => {
+                    progressContainer.className = 'loading-progress hide';
+                    setTimeout(() => {
+                        progressBar.style.width = '0%';
+                    }, 300);
+                }, 400);
+            }
+            
+            // Intercept all link clicks
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (!link) return;
+                
+                const href = link.getAttribute('href');
+                if (!href) return;
+                
+                // Skip external links, javascript, mailto, tel, anchors
+                if (href.startsWith('javascript:') || 
+                    href.startsWith('mailto:') || 
+                    href.startsWith('tel:') ||
+                    href.startsWith('#') ||
+                    link.getAttribute('target') === '_blank' ||
+                    link.getAttribute('download') !== null) {
+                    return;
+                }
+                
+                // Skip if modifier keys are pressed (opens in new tab)
+                if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+                
+                startProgress();
+                
+                // If it's the same page, complete immediately
+                if (window.location.pathname === href || window.location.href === href) {
+                    setTimeout(completeProgress, 100);
+                }
+            });
+            
+            // Intercept form submissions
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (!form || !form.getAttribute('action')) return;
+                
+                const action = form.getAttribute('action');
+                if (action && (action.startsWith('javascript:') || action.startsWith('#'))) return;
+                
+                startProgress();
+            });
+            
+            // Handle back/forward navigation
+            window.addEventListener('pageshow', function(e) {
+                if (e.persisted) {
+                    completeProgress();
+                }
+            });
+            
+            // Handle page load complete
+            window.addEventListener('load', function() {
+                completeProgress();
+            });
+            
+            // Manual API for pages that need to control the progress bar
+            window.loadingProgress = {
+                start: startProgress,
+                complete: completeProgress,
+                setProgress: function(percent) {
+                    if (!isComplete) {
+                        progressBar.style.width = Math.min(percent, 95) + '%';
+                    }
+                }
+            };
+            
+            // Initial page load
+            if (document.readyState === 'loading') {
+                startProgress();
+            } else {
+                completeProgress();
+            }
+            
+            // If page takes more than 2 seconds to load, ensure progress is visible
+            longLoadTimer = setTimeout(function() {
+                if (!isComplete) {
+                    progressBar.style.width = '90%';
+                }
+            }, 2000);
+        })();
+
         // ====== ACTIVE NAV LINK DETECTION ======
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
