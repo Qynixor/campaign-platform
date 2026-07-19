@@ -118,9 +118,19 @@ class LoginForm(AuthenticationForm):
 # ============================================================================
 # PROFILE FORMS — Builder Profile
 # ============================================================================
-
 class ProfileForm(forms.ModelForm):
     """Edit profile information for builders"""
+    
+    # Add email field
+    email = forms.EmailField(
+        max_length=254,
+        required=True,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'your@email.com',
+            'autocomplete': 'email'
+        })
+    )
     
     image = CloudinaryFileField(
         required=False,
@@ -196,6 +206,22 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = ['image', 'bio', 'location', 'website', 'twitter', 'linkedin', 'github']
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Pre-populate email field from the user instance
+        if self.instance and hasattr(self.instance, 'user') and self.instance.user:
+            self.fields['email'].initial = self.instance.user.email
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').lower()
+        
+        # Check if email is already used by another user
+        if User.objects.exclude(pk=self.instance.user.pk).filter(email__iexact=email).exists():
+            raise ValidationError('This email is already registered to another account.')
+        
+        return email
+    
     def clean_twitter(self):
         username = self.cleaned_data.get('twitter', '')
         if username and not username.startswith('@'):
@@ -218,6 +244,20 @@ class ProfileForm(forms.ModelForm):
             if 'github.com/' in username:
                 username = username.split('github.com/')[-1].split('/')[0]
         return username
+    
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        
+        # Update user's email
+        if hasattr(profile, 'user') and profile.user:
+            profile.user.email = self.cleaned_data['email']
+            if commit:
+                profile.user.save()
+        
+        if commit:
+            profile.save()
+        
+        return profile
 
 
 
