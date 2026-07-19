@@ -66,7 +66,6 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
 
-
 # ============================================================================
 # JOURNEY MODEL — Build in Public Focused
 # ============================================================================
@@ -291,9 +290,126 @@ class Journey(models.Model):
         return f"Follow {self.creator.get_display_name()}'s build in public journey: {self.title} on Rallynex"
     
     def get_meta_image(self):
+        """Get meta image - uses cover_image if available, otherwise auto-generates"""
         if self.cover_image:
             return self.cover_image.url
-        return None
+        return self.generate_cover_data_url()
+    
+    # ===== AUTO-GENERATED COVER IMAGE METHODS =====
+    def get_cover_colors(self):
+        """Generate consistent colors based on title"""
+        import hashlib
+        
+        hash_object = hashlib.md5(self.title.encode())
+        hash_hex = hash_object.hexdigest()
+        
+        primary_color = f"#{hash_hex[:6]}"
+        
+        r = int(hash_hex[0:2], 16)
+        g = int(hash_hex[2:4], 16)
+        b = int(hash_hex[4:6], 16)
+        
+        lighten_factor = 0.3
+        r2 = min(255, int(r + (255 - r) * lighten_factor))
+        g2 = min(255, int(g + (255 - g) * lighten_factor))
+        b2 = min(255, int(b + (255 - b) * lighten_factor))
+        
+        secondary_color = f"rgb({r2}, {g2}, {b2})"
+        
+        return {
+            'primary': primary_color,
+            'secondary': secondary_color,
+            'gradient': f"linear-gradient(135deg, {primary_color}, {secondary_color})"
+        }
+    
+    def get_initials(self, max_chars=2):
+        """Get initials from title"""
+        words = self.title.split()
+        if len(words) >= 2:
+            return f"{words[0][0]}{words[1][0]}".upper()
+        elif len(words) == 1:
+            return words[0][:max_chars].upper()
+        return "??"
+    
+    def get_journey_icon(self):
+        """Get icon based on journey type"""
+        icons = {
+            'build_in_public': '🚀',
+            'product': '📦',
+            'startup': '🏢',
+            'side_project': '💡'
+        }
+        return icons.get(self.journey_type, '🚀')
+    
+    def generate_cover_svg(self):
+        """Generate SVG cover image as a string"""
+        colors = self.get_cover_colors()
+        initials = self.get_initials()
+        icon = self.get_journey_icon()
+        
+        title_display = self.title[:50] + ('...' if len(self.title) > 50 else '')
+        journey_type_display = self.get_journey_type_display() or 'Build in Public'
+        
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+            <defs>
+                <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:{colors['primary']};stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:{colors['secondary']};stop-opacity:1" />
+                </linearGradient>
+                <pattern id="pattern" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <circle cx="20" cy="20" r="3" fill="rgba(255,255,255,0.08)"/>
+                    <circle cx="0" cy="0" r="3" fill="rgba(255,255,255,0.05)"/>
+                    <circle cx="40" cy="40" r="3" fill="rgba(255,255,255,0.05)"/>
+                </pattern>
+            </defs>
+            <rect width="800" height="400" fill="url(#grad)"/>
+            <rect width="800" height="400" fill="url(#pattern)"/>
+            
+            <!-- Icon -->
+            <text x="400" y="140" font-family="Arial, sans-serif" font-size="50" 
+                  fill="rgba(255,255,255,0.6)" text-anchor="middle">
+                {icon}
+            </text>
+            
+            <!-- Initials -->
+            <text x="400" y="230" font-family="Arial, sans-serif" font-size="100" font-weight="700" 
+                  fill="rgba(255,255,255,0.9)" text-anchor="middle" letter-spacing="4">
+                {initials}
+            </text>
+            
+            <!-- Title -->
+            <text x="400" y="300" font-family="Arial, sans-serif" font-size="24" font-weight="400" 
+                  fill="rgba(255,255,255,0.8)" text-anchor="middle" letter-spacing="1">
+                {title_display}
+            </text>
+            
+            <!-- Type -->
+            <text x="400" y="380" font-family="Arial, sans-serif" font-size="13" font-weight="300" 
+                  fill="rgba(255,255,255,0.4)" text-anchor="middle" letter-spacing="1.5" text-transform="uppercase">
+                {journey_type_display} Journey
+            </text>
+        </svg>'''
+        
+        return svg
+    
+    def generate_cover_data_url(self):
+        """Generate a data URL for the cover image"""
+        import base64
+        svg = self.generate_cover_svg()
+        svg_bytes = svg.encode('utf-8')
+        base64_svg = base64.b64encode(svg_bytes).decode('utf-8')
+        return f"data:image/svg+xml;base64,{base64_svg}"
+    
+    def get_cover_url(self):
+        """Get cover URL - either uploaded or auto-generated"""
+        if self.cover_image:
+            return self.cover_image.url
+        return self.generate_cover_data_url()
+    
+    def get_cover_style(self):
+        """Get CSS style for auto-generated cover"""
+        colors = self.get_cover_colors()
+        return f"background: {colors['gradient']};"
     
     # ===== HELPER METHODS =====
     def get_total_entries(self):
@@ -318,7 +434,6 @@ class Journey(models.Model):
         """Update follower count"""
         self.follower_count = self.followers.count()
         self.save(update_fields=['follower_count'])
-
 
 # ============================================================================
 # ACTIVITY MODEL — Daily Build in Public Entries

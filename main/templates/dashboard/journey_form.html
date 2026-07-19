@@ -240,111 +240,6 @@
         height: 0;
     }
     
-    .file-upload-area {
-        border: 2px dashed var(--border-color);
-        border-radius: 12px;
-        padding: 32px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: var(--bg-secondary);
-    }
-    
-    .file-upload-area:hover {
-        border-color: var(--accent);
-        background: var(--bg-tertiary);
-    }
-    
-    .file-upload-area i {
-        font-size: 36px;
-        color: var(--text-muted);
-        margin-bottom: 8px;
-    }
-    
-    .file-upload-area p {
-        color: var(--text-secondary);
-        font-size: 14px;
-        margin-bottom: 4px;
-    }
-    
-    .file-upload-area .small {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-    
-    .media-preview {
-        margin-top: 12px;
-        position: relative;
-        border-radius: 10px;
-        overflow: hidden;
-        background: var(--bg-secondary);
-        display: none;
-    }
-    
-    .media-preview.active {
-        display: block;
-    }
-    
-    .media-preview img {
-        width: 100%;
-        max-height: 300px;
-        object-fit: cover;
-        border-radius: 10px;
-    }
-    
-    .remove-media {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 32px;
-        height: 32px;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        cursor: pointer;
-        border: none;
-        transition: background 0.2s;
-        font-size: 14px;
-    }
-    
-    .remove-media:hover {
-        background: rgba(0, 0, 0, 0.8);
-    }
-    
-    .upload-progress {
-        margin-top: 12px;
-        display: none;
-    }
-    
-    .upload-progress.active {
-        display: block;
-    }
-    
-    .progress-track {
-        height: 4px;
-        background: var(--bg-tertiary);
-        border-radius: 2px;
-        overflow: hidden;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: var(--accent);
-        width: 0%;
-        transition: width 0.3s;
-    }
-    
-    .progress-text {
-        text-align: center;
-        margin-top: 6px;
-        color: var(--text-secondary);
-        font-size: 12px;
-    }
-    
     .checkbox-group {
         display: flex;
         align-items: center;
@@ -699,43 +594,6 @@
             </div>
         </div>
         
-        <!-- ===== COVER IMAGE ===== -->
-        <div class="form-section">
-            <h3 class="section-title">
-                <i class="fas fa-image"></i>
-                Cover Image
-            </h3>
-            
-            <div class="form-group">
-                <label>Journey Cover</label>
-                
-                <input type="hidden" name="cover_image_url" id="coverImageUrl" value="{{ form.cover_image_url.value|default:'' }}">
-                <input type="hidden" name="cover_image_public_id" id="coverImagePublicId" value="{{ form.cover_image_public_id.value|default:'' }}">
-                
-                <div class="file-upload-area" id="uploadArea" style="{% if form.cover_image_url.value %}display: none;{% endif %}">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <p><strong>Click to upload a cover image</strong></p>
-                    <p class="small">Max 5MB • JPG, PNG, WebP</p>
-                </div>
-                
-                <div class="upload-progress" id="uploadProgress">
-                    <div class="progress-track">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <div class="progress-text" id="progressText">Uploading... 0%</div>
-                </div>
-                
-                <div class="media-preview {% if form.cover_image_url.value %}active{% endif %}" id="coverPreview">
-                    <img id="previewImage" src="{{ form.cover_image_url.value|default:'' }}" alt="Cover Preview">
-                    <button type="button" class="remove-media" onclick="clearCoverImage()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <p class="form-hint">Recommended: 1200×630px</p>
-            </div>
-        </div>
-        
         <!-- ===== STRUCTURE ===== -->
         <div class="form-section">
             <h3 class="section-title">
@@ -921,8 +779,6 @@
     </form>
 </div>
 
-<script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
-
 <script>
     // ===== TOGGLE OPTIONAL SECTIONS =====
     function toggleOptional(button) {
@@ -945,85 +801,6 @@
             }
         }
     });
-    
-    // ===== CLOUDINARY WIDGET =====
-    const cloudName = '{{ CLOUDINARY_CLOUD_NAME|default:"demo" }}';
-    
-    if (cloudName && cloudName !== 'demo') {
-        const widget = cloudinary.createUploadWidget({
-            cloudName: cloudName,
-            uploadPreset: 'rallynex_upload',
-            sources: ['local', 'camera', 'url'],
-            maxFileSize: 5000000,
-            clientAllowedFormats: ['image'],
-            showUploadMoreButton: false,
-            cropping: true,
-            croppingAspectRatio: 1.91,
-            styles: {
-                palette: {
-                    window: "#ffffff",
-                    windowBorder: "#ced4da",
-                    tabIcon: "#6c757d",
-                    menuIcons: "#6c757d",
-                    textDark: "#212529",
-                    textLight: "#6c757d",
-                    link: "#6c757d",
-                    action: "#6c757d",
-                    inProgress: "#6c757d",
-                    complete: "#28a745",
-                    error: "#dc3545",
-                    sourceBg: "#f8f9fa"
-                }
-            }
-        }, (error, result) => {
-            if (error) {
-                showError('Upload failed: ' + error);
-                return;
-            }
-            
-            if (result && result.event === "success") {
-                document.getElementById('coverImageUrl').value = result.info.secure_url;
-                document.getElementById('coverImagePublicId').value = result.info.public_id;
-                
-                document.getElementById('uploadProgress').classList.remove('active');
-                
-                const previewArea = document.getElementById('coverPreview');
-                const previewImage = document.getElementById('previewImage');
-                
-                previewImage.src = result.info.secure_url;
-                previewArea.classList.add('active');
-                document.getElementById('uploadArea').style.display = 'none';
-                
-                document.getElementById('submitBtn').disabled = false;
-                document.getElementById('errorMessage').classList.remove('active');
-            }
-            
-            if (result && result.event === "progress") {
-                const percent = Math.round(result.info.progress.percent);
-                document.getElementById('progressFill').style.width = percent + '%';
-                document.getElementById('progressText').textContent = `Uploading... ${percent}%`;
-            }
-        });
-        
-        document.getElementById('uploadArea').addEventListener('click', () => {
-            document.getElementById('uploadProgress').classList.add('active');
-            widget.open();
-        });
-    }
-    
-    function clearCoverImage() {
-        document.getElementById('coverImageUrl').value = '';
-        document.getElementById('coverImagePublicId').value = '';
-        document.getElementById('uploadArea').style.display = 'block';
-        document.getElementById('coverPreview').classList.remove('active');
-        document.getElementById('previewImage').src = '';
-    }
-    
-    function showError(msg) {
-        document.getElementById('errorText').textContent = msg;
-        document.getElementById('errorMessage').classList.add('active');
-        document.getElementById('uploadProgress').classList.remove('active');
-    }
     
     // ===== CURRENT DAY OVERRIDE VALIDATION =====
     const currentDayOverride = document.getElementById('id_current_day_override');
@@ -1052,6 +829,13 @@
             }
         });
     }
+    
+    // ===== FORM SUBMISSION HANDLING =====
+    document.getElementById('journeyForm').addEventListener('submit', function() {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    });
 </script>
 
 {% endblock %}

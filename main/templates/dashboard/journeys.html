@@ -174,7 +174,6 @@
         gap: 6px;
     }
     
-    /* Icon styles - black/dark */
     .filter-tab i {
         font-size: 14px;
         color: var(--text-primary);
@@ -214,7 +213,6 @@
         color: #fff;
     }
     
-    /* Dark mode support for icons */
     [data-theme="dark"] .filter-tab i {
         color: #e5e7eb;
     }
@@ -296,8 +294,50 @@
         transition: transform 0.3s ease;
     }
     
-    .journey-item:hover .journey-cover img {
-        transform: scale(1.05);
+    /* ✅ Auto-cover styles for journey cover */
+    .journey-cover .auto-cover {
+        width: 100%;
+        height: 100%;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .journey-cover .auto-cover-inner {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        color: #fff;
+        padding: 12px;
+        width: 100%;
+    }
+    
+    .journey-cover .auto-cover-icon {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 2px;
+        opacity: 0.8;
+    }
+    
+    .journey-cover .auto-cover-initials {
+        display: block;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        line-height: 1.2;
+    }
+    
+    .journey-cover .auto-cover-title {
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        margin-top: 2px;
+        opacity: 0.8;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.2);
     }
     
     .journey-cover .cover-placeholder {
@@ -958,9 +998,14 @@
                     {% if journey.cover_image %}
                         <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                     {% else %}
-                        <span class="cover-placeholder">
-                            <i class="fas fa-{% if journey.journey_type == 'startup' %}rocket{% elif journey.journey_type == 'product' %}box{% else %}flag-checkered{% endif %}"></i>
-                        </span>
+                        <!-- ✅ AUTO-GENERATED COVER -->
+                        <div class="auto-cover" style="{{ journey.get_cover_style }}">
+                            <div class="auto-cover-inner">
+                                <span class="auto-cover-icon">{{ journey.get_journey_icon }}</span>
+                                <span class="auto-cover-initials">{{ journey.get_initials }}</span>
+                                <span class="auto-cover-title">{{ journey.title|truncatechars:20 }}</span>
+                            </div>
+                        </div>
                     {% endif %}
                     <span class="journey-type-indicator {% if journey.journey_type == 'milestone' %}milestone{% else %}daily{% endif %}">
                         <i class="fas fa-{% if journey.journey_type == 'milestone' %}flag{% else %}calendar-day{% endif %}"></i>
@@ -1136,7 +1181,6 @@
             }
         });
         
-        // Update URL with filter parameter
         const url = new URL(window.location);
         if (status === 'all') {
             url.searchParams.delete('status');
@@ -1145,7 +1189,6 @@
         }
         window.history.replaceState({}, '', url);
         
-        // Show/hide empty state for filter
         const journeyList = document.querySelector('.journey-list');
         const emptyState = document.querySelector('.empty-state-filter');
         
@@ -1185,19 +1228,16 @@
         document.body.style.overflow = '';
     }
     
-    // ===== MODAL CLOSE ON BACKGROUND CLICK =====
     document.getElementById('deleteModal').addEventListener('click', function(e) {
         if (e.target === this) hideDeleteModal();
     });
     
-    // ===== ESC KEY CLOSE =====
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             hideDeleteModal();
         }
     });
     
-    // ===== DOM CONTENT LOADED =====
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const statusFilter = urlParams.get('status');

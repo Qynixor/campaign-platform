@@ -220,6 +220,7 @@ class ProfileForm(forms.ModelForm):
         return username
 
 
+
 # ============================================================================
 # JOURNEY FORMS — Build in Public Focus
 # ============================================================================
@@ -289,21 +290,7 @@ class JourneyForm(forms.ModelForm):
         help_text="Link to your GitHub repository"
     )
     
-    cover_image = CloudinaryFileField(
-        required=False,
-        options={
-            'folder': 'journey_covers',
-            'transformation': [
-                {'width': 1200, 'height': 630, 'crop': 'fill'},
-                {'quality': 'auto:best', 'fetch_format': 'auto'}
-            ],
-            'format': 'webp'
-        },
-        widget=forms.FileInput(attrs={
-            'class': 'form-input',
-            'accept': 'image/*'
-        })
-    )
+    # ❌ REMOVED cover_image field completely
     
     duration = forms.IntegerField(
         min_value=1,
@@ -387,8 +374,8 @@ class JourneyForm(forms.ModelForm):
         model = Journey
         fields = [
             'title', 'description', 'journey_type', 'category', 'product_stage',
-            'product_url', 'github_url', 'cover_image', 'duration', 
-            'current_day_override', 'start_date', 'privacy_status', 
+            'product_url', 'github_url',  # ❌ Removed 'cover_image' from here
+            'duration', 'current_day_override', 'start_date', 'privacy_status', 
             'allow_comments', 'allow_followers', 'template_style'
         ]
     

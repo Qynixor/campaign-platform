@@ -536,18 +536,21 @@ def create_journey_view(request):
     profile = get_user_profile(request.user)
     
     if request.method == 'POST':
-        form = JourneyForm(request.POST, request.FILES)
+        form = JourneyForm(request.POST)
         if form.is_valid():
             try:
                 journey = form.save(commit=False)
                 journey.creator = profile
                 journey.save()
-                form.save()
+                form.save_m2m()  # Save many-to-many relationships (tags)
                 
                 messages.success(request, f'🚀 Journey "{journey.title}" created successfully!')
                 return redirect('journey_content', slug=journey.slug)
             except Exception as e:
                 messages.error(request, f'Error creating journey: {str(e)}')
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Journey creation error: {e}", exc_info=True)
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -558,7 +561,6 @@ def create_journey_view(request):
     context = {
         'form': form,
         'is_editing': False,
-        'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/journey_form.html', context)
@@ -571,11 +573,19 @@ def edit_journey_view(request, slug):
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
     if request.method == 'POST':
-        form = JourneyForm(request.POST, request.FILES, instance=journey)
+        form = JourneyForm(request.POST, instance=journey)
         if form.is_valid():
-            journey = form.save()
-            messages.success(request, f'📝 Journey "{journey.title}" updated!')
-            return redirect('my_journeys')
+            try:
+                journey = form.save()
+                
+                messages.success(request, f'📝 Journey "{journey.title}" updated!')
+                return redirect('my_journeys')
+            except Exception as e:
+                messages.error(request, f'Error updating journey: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = JourneyForm(instance=journey)
     
@@ -583,10 +593,10 @@ def edit_journey_view(request, slug):
         'form': form,
         'journey': journey,
         'is_editing': True,
-        'CLOUDINARY_CLOUD_NAME': settings.CLOUDINARY_CLOUD_NAME,
     }
     
     return render(request, 'dashboard/journey_form.html', context)
+
 
 
 @login_required

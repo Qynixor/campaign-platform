@@ -464,6 +464,52 @@
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
     }
     
+    /* ✅ Auto-cover styles for profile */
+    .journey-cover .auto-cover {
+        width: 100%;
+        height: 100%;
+        min-height: 180px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .journey-cover .auto-cover-inner {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        color: #fff;
+        padding: 20px;
+        width: 100%;
+    }
+    
+    .journey-cover .auto-cover-icon {
+        display: block;
+        font-size: 32px;
+        margin-bottom: 4px;
+        opacity: 0.8;
+    }
+    
+    .journey-cover .auto-cover-initials {
+        display: block;
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        line-height: 1.2;
+    }
+    
+    .journey-cover .auto-cover-title {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        margin-top: 4px;
+        opacity: 0.9;
+        text-shadow: 0 1px 10px rgba(0,0,0,0.2);
+    }
+    
     .journey-cover {
         aspect-ratio: 16/10;
         background: var(--bg-secondary);
@@ -682,6 +728,18 @@
         .journey-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .journey-cover .auto-cover-initials {
+            font-size: 30px;
+        }
+        
+        .journey-cover .auto-cover-icon {
+            font-size: 28px;
+        }
+        
+        .journey-cover .auto-cover-title {
+            font-size: 11px;
+        }
     }
     
     @media (max-width: 768px) {
@@ -755,6 +813,18 @@
             gap: 16px;
         }
         
+        .journey-cover .auto-cover-initials {
+            font-size: 26px;
+        }
+        
+        .journey-cover .auto-cover-icon {
+            font-size: 24px;
+        }
+        
+        .journey-cover .auto-cover-title {
+            font-size: 11px;
+        }
+        
         .profile-journeys-header {
             flex-direction: column;
             align-items: flex-start;
@@ -793,6 +863,18 @@
         
         .journey-grid {
             grid-template-columns: 1fr;
+        }
+        
+        .journey-cover .auto-cover-initials {
+            font-size: 22px;
+        }
+        
+        .journey-cover .auto-cover-icon {
+            font-size: 20px;
+        }
+        
+        .journey-cover .auto-cover-title {
+            font-size: 10px;
         }
         
         .profile-stats {
@@ -1088,9 +1170,14 @@
                                 {% if journey.cover_image %}
                                     <img src="{{ journey.cover_image.url }}" alt="{{ journey.title }}" loading="lazy">
                                 {% else %}
-                                    <span class="placeholder">
-                                        <i class="fas fa-rocket"></i>
-                                    </span>
+                                    <!-- ✅ AUTO-GENERATED COVER -->
+                                    <div class="auto-cover" style="{{ journey.get_cover_style }}">
+                                        <div class="auto-cover-inner">
+                                            <span class="auto-cover-icon">{{ journey.get_journey_icon }}</span>
+                                            <span class="auto-cover-initials">{{ journey.get_initials }}</span>
+                                            <span class="auto-cover-title">{{ journey.title|truncatechars:20 }}</span>
+                                        </div>
+                                    </div>
                                 {% endif %}
                                 
                                 <div class="journey-cover-badges">
