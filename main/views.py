@@ -370,9 +370,13 @@ def journey_detail_view(request, slug):
         'has_theme_purchase': has_theme_purchase,
         'has_ai_report_purchase': has_ai_report_purchase,
         'existing_export': existing_export,
+        # ✅ ADD THESE
+        'allow_followers': journey.allow_followers,
+        'allow_comments': journey.allow_comments,
     }
     
     return render(request, 'journey/detail.html', context)
+
 
 
 def creator_profile_view(request, username):

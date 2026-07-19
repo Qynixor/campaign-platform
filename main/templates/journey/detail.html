@@ -285,6 +285,13 @@
         background: var(--accent-light);
     }
     
+    /* Disabled state for follow button */
+    .btn-icon.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
     .privacy-badge {
         font-size: 11px;
         padding: 4px 12px;
@@ -522,11 +529,15 @@
         padding: 12px 0 4px;
         border-top: 1px solid var(--border-color);
         margin-top: 4px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
     
     .hero-stat {
         text-align: center;
         cursor: default;
+        flex: 1;
+        min-width: 60px;
     }
     
     .hero-stat .value {
@@ -611,10 +622,12 @@
         display: flex;
         gap: 8px;
         padding: 0 20px 16px;
+        flex-wrap: wrap;
     }
     
     .stat-card {
         flex: 1;
+        min-width: 60px;
         background: var(--bg-secondary);
         border-radius: 12px;
         padding: 12px 8px;
@@ -685,6 +698,17 @@
     }
     
     .stat-card.locked:hover {
+        transform: none;
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
+    }
+    
+    .stat-card.comments-disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    
+    .stat-card.comments-disabled:hover {
         transform: none;
         background: var(--bg-secondary);
         border-color: var(--border-color);
@@ -850,6 +874,12 @@
     .info-action i {
         font-size: 14px;
         color: var(--silver);
+    }
+    
+    .info-action.comments-disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
     }
     
     /* ===== REFLECTIONS SECTION ===== */
@@ -1623,11 +1653,38 @@
         transform: scale(0.98);
     }
     
-    /* ===== COMMENTS ===== */
+    /* ===== COMMENTS SECTION ===== */
     .comments-section {
         padding: 20px;
         border-top: 1px solid var(--border-color);
         background: var(--bg-primary);
+    }
+    
+    /* Comments disabled message */
+    .comments-disabled-message {
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--text-muted);
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-primary);
+    }
+    
+    .comments-disabled-message i {
+        font-size: 32px;
+        opacity: 0.3;
+        display: block;
+        margin-bottom: 12px;
+        color: var(--silver);
+    }
+    
+    .comments-disabled-message p {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .comments-disabled-message .sub-text {
+        font-size: 12px;
+        opacity: 0.7;
     }
     
     .comments-header {
@@ -2247,12 +2304,34 @@
         }
         
         /* --- Hero Stats --- */
+        .hero-stats {
+            gap: 4px;
+        }
+        
         .hero-stats .value {
             font-size: 16px;
         }
         
         .hero-stats .label {
             font-size: 9px;
+        }
+        
+        /* --- Stats Cards --- */
+        .stats-cards {
+            gap: 6px;
+        }
+        
+        .stat-card {
+            padding: 10px 6px;
+            min-width: 50px;
+        }
+        
+        .stat-card .value {
+            font-size: 14px;
+        }
+        
+        .stat-card .label {
+            font-size: 8px;
         }
     }
     
@@ -2323,12 +2402,18 @@
             </div>
             
             <div class="journey-actions-top">
-                <!-- Follow Button -->
+                <!-- ===== FOLLOW BUTTON ===== -->
+                <!-- Only show if allow_followers is True -->
+                {% if allow_followers %}
                 <button class="btn-icon {% if is_following %}active{% endif %}" 
                         onclick="toggleFollow()" 
                         title="{% if is_following %}Unfollow{% else %}Follow{% endif %} journey">
                     <i class="fas fa-{% if is_following %}user-check{% else %}user-plus{% endif %}"></i>
                 </button>
+                {% else %}
+                <!-- Optionally show a disabled state or nothing at all -->
+                <!-- We'll hide it completely for clean UI -->
+                {% endif %}
                 
                 <!-- Save Button -->
                 <button class="btn-icon {% if is_saved %}active{% endif %}" 
@@ -2473,6 +2558,13 @@
                 <div class="value">{{ journey.activities.count }}</div>
                 <div class="label">Builds</div>
             </div>
+            <!-- Only show comments stat if comments are enabled -->
+            {% if allow_comments %}
+            <div class="hero-stat">
+                <div class="value">{{ journey.comments.count }}</div>
+                <div class="label">Comments</div>
+            </div>
+            {% endif %}
         </div>
     </div>
     
@@ -2547,11 +2639,15 @@
             <div class="value">{{ journey.view_count }}</div>
             <div class="label">Views</div>
         </div>
+        
+        <!-- Only show comments stat if comments are enabled -->
+        {% if allow_comments %}
         <div class="stat-card">
             <i class="fas fa-comment"></i>
             <div class="value">{{ journey.comments.count }}</div>
             <div class="label">Comments</div>
         </div>
+        {% endif %}
         
         <!-- ===== JOURNEY DASHBOARD BUTTON ===== -->
         {% if user == journey.creator.user %}
@@ -2824,9 +2920,12 @@
         </div>
         
         <div class="info-actions" id="dynamicActions">
+            <!-- Only show comment action if comments are enabled -->
+            {% if allow_comments %}
             <button class="info-action" onclick="event.stopPropagation(); scrollToComments()">
                 <i class="far fa-comment"></i> <span id="dynamicCommentCount">{{ current_activity.comments.count|default:0 }}</span>
             </button>
+            {% endif %}
             {% if user == journey.creator.user %}
             <a href="{% url 'journey_content' slug=journey.slug %}" class="info-action" style="text-decoration:none;">
                 <i class="fas fa-list-ul"></i> Manage All
@@ -2899,7 +2998,12 @@
         {% endif %}
     </div>
     
-    <!-- ===== COMMENTS ===== -->
+    <!-- ================================================ -->
+    <!-- COMMENTS SECTION - CONDITIONAL -->
+    <!-- ================================================ -->
+    
+    {% if allow_comments %}
+    <!-- ===== COMMENTS SECTION (Enabled) ===== -->
     <div class="comments-section" id="comments">
         <div class="comments-header">
             <h4><i class="fas fa-comment"></i> Comments <span class="comment-count-badge">{{ recent_comments|length }}</span></h4>
@@ -2926,7 +3030,7 @@
             {% empty %}
             <div class="comments-empty">
                 <i class="fas fa-comment-slash"></i>
-                <p>No comments yet.</p>
+                <p>No comments yet. Be the first to share your thoughts!</p>
             </div>
             {% endfor %}
         </div>
@@ -2962,6 +3066,16 @@
         </div>
         {% endif %}
     </div>
+    
+    {% else %}
+    <!-- ===== COMMENTS DISABLED MESSAGE ===== -->
+    <div class="comments-disabled-message">
+        <i class="fas fa-comment-slash"></i>
+        <p><strong>Comments are disabled</strong></p>
+        <p class="sub-text">The journey creator has turned off comments for this journey.</p>
+    </div>
+    {% endif %}
+    
 </div>
 
 <!-- ===== MODAL ===== -->
@@ -2979,9 +3093,11 @@
         <div class="modal-footer">
             <p class="modal-caption" id="modalCaption"></p>
             <div class="modal-actions">
+                {% if allow_comments %}
                 <button class="modal-action" onclick="scrollToCommentsAndClose()">
                     <i class="far fa-comment"></i> Comments
                 </button>
+                {% endif %}
             </div>
         </div>
         <div class="modal-nav">
@@ -3612,7 +3728,10 @@
     }
     
     function scrollToComments() { 
-        document.getElementById('comments').scrollIntoView({behavior: 'smooth'}); 
+        const commentsSection = document.getElementById('comments');
+        if (commentsSection) {
+            commentsSection.scrollIntoView({behavior: 'smooth'});
+        }
     }
     
     function scrollToCommentsAndClose() {
