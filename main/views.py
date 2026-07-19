@@ -674,8 +674,6 @@ def journey_settings_view(request, slug):
     }
     
     return render(request, 'dashboard/journey_settings.html', context)
-
-
 @login_required
 def delete_journey_view(request, slug):
     """Delete a journey"""
@@ -684,15 +682,16 @@ def delete_journey_view(request, slug):
     
     if request.method == 'POST':
         title = journey.title
+        
+        # Just delete the journey - Django's cascade will handle it
         journey.delete()
-        messages.success(request, f'Journey "{title}" deleted.')
+        
+        messages.success(request, f'🗑️ Journey "{title}" has been deleted successfully.')
         return redirect('my_journeys')
     
     return render(request, 'dashboard/journey_confirm_delete.html', {
         'journey': journey,
     })
-
-
 # ============================================================================
 # ACTIVITY / ENTRY VIEWS
 # ============================================================================

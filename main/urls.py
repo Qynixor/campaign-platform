@@ -177,6 +177,7 @@ urlpatterns = [
     
     # PayPal Webhook
     path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
+    path('dashboard/journeys/<slug:slug>/delete/', views.delete_journey_view, name='delete_journey'),
 ]
 
 # ============================================================================
