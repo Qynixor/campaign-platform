@@ -260,8 +260,6 @@ def discover_view(request):
     
     return render(request, 'discover.html', context)
 
-
-
 def journey_detail_view(request, slug):
     """View a single journey with all its entries"""
     journey_qs = Journey.objects.select_related('creator__user').prefetch_related(
@@ -273,9 +271,50 @@ def journey_detail_view(request, slug):
     
     journey = get_object_or_404(journey_qs)
     
-    if journey.privacy_status != 'public':
-        if not request.user.is_authenticated or (request.user != journey.creator.user and not request.user.is_superuser):
-            raise Http404("Journey not found")
+    # ============================================
+    # FIXED: PROPER PRIVACY CHECK
+    # ============================================
+    
+    # Check if user can view this journey
+    can_view = False
+    
+    # Get the user
+    user = request.user
+    
+    # Check if user is the creator
+    is_creator = False
+    if user.is_authenticated:
+        is_creator = (user == journey.creator.user)
+    
+    # Check if user is superuser/admin
+    is_superuser = False
+    if user.is_authenticated:
+        is_superuser = user.is_superuser
+    
+    # Privacy status logic
+    if journey.privacy_status == 'public':
+        # Public: everyone can view
+        can_view = True
+        
+    elif journey.privacy_status == 'unlisted':
+        # Unlisted: anyone with the link can view it
+        # This is the key fix - unlisted should be viewable by anyone with the link
+        can_view = True
+        
+    elif journey.privacy_status == 'private':
+        # Private: only the creator or superuser can view
+        if is_creator or is_superuser:
+            can_view = True
+        else:
+            can_view = False
+    
+    # If user cannot view, raise 404
+    if not can_view:
+        raise Http404("Journey not found or you don't have permission to view it.")
+    
+    # ============================================
+    # Continue with the rest of the view
+    # ============================================
     
     track_journey_view(request, journey)
     activities_by_day = journey.get_all_activities_by_day()
@@ -370,13 +409,24 @@ def journey_detail_view(request, slug):
         'has_theme_purchase': has_theme_purchase,
         'has_ai_report_purchase': has_ai_report_purchase,
         'existing_export': existing_export,
-        # ✅ ADD THESE
         'allow_followers': journey.allow_followers,
         'allow_comments': journey.allow_comments,
+        # Add these for better UI feedback
+        'is_creator': is_creator,
+        'can_view': can_view,
+        'privacy_icon': {
+            'public': '🌍',
+            'unlisted': '🔗',
+            'private': '🔒'
+        }.get(journey.privacy_status, '🔒'),
+        'privacy_description': {
+            'public': 'Everyone can see this journey',
+            'unlisted': 'Anyone with the link can see this journey',
+            'private': 'Only you can see this journey'
+        }.get(journey.privacy_status, '')
     }
     
     return render(request, 'journey/detail.html', context)
-
 
 
 def creator_profile_view(request, username):
