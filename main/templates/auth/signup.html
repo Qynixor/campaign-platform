@@ -66,6 +66,15 @@
     
     .auth-form input:focus {
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    
+    .auth-form input.is-invalid {
+        border-color: #ef4444;
+    }
+    
+    .auth-form input.is-valid {
+        border-color: #22c55e;
     }
     
     .auth-form input::placeholder {
@@ -96,15 +105,25 @@
         cursor: pointer;
         transition: all 0.2s;
         margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
     
-    .auth-btn:hover {
+    .auth-btn:hover:not(:disabled) {
         background: var(--accent-hover);
         transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
     
-    .auth-btn:active {
+    .auth-btn:active:not(:disabled) {
         transform: scale(0.98);
+    }
+    
+    .auth-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     .auth-footer {
@@ -136,6 +155,9 @@
     
     .errorlist li {
         margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .errorlist li:last-child {
@@ -146,6 +168,9 @@
         color: #ef4444;
         font-size: 12px;
         margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
     }
     
     .claim-notice {
@@ -171,11 +196,12 @@
     }
     
     .strength-bar {
-        height: 3px;
-        border-radius: 3px;
+        height: 4px;
+        border-radius: 4px;
         margin-top: 6px;
-        transition: width 0.3s ease;
+        transition: all 0.3s ease;
         background: var(--border-color);
+        width: 0%;
     }
     
     .strength-weak {
@@ -201,6 +227,15 @@
     .strength-text {
         font-size: 11px;
         margin-top: 4px;
+        min-height: 18px;
+    }
+    
+    .match-success {
+        color: #22c55e;
+    }
+    
+    .match-error {
+        color: #ef4444;
     }
     
     /* Terms link styling */
@@ -209,6 +244,7 @@
         font-size: 12px;
         text-align: center;
         color: var(--text-muted);
+        line-height: 1.6;
     }
     
     .terms-links a {
@@ -218,6 +254,24 @@
     
     .terms-links a:hover {
         text-decoration: underline;
+    }
+    
+    /* Success message */
+    .success-message {
+        padding: 12px 16px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        color: #22c55e;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .success-message i {
+        font-size: 20px;
     }
     
     @media (max-width: 480px) {
@@ -260,6 +314,18 @@
             <p class="auth-subtitle">Start your journey with Rallynex</p>
         </div>
         
+        <!-- Display messages -->
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        
         {% if next_url and 'claim' in next_url %}
         <div class="claim-notice">
             <i class="fas fa-flag-checkered"></i>
@@ -271,13 +337,18 @@
         <ul class="errorlist">
             {% for field, errors in form.errors.items %}
                 {% for error in errors %}
-                    <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+                    <li><i class="fas fa-exclamation-circle"></i> {{ field|title }}: {{ error }}</li>
                 {% endfor %}
             {% endfor %}
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <li><i class="fas fa-exclamation-circle"></i> {{ error }}</li>
+                {% endfor %}
+            {% endif %}
         </ul>
         {% endif %}
         
-        <form method="post" class="auth-form" id="signupForm">
+        <form method="post" class="auth-form" id="signupForm" novalidate>
             {% csrf_token %}
             
             {% if next_url %}
@@ -290,9 +361,9 @@
                        placeholder="Choose a username" 
                        value="{{ form.username.value|default:'' }}"
                        required autofocus>
-                <p class="form-hint"><i class="fas fa-info-circle"></i> Letters, numbers, and underscores only. 3-150 characters.</p>
+                <p class="form-hint"><i class="fas fa-info-circle"></i> Letters, numbers, and underscores only. 3-30 characters.</p>
                 {% if form.username.errors %}
-                    <p class="field-error">{{ form.username.errors.0 }}</p>
+                    <p class="field-error"><i class="fas fa-times-circle"></i> {{ form.username.errors.0 }}</p>
                 {% endif %}
             </div>
             
@@ -304,7 +375,7 @@
                        required>
                 <p class="form-hint"><i class="fas fa-envelope"></i> We'll never share your email with anyone else.</p>
                 {% if form.email.errors %}
-                    <p class="field-error">{{ form.email.errors.0 }}</p>
+                    <p class="field-error"><i class="fas fa-times-circle"></i> {{ form.email.errors.0 }}</p>
                 {% endif %}
             </div>
             
@@ -319,7 +390,7 @@
                         <div class="strength-text" id="strengthText"></div>
                     </div>
                     {% if form.password1.errors %}
-                        <p class="field-error">{{ form.password1.errors.0 }}</p>
+                        <p class="field-error"><i class="fas fa-times-circle"></i> {{ form.password1.errors.0 }}</p>
                     {% endif %}
                 </div>
                 
@@ -328,9 +399,9 @@
                     <input type="password" name="password2" id="id_password2" 
                            placeholder="Confirm password" 
                            required>
-                    <p class="form-hint" id="confirmHint"></p>
+                    <p class="form-hint" id="confirmHint">&nbsp;</p>
                     {% if form.password2.errors %}
-                        <p class="field-error">{{ form.password2.errors.0 }}</p>
+                        <p class="field-error"><i class="fas fa-times-circle"></i> {{ form.password2.errors.0 }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -358,6 +429,7 @@
     </div>
 </div>
 
+{% block extra_js %}
 <script>
     // Password strength checker
     const passwordInput = document.getElementById('id_password1');
@@ -368,9 +440,16 @@
     const confirmHint = document.getElementById('confirmHint');
     
     function checkPasswordStrength(password) {
+        if (password.length === 0) {
+            strengthBar.className = 'strength-bar';
+            strengthBar.style.width = '0%';
+            strengthText.textContent = '';
+            return 0;
+        }
+        
         let strength = 0;
         
-        // Length check
+        // Length check (at least 8 characters)
         if (password.length >= 8) strength++;
         // Uppercase check
         if (/[A-Z]/.test(password)) strength++;
@@ -382,27 +461,21 @@
         if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
         
         // Update strength bar and text
-        if (password.length === 0) {
-            strengthBar.className = 'strength-bar';
-            strengthText.textContent = '';
-            return 0;
-        }
-        
         if (strength <= 2) {
             strengthBar.className = 'strength-bar strength-weak';
-            strengthText.textContent = 'Weak password';
+            strengthText.textContent = '⚠️ Weak password - add more characters, numbers, and symbols';
             strengthText.style.color = '#ef4444';
         } else if (strength <= 3) {
             strengthBar.className = 'strength-bar strength-fair';
-            strengthText.textContent = 'Fair password';
+            strengthText.textContent = '🔶 Fair password - add more variety for better security';
             strengthText.style.color = '#f59e0b';
         } else if (strength <= 4) {
             strengthBar.className = 'strength-bar strength-good';
-            strengthText.textContent = 'Good password';
+            strengthText.textContent = '✅ Good password';
             strengthText.style.color = 'var(--accent)';
         } else {
             strengthBar.className = 'strength-bar strength-strong';
-            strengthText.textContent = 'Strong password!';
+            strengthText.textContent = '💪 Strong password!';
             strengthText.style.color = '#22c55e';
         }
         
@@ -414,16 +487,17 @@
         const confirm = confirmInput.value;
         
         if (confirm.length === 0) {
-            confirmHint.textContent = '';
-            return true;
+            confirmHint.innerHTML = '&nbsp;';
+            confirmHint.style.color = 'var(--text-muted)';
+            return false;
         }
         
         if (password === confirm) {
-            confirmHint.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match';
+            confirmHint.innerHTML = '✅ Passwords match';
             confirmHint.style.color = '#22c55e';
             return true;
         } else {
-            confirmHint.innerHTML = '<i class="fas fa-exclamation-circle"></i> Passwords do not match';
+            confirmHint.innerHTML = '❌ Passwords do not match';
             confirmHint.style.color = '#ef4444';
             return false;
         }
@@ -432,27 +506,32 @@
     function validateForm() {
         const password = passwordInput.value;
         const confirm = confirmInput.value;
-        const strength = checkPasswordStrength(password);
         
+        // Check if password is empty
         if (password.length === 0) {
             submitBtn.disabled = true;
             return false;
         }
         
+        // Check password strength (at least fair)
+        const strength = checkPasswordStrength(password);
         if (strength < 3) {
             submitBtn.disabled = true;
             return false;
         }
         
-        if (password !== confirm) {
+        // Check if passwords match
+        if (password !== confirm || confirm.length === 0) {
             submitBtn.disabled = true;
             return false;
         }
         
+        // All validations passed
         submitBtn.disabled = false;
         return true;
     }
     
+    // Event listeners
     passwordInput.addEventListener('input', function() {
         checkPasswordStrength(this.value);
         checkPasswordMatch();
@@ -465,6 +544,26 @@
     });
     
     // Initial validation
-    validateForm();
+    setTimeout(validateForm, 100);
+    
+    // Form submission validation
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        if (submitBtn.disabled) {
+            e.preventDefault();
+            // Show error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'errorlist';
+            errorDiv.innerHTML = '<li><i class="fas fa-exclamation-circle"></i> Please fix all errors before submitting.</li>';
+            const form = this;
+            const existingErrors = form.querySelector('.errorlist');
+            if (existingErrors) {
+                existingErrors.remove();
+            }
+            form.insertBefore(errorDiv, form.firstChild);
+            return false;
+        }
+    });
 </script>
+{% endblock extra_js %}
+
 {% endblock %}

@@ -2260,405 +2260,162 @@ def handler500(request):
 def handler403(request, exception):
     return render(request, 'errors/403.html', status=403)
 
+# ============================================================================
+# CUSTOM PASSWORD RESET VIEWS - NO EMAIL REQUIRED
+# ============================================================================
 
-
-import logging
 from django.contrib.auth.views import (
     PasswordResetView, 
     PasswordResetDoneView, 
     PasswordResetConfirmView, 
     PasswordResetCompleteView
 )
-from django.contrib.sites.shortcuts import get_current_site
-from django.urls import reverse, reverse_lazy
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.conf import settings
-from django.shortcuts import redirect
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login
+from django.urls import reverse
+from django.http import HttpResponse
 from django.contrib.auth.forms import SetPasswordForm
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.utils.crypto import constant_time_compare
-from django.utils import timezone
-import hashlib
-import time
 
-logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-# ============================================================================
-# FIXED CUSTOM TOKEN GENERATOR
-# ============================================================================
-
-class CustomTokenGenerator(PasswordResetTokenGenerator):
-    """
-    Custom token generator that works with Django 5.2.
-    """
-    
-    def _make_token_with_timestamp(self, user, timestamp, secret=None):
-        """
-        Create a token with timestamp.
-        Override parent method with correct signature.
-        """
-        # Convert timestamp to base36
-        ts_b36 = self._int_to_base36(timestamp)
-        
-        # Create the hash
-        hash_input = (
-            force_str(user.pk) + 
-            user.password + 
-            force_str(timestamp)
-        )
-        
-        # Add secret if provided (for Django 5.2+ compatibility)
-        if secret:
-            hash_input += secret
-        
-        hash_value = hashlib.sha256(hash_input.encode()).hexdigest()
-        
-        return f"{ts_b36}-{hash_value[:20]}"
-    
-    def check_token(self, user, token):
-        """
-        Check if token is valid.
-        """
-        if not (user and token):
-            return False
-        
-        # Parse token
-        try:
-            ts_b36, hash_value = token.split("-")
-        except ValueError:
-            return False
-        
-        try:
-            timestamp = self._base36_to_int(ts_b36)
-        except ValueError:
-            return False
-        
-        # Check if token matches using the same method as make_token
-        expected_token = self._make_token_with_timestamp(user, timestamp)
-        
-        if not constant_time_compare(token, expected_token):
-            return False
-        
-        # Check if token has expired (24 hours)
-        token_age = timezone.now() - timezone.datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        if token_age.total_seconds() > 86400:  # 24 hours
-            return False
-        
-        return True
-
-# Create instance
-custom_token_generator = CustomTokenGenerator()
-
-
-# ============================================================================
-# ALTERNATIVE: SIMPLE CUSTOM TOKEN GENERATOR (NO INHERITANCE)
-# ============================================================================
-
-class SimpleTokenGenerator:
-    """
-    A completely custom token generator that doesn't inherit from Django's.
-    This avoids all compatibility issues.
-    """
-    
-    def make_token(self, user):
-        """
-        Generate a token based on user ID, password hash, and timestamp.
-        """
-        # Get current timestamp
-        timestamp = int(time.time())
-        
-        # Create hash input
-        hash_input = f"{user.pk}:{user.password}:{timestamp}:{settings.SECRET_KEY}"
-        hash_value = hashlib.sha256(hash_input.encode()).hexdigest()
-        
-        # Return token with timestamp
-        return f"{timestamp}-{hash_value[:20]}"
-    
-    def check_token(self, user, token):
-        """
-        Check if a token is valid.
-        """
-        if not user or not token:
-            return False
-        
-        try:
-            # Parse token
-            timestamp_str, hash_value = token.split("-")
-            timestamp = int(timestamp_str)
-        except (ValueError, TypeError):
-            return False
-        
-        # Check if token has expired (24 hours)
-        if time.time() - timestamp > 86400:  # 24 hours
-            print(f"Token expired: {time.time() - timestamp} seconds old")
-            return False
-        
-        # Generate expected token
-        expected_hash_input = f"{user.pk}:{user.password}:{timestamp}:{settings.SECRET_KEY}"
-        expected_hash = hashlib.sha256(expected_hash_input.encode()).hexdigest()[:20]
-        
-        # Compare
-        is_valid = constant_time_compare(hash_value, expected_hash)
-        print(f"Token validation: {is_valid}")
-        
-        return is_valid
-
-# Create instance
-simple_token_generator = SimpleTokenGenerator()
-
-
-# ============================================================================
-# PASSWORD RESET VIEWS - USING SIMPLE TOKEN GENERATOR
-# ============================================================================
-
 class CustomPasswordResetView(PasswordResetView):
     """
-    Password reset view that sends a reset link via email.
+    Custom password reset that shows the reset link directly on the page
+    instead of sending an email.
     """
-    template_name = 'auth/password_reset.html'
-    email_template_name = 'auth/password_reset_email.html'
+    template_name = 'auth/password_reset_form.html'
+    email_template_name = None  # Don't send email
+    subject_template_name = None  # Don't send email
+    success_url = '/password-reset/done/'
     
     def form_valid(self, form):
-        """Handle valid form submission."""
+        # Get the email from the form
+        email = form.cleaned_data['email']
+        
         try:
-            email = form.cleaned_data['email']
-            user = User.objects.filter(email__iexact=email).first()
+            # Find the user
+            user = User.objects.get(email__iexact=email)
             
-            if not user:
-                messages.warning(self.request, 'No account found with that email address.')
-                return redirect('password_reset')
-            
-            # Generate UID and token using SIMPLE generator
+            # Generate the reset token
+            token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = simple_token_generator.make_token(user)
             
-            print(f"🔑 Generated UID: {uid}")
-            print(f"🔑 Generated Token: {token}")
+            # Store in session for the next view
+            self.request.session['reset_uid'] = uid
+            self.request.session['reset_token'] = token
+            self.request.session['reset_email'] = email
+            self.request.session['reset_user_id'] = user.pk
             
-            # Build reset URL
-            current_site = get_current_site(self.request)
-            domain = current_site.domain
+            messages.success(self.request, '✅ Reset link generated successfully!')
             
-            if settings.DEBUG:
-                domain = self.request.get_host()
+        except User.DoesNotExist:
+            # For security, don't reveal if email exists or not
+            messages.info(self.request, 
+                'If an account exists with that email, a reset link will be shown.')
             
-            protocol = 'https' if self.request.is_secure() else 'http'
-            reset_path = reverse('password_reset_confirm', kwargs={
-                'uidb64': uid,
-                'token': token
-            })
-            full_reset_url = f"{protocol}://{domain}{reset_path}"
-            
-            # Store in session
-            self.request.session['password_reset_email'] = email
-            self.request.session['password_reset_link'] = full_reset_url
-            self.request.session['password_reset_uid'] = uid
-            self.request.session['password_reset_token'] = token
-            self.request.session['password_reset_user_id'] = user.pk
-            
-            # Send email
-            try:
-                context = {
-                    'user': user,
-                    'domain': domain,
-                    'protocol': protocol,
-                    'uid': uid,
-                    'token': token,
-                    'site_name': 'Rallynex',
-                    'reset_url': full_reset_url,
-                }
-                
-                html_message = render_to_string(self.email_template_name, context)
-                plain_message = strip_tags(html_message)
-                
-                send_mail(
-                    subject='Password Reset | Rallynex',
-                    message=plain_message,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    html_message=html_message,
-                    fail_silently=False,
-                )
-                
-                messages.success(self.request, f'Password reset link sent to {email}')
-                
-            except Exception as e:
-                print(f"Email error: {str(e)}")
-                messages.error(self.request, 'Failed to send email. Please try again.')
-                return redirect('password_reset')
-            
-            return redirect('password_reset_done')
-            
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            messages.error(self.request, 'An error occurred. Please try again.')
-            return redirect('password_reset')
+            # Still set a fake session so we can show the link on done page
+            # (but it won't work, which is secure)
+            self.request.session['reset_uid'] = 'fake'
+            self.request.session['reset_token'] = 'fake'
+            self.request.session['reset_email'] = email
+            self.request.session['reset_user_id'] = None
+        
+        return redirect(self.success_url)
     
     def form_invalid(self, form):
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(self.request, error)
+        messages.error(self.request, 'Please enter a valid email address.')
         return super().form_invalid(form)
 
 
 class CustomPasswordResetDoneView(PasswordResetDoneView):
-    """Done view that displays the reset link."""
+    """
+    Show the password reset link directly on the page
+    """
     template_name = 'auth/password_reset_done.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['reset_email'] = self.request.session.get('password_reset_email', '')
-        context['reset_link'] = self.request.session.get('password_reset_link', '')
-        context['uid'] = self.request.session.get('password_reset_uid', '')
-        context['token'] = self.request.session.get('password_reset_token', '')
+        
+        # Get the reset info from session
+        uid = self.request.session.get('reset_uid')
+        token = self.request.session.get('reset_token')
+        email = self.request.session.get('reset_email', '')
+        user_id = self.request.session.get('reset_user_id')
+        
+        # Verify the token is still valid
+        is_valid = False
+        if uid and token and uid != 'fake' and user_id:
+            try:
+                user = User.objects.get(pk=user_id)
+                if default_token_generator.check_token(user, token):
+                    is_valid = True
+            except User.DoesNotExist:
+                is_valid = False
+        
+        if is_valid and uid and token:
+            # Build the actual reset link
+            reset_link = self.request.build_absolute_uri(
+                reverse('password_reset_confirm', kwargs={
+                    'uidb64': uid,
+                    'token': token
+                })
+            )
+            context['reset_link'] = reset_link
+            context['show_link'] = True
+            context['email'] = email
+            context['is_valid'] = True
+        else:
+            # No valid reset link
+            context['show_link'] = False
+            context['email'] = email
+            context['is_valid'] = False
+        
         return context
 
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     """
-    Confirm view with custom token validation.
+    Confirm the password reset and set new password
     """
     template_name = 'auth/password_reset_confirm.html'
-    success_url = reverse_lazy('password_reset_complete')
-    form_class = SetPasswordForm
-    
-    def dispatch(self, request, *args, **kwargs):
-        """Log access."""
-        uidb64 = kwargs.get('uidb64')
-        token = kwargs.get('token')
-        
-        print(f"🔑 Reset confirm accessed - uidb64: {uidb64}")
-        print(f"🔑 Token: {token[:20] if token else 'None'}...")
-        
-        return super().dispatch(request, *args, **kwargs)
-    
-    def get(self, request, *args, **kwargs):
-        """Validate token and show form."""
-        try:
-            uidb64 = kwargs.get('uidb64')
-            token = kwargs.get('token')
-            
-            if not uidb64 or not token:
-                messages.error(request, 'Invalid reset link.')
-                return redirect('password_reset')
-            
-            # Decode user
-            try:
-                uid = force_str(urlsafe_base64_decode(uidb64))
-                user = User.objects.get(pk=uid)
-                print(f"✅ User found: {user.email}")
-                print(f"✅ User ID: {user.pk}")
-            except Exception as e:
-                print(f"❌ User decode error: {str(e)}")
-                user = None
-            
-            # Check token with SIMPLE generator
-            if user is not None:
-                token_valid = simple_token_generator.check_token(user, token)
-                print(f"✅ Token valid: {token_valid}")
-                
-                if token_valid:
-                    self.validlink = True
-                    self.user = user
-                    self.request.session['password_reset_user_id'] = user.pk
-                    messages.success(request, 'Token verified. Please set your new password.')
-                else:
-                    self.validlink = False
-                    self.user = None
-                    messages.error(request, 'The password reset link is invalid or has expired.')
-            else:
-                self.validlink = False
-                self.user = None
-                messages.error(request, 'Invalid user account.')
-            
-            request.validlink = self.validlink
-            request.user_obj = self.user
-            
-            return super().get(request, *args, **kwargs)
-            
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            messages.error(request, 'Invalid reset link. Please request a new one.')
-            return redirect('password_reset')
-    
-    def post(self, request, *args, **kwargs):
-        """Handle POST request."""
-        print(f"📝 POST to reset confirm")
-        
-        # Ensure user exists in session
-        if not request.session.get('password_reset_user_id'):
-            try:
-                uidb64 = kwargs.get('uidb64')
-                if uidb64:
-                    uid = force_str(urlsafe_base64_decode(uidb64))
-                    user = User.objects.get(pk=uid)
-                    request.session['password_reset_user_id'] = user.pk
-                    print(f"✅ User ID restored from URL: {user.email}")
-            except Exception as e:
-                print(f"❌ Could not restore user: {str(e)}")
-                messages.error(request, 'Session expired. Please request a new reset link.')
-                return redirect('password_reset')
-        
-        return super().post(request, *args, **kwargs)
+    success_url = '/password-reset/complete/'
     
     def get_context_data(self, **kwargs):
-        """Add context to template."""
         context = super().get_context_data(**kwargs)
-        context['validlink'] = getattr(self.request, 'validlink', False)
-        context['user'] = getattr(self.request, 'user_obj', None)
-        
-        if not context['user']:
-            user_id = self.request.session.get('password_reset_user_id')
-            if user_id:
-                try:
-                    context['user'] = User.objects.get(pk=user_id)
-                except User.DoesNotExist:
-                    pass
-        
+        context['validlink'] = self.validlink
         return context
     
     def form_valid(self, form):
-        """Save new password."""
-        try:
-            user = form.save()
-            print(f"✅ Password reset successful: {user.email}")
-            
-            # Login user
-            login(self.request, user)
-            messages.success(self.request, 'Your password has been reset! You are now logged in.')
-            
-            # Clear session
-            if 'password_reset_user_id' in self.request.session:
-                del self.request.session['password_reset_user_id']
-            
-            return super().form_valid(form)
-            
-        except Exception as e:
-            print(f"❌ Error saving password: {str(e)}")
-            messages.error(self.request, f'Failed to reset password: {str(e)}')
-            return self.form_invalid(form)
+        # Clear the session data after successful reset
+        if 'reset_uid' in self.request.session:
+            del self.request.session['reset_uid']
+        if 'reset_token' in self.request.session:
+            del self.request.session['reset_token']
+        if 'reset_email' in self.request.session:
+            del self.request.session['reset_email']
+        if 'reset_user_id' in self.request.session:
+            del self.request.session['reset_user_id']
+        
+        messages.success(self.request, '✅ Password reset successful! You can now login with your new password.')
+        return super().form_valid(form)
     
     def form_invalid(self, form):
-        """Handle invalid form."""
-        print(f"❌ Form invalid: {form.errors}")
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(self.request, error)
+        messages.error(self.request, 'Please correct the errors below.')
         return super().form_invalid(form)
 
 
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
-    """Complete view."""
+    """
+    Password reset complete page
+    """
     template_name = 'auth/password_reset_complete.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add any extra context if needed
+        return context

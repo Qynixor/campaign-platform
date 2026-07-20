@@ -1157,3 +1157,5 @@ class AICustomizationForm(forms.Form):
         widget=forms.RadioSelect,
         initial='detailed'
     )
+
+
