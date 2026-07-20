@@ -2260,6 +2260,9 @@ def handler500(request):
 def handler403(request, exception):
     return render(request, 'errors/403.html', status=403)
 
+
+
+
 import logging
 from django.contrib.auth.views import (
     PasswordResetView, 
@@ -2280,21 +2283,15 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+from django.http import HttpResponseRedirect
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-# ============================================================================
-# PASSWORD RESET VIEWS - COMPLETE WORKING IMPLEMENTATION
-# ============================================================================
-
 class CustomPasswordResetView(PasswordResetView):
     """
-    Custom password reset view that:
-    1. Generates a reset link
-    2. Sends it via email
-    3. Stores it in session to display on the done page
+    Custom password reset view that generates a reset link and sends it via email.
     """
     template_name = 'auth/password_reset.html'
     email_template_name = 'auth/password_reset_email.html'
@@ -2310,9 +2307,16 @@ class CustomPasswordResetView(PasswordResetView):
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
                 
-                # Build the full reset URL
-                domain = get_current_site(self.request).domain
+                # Build the full reset URL using the current site
+                current_site = get_current_site(self.request)
+                domain = current_site.domain
                 protocol = 'https' if self.request.is_secure() else 'http'
+                
+                # For local development, use localhost
+                if settings.DEBUG:
+                    domain = self.request.get_host()
+                    protocol = 'http'
+                
                 reset_path = reverse('password_reset_confirm', kwargs={
                     'uidb64': uid,
                     'token': token
@@ -2326,12 +2330,12 @@ class CustomPasswordResetView(PasswordResetView):
                 self.request.session['password_reset_token'] = token
                 self.request.session['password_reset_user_id'] = user.pk
                 
-                # Log for debugging
-                logger.info(f"Password reset requested for {email}")
                 print(f"✅ Password reset link generated for {email}")
                 print(f"🔗 Reset link: {full_reset_url}")
+                print(f"🔑 UID: {uid}")
+                print(f"🔑 Token: {token}")
                 
-                # ✅ SEND THE EMAIL
+                # Send the email
                 try:
                     context = {
                         'user': user,
@@ -2357,22 +2361,17 @@ class CustomPasswordResetView(PasswordResetView):
                     print(f"✅ Password reset email sent to {email}")
                     
                 except Exception as email_error:
-                    logger.error(f"Failed to send password reset email: {str(email_error)}")
                     print(f"❌ Email sending failed: {str(email_error)}")
-                    # Continue anyway - link will be displayed on the done page
                 
                 messages.success(self.request, f'Password reset link sent to {email}')
-                
             else:
-                logger.warning(f"Password reset attempted for non-existent email: {email}")
                 messages.warning(self.request, 'No account found with that email address.')
                 return redirect('password_reset')
             
-            # Redirect to the done view where the link is displayed
             return redirect('password_reset_done')
             
         except Exception as e:
-            logger.error(f"Error in password reset: {str(e)}")
+            print(f"❌ Error in password reset: {str(e)}")
             import traceback
             traceback.print_exc()
             messages.error(self.request, 'An error occurred. Please try again.')
@@ -2389,30 +2388,21 @@ class CustomPasswordResetView(PasswordResetView):
 class CustomPasswordResetDoneView(PasswordResetDoneView):
     """
     Done view that displays the reset link directly on the page.
-    This is the page users see after requesting a password reset.
     """
     template_name = 'auth/password_reset_done.html'
     
     def get_context_data(self, **kwargs):
-        """Get the reset link from session and add to context"""
         context = super().get_context_data(**kwargs)
-        
-        # Get data from session
         context['reset_email'] = self.request.session.get('password_reset_email', '')
         context['reset_link'] = self.request.session.get('password_reset_link', '')
         context['uid'] = self.request.session.get('password_reset_uid', '')
         context['token'] = self.request.session.get('password_reset_token', '')
-        
-        # Log for debugging
-        print(f"📧 Reset email in context: {context['reset_email']}")
-        print(f"🔗 Reset link in context: {context['reset_link']}")
-        
         return context
+
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     """
-    Confirm view where users set their new password.
-    Validates the token and displays the password reset form.
+    Custom confirm view with proper token validation.
     """
     template_name = 'auth/password_reset_confirm.html'
     success_url = reverse_lazy('password_reset_complete')
@@ -2443,28 +2433,37 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
                 messages.error(request, 'Invalid reset link. Please request a new one.')
                 return redirect('password_reset')
             
-            # Decode the user ID
+            # Decode the user ID - ✅ FIXED: Use force_str
             try:
                 uid = force_str(urlsafe_base64_decode(uidb64))
                 user = User.objects.get(pk=uid)
                 print(f"✅ User found: {user.email}")
+                print(f"✅ User ID: {user.pk}")
             except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
                 print(f"❌ User decode error: {str(e)}")
                 user = None
             
-            # Check if token is valid
-            if user is not None and default_token_generator.check_token(user, token):
-                self.validlink = True
-                self.user = user
-                print(f"✅ Token is valid for user: {user.email}")
+            # ✅ FIXED: Check token properly
+            if user is not None:
+                token_valid = default_token_generator.check_token(user, token)
+                print(f"✅ Token valid: {token_valid}")
                 
-                # Store user ID in session for the form submission
-                self.request.session['password_reset_user_id'] = user.pk
-                
+                if token_valid:
+                    self.validlink = True
+                    self.user = user
+                    print(f"✅ Token is valid for user: {user.email}")
+                    
+                    # Store user ID in session
+                    self.request.session['password_reset_user_id'] = user.pk
+                else:
+                    self.validlink = False
+                    self.user = None
+                    print(f"❌ Token is invalid for user: {user.email}")
+                    messages.error(request, 'The password reset link is invalid or has expired.')
             else:
                 self.validlink = False
                 self.user = None
-                print(f"❌ Invalid token or user not found")
+                print(f"❌ User not found")
                 messages.error(request, 'The password reset link is invalid or has expired.')
             
             # Pass flags to the template via request
@@ -2474,7 +2473,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
             return super().get(request, *args, **kwargs)
             
         except Exception as e:
-            logger.error(f"Error in password reset confirm GET: {str(e)}")
+            print(f"❌ Error in password reset confirm GET: {str(e)}")
             import traceback
             traceback.print_exc()
             messages.error(request, 'Invalid or expired reset link. Please request a new one.')
@@ -2483,11 +2482,9 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     def post(self, request, *args, **kwargs):
         """Handle POST request - validate and save the new password"""
         print(f"📝 POST request to password reset confirm")
-        print(f"📝 POST data keys: {request.POST.keys()}")
-        print(f"📝 new_password1 present: {'new_password1' in request.POST}")
-        print(f"📝 new_password2 present: {'new_password2' in request.POST}")
+        print(f"📝 POST data: {request.POST}")
         
-        # Ensure we have the user ID
+        # Get the user from session
         user_id = request.session.get('password_reset_user_id')
         print(f"📝 User ID from session: {user_id}")
         
@@ -2505,14 +2502,13 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
                 messages.error(request, 'Session expired. Please request a new reset link.')
                 return redirect('password_reset')
         
-        # Call the parent post method
         return super().post(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         """Add extra context to the template"""
         context = super().get_context_data(**kwargs)
         
-        # Get the validlink flag from the request
+        # Get the validlink flag
         context['validlink'] = getattr(self.request, 'validlink', False)
         context['user'] = getattr(self.request, 'user_obj', None)
         
@@ -2537,7 +2533,6 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         print(f"✅ Form is valid, saving new password...")
         try:
             user = form.save()
-            logger.info(f"Password reset successful for user: {user.email}")
             print(f"✅ Password reset successful for user: {user.email}")
             
             # Log the user in
@@ -2551,7 +2546,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
             return super().form_valid(form)
             
         except Exception as e:
-            logger.error(f"Error saving new password: {str(e)}")
+            print(f"❌ Error saving new password: {str(e)}")
             import traceback
             traceback.print_exc()
             messages.error(self.request, f'Failed to reset password: {str(e)}')
@@ -2566,6 +2561,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
                 print(f"   - {field}: {error}")
                 messages.error(self.request, f'{error}')
         return super().form_invalid(form)
+
 
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     """
