@@ -17,18 +17,23 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     
-    # Password reset
+    # ============================================================================
+    # PASSWORD RESET - CUSTOM (Shows link directly on page)
+    # ============================================================================
     path('password-reset/', 
-         auth_views.PasswordResetView.as_view(template_name='auth/password_reset.html'),
+         views.CustomPasswordResetView.as_view(),
          name='password_reset'),
+    
     path('password-reset/done/',
-         auth_views.PasswordResetDoneView.as_view(template_name='auth/password_reset_done.html'),
+         views.CustomPasswordResetDoneView.as_view(),
          name='password_reset_done'),
+    
     path('password-reset/<uidb64>/<token>/',
-         auth_views.PasswordResetConfirmView.as_view(template_name='auth/password_reset_confirm.html'),
+         views.CustomPasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
+    
     path('password-reset/complete/',
-         auth_views.PasswordResetCompleteView.as_view(template_name='auth/password_reset_complete.html'),
+         views.CustomPasswordResetCompleteView.as_view(),
          name='password_reset_complete'),
 
     # ============================================================================
@@ -177,7 +182,6 @@ urlpatterns = [
     
     # PayPal Webhook
     path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
-    path('dashboard/journeys/<slug:slug>/delete/', views.delete_journey_view, name='delete_journey'),
 ]
 
 # ============================================================================
