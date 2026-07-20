@@ -558,7 +558,7 @@
         object-fit: cover;
     }
     
-    .profile-avatar-large i {
+    .profile-avatar-large .avatar-placeholder {
         font-size: 28px;
         color: var(--text-muted);
         opacity: 0.4;
@@ -1041,14 +1041,19 @@
         <!-- ====== RIGHT COLUMN ====== -->
         <div>
             
-            <!-- Profile Summary -->
+            <!-- Profile Summary - UPDATED WITH PROPER DEFAULT AVATAR -->
             <div class="dashboard-card">
                 <div class="card-body profile-summary">
                     <div class="profile-avatar-large">
-                        {% if user.profile.image %}
-                            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}" loading="lazy">
+                        {% if user.profile.image and user.profile.image.url %}
+                            <img src="{{ user.profile.image.url }}" 
+                                 alt="{{ user.username }}" 
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                         {% else %}
-                            <i class="fas fa-user"></i>
+                            <img src="{% static 'images/default-avatar.png' %}" 
+                                 alt="{{ user.username }}" 
+                                 loading="lazy">
                         {% endif %}
                     </div>
                     <h4 class="profile-name-large">{{ user.get_full_name|default:user.username }}</h4>
@@ -1250,5 +1255,15 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        'use strict';
+        console.log('📊 Dashboard loaded');
+        
+        // Log avatar info for debugging
+        console.log('Profile avatar exists:', {% if user.profile.image and user.profile.image.url %}true{% else %}false{% endif %});
+    })();
+</script>
 
 {% endblock %}

@@ -209,6 +209,7 @@
         align-items: center;
         gap: 8px;
         margin-top: 4px;
+        text-decoration: none;
     }
     
     .journey-creator .avatar {
@@ -230,7 +231,7 @@
         object-fit: cover;
     }
     
-    .journey-creator .avatar i {
+    .journey-creator .avatar .avatar-placeholder {
         font-size: 12px;
         color: var(--text-muted);
     }
@@ -1751,7 +1752,7 @@
         object-fit: cover;
     }
     
-    .comment-item .comment-avatar i {
+    .comment-item .comment-avatar .avatar-placeholder {
         font-size: 14px;
         color: var(--text-muted);
     }
@@ -1836,7 +1837,7 @@
         object-fit: cover;
     }
     
-    .comment-form-container .comment-avatar i {
+    .comment-form-container .comment-avatar .avatar-placeholder {
         font-size: 14px;
         color: var(--text-muted);
     }
@@ -2387,18 +2388,19 @@
         <div class="journey-hero-top">
             <div class="journey-title-section">
                 <h1 id="journeyTitle">{{ journey.title }}</h1>
-                <div class="journey-creator">
-                    <a href="{% url 'creator_profile' username=journey.creator.user.username %}" class="journey-creator">
-                        <div class="avatar">
-                            {% if journey.creator.image %}
-                                <img src="{{ journey.creator.image.url }}" alt="{{ journey.creator.get_display_name }}">
-                            {% else %}
-                                <i class="fas fa-user"></i>
-                            {% endif %}
-                        </div>
-                        <span class="name">@{{ journey.creator.user.username }}</span>
-                    </a>
-                </div>
+                <a href="{% url 'creator_profile' username=journey.creator.user.username %}" class="journey-creator">
+                    <div class="avatar">
+                        {% if journey.creator.image and journey.creator.image.url %}
+                            <img src="{{ journey.creator.image.url }}" 
+                                 alt="{{ journey.creator.get_display_name }}"
+                                 onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
+                        {% else %}
+                            <img src="{% static 'images/default-avatar.png' %}" 
+                                 alt="{{ journey.creator.get_display_name }}">
+                        {% endif %}
+                    </div>
+                    <span class="name">@{{ journey.creator.user.username }}</span>
+                </a>
             </div>
             
             <div class="journey-actions-top">
@@ -2410,9 +2412,6 @@
                         title="{% if is_following %}Unfollow{% else %}Follow{% endif %} journey">
                     <i class="fas fa-{% if is_following %}user-check{% else %}user-plus{% endif %}"></i>
                 </button>
-                {% else %}
-                <!-- Optionally show a disabled state or nothing at all -->
-                <!-- We'll hide it completely for clean UI -->
                 {% endif %}
                 
                 <!-- Save Button -->
@@ -3013,10 +3012,13 @@
             {% for comment in recent_comments %}
             <div class="comment-item">
                 <div class="comment-avatar">
-                    {% if comment.user.profile.image %}
-                        <img src="{{ comment.user.profile.image.url }}" alt="{{ comment.user.username }}">
+                    {% if comment.user.profile.image and comment.user.profile.image.url %}
+                        <img src="{{ comment.user.profile.image.url }}" 
+                             alt="{{ comment.user.username }}"
+                             onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                     {% else %}
-                        <i class="fas fa-user"></i>
+                        <img src="{% static 'images/default-avatar.png' %}" 
+                             alt="{{ comment.user.username }}">
                     {% endif %}
                 </div>
                 <div class="comment-content">
@@ -3042,10 +3044,13 @@
                 <input type="hidden" id="commentActivityId" value="{{ current_activity.id|default:'' }}">
                 <div class="comment-input-wrapper">
                     <div class="comment-avatar">
-                        {% if user.profile.image %}
-                            <img src="{{ user.profile.image.url }}" alt="{{ user.username }}">
+                        {% if user.profile.image and user.profile.image.url %}
+                            <img src="{{ user.profile.image.url }}" 
+                                 alt="{{ user.username }}"
+                                 onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                         {% else %}
-                            <i class="fas fa-user"></i>
+                            <img src="{% static 'images/default-avatar.png' %}" 
+                                 alt="{{ user.username }}">
                         {% endif %}
                     </div>
                     <div class="comment-input-group">

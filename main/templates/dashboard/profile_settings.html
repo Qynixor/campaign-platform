@@ -628,13 +628,16 @@
     <form method="post" enctype="multipart/form-data" class="settings-card" id="profileForm">
         {% csrf_token %}
         
-        <!-- ===== AVATAR SECTION ===== -->
+        <!-- ===== AVATAR SECTION - UPDATED WITH PROPER DEFAULT HANDLING ===== -->
         <div class="avatar-section">
             <div class="avatar-preview" id="avatarPreview">
                 {% if profile.image and profile.image.url %}
-                    <img src="{{ profile.image.url }}" alt="Profile photo">
+                    <img src="{{ profile.image.url }}" 
+                         alt="Profile photo"
+                         onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                 {% else %}
-                    <span class="avatar-placeholder"><i class="fas fa-user"></i></span>
+                    <img src="{% static 'images/default-avatar.png' %}" 
+                         alt="Default profile photo">
                 {% endif %}
                 <div class="avatar-overlay" onclick="document.getElementById('id_image').click()">
                     <i class="fas fa-camera"></i> Change Photo
@@ -647,7 +650,7 @@
                         <i class="fas fa-upload"></i> Upload Photo
                     </label>
                     <input type="file" name="image" id="id_image" accept="image/*" style="display: none;">
-                    {% if profile.image %}
+                    {% if profile.image and profile.image.url %}
                         <button type="button" class="btn-remove" id="removePhotoBtn">
                             <i class="fas fa-trash-alt"></i> Remove
                         </button>
@@ -657,9 +660,13 @@
                     <i class="fas fa-info-circle"></i>
                     JPG, PNG, or WebP. Max 5MB. Recommended: 400x400px
                 </div>
-                {% if profile.image %}
+                {% if profile.image and profile.image.url %}
                     <div class="avatar-status">
                         <i class="fas fa-check-circle"></i> Photo uploaded
+                    </div>
+                {% else %}
+                    <div class="avatar-status" style="color: var(--text-muted);">
+                        <i class="fas fa-user-circle"></i> Using default avatar
                     </div>
                 {% endif %}
             </div>
@@ -821,6 +828,12 @@
                                 <i class="fas fa-camera"></i> Change Photo
                             </div>
                         `;
+                        // Update status
+                        const statusDiv = document.querySelector('.avatar-status');
+                        if (statusDiv) {
+                            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                            statusDiv.style.color = 'var(--accent)';
+                        }
                     };
                     reader.readAsDataURL(file);
                 }
@@ -840,12 +853,19 @@
                     document.getElementById('profileForm').appendChild(removalInput);
                     
                     avatarPreview.innerHTML = `
-                        <span class="avatar-placeholder"><i class="fas fa-user"></i></span>
+                        <img src="{% static 'images/default-avatar.png' %}" alt="Default profile photo">
                         <div class="avatar-overlay" onclick="document.getElementById('id_image').click()">
                             <i class="fas fa-camera"></i> Change Photo
                         </div>
                     `;
                     this.style.display = 'none';
+                    
+                    // Update status
+                    const statusDiv = document.querySelector('.avatar-status');
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '<i class="fas fa-user-circle"></i> Using default avatar';
+                        statusDiv.style.color = 'var(--text-muted)';
+                    }
                 }
             });
         }

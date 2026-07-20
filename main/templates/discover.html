@@ -587,7 +587,7 @@
         object-fit: cover;
     }
     
-    .card-creator .avatar i {
+    .card-creator .avatar .avatar-placeholder {
         font-size: 14px;
         color: var(--text-muted);
     }
@@ -1141,17 +1141,18 @@
                                             {{ journey.cover_image.url }}?w=1200&h=750&fit=crop&q=90&f=auto 1200w
                                         "
                                         sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                        onerror="this.style.display='none'; this.parentElement.querySelector('.auto-cover-fallback').style.display='flex';"
                                     >
-                                {% else %}
-                                    <!-- ✅ AUTO-GENERATED COVER -->
-                                    <div class="auto-cover" style="{{ journey.get_cover_style }}">
-                                        <div class="auto-cover-inner">
-                                            <span class="auto-cover-icon">{{ journey.get_journey_icon }}</span>
-                                            <span class="auto-cover-initials">{{ journey.get_initials }}</span>
-                                            <span class="auto-cover-title">{{ journey.title|truncatechars:25 }}</span>
-                                        </div>
-                                    </div>
                                 {% endif %}
+                                
+                                <!-- ✅ AUTO-GENERATED COVER (fallback) -->
+                                <div class="auto-cover auto-cover-fallback" style="{% if journey.cover_image %}display:none;{% else %}display:flex;{% endif %}{{ journey.get_cover_style }}">
+                                    <div class="auto-cover-inner">
+                                        <span class="auto-cover-icon">{{ journey.get_journey_icon }}</span>
+                                        <span class="auto-cover-initials">{{ journey.get_initials }}</span>
+                                        <span class="auto-cover-title">{{ journey.title|truncatechars:25 }}</span>
+                                    </div>
+                                </div>
                                 
                                 <div class="card-badges">
                                     <span class="card-badge category">
@@ -1176,10 +1177,15 @@
                                    class="card-creator-link"
                                    onclick="event.stopPropagation();">
                                     <div class="avatar">
-                                        {% if journey.creator.image %}
-                                            <img src="{{ journey.creator.image.url }}?w=56&h=56&fit=crop&q=80&f=auto" alt="{{ journey.creator.get_display_name }}" loading="lazy">
+                                        {% if journey.creator.image and journey.creator.image.url %}
+                                            <img src="{{ journey.creator.image.url }}?w=56&h=56&fit=crop&q=80&f=auto" 
+                                                 alt="{{ journey.creator.get_display_name }}" 
+                                                 loading="lazy"
+                                                 onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                                         {% else %}
-                                            <i class="fas fa-user"></i>
+                                            <img src="{% static 'images/default-avatar.png' %}" 
+                                                 alt="{{ journey.creator.get_display_name }}" 
+                                                 loading="lazy">
                                         {% endif %}
                                     </div>
                                     <span class="name">@{{ journey.creator.user.username }}</span>

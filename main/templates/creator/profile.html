@@ -966,15 +966,18 @@
              ============================================ -->
         <div class="profile-header">
             
-            <!-- Avatar -->
+            <!-- Avatar - UPDATED WITH PROPER DEFAULT HANDLING -->
             <div class="profile-avatar-wrapper">
                 <div class="profile-avatar">
                     {% if profile.image and profile.image.url %}
-                        <img src="{{ profile.image.url }}" alt="{{ profile.user.get_full_name|default:profile.user.username }}" loading="lazy">
+                        <img src="{{ profile.image.url }}" 
+                             alt="{{ profile.user.get_full_name|default:profile.user.username }}" 
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='{% static 'images/default-avatar.png' %}';">
                     {% else %}
-                        <span class="avatar-placeholder">
-                            <i class="fas fa-user"></i>
-                        </span>
+                        <img src="{% static 'images/default-avatar.png' %}" 
+                             alt="{{ profile.user.get_full_name|default:profile.user.username }}" 
+                             loading="lazy">
                     {% endif %}
                 </div>
             </div>
@@ -1309,6 +1312,10 @@
             paypal: '{{ profile.paypal_email }}',
             location: '{{ profile.location }}'
         });
+        
+        // Log avatar info
+        console.log('Avatar URL:', '{{ profile.get_avatar_url }}');
+        console.log('Has custom avatar:', {% if profile.image and profile.image.url %}true{% else %}false{% endif %});
     })();
 </script>
 

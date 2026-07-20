@@ -18,14 +18,18 @@ User = get_user_model()
 # ============================================================================
 # CORE USER MODELS
 # ============================================================================
+
 class Profile(models.Model):
     """User profile for Rallynex — Product Builders & Creators"""
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # Cloudinary field for user-uploaded images
     image = CloudinaryField(
         'image',
         folder='profile_pics',
-        default='v1763637368/pp_vvzbcj'
+        null=True,  # Allow null
+        blank=True   # Allow blank
     )
     
     bio = models.TextField(default='', max_length=200, blank=True)
@@ -48,6 +52,12 @@ class Profile(models.Model):
     def __str__(self):
         return f'{self.user.username} Profile'
     
+    def get_avatar_url(self):
+        """Get avatar URL - Cloudinary image if exists, else static default"""
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        return '/static/images/default-avatar.png'
+    
     def get_display_name(self):
         return self.user.get_full_name() or self.user.username
     
@@ -64,8 +74,8 @@ class Profile(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
-
+        Profile.objects.create(user=instance)  # Don't set image here
+        
 # ============================================================================
 # JOURNEY MODEL — Build in Public Focused
 # ============================================================================
