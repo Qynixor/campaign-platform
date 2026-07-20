@@ -154,14 +154,31 @@ CSRF_TRUSTED_ORIGINS = [
 # =====================================================
 # AUTH
 # =====================================================
+
+# =====================================================
+# AUTH - PASSWORD VALIDATORS (UPDATED)
+# =====================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {
-            'min_length': 6,
+            'min_length': 5,  # Changed from 6 to 5
         }
     },
+    # Add custom validator for symbol requirement
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    # Custom validator for symbol requirement
+    {
+        'NAME': 'main.validators.SymbolValidator',  # You'll create this
+    },
 ]
+
+
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 

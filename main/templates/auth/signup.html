@@ -206,20 +206,10 @@
     
     .strength-weak {
         background: #ef4444;
-        width: 25%;
-    }
-    
-    .strength-fair {
-        background: #f59e0b;
         width: 50%;
     }
     
     .strength-good {
-        background: var(--accent);
-        width: 75%;
-    }
-    
-    .strength-strong {
         background: #22c55e;
         width: 100%;
     }
@@ -236,6 +226,50 @@
     
     .match-error {
         color: #ef4444;
+    }
+    
+    /* Password Requirements */
+    .password-requirements {
+        margin: 12px 0 16px 0;
+        padding: 12px 16px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .password-requirements .req-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .password-requirements .req-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    .password-requirements .req-list .req-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        transition: color 0.3s ease;
+    }
+    
+    .password-requirements .req-list .req-item.met {
+        color: #22c55e;
+    }
+    
+    .password-requirements .req-list .req-item i {
+        font-size: 14px;
+        width: 16px;
     }
     
     /* Terms link styling */
@@ -405,8 +439,26 @@
                     {% endif %}
                 </div>
             </div>
+            
+            <!-- Password Requirements -->
+            <div class="password-requirements">
+                <div class="req-title">
+                    <i class="fas fa-shield-alt"></i> Password Requirements
+                </div>
+                <div class="req-list">
+                    <div class="req-item" id="req-length">
+                        <i class="fas fa-circle"></i> At least 5 characters
+                    </div>
+                    <div class="req-item" id="req-symbol">
+                        <i class="fas fa-circle"></i> At least one symbol (!@#$%^&*)
+                    </div>
+                    <div class="req-item" id="req-match">
+                        <i class="fas fa-circle"></i> Passwords match
+                    </div>
+                </div>
+            </div>
           
-            <button type="submit" class="auth-btn" id="submitBtn">
+            <button type="submit" class="auth-btn" id="submitBtn" disabled>
                 <i class="fas fa-user-plus"></i> 
                 {% if next_url and 'claim' in next_url %}
                     Create Account & Claim Journey
@@ -429,15 +481,19 @@
     </div>
 </div>
 
-{% block extra_js %}
 <script>
-    // Password strength checker
+    // Password validation
     const passwordInput = document.getElementById('id_password1');
     const confirmInput = document.getElementById('id_password2');
     const submitBtn = document.getElementById('submitBtn');
     const strengthBar = document.getElementById('strengthBar');
     const strengthText = document.getElementById('strengthText');
     const confirmHint = document.getElementById('confirmHint');
+    
+    // Get requirement elements
+    const reqLength = document.getElementById('req-length');
+    const reqSymbol = document.getElementById('req-symbol');
+    const reqMatch = document.getElementById('req-match');
     
     function checkPasswordStrength(password) {
         if (password.length === 0) {
@@ -449,33 +505,19 @@
         
         let strength = 0;
         
-        // Length check (at least 8 characters)
-        if (password.length >= 8) strength++;
-        // Uppercase check
-        if (/[A-Z]/.test(password)) strength++;
-        // Lowercase check
-        if (/[a-z]/.test(password)) strength++;
-        // Number check
-        if (/[0-9]/.test(password)) strength++;
-        // Special character check
+        // Length check (at least 5 characters)
+        if (password.length >= 5) strength++;
+        // Symbol check
         if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
         
         // Update strength bar and text
-        if (strength <= 2) {
+        if (strength <= 1) {
             strengthBar.className = 'strength-bar strength-weak';
-            strengthText.textContent = '⚠️ Weak password - add more characters, numbers, and symbols';
+            strengthText.textContent = '⚠️ Password needs at least 5 characters and a symbol';
             strengthText.style.color = '#ef4444';
-        } else if (strength <= 3) {
-            strengthBar.className = 'strength-bar strength-fair';
-            strengthText.textContent = '🔶 Fair password - add more variety for better security';
-            strengthText.style.color = '#f59e0b';
-        } else if (strength <= 4) {
+        } else if (strength === 2) {
             strengthBar.className = 'strength-bar strength-good';
-            strengthText.textContent = '✅ Good password';
-            strengthText.style.color = 'var(--accent)';
-        } else {
-            strengthBar.className = 'strength-bar strength-strong';
-            strengthText.textContent = '💪 Strong password!';
+            strengthText.textContent = '✅ Password meets requirements!';
             strengthText.style.color = '#22c55e';
         }
         
@@ -503,48 +545,46 @@
         }
     }
     
-    function validateForm() {
-        const password = passwordInput.value;
-        const confirm = confirmInput.value;
-        
-        // Check if password is empty
-        if (password.length === 0) {
-            submitBtn.disabled = true;
-            return false;
+    function updateRequirement(element, met, label) {
+        if (met) {
+            element.classList.add('met');
+            element.innerHTML = `<i class="fas fa-check-circle"></i> ${label}`;
+        } else {
+            element.classList.remove('met');
+            element.innerHTML = `<i class="fas fa-circle"></i> ${label}`;
         }
+    }
+    
+    function validatePassword() {
+        const pwd = passwordInput.value;
+        const pwd2 = confirmInput.value;
         
-        // Check password strength (at least fair)
-        const strength = checkPasswordStrength(password);
-        if (strength < 3) {
-            submitBtn.disabled = true;
-            return false;
-        }
+        // Check requirements
+        const hasLength = pwd.length >= 5;
+        const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+        const match = pwd === pwd2 && pwd.length > 0 && pwd2.length > 0;
         
-        // Check if passwords match
-        if (password !== confirm || confirm.length === 0) {
-            submitBtn.disabled = true;
-            return false;
-        }
+        // Update UI
+        updateRequirement(reqLength, hasLength, 'At least 5 characters');
+        updateRequirement(reqSymbol, hasSymbol, 'At least one symbol (!@#$%^&*)');
+        updateRequirement(reqMatch, match, 'Passwords match');
         
-        // All validations passed
-        submitBtn.disabled = false;
-        return true;
+        // Check password strength
+        checkPasswordStrength(pwd);
+        
+        // Enable/disable submit button
+        const allMet = hasLength && hasSymbol && match;
+        submitBtn.disabled = !allMet;
+        
+        return allMet;
     }
     
     // Event listeners
-    passwordInput.addEventListener('input', function() {
-        checkPasswordStrength(this.value);
-        checkPasswordMatch();
-        validateForm();
-    });
-    
-    confirmInput.addEventListener('input', function() {
-        checkPasswordMatch();
-        validateForm();
-    });
+    passwordInput.addEventListener('input', validatePassword);
+    confirmInput.addEventListener('input', validatePassword);
     
     // Initial validation
-    setTimeout(validateForm, 100);
+    setTimeout(validatePassword, 100);
     
     // Form submission validation
     document.getElementById('signupForm').addEventListener('submit', function(e) {
@@ -564,6 +604,4 @@
         }
     });
 </script>
-{% endblock extra_js %}
-
 {% endblock %}

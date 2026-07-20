@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, SetPasswordForm
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from cloudinary.forms import CloudinaryFileField
@@ -79,6 +79,21 @@ class SignUpForm(UserCreationForm):
             raise ValidationError('This email is already registered.')
         return email
     
+    def clean_password1(self):
+        """Validate password: minimum 5 characters and at least one symbol"""
+        password = self.cleaned_data.get('password1', '')
+        
+        # Check minimum length
+        if len(password) < 5:
+            raise ValidationError('Password must be at least 5 characters long.')
+        
+        # Check for at least one symbol
+        symbols = r'[!@#$%^&*(),.?":{}|<>]'
+        if not re.search(symbols, password):
+            raise ValidationError('Password must contain at least one symbol (e.g., !@#$%^&*)')
+        
+        return password
+    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email'].lower()
@@ -113,6 +128,29 @@ class LoginForm(AuthenticationForm):
             'class': 'form-checkbox'
         })
     )
+
+
+# ============================================================================
+# CUSTOM SET PASSWORD FORM (For Password Reset)
+# ============================================================================
+
+class CustomSetPasswordForm(SetPasswordForm):
+    """Custom set password form with relaxed requirements"""
+    
+    def clean_new_password1(self):
+        """Validate password: minimum 5 characters and at least one symbol"""
+        password = self.cleaned_data.get('new_password1', '')
+        
+        # Check minimum length
+        if len(password) < 5:
+            raise ValidationError('Password must be at least 5 characters long.')
+        
+        # Check for at least one symbol
+        symbols = r'[!@#$%^&*(),.?":{}|<>]'
+        if not re.search(symbols, password):
+            raise ValidationError('Password must contain at least one symbol (e.g., !@#$%^&*)')
+        
+        return password
 
 
 # ============================================================================
@@ -330,8 +368,6 @@ class JourneyForm(forms.ModelForm):
         help_text="Link to your GitHub repository"
     )
     
-    # ❌ REMOVED cover_image field completely
-    
     duration = forms.IntegerField(
         min_value=1,
         max_value=365,
@@ -414,7 +450,7 @@ class JourneyForm(forms.ModelForm):
         model = Journey
         fields = [
             'title', 'description', 'journey_type', 'category', 'product_stage',
-            'product_url', 'github_url',  # ❌ Removed 'cover_image' from here
+            'product_url', 'github_url',
             'duration', 'current_day_override', 'start_date', 'privacy_status', 
             'allow_comments', 'allow_followers', 'template_style'
         ]
@@ -488,6 +524,7 @@ class JourneySettingsForm(forms.ModelForm):
             'allow_comments': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
             'allow_followers': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
+
 
 # ============================================================================
 # ACTIVITY FORMS — Daily Build in Public Entries
@@ -613,21 +650,18 @@ class ActivityForm(forms.ModelForm):
         help_text="Save as draft without publishing"
     )
     
-    # ✅ Source URL field
     source_url = forms.URLField(
         required=False,
-        widget=forms.HiddenInput(),  # Hidden because users don't need to see it
+        widget=forms.HiddenInput(),
         initial=''
     )
     
-    # ✅ View count field (required by database)
     view_count = forms.IntegerField(
         required=False,
         initial=0,
         widget=forms.HiddenInput()
     )
     
-    # ✅ Unique viewers field (if exists in model)
     unique_viewers = forms.IntegerField(
         required=False,
         initial=0,
@@ -657,7 +691,6 @@ class ActivityForm(forms.ModelForm):
                 f"Share your progress, learnings, and challenges..."
             )
         
-        # ✅ Set initial values for hidden fields
         if self.instance and self.instance.pk:
             self.fields['view_count'].initial = self.instance.view_count if hasattr(self.instance, 'view_count') else 0
             self.fields['unique_viewers'].initial = self.instance.unique_viewers if hasattr(self.instance, 'unique_viewers') else 0
@@ -729,22 +762,18 @@ class ActivityForm(forms.ModelForm):
         if self.day_number and not activity.day_number_field:
             activity.day_number_field = self.day_number
         
-        # ✅ Ensure source_url is never None
         if hasattr(activity, 'source_url'):
             if activity.source_url is None or activity.source_url == '':
                 activity.source_url = ''
         
-        # ✅ Force set view_count to 0 if None
         if hasattr(activity, 'view_count'):
             if activity.view_count is None:
                 activity.view_count = 0
         
-        # ✅ Force set unique_viewers to 0 if None
         if hasattr(activity, 'unique_viewers'):
             if activity.unique_viewers is None:
                 activity.unique_viewers = 0
         
-        # ✅ Set published_at if it exists and is None
         if hasattr(activity, 'published_at'):
             if activity.published_at is None:
                 from django.utils import timezone
@@ -1038,7 +1067,7 @@ class NewsletterSignupForm(forms.Form):
 class SubscribeForm(forms.Form):
     """Form for users to subscribe to Rallynex Plus"""
     plan_id = forms.ModelChoiceField(
-        queryset=None,  # Will be set in __init__
+        queryset=None,
         widget=forms.RadioSelect,
         empty_label=None
     )
@@ -1054,7 +1083,7 @@ class SubscribeForm(forms.Form):
 class PurchaseProductForm(forms.Form):
     """Form for users to purchase one-time products"""
     product_id = forms.ModelChoiceField(
-        queryset=None,  # Will be set in __init__
+        queryset=None,
         widget=forms.RadioSelect,
         empty_label=None
     )
@@ -1079,7 +1108,6 @@ class PurchaseProductForm(forms.Form):
             except:
                 pass
         
-        # Show journey field only when needed
         product_id = self.data.get('product_id') if self.data else None
         if product_id:
             try:
@@ -1157,5 +1185,3 @@ class AICustomizationForm(forms.Form):
         widget=forms.RadioSelect,
         initial='detailed'
     )
-
-

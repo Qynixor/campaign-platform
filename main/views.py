@@ -2279,6 +2279,7 @@ from django.contrib import messages
 from django.urls import reverse
 from django.http import HttpResponse
 from django.contrib.auth.forms import SetPasswordForm
+from .forms import CustomSetPasswordForm  # Import the custom form
 
 User = get_user_model()
 
@@ -2381,9 +2382,11 @@ class CustomPasswordResetDoneView(PasswordResetDoneView):
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     """
     Confirm the password reset and set new password
+    Uses CustomSetPasswordForm for relaxed password requirements
     """
     template_name = 'auth/password_reset_confirm.html'
     success_url = '/password-reset/complete/'
+    form_class = CustomSetPasswordForm  # Use the custom form with relaxed requirements
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
