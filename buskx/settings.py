@@ -314,3 +314,7 @@ CELERY_BROKER_URL = 'sqla+sqlite:///celerydb.sqlite'
 CELERY_RESULT_BACKEND = 'db+sqlite:///celerydb.sqlite'
 
 
+
+# Password reset timeout
+PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds
+PASSWORD_RESET_TIMEOUT_DAYS = 1  # Django 5.2 uses this
