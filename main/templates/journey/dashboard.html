@@ -874,28 +874,28 @@
     <!-- ================================================ -->
     <!-- TAB 1: OVERVIEW -->
     <!-- ================================================ -->
-    <div id="tab-overview" class="tab-content active">
+    <div id="tab-overview" class="tab-content active" style="display: block;">
         
         <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="icon">📊</span>
-                <div class="number">{{ analytics.total_entries }}</div>
+                <div class="number">{{ analytics.total_entries|default:0 }}</div>
                 <div class="label">Total Entries</div>
             </div>
             <div class="stat-card">
                 <span class="icon">📈</span>
-                <div class="number">{{ analytics.completion_rate }}%</div>
+                <div class="number">{{ analytics.completion_rate|default:0 }}%</div>
                 <div class="label">Completion Rate</div>
             </div>
             <div class="stat-card">
                 <span class="icon">🔥</span>
-                <div class="number">{{ analytics.current_streak }}</div>
+                <div class="number">{{ analytics.current_streak|default:0 }}</div>
                 <div class="label">Current Streak</div>
             </div>
             <div class="stat-card">
                 <span class="icon">⏱️</span>
-                <div class="number">{{ analytics.avg_duration }}m</div>
+                <div class="number">{{ analytics.avg_duration|default:0 }}m</div>
                 <div class="label">Avg Duration</div>
             </div>
         </div>
@@ -911,7 +911,7 @@
                 <div class="label">Entries</div>
             </div>
             <div class="quick-stat">
-                <div class="value">{{ goal_stats.active }}</div>
+                <div class="value">{{ goal_stats.active|default:0 }}</div>
                 <div class="label">Active Goals</div>
             </div>
             <div class="quick-stat">
@@ -923,7 +923,7 @@
                 <div class="label">Metrics Tracked</div>
             </div>
             <div class="quick-stat">
-                <div class="value">{{ analytics.consistency }}%</div>
+                <div class="value">{{ analytics.consistency|default:0 }}%</div>
                 <div class="label">Consistency</div>
             </div>
         </div>
@@ -947,6 +947,15 @@
                         </span>
                     </div>
                 {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fas fa-file-alt"></i></div>
+                <h3>No Activities Yet</h3>
+                <p>Start your journey by adding your first entry!</p>
+                <a href="{% url 'create_activity' journey.slug %}" class="btn-primary-sm" style="margin-top: 12px;">
+                    <i class="fas fa-plus"></i> Add First Entry
+                </a>
             </div>
         {% endif %}
     </div>
@@ -978,7 +987,7 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">No mood data available yet.</p>
+                    <p class="text-muted" style="text-align:center;padding:20px;">No mood data available yet.</p>
                 {% endif %}
             </div>
             
@@ -1002,7 +1011,7 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">No activity data available yet.</p>
+                    <p class="text-muted" style="text-align:center;padding:20px;">No activity data available yet.</p>
                 {% endif %}
             </div>
         </div>
@@ -1028,7 +1037,7 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">No intensity data available yet.</p>
+                    <p class="text-muted" style="text-align:center;padding:20px;">No intensity data available yet.</p>
                 {% endif %}
             </div>
             
@@ -1039,16 +1048,16 @@
                 </div>
                 <div class="text-center" style="padding: 20px 0;">
                     <div style="font-size: 48px; font-weight: 700; color: var(--text-primary);">
-                        {{ analytics.consistency }}%
+                        {{ analytics.consistency|default:0 }}%
                     </div>
                     <div style="font-size: 14px; color: var(--text-secondary);">
                         Days with activity
                     </div>
                     <div style="margin-top: 12px; height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
-                        <div style="height: 100%; width: {{ analytics.consistency }}%; background: var(--accent); border-radius: 4px;"></div>
+                        <div style="height: 100%; width: {{ analytics.consistency|default:0 }}%; background: var(--accent); border-radius: 4px;"></div>
                     </div>
                     <div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
-                        {{ analytics.total_entries }} entries out of {{ journey.duration }} days
+                        {{ analytics.total_entries|default:0 }} entries out of {{ journey.duration }} days
                     </div>
                 </div>
             </div>
@@ -1113,8 +1122,8 @@
             <div class="metrics-grid">
                 {% for key, metric in metrics_summary.items %}
                     <div class="metric-card">
-                        <span class="metric-icon">{{ metric.icon }}</span>
-                        <div class="metric-name">{{ metric.label }}</div>
+                        <span class="metric-icon">{{ metric.icon|default:"📊" }}</span>
+                        <div class="metric-name">{{ metric.label|default:key|title }}</div>
                         <div class="metric-value">
                             {{ metric.latest|default:'—' }}
                             {% if metric.unit %}<span style="font-size:14px;font-weight:400;">{{ metric.unit }}</span>{% endif %}
@@ -1147,7 +1156,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for day in "12345678910"|make_list %}
+                                {% for day in journey.get_current_day|make_list %}
                                     <tr>
                                         <td style="padding: 6px 12px; border-bottom: 1px solid var(--border-color);">Day {{ day }}</td>
                                         {% for metric, data in metrics_data.items %}
@@ -1172,6 +1181,9 @@
                 <div class="empty-icon"><i class="fas fa-sliders-h"></i></div>
                 <h3>No Custom Metrics Yet</h3>
                 <p>Start tracking your progress by adding metrics to your daily entries.</p>
+                <a href="{% url 'create_activity' journey.slug %}" class="btn-primary-sm" style="margin-top: 12px;">
+                    <i class="fas fa-plus"></i> Add Metrics
+                </a>
             </div>
         {% endif %}
     </div>
@@ -1184,19 +1196,19 @@
         <!-- Goal Stats -->
         <div class="quick-stats" style="margin-bottom: 24px;">
             <div class="quick-stat">
-                <div class="value">{{ goal_stats.total }}</div>
+                <div class="value">{{ goal_stats.total|default:0 }}</div>
                 <div class="label">Total Goals</div>
             </div>
             <div class="quick-stat">
-                <div class="value">{{ goal_stats.completed }}</div>
+                <div class="value">{{ goal_stats.completed|default:0 }}</div>
                 <div class="label">Completed</div>
             </div>
             <div class="quick-stat">
-                <div class="value">{{ goal_stats.active }}</div>
+                <div class="value">{{ goal_stats.active|default:0 }}</div>
                 <div class="label">Active</div>
             </div>
             <div class="quick-stat">
-                <div class="value">{{ goal_stats.completion_rate }}%</div>
+                <div class="value">{{ goal_stats.completion_rate|default:0 }}%</div>
                 <div class="label">Completion Rate</div>
             </div>
         </div>
@@ -1292,7 +1304,7 @@
             <div class="milestone-grid">
                 {% for milestone in milestones %}
                     <div class="milestone-item">
-                        <span class="icon">{{ milestone.icon }}</span>
+                        <span class="icon">{{ milestone.icon|default:"🏆" }}</span>
                         <div class="name">{{ milestone.name }}</div>
                         <div class="date">{{ milestone.achieved_at|date:"M d, Y" }}</div>
                     </div>
@@ -1317,17 +1329,19 @@
             <div class="card-title">
                 <i class="fas fa-lightbulb"></i> Key Insights
             </div>
-            {% for insight in analytics.insights %}
-                <div class="insight-item">
-                    <span class="bullet">•</span>
-                    {{ insight }}
-                </div>
-            {% empty %}
+            {% if analytics.insights %}
+                {% for insight in analytics.insights %}
+                    <div class="insight-item">
+                        <span class="bullet">•</span>
+                        {{ insight }}
+                    </div>
+                {% endfor %}
+            {% else %}
                 <div class="insight-item">
                     <span class="bullet">•</span>
                     Start adding entries to generate insights!
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
         
         <!-- Recommendations -->
@@ -1335,17 +1349,19 @@
             <div class="card-title">
                 <i class="fas fa-rocket"></i> Recommendations
             </div>
-            {% for recommendation in analytics.recommendations %}
-                <div class="recommendation-item">
-                    <span class="rec-icon">💡</span>
-                    {{ recommendation }}
-                </div>
-            {% empty %}
+            {% if analytics.recommendations %}
+                {% for recommendation in analytics.recommendations %}
+                    <div class="recommendation-item">
+                        <span class="rec-icon">💡</span>
+                        {{ recommendation }}
+                    </div>
+                {% endfor %}
+            {% else %}
                 <div class="recommendation-item">
                     <span class="rec-icon">💡</span>
                     Keep adding entries for personalized recommendations!
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
         
         <!-- Metric Insights -->
@@ -1360,8 +1376,8 @@
                 </div>
                 {% for key, metric in metrics_summary.items|slice:":5" %}
                     <div class="insight-item">
-                        <span class="bullet">{{ metric.icon }}</span>
-                        {{ metric.label }}: 
+                        <span class="bullet">{{ metric.icon|default:"📊" }}</span>
+                        {{ metric.label|default:key|title }}: 
                         <strong>{{ metric.latest|default:'—' }}</strong> 
                         {% if metric.unit %}{{ metric.unit }}{% endif %}
                         {% if metric.change > 0 %}↑{% elif metric.change < 0 %}↓{% else %}→{% endif %}
@@ -1452,7 +1468,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- ================================================ -->
-<!-- JAVASCRIPT -->
+<!-- JAVASCRIPT - FULLY WORKING -->
 <!-- ================================================ -->
 <script>
     // ================================================
@@ -1462,6 +1478,7 @@
         // Hide all tabs
         document.querySelectorAll('.tab-content').forEach(el => {
             el.classList.remove('active');
+            el.style.display = 'none';
         });
         
         // Remove active class from all buttons
@@ -1472,7 +1489,9 @@
         // Show selected tab
         const tabContent = document.getElementById('tab-' + tabName);
         if (tabContent) {
+            tabContent.style.display = 'block';
             tabContent.classList.add('active');
+            void tabContent.offsetHeight;
         }
         
         // Activate button
@@ -1483,91 +1502,120 @@
         
         // Update URL hash
         window.location.hash = tabName;
+        
+        // Re-render charts if switching to charts tab
+        if (tabName === 'charts') {
+            setTimeout(function() {
+                if (typeof Chart !== 'undefined' && Chart.instances) {
+                    for (let key in Chart.instances) {
+                        if (Chart.instances.hasOwnProperty(key)) {
+                            try {
+                                Chart.instances[key].resize();
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }, 300);
+        }
     }
-    
-    // Check URL hash on load
+
+    // ================================================
+    // INITIALIZE ON DOM LOAD
+    // ================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Set initial tab states
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        const overviewTab = document.getElementById('tab-overview');
+        if (overviewTab) {
+            overviewTab.style.display = 'block';
+            overviewTab.classList.add('active');
+        }
+        
+        // Check URL hash
         const hash = window.location.hash.replace('#', '');
         if (hash && ['overview', 'analytics', 'charts', 'metrics', 'goals', 'insights'].includes(hash)) {
             switchTab(hash);
         }
+        
+        // Initialize charts after a delay
+        setTimeout(function() {
+            initializeCharts();
+        }, 500);
     });
-    
+
     // ================================================
-    // GOAL MODALS
+    // CHART INITIALIZATION
     // ================================================
-    function openCreateGoal() {
-        document.getElementById('createGoalModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeCreateGoal() {
-        document.getElementById('createGoalModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
-    function openUpdateProgress(goalId, goalTitle, currentValue) {
-        const modal = document.getElementById('updateProgressModal');
-        const form = document.getElementById('updateProgressForm');
-        form.action = '/j/{{ journey.slug }}/goal/' + goalId + '/update/';
-        document.getElementById('updateGoalTitle').textContent = goalTitle + ' (Current: ' + currentValue + ')';
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function closeUpdateProgress() {
-        document.getElementById('updateProgressModal').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-    
-    // Close modals on outside click
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-                document.body.style.overflow = '';
+    function initializeCharts() {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded');
+            return;
+        }
+        
+        // Check if chart containers exist
+        const chartIds = ['progressChart', 'moodChart', 'activityChart', 'streakChart'];
+        let hasCharts = false;
+        
+        chartIds.forEach(id => {
+            if (document.getElementById(id)) {
+                hasCharts = true;
             }
         });
-    });
-    
-    // ================================================
-    // CHART HELPERS
-    // ================================================
-    function getThemeColors() {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        return {
-            textColor: isDark ? '#9ca3af' : '#6b7280',
-            gridColor: isDark ? '#374151' : '#e5e7eb',
-            cardBg: isDark ? '#1f2937' : '#ffffff'
-        };
+        
+        if (!hasCharts) {
+            console.log('No chart containers found');
+            return;
+        }
+        
+        // Initialize each chart with error handling
+        try { initializeProgressChart(); } catch(e) { console.warn('Progress chart error:', e.message); }
+        try { initializeMoodChart(); } catch(e) { console.warn('Mood chart error:', e.message); }
+        try { initializeActivityChart(); } catch(e) { console.warn('Activity chart error:', e.message); }
+        try { initializeStreakChart(); } catch(e) { console.warn('Streak chart error:', e.message); }
     }
-    
+
     // ================================================
     // PROGRESS CHART
     // ================================================
-    const progressData = {{ progress_chart_data|safe }};
-    
-    if (progressData && progressData.labels && progressData.labels.length > 0) {
-        const ctx = document.getElementById('progressChart').getContext('2d');
-        const colors = getThemeColors();
+    function initializeProgressChart() {
+        const ctx = document.getElementById('progressChart');
+        if (!ctx) return;
         
-        const datasets = progressData.datasets.map(ds => {
-            let color = '#3B82F6';
-            if (ds.label === 'Mood') color = '#10B981';
-            if (ds.label === 'Duration (min)') color = '#8B5CF6';
-            
-            return {
-                ...ds,
-                borderColor: color,
-                backgroundColor: color + '30',
-                pointBackgroundColor: color,
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                tension: 0.3
-            };
-        });
+        let progressData = null;
+        try {
+            progressData = {{ progress_chart_data|safe }};
+        } catch(e) {
+            console.warn('Could not parse progress chart data');
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">No progress data available</div>';
+            return;
+        }
+        
+        if (!progressData || !progressData.labels || progressData.labels.length === 0) {
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">No progress data yet. Add your first entry!</div>';
+            return;
+        }
+        
+        const colors = getThemeColors();
+        const colorPalette = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899'];
+        
+        const datasets = progressData.datasets.map((ds, index) => ({
+            ...ds,
+            borderColor: colorPalette[index % colorPalette.length],
+            backgroundColor: colorPalette[index % colorPalette.length] + '30',
+            pointBackgroundColor: colorPalette[index % colorPalette.length],
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: index === 0,
+        }));
         
         new Chart(ctx, {
             type: 'line',
@@ -1618,14 +1666,30 @@
             }
         });
     }
-    
+
     // ================================================
-    // MOOD DISTRIBUTION CHART
+    // MOOD CHART
     // ================================================
-    const moodData = {{ distribution_data.mood|safe }};
-    
-    if (moodData && Object.keys(moodData).length > 0) {
-        const ctx = document.getElementById('moodChart').getContext('2d');
+    function initializeMoodChart() {
+        const ctx = document.getElementById('moodChart');
+        if (!ctx) return;
+        
+        let moodData = null;
+        try {
+            moodData = {{ distribution_data.mood|safe }};
+        } catch(e) {
+            console.warn('Could not parse mood chart data');
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No mood data available</div>';
+            return;
+        }
+        
+        if (!moodData || Object.keys(moodData).length === 0) {
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No mood data recorded yet</div>';
+            return;
+        }
+        
         const colors = getThemeColors();
         const moodColors = {
             'amazing': '#8B5CF6',
@@ -1633,7 +1697,6 @@
             'good': '#10B981',
             'okay': '#F59E0B',
             'tired': '#F97316',
-            'challenged': '#8B5CF6',
             'struggling': '#EF4444',
             'proud': '#8B5CF6',
             'grateful': '#10B981',
@@ -1642,7 +1705,7 @@
         
         const labels = Object.keys(moodData);
         const data = Object.values(moodData);
-        const backgroundColor = labels.map(label => moodColors[label] || '#3B82F6');
+        const backgroundColor = labels.map(label => moodColors[label.toLowerCase()] || '#3B82F6');
         
         new Chart(ctx, {
             type: 'doughnut',
@@ -1672,14 +1735,30 @@
             }
         });
     }
-    
+
     // ================================================
-    // ACTIVITY TYPES CHART
+    // ACTIVITY CHART
     // ================================================
-    const activityData = {{ distribution_data.activity_types|safe }};
-    
-    if (activityData && Object.keys(activityData).length > 0) {
-        const ctx = document.getElementById('activityChart').getContext('2d');
+    function initializeActivityChart() {
+        const ctx = document.getElementById('activityChart');
+        if (!ctx) return;
+        
+        let activityData = null;
+        try {
+            activityData = {{ distribution_data.activity_types|safe }};
+        } catch(e) {
+            console.warn('Could not parse activity chart data');
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No activity data available</div>';
+            return;
+        }
+        
+        if (!activityData || Object.keys(activityData).length === 0) {
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No activity data recorded yet</div>';
+            return;
+        }
+        
         const colors = getThemeColors();
         const palette = [
             '#3B82F6', '#10B981', '#F59E0B', '#EF4444', 
@@ -1692,7 +1771,7 @@
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+                labels: labels,
                 datasets: [{
                     label: 'Activities',
                     data: data,
@@ -1732,20 +1811,34 @@
             }
         });
     }
-    
+
     // ================================================
     // STREAK CHART
     // ================================================
-    const streakData = {{ streak_data|safe }};
-    
-    if (streakData && streakData.labels && streakData.labels.length > 0) {
-        const ctx = document.getElementById('streakChart').getContext('2d');
+    function initializeStreakChart() {
+        const ctx = document.getElementById('streakChart');
+        if (!ctx) return;
+        
+        let streakData = null;
+        try {
+            streakData = {{ streak_data|safe }};
+        } catch(e) {
+            console.warn('Could not parse streak chart data');
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No streak data available</div>';
+            return;
+        }
+        
+        if (!streakData || !streakData.labels || streakData.labels.length === 0) {
+            const parent = ctx.parentElement;
+            parent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">No streak data available</div>';
+            return;
+        }
+        
         const colors = getThemeColors();
         
         const backgroundColor = streakData.data.map(v => 
-            v >= 7 ? '#10B981' : 
-            v >= 3 ? '#F59E0B' : 
-            '#3B82F6'
+            v > 0 ? '#10B981' : '#EF4444'
         );
         
         new Chart(ctx, {
@@ -1753,7 +1846,7 @@
             data: {
                 labels: streakData.labels,
                 datasets: [{
-                    label: 'Streak',
+                    label: 'Activity',
                     data: streakData.data,
                     backgroundColor: backgroundColor,
                     borderWidth: 0,
@@ -1766,6 +1859,13 @@
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y > 0 ? '✅ Active' : '❌ No entry';
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -1781,7 +1881,8 @@
                     y: {
                         ticks: {
                             color: colors.textColor,
-                            stepSize: 1
+                            stepSize: 1,
+                            max: 1.5
                         },
                         grid: {
                             color: colors.gridColor
@@ -1792,5 +1893,54 @@
             }
         });
     }
+
+    // ================================================
+    // THEME COLORS HELPER
+    // ================================================
+    function getThemeColors() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            textColor: isDark ? '#9ca3af' : '#6b7280',
+            gridColor: isDark ? '#374151' : '#e5e7eb',
+            cardBg: isDark ? '#1f2937' : '#ffffff'
+        };
+    }
+
+    // ================================================
+    // GOAL MODALS
+    // ================================================
+    function openCreateGoal() {
+        document.getElementById('createGoalModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeCreateGoal() {
+        document.getElementById('createGoalModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    function openUpdateProgress(goalId, goalTitle, currentValue) {
+        const modal = document.getElementById('updateProgressModal');
+        const form = document.getElementById('updateProgressForm');
+        form.action = '/j/{{ journey.slug }}/goal/' + goalId + '/update/';
+        document.getElementById('updateGoalTitle').textContent = goalTitle + ' (Current: ' + currentValue + ')';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeUpdateProgress() {
+        document.getElementById('updateProgressModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    // Close modals on outside click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    });
 </script>
 {% endblock %}

@@ -2134,10 +2134,9 @@ def delete_goal(request, slug, goal_id):
 # ============================================================================
 # JOURNEY DASHBOARD
 # ============================================================================
-
 @login_required
 def journey_dashboard(request, slug):
-    """Complete dashboard for a journey"""
+    """Complete dashboard for a journey with REAL data"""
     profile = get_user_profile(request.user)
     journey = get_object_or_404(Journey, slug=slug, creator=profile)
     
@@ -2151,37 +2150,343 @@ def journey_dashboard(request, slug):
         messages.warning(request, '📊 Upgrade to Premium to access the Journey Dashboard.')
         return redirect('subscription_plans')
     
+    # ============================================
+    # GET ALL ACTIVITIES FOR THIS JOURNEY
+    # ============================================
+    activities = journey.activities.all().order_by('day_number_field')
+    total_entries = activities.count()
+    current_day = journey.get_current_day()
+    
+    # ============================================
+    # 1. ANALYTICS - REAL DATA
+    # ============================================
+    
+    # Completion Rate
+    completion_rate = round((total_entries / journey.duration) * 100) if journey.duration > 0 else 0
+    
+    # Current Streak - REAL calculation
+    current_streak = 0
+    if total_entries > 0:
+        activity_days = set(activities.values_list('day_number_field', flat=True))
+        # Check from current day backwards
+        for day in range(current_day, 0, -1):
+            if day in activity_days:
+                current_streak += 1
+            else:
+                break
+    
+    # Average Duration - from actual hours_spent
+    avg_duration = 0
+    durations = [a.hours_spent for a in activities if a.hours_spent is not None]
+    if durations:
+        avg_duration = round(sum(durations) / len(durations), 1)
+    
+    # Mood Distribution - from custom_metrics
+    mood_distribution = {}
+    for activity in activities:
+        if activity.custom_metrics and 'mood' in activity.custom_metrics:
+            mood = activity.custom_metrics['mood']
+            mood_distribution[mood] = mood_distribution.get(mood, 0) + 1
+    
+    # Activity Types - from activity_type field
+    activity_types = {}
+    for activity in activities:
+        if activity.activity_type:
+            # Get display name
+            type_display = dict(Activity.ACTIVITY_TYPES).get(activity.activity_type, activity.activity_type)
+            activity_types[type_display] = activity_types.get(type_display, 0) + 1
+    
+    # Intensity Distribution - from custom_metrics
+    intensity_distribution = {}
+    for activity in activities:
+        if activity.custom_metrics and 'intensity' in activity.custom_metrics:
+            intensity = activity.custom_metrics['intensity']
+            intensity_distribution[intensity] = intensity_distribution.get(intensity, 0) + 1
+    
+    # Consistency
+    consistency = round((total_entries / current_day) * 100) if current_day > 0 else 0
+    
+    # ============================================
+    # 2. GENERATE INSIGHTS - REAL
+    # ============================================
+    insights = []
+    recommendations = []
+    
+    if total_entries > 0:
+        insights.append(f"📊 You've completed {completion_rate}% of your {journey.duration}-day journey")
+        insights.append(f"🔥 You're on a {current_streak}-day streak!")
+        insights.append(f"📝 You've logged {total_entries} entries so far")
+        
+        if avg_duration > 0:
+            insights.append(f"⏱️ Average session: {avg_duration} minutes")
+        
+        if consistency > 70:
+            insights.append(f"💪 Great consistency at {consistency}%!")
+        elif consistency > 40:
+            insights.append(f"📈 Keep going! {consistency}% consistency")
+        else:
+            insights.append(f"🎯 Try to be more consistent. Current rate: {consistency}%")
+        
+        # Top mood
+        if mood_distribution:
+            top_mood = max(mood_distribution, key=mood_distribution.get)
+            insights.append(f"😊 Most common mood: {top_mood.title()}")
+        
+        # Top activity
+        if activity_types:
+            top_activity = max(activity_types, key=activity_types.get)
+            insights.append(f"🚀 Most common activity: {top_activity}")
+        
+        # Recommendations based on data
+        if current_streak < 3 and total_entries > 0:
+            recommendations.append("Try to post daily to build a stronger streak!")
+        elif current_streak >= 7:
+            recommendations.append("Amazing streak! 🎉 Keep up the momentum!")
+        
+        if consistency < 50:
+            recommendations.append("Set a daily reminder to log your progress.")
+        
+        if len(activities) < journey.duration * 0.5:
+            recommendations.append("You're behind schedule. Try to catch up on your entries!")
+        
+        if not recommendations:
+            recommendations.append("You're doing great! 🚀 Keep building in public!")
+    else:
+        insights = ["🌟 Start your journey by adding your first entry!"]
+        recommendations = ["📝 Add your first activity to get personalized insights"]
+    
     analytics = {
-        'total_views': journey.view_count,
-        'unique_viewers': journey.unique_viewers,
-        'follower_count': journey.follower_count,
-        'total_entries': journey.activities.count(),
-        'progress_percentage': journey.get_progress_percentage(),
-        'current_day': journey.get_current_day(),
+        'total_entries': total_entries,
+        'completion_rate': completion_rate,
+        'current_streak': current_streak,
+        'avg_duration': avg_duration,
+        'consistency': consistency,
+        'mood_distribution': mood_distribution,
+        'activity_types': activity_types,
+        'intensity_distribution': intensity_distribution,
+        'insights': insights,
+        'recommendations': recommendations,
     }
     
+    # ============================================
+    # 3. METRICS - REAL CUSTOM METRICS
+    # ============================================
     metrics_data = {}
-    for activity in journey.activities.all():
+    for activity in activities:
         if activity.custom_metrics:
             for key, value in activity.custom_metrics.items():
+                # Skip metadata fields
+                if key in ['mood', 'intensity', 'goal', 'goal_metric', 'goal_target', 'goal_current']:
+                    continue
                 if key not in metrics_data:
                     metrics_data[key] = []
                 metrics_data[key].append({
                     'day': activity.day_number_field,
-                    'value': value
+                    'value': value,
+                    'label': key.replace('_', ' ').title()
                 })
     
+    # Build metrics summary
+    metrics_summary = {}
+    for key, data in metrics_data.items():
+        values = [d['value'] for d in data if d['value'] is not None]
+        if values:
+            # Calculate change (last vs previous)
+            change = 0
+            if len(values) >= 2:
+                change = values[-1] - values[-2]
+            
+            # Determine icon based on metric name
+            icon = '📊'
+            if 'weight' in key.lower():
+                icon = '⚖️'
+            elif 'sleep' in key.lower():
+                icon = '😴'
+            elif 'steps' in key.lower():
+                icon = '👟'
+            elif 'water' in key.lower():
+                icon = '💧'
+            elif 'calories' in key.lower():
+                icon = '🔥'
+            elif 'mood' in key.lower():
+                icon = '😊'
+            
+            metrics_summary[key] = {
+                'label': key.replace('_', ' ').title(),
+                'icon': icon,
+                'latest': values[-1] if values else None,
+                'count': len(values),
+                'unit': '',
+                'change': change,
+            }
+    
+    # ============================================
+    # 4. CHART DATA - REAL DATA
+    # ============================================
+    
+    # Progress Chart - real progress over days
+    progress_labels = []
+    progress_values = []
+    
+    # Get activity count per day
+    day_counts = {}
+    for activity in activities:
+        day_counts[activity.day_number_field] = day_counts.get(activity.day_number_field, 0) + 1
+    
+    # Build progress data (cumulative)
+    cumulative = 0
+    for day in range(1, min(current_day + 1, 31)):  # Limit to 30 days for readability
+        cumulative += day_counts.get(day, 0)
+        progress_labels.append(f'Day {day}')
+        progress_values.append(cumulative)
+    
+    progress_chart_data = {
+        'labels': progress_labels,
+        'datasets': [
+            {
+                'label': 'Total Entries',
+                'data': progress_values,
+            }
+        ]
+    }
+    
+    # If we have custom metrics, add them as datasets
+    if metrics_data:
+        # Add first 2 metrics as additional lines
+        for idx, (key, data) in enumerate(list(metrics_data.items())[:2]):
+            # Create a mapping of day -> value
+            day_value_map = {d['day']: d['value'] for d in data}
+            values = [day_value_map.get(day, None) for day in range(1, min(current_day + 1, 31))]
+            # Only add if we have values
+            if any(v is not None for v in values):
+                progress_chart_data['datasets'].append({
+                    'label': key.replace('_', ' ').title(),
+                    'data': values,
+                })
+    
+    # Streak Data - last 7 days
+    streak_labels = []
+    streak_values = []
+    
+    # Get the last 7 days (or less if journey is shorter)
+    days_to_show = min(7, current_day)
+    for i in range(days_to_show, 0, -1):
+        day_num = current_day - i + 1
+        streak_labels.append(f'Day {day_num}')
+        streak_values.append(1 if day_num in day_counts else 0)
+    
+    streak_data = {
+        'labels': streak_labels,
+        'data': streak_values,
+    }
+    
+    # Distribution data for charts
+    distribution_data = {
+        'mood': mood_distribution,
+        'activity_types': activity_types,
+    }
+    
+    # ============================================
+    # 5. GOALS - Extract from custom metrics
+    # ============================================
+    active_goals = []
+    completed_goals = []
+    goal_stats = {'total': 0, 'completed': 0, 'active': 0, 'completion_rate': 0}
+    
+    # Track goals by type
+    goal_data = {}
+    for activity in activities:
+        if activity.custom_metrics and 'goal' in activity.custom_metrics:
+            goal_type = activity.custom_metrics.get('goal_metric', 'custom')
+            if goal_type not in goal_data:
+                goal_data[goal_type] = {
+                    'title': activity.custom_metrics.get('goal_title', goal_type.title()),
+                    'target': activity.custom_metrics.get('goal_target', 100),
+                    'current': activity.custom_metrics.get('goal_current', 0),
+                    'unit': activity.custom_metrics.get('goal_unit', ''),
+                    'completed': False,
+                    'completed_at': None,
+                }
+            # Update current value
+            goal_data[goal_type]['current'] = activity.custom_metrics.get('goal_current', 0)
+    
+    # Build goal objects
+    for key, data in goal_data.items():
+        is_completed = data['current'] >= data['target']
+        goal_obj = {
+            'id': key,
+            'title': data['title'],
+            'target_value': data['target'],
+            'current_value': data['current'],
+            'unit': data['unit'],
+            'deadline': None,  # Not stored in current schema
+            'get_progress_percentage': lambda d=data: min(round((d['current'] / d['target']) * 100), 100),
+            'get_days_remaining': lambda: None,
+        }
+        
+        if is_completed:
+            goal_obj['completed_at'] = timezone.now() - timezone.timedelta(days=1)
+            completed_goals.append(goal_obj)
+        else:
+            active_goals.append(goal_obj)
+    
+    # Goal stats
+    goal_stats['total'] = len(goal_data)
+    goal_stats['completed'] = len(completed_goals)
+    goal_stats['active'] = len(active_goals)
+    goal_stats['completion_rate'] = round((goal_stats['completed'] / goal_stats['total']) * 100) if goal_stats['total'] > 0 else 0
+    
+    # ============================================
+    # 6. MILESTONES - REAL
+    # ============================================
+    milestones = []
+    for activity in activities:
+        if activity.activity_type == 'milestone':
+            milestones.append({
+                'icon': '🏆',
+                'name': activity.title or 'Milestone Achieved',
+                'achieved_at': activity.created_at,
+            })
+    
+    # Also check for milestone-like entries in custom metrics
+    for activity in activities:
+        if activity.custom_metrics and 'milestone' in activity.custom_metrics:
+            milestones.append({
+                'icon': '⭐',
+                'name': activity.custom_metrics.get('milestone_name', 'Milestone'),
+                'achieved_at': activity.created_at,
+            })
+    
+    # Remove duplicates (keep unique milestones)
+    seen = set()
+    unique_milestones = []
+    for m in milestones:
+        key = (m['name'], m['achieved_at'].strftime('%Y-%m-%d'))
+        if key not in seen:
+            seen.add(key)
+            unique_milestones.append(m)
+    milestones = unique_milestones
+    
+    # ============================================
+    # 7. CONTEXT
+    # ============================================
     context = {
         'journey': journey,
         'has_subscription': has_subscription,
         'analytics': analytics,
         'metrics_data': metrics_data,
+        'metrics_summary': metrics_summary,
         'available_metrics': list(metrics_data.keys()),
+        'goal_stats': goal_stats,
+        'active_goals': active_goals,
+        'completed_goals': completed_goals,
+        'milestones': milestones,
+        'distribution_data': distribution_data,
+        'progress_chart_data': progress_chart_data,
+        'streak_data': streak_data,
     }
     
     return render(request, 'journey/dashboard.html', context)
-
-
 # ============================================================================
 # JOURNEY CUSTOMIZATION
 # ============================================================================
