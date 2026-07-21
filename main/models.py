@@ -1533,11 +1533,8 @@ class PaidExtraStorage(models.Model):
             return False
         return True
 
-
+# models.py - PaidAIProgressReport (already exists)
 class PaidAIProgressReport(models.Model):
-    """
-    AI Progress Report purchases (paid version)
-    """
     REPORT_STATUS = [
         ('pending', 'Pending'),
         ('generating', 'Generating'),
@@ -1572,14 +1569,6 @@ class PaidAIProgressReport(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['user', 'journey']),
-            models.Index(fields=['purchase']),
-            models.Index(fields=['status']),
-        ]
-    
-    def __str__(self):
-        return f"{self.user.username} - {self.journey.title} Report"
     
     def is_valid(self):
         if self.status != 'completed':

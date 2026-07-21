@@ -18,7 +18,8 @@ import re
 import uuid
 from datetime import timedelta, datetime
 from django.contrib.auth import get_user_model
-
+# AI Report Service
+from .services.ai_report_service import generate_instant_report
 from .models import (
     Profile, Journey, Activity, Reflection,
     Comment, JourneyFollow, JourneySave, Tag,
@@ -1699,12 +1700,14 @@ def apply_theme(request, theme_id):
 # ============================================================================
 # MONETIZATION VIEWS - AI REPORT
 # ============================================================================
+# views.py - Add these views
 
 @login_required
 def generate_ai_report(request, journey_id):
-    """Generate an AI progress report"""
+    """Generate an instant progress report"""
     journey = get_object_or_404(Journey, id=journey_id, creator=request.user.profile)
     
+    # Check if user has purchased the feature
     has_purchase = UserPurchase.objects.filter(
         user=request.user,
         product__product_type='ai_report',
@@ -1715,6 +1718,7 @@ def generate_ai_report(request, journey_id):
         messages.warning(request, 'You need to purchase AI Report feature first.')
         return redirect('product_list')
     
+    # Check for existing valid report
     existing = PaidAIProgressReport.objects.filter(
         user=request.user,
         journey=journey,
@@ -1728,22 +1732,46 @@ def generate_ai_report(request, journey_id):
     if request.method == 'POST':
         form = AICustomizationForm(request.POST)
         if form.is_valid():
-            with transaction.atomic():
-                report = PaidAIProgressReport.objects.create(
-                    user=request.user,
-                    journey=journey,
-                    purchase=UserPurchase.objects.filter(
+            try:
+                from .services.ai_report_service import generate_instant_report
+                
+                # Generate report instantly
+                report_data, metadata = generate_instant_report(journey, request)
+                
+                with transaction.atomic():
+                    # Get purchase
+                    purchase = UserPurchase.objects.filter(
                         user=request.user,
                         product__product_type='ai_report',
                         status='completed'
-                    ).first(),
-                    report_title=form.cleaned_data['report_title'],
-                    report_content="Generating report...",
-                    status='generating',
-                )
-                
-                messages.success(request, 'Your AI report is being generated. You will be notified when ready.')
-                return redirect('view_ai_report', report_id=report.id)
+                    ).first()
+                    
+                    # Create report
+                    report = PaidAIProgressReport.objects.create(
+                        user=request.user,
+                        journey=journey,
+                        purchase=purchase,
+                        report_title=form.cleaned_data['report_title'],
+                        report_content=report_data['report_content'],
+                        summary=report_data['summary'],
+                        insights=report_data['insights'],
+                        recommendations=report_data['recommendations'],
+                        metrics=report_data['metrics'],
+                        progress_data=report_data['progress_data'],
+                        status='completed',
+                        generated_at=timezone.now(),
+                        expires_at=timezone.now() + timedelta(days=30),
+                    )
+                    
+                    messages.success(request, f'✨ Report "{report.report_title}" generated successfully!')
+                    return redirect('view_ai_report', report_id=report.id)
+                    
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"AI Report generation error: {e}", exc_info=True)
+                messages.error(request, f'Error generating report: {str(e)}')
+                return redirect('generate_ai_report', journey_id=journey_id)
     else:
         form = AICustomizationForm()
     
@@ -1770,6 +1798,79 @@ def view_ai_report(request, report_id):
     }
     return render(request, 'main/view_ai_report.html', context)
 
+
+@login_required
+def download_ai_report(request, report_id):
+    """Download AI report as markdown file"""
+    report = get_object_or_404(PaidAIProgressReport, id=report_id, user=request.user)
+    
+    if report.status != 'completed':
+        messages.error(request, 'Report is not ready yet.')
+        return redirect('view_ai_report', report_id=report_id)
+    
+    # Build markdown content
+    content = f"""# 📊 {report.report_title}
+
+**Journey:** {report.journey.title}
+**Generated:** {report.generated_at.strftime('%B %d, %Y at %I:%M %p') if report.generated_at else 'N/A'}
+
+---
+
+## 📈 Analytics
+
+| Metric | Value |
+|--------|-------|
+"""
+    
+    # Add analytics
+    analytics = report.insights.get('analytics', {}) if report.insights else {}
+    for key, value in analytics.items():
+        content += f"| {key} | {value} |\n"
+    
+    content += f"""
+---
+
+## 📊 Progress Chart
+
+{report.progress_data if report.progress_data else 'No progress data available.'}
+
+---
+
+## 💡 Key Insights
+
+{report.summary if report.summary else 'No insights available.'}
+
+---
+
+## 🎯 Recommendations
+
+"""
+    
+    # Add recommendations
+    if report.recommendations:
+        for rec in report.recommendations:
+            content += f"- {rec}\n"
+    else:
+        content += "No recommendations available.\n"
+    
+    content += f"""
+---
+
+*Report generated by Rallynex AI*
+*Journey: {report.journey.title}*
+    """
+    
+    # Create response
+    response = HttpResponse(content, content_type='text/markdown;charset=utf-8')
+    filename = f"report-{report.journey.slug}-{timezone.now().strftime('%Y-%m-%d')}.md"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Update download count
+    report.download_count += 1
+    report.is_downloaded = True
+    report.save(update_fields=['download_count', 'is_downloaded'])
+    
+    return response
 
 # ============================================================================
 # MONETIZATION VIEWS - STORAGE

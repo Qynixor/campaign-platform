@@ -1158,30 +1158,20 @@ class ThemeCustomizationForm(forms.ModelForm):
             'font_family': forms.Select(attrs={'class': 'form-control'}),
         }
 
+# forms.py
 
 class AICustomizationForm(forms.Form):
     """Form for AI report customization"""
     report_title = forms.CharField(
         max_length=200,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter report title'})
+        initial=lambda: f"Progress Report - {timezone.now().strftime('%B %Y')}",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter report title'
+        })
     )
-    include_sections = forms.MultipleChoiceField(
-        choices=[
-            ('summary', 'Summary'),
-            ('insights', 'Key Insights'),
-            ('recommendations', 'Recommendations'),
-            ('metrics', 'Detailed Metrics'),
-            ('progress', 'Progress Analysis'),
-        ],
-        widget=forms.CheckboxSelectMultiple,
-        initial=['summary', 'insights', 'recommendations']
-    )
-    report_style = forms.ChoiceField(
-        choices=[
-            ('detailed', 'Detailed'),
-            ('concise', 'Concise'),
-            ('visual', 'Visual Focus'),
-        ],
-        widget=forms.RadioSelect,
-        initial='detailed'
-    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.initial.get('report_title'):
+            self.initial['report_title'] = f"Progress Report - {timezone.now().strftime('%B %Y')}"
