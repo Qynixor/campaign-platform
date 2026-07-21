@@ -1522,14 +1522,15 @@ def purchase_success(request, purchase_id):
 
 
 # ============================================================================
-# MONETIZATION VIEWS - EXPORT
+# DISTRIBUTION VIEWS (formerly Export)
 # ============================================================================
 
 @login_required
 def request_export(request, journey_id):
-    """Request a journey export"""
+    """Generate distribution content for a journey"""
     journey = get_object_or_404(Journey, id=journey_id, creator=request.user.profile)
     
+    # Check if user has purchased the feature
     has_purchase = UserPurchase.objects.filter(
         user=request.user,
         product__product_type='export',
@@ -1537,71 +1538,99 @@ def request_export(request, journey_id):
     ).exists()
     
     if not has_purchase:
-        messages.warning(request, 'You need to purchase export feature first.')
+        messages.warning(request, 'You need to purchase distribution features first.')
         return redirect('product_list')
     
+    # Check for existing valid export
     existing = PaidJourneyExport.objects.filter(
         user=request.user,
-        journey=journey
-    ).first()
+        journey=journey,
+        expires_at__gt=timezone.now()
+    ).order_by('-created_at').first()
     
     if request.method == 'POST':
-        form = ExportRequestForm(request.POST)
-        if form.is_valid():
+        distribution_type = request.POST.get('distribution_type', 'twitter')
+        
+        try:
+            from .services.distribution_service import generate_distribution
+            
+            # ✅ Pass request to generator for absolute URLs
+            content, metadata = generate_distribution(
+                journey, 
+                distribution_type,
+                request=request
+            )
+            
             with transaction.atomic():
-                if existing:
-                    existing.format = form.cleaned_data['format']
-                    existing.include_media = form.cleaned_data['include_media']
-                    existing.include_reflections = form.cleaned_data['include_reflections']
-                    existing.include_comments = form.cleaned_data['include_comments']
-                    existing.expires_at = timezone.now() + timezone.timedelta(days=7)
-                    existing.save()
-                else:
-                    existing = PaidJourneyExport.objects.create(
-                        user=request.user,
-                        journey=journey,
-                        purchase=UserPurchase.objects.filter(
-                            user=request.user,
-                            product__product_type='export',
-                            status='completed'
-                        ).first(),
-                        format=form.cleaned_data['format'],
-                        include_media=form.cleaned_data['include_media'],
-                        include_reflections=form.cleaned_data['include_reflections'],
-                        include_comments=form.cleaned_data['include_comments'],
-                        expires_at=timezone.now() + timezone.timedelta(days=7),
-                    )
+                # Get purchase
+                purchase = UserPurchase.objects.filter(
+                    user=request.user,
+                    product__product_type='export',
+                    status='completed'
+                ).first()
                 
-                messages.success(request, 'Export request submitted!')
-                return redirect('export_download', export_id=existing.id)
-    else:
-        form = ExportRequestForm(instance=existing)
+                # Create new export
+                export = PaidJourneyExport.objects.create(
+                    user=request.user,
+                    journey=journey,
+                    purchase=purchase,
+                    distribution_type=distribution_type,
+                    generated_content=content,
+                    include_media=True,
+                    include_reflections=True,
+                    include_comments=False,
+                    include_metrics=True,
+                    expires_at=timezone.now() + timedelta(days=30),
+                )
+                
+                messages.success(
+                    request, 
+                    f'✨ {export.get_distribution_type_display()} generated successfully!'
+                )
+                return redirect('export_download', export_id=export.id)
+                
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Distribution generation error: {e}", exc_info=True)
+            messages.error(request, f'Error generating content: {str(e)}')
+            return redirect('request_export', journey_id=journey_id)
     
     context = {
         'journey': journey,
-        'form': form,
-        'export': existing,
+        'distribution_types': PaidJourneyExport.DISTRIBUTION_TYPES,
+        'existing': existing,
     }
     return render(request, 'main/request_export.html', context)
 
 
 @login_required
 def export_download(request, export_id):
-    """Download a journey export"""
+    """View and download generated distribution content"""
     export = get_object_or_404(PaidJourneyExport, id=export_id, user=request.user)
     
     if not export.is_valid():
-        messages.error(request, 'Export has expired or is not available.')
+        messages.error(request, 'This content has expired. Please generate new content.')
         return redirect('request_export', journey_id=export.journey.id)
     
-    export.is_downloaded = True
-    export.download_count += 1
-    export.downloaded_at = timezone.now()
-    export.save()
+    # ✅ Build absolute URL for sharing
+    journey_url = request.build_absolute_uri(
+        reverse('journey_detail', kwargs={'slug': export.journey.slug})
+    )
     
-    messages.success(request, 'Your export is being generated.')
-    return render(request, 'main/export_download.html', {'export': export})
+    context = {
+        'export': export,
+        'journey_url': journey_url,
+    }
+    return render(request, 'main/export_download.html', context)
 
+
+@login_required
+def track_export_view(request, export_id):
+    """Track when a user views their export"""
+    export = get_object_or_404(PaidJourneyExport, id=export_id, user=request.user)
+    export.mark_viewed()
+    return JsonResponse({'success': True})
 
 # ============================================================================
 # MONETIZATION VIEWS - THEME

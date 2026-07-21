@@ -1234,50 +1234,161 @@ class UserPurchase(models.Model):
         if self.expires_at and timezone.now() > self.expires_at:
             return False
         return True
-
-
 class PaidJourneyExport(models.Model):
     """
-    Export Complete Journey purchases (paid version)
+    Distribution content for journeys (paid version)
+    Builders can generate shareable content from their journey
     """
-    EXPORT_FORMATS = [
-        ('pdf', 'PDF'),
-        ('markdown', 'Markdown'),
-        ('json', 'JSON'),
-        ('html', 'HTML'),
-        ('csv', 'CSV'),
+    
+    # ===== DISTRIBUTION TYPES =====
+    DISTRIBUTION_TYPES = [
+        ('twitter', 'Twitter/X Thread'),
+        ('linkedin', 'LinkedIn Post'),
+        ('blog', 'Blog Post (Markdown)'),
+        ('embed', 'Embed Widget'),
+        ('portfolio', 'Portfolio Page'),
     ]
     
+    # ===== RELATIONSHIPS =====
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='paid_journey_exports')
     journey = models.ForeignKey(Journey, on_delete=models.CASCADE, related_name='paid_export_orders')
-    purchase = models.ForeignKey(UserPurchase, on_delete=models.PROTECT, related_name='paid_export_purchases')
+    purchase = models.ForeignKey(
+        UserPurchase, 
+        on_delete=models.PROTECT, 
+        related_name='paid_export_purchases',
+        null=True,  # Allow null for easier testing
+        blank=True
+    )
     
-    format = models.CharField(max_length=20, choices=EXPORT_FORMATS)
-    file_url = models.URLField(max_length=500, blank=True)
-    file_size = models.PositiveIntegerField(default=0)
+    # ===== DISTRIBUTION =====
+    distribution_type = models.CharField(
+        max_length=20, 
+        choices=DISTRIBUTION_TYPES,
+        default='twitter',
+        help_text="What type of content to generate"
+    )
     
-    include_media = models.BooleanField(default=True)
-    include_reflections = models.BooleanField(default=True)
-    include_comments = models.BooleanField(default=True)
-    include_metrics = models.BooleanField(default=True)
+    # ===== GENERATED CONTENT =====
+    generated_content = models.TextField(
+        blank=True,
+        help_text="Auto-generated content ready to copy-paste"
+    )
     
-    is_downloaded = models.BooleanField(default=False)
-    download_count = models.PositiveIntegerField(default=0)
+    # ===== OPTIONS =====
+    include_media = models.BooleanField(
+        default=True,
+        help_text="Include media references in content"
+    )
+    include_reflections = models.BooleanField(
+        default=True,
+        help_text="Include reflections"
+    )
+    include_comments = models.BooleanField(
+        default=False,
+        help_text="Include comments"
+    )
+    include_metrics = models.BooleanField(
+        default=True,
+        help_text="Include metrics like views, followers"
+    )
     
+    # ===== FOR BACKWARDS COMPATIBILITY =====
+    # Keep these but mark as deprecated
+    format = models.CharField(
+        max_length=20, 
+        choices=[
+            ('pdf', 'PDF'),
+            ('markdown', 'Markdown'),
+            ('json', 'JSON'),
+            ('html', 'HTML'),
+            ('csv', 'CSV'),
+        ],
+        blank=True,
+        null=True,
+        help_text="DEPRECATED: Use distribution_type instead"
+    )
+    file_url = models.URLField(
+        max_length=500, 
+        blank=True,
+        help_text="DEPRECATED: Use generated_content instead"
+    )
+    file_size = models.PositiveIntegerField(
+        default=0,
+        help_text="DEPRECATED: Use generated_content instead"
+    )
+    
+    # ===== TRACKING =====
+    is_downloaded = models.BooleanField(
+        default=False,
+        help_text="Has the user copied/viewed the content?"
+    )
+    download_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times content was copied/viewed"
+    )
+    
+    # ===== TIMESTAMPS =====
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(null=True, blank=True)
-    downloaded_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Content expires after this date"
+    )
+    downloaded_at = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Last time content was copied/viewed"
+    )
     
     class Meta:
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', 'journey']),
             models.Index(fields=['purchase']),
+            models.Index(fields=['distribution_type']),
+            models.Index(fields=['-created_at']),
         ]
+        verbose_name_plural = 'Paid Journey Distributions'
     
     def __str__(self):
-        return f"{self.user.username} - {self.journey.title} ({self.format})"
-
+        return f"{self.user.username} - {self.journey.title} ({self.get_distribution_type_display()})"
+    
+    def save(self, *args, **kwargs):
+        """Auto-set expiry if not set"""
+        if not self.expires_at:
+            from django.utils import timezone
+            from datetime import timedelta
+            self.expires_at = timezone.now() + timedelta(days=30)
+        super().save(*args, **kwargs)
+    
+    def is_valid(self):
+        """Check if content is still valid (not expired)"""
+        from django.utils import timezone
+        if not self.expires_at:
+            return True
+        return timezone.now() < self.expires_at
+    
+    def get_distribution_type_display(self):
+        """Get human-readable display name"""
+        return dict(self.DISTRIBUTION_TYPES).get(self.distribution_type, self.distribution_type)
+    
+    def get_content_preview(self, length=100):
+        """Get a preview of the generated content"""
+        if self.generated_content:
+            return self.generated_content[:length] + ('...' if len(self.generated_content) > length else '')
+        return "No content generated yet"
+    
+    def copy_count(self):
+        """Alias for download_count for better readability"""
+        return self.download_count
+    
+    def mark_viewed(self):
+        """Mark content as viewed/copied"""
+        from django.utils import timezone
+        self.is_downloaded = True
+        self.download_count += 1
+        self.downloaded_at = timezone.now()
+        self.save(update_fields=['is_downloaded', 'download_count', 'downloaded_at'])
 
 class CustomTheme(models.Model):
     """

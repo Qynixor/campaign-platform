@@ -176,7 +176,7 @@ urlpatterns = [
     
     # PayPal Webhook
     path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
- 
+ path('api/export/<int:export_id>/view/', views.track_export_view, name='track_export_view'),
 
 ]
 

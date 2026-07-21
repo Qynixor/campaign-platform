@@ -2,332 +2,551 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Export Ready | Rallynex{% endblock %}
+{% block title %}{{ export.get_distribution_type_display }} | Rallynex{% endblock %}
 
 {% block extra_css %}
 <style>
-    .download-container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 60px 20px 40px;
-        text-align: center;
+    .content-container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 0 20px;
     }
     
-    .download-card {
+    .content-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         border-radius: 20px;
-        padding: 48px 32px;
+        padding: 32px;
     }
     
-    .download-icon {
-        font-size: 72px;
-        color: var(--accent);
-        margin-bottom: 16px;
-        animation: bounce 1s ease infinite;
-    }
-    
-    @keyframes bounce {
-        0%, 100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-10px);
-        }
-    }
-    
-    .download-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-    }
-    
-    .download-subtitle {
-        font-size: 16px;
-        color: var(--text-secondary);
+    .content-header {
+        text-align: center;
         margin-bottom: 24px;
     }
     
-    .export-details {
-        background: var(--bg-secondary);
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin: 24px 0;
-        text-align: left;
-        border: 1px solid var(--border-color);
+    .content-header .icon {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 8px;
     }
     
-    .export-details .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        font-size: 14px;
-        border-bottom: 1px solid var(--border-color);
+    .content-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
     }
     
-    .export-details .detail-row:last-child {
-        border-bottom: none;
-    }
-    
-    .export-details .detail-row .label {
+    .content-header p {
         color: var(--text-secondary);
+        margin-top: 4px;
+        font-size: 14px;
     }
     
-    .export-details .detail-row .value {
+    .content-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        max-height: 500px;
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    .content-box pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.7;
         color: var(--text-primary);
-        font-weight: 500;
+        margin: 0;
+        padding: 0;
     }
     
-    .export-details .detail-row .value.text-success {
-        color: #10b981;
-    }
-    
-    .export-details .detail-row .value.text-warning {
-        color: #f59e0b;
-    }
-    
-    .btn-group-download {
+    .content-actions {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 8px;
     }
     
-    .btn-group-download .btn {
+    .content-actions .btn {
         flex: 1;
-        min-width: 160px;
-        padding: 14px 24px;
-        font-weight: 600;
+        min-width: 140px;
+        padding: 12px 20px;
         border-radius: 12px;
-        font-size: 16px;
-    }
-    
-    .btn-download-main {
-        background: #10b981;
-        color: #fff;
-        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
         transition: all 0.2s;
+        text-align: center;
         text-decoration: none;
+        border: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
     }
     
-    .btn-download-main:hover {
-        background: #059669;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    .btn-copy {
+        background: var(--accent);
         color: #fff;
     }
     
-    .btn-download-main i {
-        font-size: 18px;
+    .btn-copy:hover {
+        background: var(--accent-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
-    .btn-download-main:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
+    .btn-copy.copied {
+        background: #10b981;
     }
     
-    .btn-download-secondary {
-        background: transparent;
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-    
-    .btn-download-secondary:hover {
+    .btn-back {
         background: var(--bg-secondary);
         color: var(--text-primary);
+        border: 1px solid var(--border-color);
     }
     
-    .expiry-alert {
-        background: rgba(245, 158, 11, 0.06);
-        border: 1px solid rgba(245, 158, 11, 0.12);
+    .btn-back:hover {
+        background: var(--bg-tertiary);
+    }
+    
+    .btn-download {
+        color: #fff;
+    }
+    
+    .btn-download:hover {
+        transform: translateY(-2px);
+    }
+    
+    .btn-twitter {
+        background: #1DA1F2;
+    }
+    
+    .btn-twitter:hover {
+        background: #1a8cd8;
+        box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3);
+    }
+    
+    .btn-thread {
+        background: #8b5cf6;
+    }
+    
+    .btn-thread:hover {
+        background: #7c3aed;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+    
+    .btn-linkedin {
+        background: #0A66C2;
+    }
+    
+    .btn-linkedin:hover {
+        background: #0957a8;
+        box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
+    }
+    
+    .btn-blog {
+        background: #6b7280;
+    }
+    
+    .btn-blog:hover {
+        background: #4b5563;
+        box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+    }
+    
+    .btn-embed {
+        background: #10b981;
+    }
+    
+    .btn-embed:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-portfolio {
+        background: #8b5cf6;
+    }
+    
+    .btn-portfolio:hover {
+        background: #7c3aed;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+    
+    .content-footer {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .content-footer .badge {
+        background: var(--bg-secondary);
+        padding: 2px 10px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--text-primary);
+        color: var(--text-inverse);
+        padding: 12px 24px;
         border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 1000;
+        max-width: 90%;
+        text-align: center;
+    }
+    
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    
+    /* ===== TWITTER THREAD HELPER ===== */
+    .thread-helper {
+        margin-top: 12px;
         padding: 12px 16px;
-        margin: 16px 0 20px;
+        background: rgba(29, 161, 242, 0.06);
+        border: 1px solid rgba(29, 161, 242, 0.12);
+        border-radius: 12px;
+        font-size: 13px;
+        color: var(--text-secondary);
         display: flex;
         align-items: center;
-        justify-content: center;
         gap: 10px;
-        font-size: 14px;
-        color: var(--text-secondary);
     }
     
-    .expiry-alert i {
-        color: #f59e0b;
+    .thread-helper i {
+        color: #1DA1F2;
         font-size: 18px;
     }
     
-    .expiry-alert strong {
-        color: var(--text-primary);
-    }
-    
-    .file-info {
+    .thread-helper .steps {
         display: flex;
-        justify-content: center;
-        gap: 24px;
-        margin: 16px 0;
+        gap: 16px;
         flex-wrap: wrap;
     }
     
-    .file-info .info-item {
+    .thread-helper .steps span {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        color: var(--text-secondary);
+        gap: 4px;
     }
     
-    .file-info .info-item i {
-        color: var(--accent);
-    }
-    
-    @media (max-width: 768px) {
-        .download-container {
-            padding: 40px 16px 30px;
-        }
-        
-        .download-card {
-            padding: 32px 20px;
-        }
-        
-        .download-title {
-            font-size: 24px;
-        }
-        
-        .download-icon {
-            font-size: 56px;
-        }
-        
-        .btn-group-download .btn {
-            flex: 1 1 100%;
-        }
-        
-        .export-details .detail-row {
-            flex-direction: column;
-            gap: 2px;
-        }
+    .thread-helper .steps .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: #1DA1F2;
+        color: #fff;
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: 700;
     }
     
     @media (max-width: 480px) {
-        .file-info {
+        .content-card {
+            padding: 20px;
+        }
+        .content-actions .btn {
+            flex: 1 1 100%;
+        }
+        .content-footer {
             flex-direction: column;
-            align-items: center;
-            gap: 8px;
+            text-align: center;
+        }
+        .thread-helper {
+            flex-direction: column;
+            text-align: center;
+        }
+        .thread-helper .steps {
+            justify-content: center;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="download-container">
-    <div class="download-card">
-        
-        <!-- Icon -->
-        <div class="download-icon">
-            <i class="fas fa-file-export"></i>
-        </div>
-        
-        <!-- Title -->
-        <h1 class="download-title">Export Ready! 🎉</h1>
-        <p class="download-subtitle">
-            Your journey export has been generated and is ready for download.
-        </p>
-        
-        <!-- Export Details -->
-        <div class="export-details">
-            <div class="detail-row">
-                <span class="label">Journey</span>
-                <span class="value">{{ export.journey.title }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="label">Format</span>
-                <span class="value">{{ export.get_format_display }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="label">File Size</span>
-                <span class="value">
-                    {% if export.file_size %}
-                        {{ export.file_size|filesizeformat }}
-                    {% else %}
-                        <span class="text-warning">Processing...</span>
-                    {% endif %}
-                </span>
-            </div>
-            <div class="detail-row">
-                <span class="label">Generated</span>
-                <span class="value">{{ export.created_at|date:"M d, Y H:i" }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="label">Expires</span>
-                <span class="value">
-                    {{ export.expires_at|date:"M d, Y" }}
-                    ({{ export.expires_at|timeuntil }})
-                </span>
-            </div>
-            <div class="detail-row">
-                <span class="label">Status</span>
-                <span class="value text-success">
-                    <i class="fas fa-check-circle"></i> Ready
-                </span>
-            </div>
-        </div>
-        
-        <!-- File Info -->
-        <div class="file-info">
-            <span class="info-item">
-                <i class="fas fa-check-circle"></i>
-                Includes: 
-                {% if export.include_media %}Media, {% endif %}
-                {% if export.include_reflections %}Reflections, {% endif %}
-                {% if export.include_comments %}Comments{% endif %}
-                {% if not export.include_media and not export.include_reflections and not export.include_comments %}
-                    Content Only
+<div class="content-container">
+    <div class="content-card">
+        <!-- Header -->
+        <div class="content-header">
+            <span class="icon">
+                {% if export.distribution_type == 'twitter' %}🐦
+                {% elif export.distribution_type == 'linkedin' %}💼
+                {% elif export.distribution_type == 'blog' %}📝
+                {% elif export.distribution_type == 'embed' %}🔗
+                {% elif export.distribution_type == 'portfolio' %}🎨
                 {% endif %}
             </span>
-            <span class="info-item">
-                <i class="fas fa-download"></i>
-                Downloaded {{ export.download_count }} time{{ export.download_count|pluralize }}
-            </span>
+            <h1>{{ export.get_distribution_type_display }}</h1>
+            <p>Copy and share this content with your audience</p>
         </div>
         
-        <!-- Expiry Alert -->
-        <div class="expiry-alert">
-            <i class="fas fa-clock"></i>
-            <span>
-                <strong>Download soon!</strong>
-                This export will expire in {{ export.expires_at|timeuntil }}.
-            </span>
+        <!-- Content -->
+        <div class="content-box" id="contentBox">
+            <pre id="contentText">{{ export.generated_content }}</pre>
         </div>
         
-        <!-- Action Buttons -->
-        <div class="btn-group-download">
-            <a href="#" class="btn btn-download-main" onclick="alert('In production, this would download the file.')">
-                <i class="fas fa-download"></i> Download Export
+        <!-- ===== TWITTER THREAD HELPER ===== -->
+        {% if export.distribution_type == 'twitter' %}
+        <div class="thread-helper">
+            <i class="fas fa-info-circle"></i>
+            <div class="steps">
+                <span><span class="step-num">1</span> Copy all tweets</span>
+                <span><span class="step-num">2</span> Post first tweet</span>
+                <span><span class="step-num">3</span> Reply with remaining tweets</span>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Actions -->
+        <div class="content-actions">
+            <!-- Copy Button -->
+            <button class="btn btn-copy" id="copyBtn" onclick="copyContent()">
+                📋 Copy to Clipboard
+            </button>
+            
+            <!-- Distribution-specific buttons -->
+            {% if export.distribution_type == 'twitter' %}
+                <!-- Post first tweet + link -->
+                <a href="#" class="btn btn-download btn-twitter" onclick="shareTwitterThread(event)">
+                    🐦 Post First Tweet
+                </a>
+                
+                <!-- Copy all tweets formatted for thread -->
+                <button class="btn btn-download btn-thread" onclick="copyThreadTweets()">
+                    📋 Copy Thread
+                </button>
+                
+            {% elif export.distribution_type == 'linkedin' %}
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ journey_url|urlencode }}" 
+                   target="_blank" class="btn btn-download btn-linkedin">
+                    💼 Post to LinkedIn
+                </a>
+                
+            {% elif export.distribution_type == 'blog' %}
+                <button class="btn btn-download btn-blog" onclick="downloadText()">
+                    ⬇️ Download Markdown
+                </button>
+                
+            {% elif export.distribution_type == 'embed' %}
+                <button class="btn btn-download btn-embed" onclick="copyContent()">
+                    🔗 Copy Embed Code
+                </button>
+                
+            {% elif export.distribution_type == 'portfolio' %}
+                <button class="btn btn-download btn-portfolio" onclick="downloadText()">
+                    ⬇️ Download Portfolio
+                </button>
+                
+            {% else %}
+                <button class="btn btn-download" onclick="downloadText()" style="background:#6b7280;">
+                    ⬇️ Download as File
+                </button>
+            {% endif %}
+            
+            <!-- Back Button -->
+            <a href="{% url 'journey_detail' export.journey.slug %}" class="btn btn-back">
+                ← Back to Journey
             </a>
-            <a href="{% url 'journey_detail' export.journey.slug %}" class="btn btn-download-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Journey
-            </a>
         </div>
         
-        <!-- Request New -->
-        <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
-            <i class="fas fa-sync"></i>
+        <!-- Footer -->
+        <div class="content-footer">
+            <div>
+                <span class="badge">
+                    <i class="fas fa-clock"></i> Expires {{ export.expires_at|timeuntil }}
+                </span>
+                <span class="badge">
+                    <i class="fas fa-eye"></i> {{ export.download_count }} views
+                </span>
+            </div>
+            <div>
+                <span class="badge">
+                    <i class="fas fa-calendar"></i> {{ export.created_at|date:"M d, Y" }}
+                </span>
+            </div>
+        </div>
+        
+        <!-- Request new -->
+        <div style="margin-top:16px;text-align:center;font-size:13px;color:var(--text-muted);">
             Need a different format? 
-            <a href="{% url 'request_export' export.journey.id %}" style="color: var(--accent);">
-                Request new export
+            <a href="{% url 'request_export' export.journey.id %}" style="color:var(--accent);">
+                Generate something else →
             </a>
         </div>
     </div>
 </div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✅ Copied to clipboard!</div>
+
+<script>
+// ============================================
+// CORE FUNCTIONS
+// ============================================
+
+function copyContent() {
+    const content = document.getElementById('contentText').textContent;
+    const btn = document.getElementById('copyBtn');
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(content).then(() => {
+            showToast('✅ Copied to clipboard!');
+            btn.textContent = '✅ Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '📋 Copy to Clipboard';
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(() => {
+            fallbackCopy(content);
+        });
+    } else {
+        fallbackCopy(content);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ Copied to clipboard!');
+    } catch (e) {
+        alert('Copy this content manually:\n\n' + text);
+    }
+    document.body.removeChild(textarea);
+}
+
+function downloadText() {
+    const content = document.getElementById('contentText').textContent;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '{{ export.journey.slug }}-{{ export.distribution_type }}.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(window.toastTimeout);
+    window.toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// ============================================
+// TWITTER THREAD FUNCTIONS
+// ============================================
+
+function shareTwitterThread(e) {
+    e.preventDefault();
+    const fullContent = document.getElementById('contentText').textContent;
+    
+    // Split thread into individual tweets (split by double newline)
+    const tweets = fullContent.split('\n\n').filter(t => t.trim().length > 0);
+    
+    if (tweets.length === 0) {
+        showToast('⚠️ No content to share');
+        return;
+    }
+    
+    // First tweet (must be under 280 chars)
+    let firstTweet = tweets[0];
+    if (firstTweet.length > 280) {
+        firstTweet = firstTweet.substring(0, 240) + '...';
+    }
+    
+    // Add link to the full journey - ✅ ABSOLUTE URL from context
+    const journeyUrl = '{{ journey_url }}';
+    firstTweet += `\n\n📖 Full thread: ${journeyUrl}`;
+    
+    // Open Twitter intent with first tweet
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(firstTweet)}`;
+    window.open(tweetUrl, '_blank', 'width=600,height=500');
+    
+    // Show helper toast
+    setTimeout(() => {
+        const remaining = tweets.length - 1;
+        if (remaining > 0) {
+            showToast(`💡 Copy the remaining ${remaining} tweet${remaining > 1 ? 's' : ''} from the content box above`);
+        }
+    }, 1000);
+}
+
+function copyThreadTweets() {
+    const fullContent = document.getElementById('contentText').textContent;
+    
+    // Split into individual tweets
+    const tweets = fullContent.split('\n\n').filter(t => t.trim().length > 0);
+    
+    if (tweets.length === 0) {
+        showToast('⚠️ No content to copy');
+        return;
+    }
+    
+    // Format as individual tweets with numbering
+    let formatted = '';
+    tweets.forEach((tweet, index) => {
+        formatted += `Tweet ${index + 1}/${tweets.length}:\n${tweet.trim()}\n\n`;
+    });
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(formatted).then(() => {
+            showToast(`✅ ${tweets.length} tweets copied! Paste them one by one.`);
+        }).catch(() => {
+            fallbackCopy(formatted);
+        });
+    } else {
+        fallbackCopy(formatted);
+    }
+}
+
+// ============================================
+// TRACK VIEW
+// ============================================
+
+// Mark as viewed when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/export/{{ export.id }}/view/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        }
+    }).catch(() => {});
+});
+</script>
 {% endblock %}
