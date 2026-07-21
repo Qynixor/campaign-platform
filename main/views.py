@@ -2487,67 +2487,7 @@ def journey_dashboard(request, slug):
     }
     
     return render(request, 'journey/dashboard.html', context)
-# ============================================================================
-# JOURNEY CUSTOMIZATION
-# ============================================================================
 
-@login_required
-def journey_customize(request, slug):
-    """Customize journey appearance"""
-    profile = get_user_profile(request.user)
-    journey = get_object_or_404(Journey, slug=slug, creator=profile)
-    
-    has_subscription = UserSubscription.objects.filter(
-        user=request.user,
-        status='active',
-        end_date__gt=timezone.now()
-    ).exists()
-    
-    if not has_subscription:
-        messages.warning(request, '🎨 Upgrade to Premium to customize your journey.')
-        return redirect('subscription_plans')
-    
-    current_theme = getattr(journey, 'theme_settings', None)
-    
-    if not current_theme or not isinstance(current_theme, dict):
-        current_theme = {
-            'primary_color': '#3B82F6',
-            'secondary_color': '#6366F1',
-            'background_color': '#FFFFFF',
-            'text_color': '#1F2937',
-            'accent_color': '#3B82F6',
-            'font_family': 'Inter',
-            'layout_style': 'modern',
-            'theme_name': 'Default'
-        }
-    
-    if request.method == 'POST':
-        theme_data = {
-            'primary_color': request.POST.get('primary_color', '#3B82F6'),
-            'secondary_color': request.POST.get('secondary_color', '#6366F1'),
-            'background_color': request.POST.get('background_color', '#FFFFFF'),
-            'text_color': request.POST.get('text_color', '#1F2937'),
-            'accent_color': request.POST.get('accent_color', '#3B82F6'),
-            'font_family': request.POST.get('font_family', 'Inter'),
-            'layout_style': request.POST.get('layout_style', 'modern'),
-            'theme_name': request.POST.get('theme_name', 'Custom Theme'),
-        }
-        
-        journey.theme_settings = theme_data
-        journey.save()
-        
-        messages.success(request, '🎨 Theme updated successfully!')
-        return redirect('journey_customize', slug=slug)
-    
-    context = {
-        'journey': journey,
-        'current_theme': current_theme,
-        'has_subscription': has_subscription,
-        'fonts': ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat'],
-        'layouts': ['modern', 'classic', 'minimal', 'bold'],
-    }
-    
-    return render(request, 'journey/customize.html', context)
 
 
 # ============================================================================
@@ -2727,3 +2667,4 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
         context = super().get_context_data(**kwargs)
         # Add any extra context if needed
         return context
+

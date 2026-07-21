@@ -142,11 +142,7 @@ urlpatterns = [
     # ============================================================================
     path('j/<slug:slug>/dashboard/', views.journey_dashboard, name='journey_dashboard'),
     
-    # ============================================================================
-    # JOURNEY CUSTOMIZATION - Brand Your Journey
-    # ============================================================================
-    path('j/<slug:slug>/customize/', views.journey_customize, name='journey_customize'),
-
+   
     # ============================================================================
     # MONETIZATION URLS - Rallynex Plus
     # ============================================================================
@@ -166,9 +162,7 @@ urlpatterns = [
     path('export/request/<int:journey_id>/', views.request_export, name='request_export'),
     path('export/download/<int:export_id>/', views.export_download, name='export_download'),
     
-    # Custom Themes
-    path('theme/customize/<int:journey_id>/', views.theme_customization, name='theme_customization'),
-    path('theme/apply/<int:theme_id>/', views.apply_theme, name='apply_theme'),
+
     
     # AI Progress Reports
     path('ai/report/generate/<int:journey_id>/', views.generate_ai_report, name='generate_ai_report'),
@@ -182,6 +176,8 @@ urlpatterns = [
     
     # PayPal Webhook
     path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
+ 
+
 ]
 
 # ============================================================================
