@@ -23,15 +23,12 @@ urlpatterns = [
     path('password-reset/', 
          views.CustomPasswordResetView.as_view(),
          name='password_reset'),
-    
     path('password-reset/done/',
          views.CustomPasswordResetDoneView.as_view(),
          name='password_reset_done'),
-    
     path('password-reset/<uidb64>/<token>/',
          views.CustomPasswordResetConfirmView.as_view(),
          name='password_reset_confirm'),
-    
     path('password-reset/complete/',
          views.CustomPasswordResetCompleteView.as_view(),
          name='password_reset_complete'),
@@ -94,8 +91,6 @@ urlpatterns = [
     # ============================================================================
     path('api/journey/<slug:slug>/follow/', views.follow_journey_view, name='follow_journey'),
     path('api/journey/<slug:slug>/save/', views.save_journey_view, name='save_journey'),
-    
-    # Comments
     path('api/journey/<slug:slug>/comment/', views.comment_journey_view, name='comment_journey'),
     path('api/journey/<slug:slug>/<int:day_number>/comment/', views.comment_activity_view, name='comment_activity'),
     path('api/comment/<int:comment_id>/delete/', views.delete_comment_view, name='delete_comment'),
@@ -142,7 +137,6 @@ urlpatterns = [
     # ============================================================================
     path('j/<slug:slug>/dashboard/', views.journey_dashboard, name='journey_dashboard'),
     
-   
     # ============================================================================
     # MONETIZATION URLS - Rallynex Plus
     # ============================================================================
@@ -158,15 +152,15 @@ urlpatterns = [
     path('products/purchase/<int:product_id>/', views.purchase_product, name='purchase_product'),
     path('products/success/<int:purchase_id>/', views.purchase_success, name='purchase_success'),
     
-    # Paid Exports
+    # Paid Exports / Distribution
     path('export/request/<int:journey_id>/', views.request_export, name='request_export'),
     path('export/download/<int:export_id>/', views.export_download, name='export_download'),
-    
-
+    path('api/export/<int:export_id>/view/', views.track_export_view, name='track_export_view'),
     
     # AI Progress Reports
     path('ai/report/generate/<int:journey_id>/', views.generate_ai_report, name='generate_ai_report'),
     path('ai/report/view/<int:report_id>/', views.view_ai_report, name='view_ai_report'),
+    path('ai/report/download/<int:report_id>/', views.download_ai_report, name='download_ai_report'),
     
     # Storage Management
     path('storage/dashboard/', views.storage_dashboard, name='storage_dashboard'),
@@ -174,11 +168,27 @@ urlpatterns = [
     # Payment Dashboard
     path('payments/dashboard/', views.subscription_dashboard, name='subscription_dashboard'),
     
+    # ============================================================================
+    # PAYPAL URLS - COMPLETE (BOTH One-Time & Subscriptions)
+    # ============================================================================
+    
+    # PayPal One-Time Payments
+    path('paypal/payment/<int:product_id>/', views.paypal_payment_create, name='paypal_payment_create'),
+    path('paypal/execute/', views.paypal_execute, name='paypal_execute'),
+    path('paypal/cancel/', views.paypal_cancel, name='paypal_cancel'),
+    
+    # PayPal Subscriptions (ADD THESE - THIS FIXES YOUR ERROR)
+    path('paypal/subscribe/<int:plan_id>/', views.paypal_subscribe, name='paypal_subscribe'),
+    path('paypal/subscribe/success/', views.paypal_subscribe_success, name='paypal_subscribe_success'),
+    path('paypal/subscribe/cancel/', views.paypal_subscribe_cancel, name='paypal_subscribe_cancel'),
+    path('paypal/cancel-subscription/<int:subscription_id>/', views.paypal_cancel_subscription, name='paypal_cancel_subscription'),
+    
     # PayPal Webhook
-    path('webhook/paypal/', views.paypal_webhook, name='paypal_webhook'),
- path('api/export/<int:export_id>/view/', views.track_export_view, name='track_export_view'),
- path('ai/report/download/<int:report_id>/', views.download_ai_report, name='download_ai_report'),
-
+    path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
+    # urls.py - Add this
+path('test-paypal/', views.test_paypal, name='test_paypal'),
+# urls.py - Add this
+path('test-paypal/', views.test_paypal_connection_view, name='test_paypal'),
 ]
 
 # ============================================================================

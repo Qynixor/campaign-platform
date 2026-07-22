@@ -38,6 +38,10 @@ from .forms import (
     SubscribeForm, PurchaseProductForm, ExportRequestForm,
     ThemeCustomizationForm, AICustomizationForm,
 )
+# views.py - Add at the top
+from .services.paypal_service import create_payment, execute_payment
+
+
 
 User = get_user_model()
 
@@ -2798,3 +2802,369 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
         # Add any extra context if needed
         return context
 
+
+
+
+# ============================================================================
+# PAYPAL VIEWS - ONE-TIME PAYMENTS
+# ============================================================================
+
+@login_required
+def paypal_payment_create(request, product_id):
+    """Create PayPal payment"""
+    product = get_object_or_404(OneTimeProduct, id=product_id, is_active=True)
+    
+    # Check if already purchased
+    if UserPurchase.objects.filter(user=request.user, product=product, status='completed').exists():
+        messages.warning(request, 'You already purchased this product.')
+        return redirect('product_list')
+    
+    payment = create_payment(product, request.user, request)
+    
+    if payment:
+        request.session['pending_payment_id'] = payment.id
+        request.session['pending_product_id'] = product.id
+        
+        for link in payment.links:
+            if link.rel == 'approval_url':
+                return redirect(link.href)
+        
+        messages.error(request, 'Could not get approval URL.')
+    else:
+        messages.error(request, 'Payment creation failed.')
+    
+    return redirect('product_list')
+
+# views.py - Replace the paypal_execute function
+# views.py - Update paypal_execute with better error handling
+
+@login_required
+def paypal_execute(request):
+    """Execute PayPal payment - Handles both one-time and subscription payments"""
+    payment_id = request.GET.get('paymentId')
+    payer_id = request.GET.get('PayerID')
+    
+    if not payment_id or not payer_id:
+        messages.error(request, 'Missing payment info.')
+        return redirect('product_list')
+    
+    # Debug: Print session contents
+    print("=" * 50)
+    print("SESSION CONTENTS:")
+    print(f"pending_plan_id: {request.session.get('pending_plan_id')}")
+    print(f"pending_product_id: {request.session.get('pending_product_id')}")
+    print(f"pending_payment_id: {request.session.get('pending_payment_id')}")
+    print("=" * 50)
+    
+    try:
+        # Execute payment with retry logic
+        payment = execute_payment(payment_id, payer_id)
+        
+        if payment and payment.state == 'approved':
+            print(f"✅ Payment approved: {payment.id}")
+            
+            # Check if this is a subscription payment
+            plan_id = request.session.get('pending_plan_id')
+            product_id = request.session.get('pending_product_id')
+            
+            if plan_id:
+                # ✅ SUBSCRIPTION PAYMENT
+                print(f"✅ Creating subscription for plan: {plan_id}")
+                plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+                
+                # Check if subscription already exists
+                existing = UserSubscription.objects.filter(
+                    user=request.user,
+                    plan=plan,
+                    status='active'
+                ).first()
+                
+                if existing:
+                    messages.info(request, 'You already have this subscription.')
+                else:
+                    # Create subscription
+                    subscription = UserSubscription.objects.create(
+                        user=request.user,
+                        plan=plan,
+                        paypal_subscription_id=payment.id,
+                        status='active',
+                        start_date=timezone.now(),
+                        end_date=timezone.now() + timedelta(days=30 if plan.plan_type == 'monthly' else 365),
+                        auto_renew=True,
+                    )
+                    
+                    # Create transaction record
+                    PaymentTransaction.objects.create(
+                        user=request.user,
+                        subscription=subscription,
+                        paypal_transaction_id=payment.id,
+                        amount=plan.price,
+                        transaction_type='subscription',
+                        description=f'Subscription to {plan.name}',
+                        is_successful=True,
+                    )
+                    
+                    print(f"✅ Subscription created: {subscription.id}")
+                
+                # Clear session
+                request.session.pop('pending_plan_id', None)
+                request.session.pop('pending_payment_id', None)
+                
+                messages.success(request, f'🎉 Successfully subscribed to {plan.name}!')
+                return redirect('subscription_success')
+                
+            elif product_id:
+                # ✅ ONE-TIME PRODUCT PAYMENT
+                print(f"✅ Creating purchase for product: {product_id}")
+                product = get_object_or_404(OneTimeProduct, id=product_id)
+                
+                purchase = UserPurchase.objects.create(
+                    user=request.user,
+                    product=product,
+                    paypal_transaction_id=payment.id,
+                    amount_paid=product.price_min,
+                    status='completed',
+                    purchased_at=timezone.now(),
+                )
+                
+                # Create transaction record
+                PaymentTransaction.objects.create(
+                    user=request.user,
+                    purchase=purchase,
+                    paypal_transaction_id=payment.id,
+                    amount=product.price_min,
+                    transaction_type='purchase',
+                    description=f'Purchase of {product.name}',
+                    is_successful=True,
+                )
+                
+                # Clear session
+                request.session.pop('pending_product_id', None)
+                request.session.pop('pending_payment_id', None)
+                
+                messages.success(request, f'✅ Purchased {product.name}!')
+                return redirect('purchase_success', purchase_id=purchase.id)
+            else:
+                # Unknown payment type
+                messages.error(request, 'Unknown payment type. Please contact support.')
+                return redirect('dashboard')
+        
+        messages.error(request, 'Payment execution failed. Please try again.')
+        
+    except Exception as e:
+        logger.error(f"Payment execution error: {e}")
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f'Error processing payment: {str(e)}')
+    
+    return redirect('subscription_plans')
+
+@login_required
+def paypal_cancel(request):
+    """Cancel PayPal payment"""
+    # Clear session
+    if 'pending_payment_id' in request.session:
+        del request.session['pending_payment_id']
+    if 'pending_product_id' in request.session:
+        del request.session['pending_product_id']
+    
+    messages.warning(request, 'Payment cancelled.')
+    return redirect('product_list')
+
+
+# ============================================================================
+# PAYPAL VIEWS - SUBSCRIPTIONS (ADD THESE - FIXES YOUR ERROR)
+# ============================================================================
+
+# views.py - Add at the top with other imports
+import logging
+
+# Create logger
+logger = logging.getLogger(__name__)
+
+# views.py - Update paypal_subscribe
+
+@login_required
+def paypal_subscribe(request, plan_id):
+    """Subscribe to a plan using PayPal"""
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id, is_active=True)
+    
+    # Check if already subscribed
+    if UserSubscription.objects.filter(
+        user=request.user, 
+        status='active',
+        end_date__gt=timezone.now()
+    ).exists():
+        messages.warning(request, 'You already have an active subscription.')
+        return redirect('subscription_plans')
+    
+    # Create payment
+    payment = create_payment(plan, request.user, request)
+    
+    if payment:
+        # ✅ Store plan ID in session - CRITICAL
+        request.session['pending_plan_id'] = plan.id
+        request.session['pending_payment_id'] = payment.id
+        
+        for link in payment.links:
+            if link.rel == 'approval_url':
+                return redirect(link.href)
+        
+        messages.error(request, 'Could not get approval URL.')
+    else:
+        messages.error(request, 'Payment creation failed.')
+    
+    return redirect('subscription_plans')
+
+# views.py - Make sure this exists
+
+@login_required
+def subscription_success(request):
+    """Subscription success page"""
+    return render(request, 'main/subscription_success.html')
+
+@login_required
+def paypal_subscribe_success(request):
+    """Subscription payment success"""
+    try:
+        payment_id = request.GET.get('paymentId')
+        payer_id = request.GET.get('PayerID')
+        
+        if not payment_id or not payer_id:
+            messages.error(request, 'Missing payment info.')
+            return redirect('subscription_plans')
+        
+        payment = execute_payment(payment_id, payer_id)
+        
+        if payment and payment.state == 'approved':
+            plan_id = request.session.get('pending_plan_id')
+            if plan_id:
+                plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+                
+                # Check if subscription already exists
+                existing = UserSubscription.objects.filter(
+                    user=request.user,
+                    plan=plan,
+                    status='active'
+                ).first()
+                
+                if existing:
+                    messages.info(request, 'You already have this subscription.')
+                else:
+                    subscription = UserSubscription.objects.create(
+                        user=request.user,
+                        plan=plan,
+                        paypal_subscription_id=payment.id,
+                        status='active',
+                        start_date=timezone.now(),
+                        end_date=timezone.now() + timedelta(days=30 if plan.plan_type == 'monthly' else 365),
+                        auto_renew=True,
+                    )
+                    
+                    # Create transaction
+                    PaymentTransaction.objects.create(
+                        user=request.user,
+                        subscription=subscription,
+                        paypal_transaction_id=payment.id,
+                        amount=plan.price,
+                        transaction_type='subscription',
+                        description=f'Subscription to {plan.name}',
+                        is_successful=True,
+                    )
+                
+                # Clear session
+                request.session.pop('pending_plan_id', None)
+                request.session.pop('pending_payment_id', None)
+                
+                messages.success(request, f'🎉 Successfully subscribed to {plan.name}!')
+                return redirect('subscription_success')
+        
+        messages.error(request, 'Payment execution failed.')
+        
+    except Exception as e:
+        logger.error(f"Subscription success error: {e}")
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('subscription_plans')
+
+@login_required
+def paypal_subscribe_cancel(request):
+    """Subscription payment cancelled"""
+    # Clear session
+    if 'pending_plan_id' in request.session:
+        del request.session['pending_plan_id']
+    if 'pending_payment_id' in request.session:
+        del request.session['pending_payment_id']
+    
+    messages.warning(request, 'Payment cancelled.')
+    return redirect('subscription_plans')
+
+
+@login_required
+def paypal_cancel_subscription(request, subscription_id):
+    """Cancel an active subscription"""
+    subscription = get_object_or_404(
+        UserSubscription, 
+        id=subscription_id, 
+        user=request.user,
+        status='active'
+    )
+    
+    if request.method == 'POST':
+        subscription.status = 'canceled'
+        subscription.cancel_date = timezone.now()
+        subscription.auto_renew = False
+        subscription.save()
+        
+        messages.success(request, '✅ Subscription cancelled successfully.')
+        return redirect('subscription_dashboard')
+    
+    return render(request, 'main/cancel_subscription.html', {'subscription': subscription})
+
+
+
+# views.py - Add this test view
+
+from django.http import JsonResponse
+from .services.paypal_service import test_paypal_connection, PAYPAL_CONFIGURED
+
+def test_paypal(request):
+    """Test PayPal connection and configuration"""
+    result = {
+        'configured': PAYPAL_CONFIGURED,
+        'client_id': settings.PAYPAL_CLIENT_ID[:20] + '...' if settings.PAYPAL_CLIENT_ID else 'MISSING',
+        'mode': settings.PAYPAL_MODE,
+        'receiver_email': settings.PAYPAL_RECEIVER_EMAIL,
+    }
+    
+    # Test the connection
+    success, message = test_paypal_connection()
+    result['test_result'] = 'success' if success else 'failed'
+    result['test_message'] = message
+    
+    return JsonResponse(result)
+
+
+# views.py - Add this test view
+from django.http import JsonResponse
+
+def test_paypal_connection_view(request):
+    """Test PayPal connection"""
+    from .services.paypal_service import test_paypal_connection, PAYPAL_CONFIGURED
+    
+    result = {
+        'configured': PAYPAL_CONFIGURED,
+        'mode': settings.PAYPAL_MODE,
+        'client_id': settings.PAYPAL_CLIENT_ID[:20] + '...' if settings.PAYPAL_CLIENT_ID else 'MISSING',
+        'receiver_email': settings.PAYPAL_RECEIVER_EMAIL,
+    }
+    
+    if PAYPAL_CONFIGURED:
+        success, message = test_paypal_connection()
+        result['connection_test'] = 'success' if success else 'failed'
+        result['message'] = message
+    else:
+        result['connection_test'] = 'failed'
+        result['message'] = 'PayPal not configured properly'
+    
+    return JsonResponse(result)

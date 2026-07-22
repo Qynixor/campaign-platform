@@ -8,6 +8,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
+from decouple import config
 # =====================================================
 # ENV SETUP
 # =====================================================
@@ -246,10 +247,30 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 
-PAYPAL_CLIENT_ID = env('PAYPAL_CLIENT_ID', default='')
-PAYPAL_CLIENT_SECRET = env('PAYPAL_CLIENT_SECRET', default='')
-PAYPAL_MODE = env('PAYPAL_MODE', default='sandbox')
-PAYPAL_BRAND_NAME = 'RALLYNEX'
+
+# settings.py - At the top, make sure these imports are there
+import os
+from decouple import config
+from pathlib import Path
+
+# Base directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables FIRST
+from dotenv import load_dotenv
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+# ============================================
+# PAYPAL CONFIGURATION
+# ============================================
+
+# Get credentials from environment with fallbacks
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '') or config('PAYPAL_CLIENT_ID', default='')
+PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '') or config('PAYPAL_CLIENT_SECRET', default='')
+PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox') or config('PAYPAL_MODE', default='sandbox')
+PAYPAL_RECEIVER_EMAIL = os.getenv('PAYPAL_RECEIVER_EMAIL', '') or config('PAYPAL_RECEIVER_EMAIL', default='')
+
+
 
 # =====================================================
 # TINYMCE
