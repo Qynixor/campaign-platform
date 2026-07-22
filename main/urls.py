@@ -171,13 +171,16 @@ urlpatterns = [
     # ============================================================================
     # PAYPAL URLS - COMPLETE (BOTH One-Time & Subscriptions)
     # ============================================================================
+    # ============================================================================
+    # PAYPAL URLS - PRODUCTION READY
+    # ============================================================================
     
-    # PayPal One-Time Payments
+  # PayPal One-Time Payments
     path('paypal/payment/<int:product_id>/', views.paypal_payment_create, name='paypal_payment_create'),
     path('paypal/execute/', views.paypal_execute, name='paypal_execute'),
     path('paypal/cancel/', views.paypal_cancel, name='paypal_cancel'),
     
-    # PayPal Subscriptions (ADD THESE - THIS FIXES YOUR ERROR)
+    # PayPal Subscriptions
     path('paypal/subscribe/<int:plan_id>/', views.paypal_subscribe, name='paypal_subscribe'),
     path('paypal/subscribe/success/', views.paypal_subscribe_success, name='paypal_subscribe_success'),
     path('paypal/subscribe/cancel/', views.paypal_subscribe_cancel, name='paypal_subscribe_cancel'),
@@ -185,10 +188,12 @@ urlpatterns = [
     
     # PayPal Webhook
     path('paypal/webhook/', views.paypal_webhook, name='paypal_webhook'),
-    # urls.py - Add this
-path('test-paypal/', views.test_paypal, name='test_paypal'),
-# urls.py - Add this
-path('test-paypal/', views.test_paypal_connection_view, name='test_paypal'),
+    
+    # ============================================================================
+    # TEST URL - REMOVE BEFORE GOING LIVE
+    # ============================================================================
+    path('test-paypal/', views.test_paypal_connection_view, name='test_paypal'),   
+ 
 ]
 
 # ============================================================================

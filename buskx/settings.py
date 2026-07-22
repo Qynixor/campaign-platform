@@ -264,13 +264,14 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # PAYPAL CONFIGURATION
 # ============================================
 
-# Get credentials from environment with fallbacks
-PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '') or config('PAYPAL_CLIENT_ID', default='')
-PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '') or config('PAYPAL_CLIENT_SECRET', default='')
-PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'sandbox') or config('PAYPAL_MODE', default='sandbox')
-PAYPAL_RECEIVER_EMAIL = os.getenv('PAYPAL_RECEIVER_EMAIL', '') or config('PAYPAL_RECEIVER_EMAIL', default='')
 
-
+# settings.py - Add at the bottom
+import paypalrestsdk
+paypalrestsdk.configure({
+    "mode": os.getenv('PAYPAL_MODE', 'live'),  # ← Reads from .env
+    "client_id": os.getenv('PAYPAL_CLIENT_ID', ''),
+    "client_secret": os.getenv('PAYPAL_CLIENT_SECRET', '')
+})
 
 # =====================================================
 # TINYMCE
