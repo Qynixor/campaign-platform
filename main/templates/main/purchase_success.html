@@ -54,6 +54,30 @@
         margin-bottom: 24px;
     }
     
+    .product-badge-success {
+        display: inline-block;
+        padding: 4px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+    
+    .product-badge-success.ai-report {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+    }
+    
+    .product-badge-success.distribute {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3B82F6;
+    }
+    
+    .product-badge-success.storage {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+    
     .purchase-details {
         background: var(--bg-secondary);
         border-radius: 12px;
@@ -88,6 +112,11 @@
         color: #10b981;
     }
     
+    .purchase-details .detail-row .value .product-icon-small {
+        font-size: 18px;
+        margin-right: 6px;
+    }
+    
     .product-icon-large {
         font-size: 48px;
         display: block;
@@ -106,6 +135,13 @@
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .next-steps h6 i {
+        color: var(--accent);
     }
     
     .next-steps ul {
@@ -117,16 +153,24 @@
     .next-steps ul li {
         padding: 6px 0;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 10px;
         font-size: 14px;
         color: var(--text-secondary);
+        line-height: 1.5;
     }
     
     .next-steps ul li i {
         color: var(--accent);
         width: 18px;
         font-size: 14px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    
+    .next-steps ul li .highlight {
+        color: var(--text-primary);
+        font-weight: 500;
     }
     
     .btn-group-success {
@@ -143,6 +187,61 @@
         padding: 12px 24px;
         font-weight: 600;
         border-radius: 12px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    
+    .btn-group-success .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border: none;
+    }
+    
+    .btn-group-success .btn-primary:hover {
+        background: #2563EB;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    
+    .btn-group-success .btn-outline {
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .btn-group-success .btn-outline:hover {
+        background: var(--bg-secondary);
+        border-color: var(--silver);
+    }
+    
+    .btn-group-success .btn-success {
+        background: #10b981;
+        color: #fff;
+        border: none;
+    }
+    
+    .btn-group-success .btn-success:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    }
+    
+    .billing-info {
+        margin-top: 20px;
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .billing-info i {
+        color: var(--silver);
     }
     
     .confetti {
@@ -206,6 +305,10 @@
         .product-icon-large {
             font-size: 40px;
         }
+        
+        .next-steps ul li {
+            font-size: 13px;
+        }
     }
 </style>
 {% endblock %}
@@ -222,19 +325,32 @@
         <!-- Title -->
         <h1 class="success-title">Purchase Successful! 🎉</h1>
         <p class="success-subtitle">
-            You have successfully purchased <strong>{{ purchase.product.name }}</strong>
+            You now have access to <strong>{{ purchase.product.name }}</strong>
         </p>
+        
+        <!-- Product Badge -->
+        <span class="product-badge-success 
+            {% if purchase.product.product_type == 'ai_report' %}ai-report
+            {% elif purchase.product.product_type == 'export' %}distribute
+            {% elif purchase.product.product_type == 'storage' %}storage
+            {% endif %}">
+            {% if purchase.product.product_type == 'ai_report' %}
+                🤖 AI Progress Report
+            {% elif purchase.product.product_type == 'export' %}
+                📤 Distribute Journey
+            {% elif purchase.product.product_type == 'storage' %}
+                💾 Extra Storage
+            {% endif %}
+        </span>
         
         <!-- Product Icon -->
         <span class="product-icon-large">
             {% if purchase.product.product_type == 'export' %}
-                📄
-            {% elif purchase.product.product_type == 'theme' %}
-                🎨
-            {% elif purchase.product.product_type == 'storage' %}
-                💾
+                📤
             {% elif purchase.product.product_type == 'ai_report' %}
                 🤖
+            {% elif purchase.product.product_type == 'storage' %}
+                💾
             {% else %}
                 📦
             {% endif %}
@@ -244,23 +360,19 @@
         <div class="purchase-details">
             <div class="detail-row">
                 <span class="label">Product</span>
-                <span class="value">{{ purchase.product.name }}</span>
+                <span class="value">
+                    <span class="product-icon-small">
+                        {% if purchase.product.product_type == 'ai_report' %}🤖
+                        {% elif purchase.product.product_type == 'export' %}📤
+                        {% elif purchase.product.product_type == 'storage' %}💾
+                        {% endif %}
+                    </span>
+                    {{ purchase.product.name }}
+                </span>
             </div>
             <div class="detail-row">
                 <span class="label">Amount Paid</span>
                 <span class="value">${{ purchase.amount_paid }}</span>
-            </div>
-            <div class="detail-row">
-                <span class="label">Payment Type</span>
-                <span class="value">
-                    {% if purchase.product.payment_type == 'one_time' %}
-                        One-Time
-                    {% elif purchase.product.payment_type == 'monthly' %}
-                        Monthly
-                    {% elif purchase.product.payment_type == 'per_report' %}
-                        Per Report
-                    {% endif %}
-                </span>
             </div>
             <div class="detail-row">
                 <span class="label">Purchase Date</span>
@@ -272,57 +384,80 @@
                     <i class="fas fa-check-circle"></i> Completed
                 </span>
             </div>
+            <div class="detail-row">
+                <span class="label">Access</span>
+                <span class="value text-success">
+                    <i class="fas fa-infinity"></i> Lifetime
+                </span>
+            </div>
         </div>
         
         <!-- Next Steps -->
         <div class="next-steps">
-            <h6><i class="fas fa-rocket" style="color: var(--accent);"></i> What's Next?</h6>
+            <h6>
+                <i class="fas fa-rocket"></i> 
+                What's Next?
+            </h6>
             <ul>
-                {% if purchase.product.product_type == 'export' %}
+                {% if purchase.product.product_type == 'ai_report' %}
                     <li>
-                        <i class="fas fa-file-export"></i>
-                        Go to your journey and request an export
+                        <i class="fas fa-robot"></i>
+                        Go to any of your journeys and <span class="highlight">generate an AI Progress Report</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-chart-line"></i>
+                        Get <span class="highlight">insights, analytics, and smart recommendations</span>
                     </li>
                     <li>
                         <i class="fas fa-download"></i>
-                        Download your journey in your preferred format
+                        <span class="highlight">Download your report</span> as Markdown to share with your audience
                     </li>
-                {% elif purchase.product.product_type == 'theme' %}
+                    <li>
+                        <i class="fas fa-infinity"></i>
+                        <span class="highlight">Unlimited reports</span> for all your journeys — forever
+                    </li>
+                {% elif purchase.product.product_type == 'export' %}
+                    <li>
+                        <i class="fab fa-twitter"></i>
+                        Generate a <span class="highlight">Twitter/X thread</span> from your journey
+                    </li>
+                    <li>
+                        <i class="fab fa-linkedin"></i>
+                        Create a <span class="highlight">LinkedIn post</span> to share your progress
+                    </li>
+                    <li>
+                        <i class="fas fa-newspaper"></i>
+                        Export your journey as a <span class="highlight">Markdown blog post</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-code"></i>
+                        Get an <span class="highlight">embed widget</span> for your portfolio or website
+                    </li>
                     <li>
                         <i class="fas fa-palette"></i>
-                        Customize your journey with your new theme
-                    </li>
-                    <li>
-                        <i class="fas fa-paint-brush"></i>
-                        Choose colors, fonts, and layout
+                        Generate a <span class="highlight">beautiful portfolio page</span> to showcase your work
                     </li>
                 {% elif purchase.product.product_type == 'storage' %}
                     <li>
                         <i class="fas fa-hdd"></i>
-                        You now have {{ purchase.product.storage_amount_mb }}MB extra storage
+                        You now have <span class="highlight">{{ purchase.product.storage_mb|default:"100" }}MB extra storage</span>
                     </li>
                     <li>
                         <i class="fas fa-upload"></i>
-                        Upload more media to your journeys
-                    </li>
-                {% elif purchase.product.product_type == 'ai_report' %}
-                    <li>
-                        <i class="fas fa-robot"></i>
-                        Generate an AI progress report for any journey
+                        Upload <span class="highlight">more images, videos, and documents</span> to your journeys
                     </li>
                     <li>
-                        <i class="fas fa-chart-line"></i>
-                        Get insights and recommendations
+                        <i class="fas fa-cloud"></i>
+                        Files are hosted on <span class="highlight">Cloudinary</span> for fast, reliable delivery
                     </li>
-                {% else %}
                     <li>
-                        <i class="fas fa-check"></i>
-                        Your purchase has been applied to your account
+                        <i class="fas fa-infinity"></i>
+                        <span class="highlight">Lifetime access</span> — your storage never expires
                     </li>
                 {% endif %}
                 <li>
                     <i class="fas fa-envelope"></i>
-                    Check your email for confirmation receipt
+                    A confirmation receipt has been sent to your email
                 </li>
             </ul>
         </div>
@@ -332,15 +467,33 @@
             <a href="{% url 'dashboard' %}" class="btn btn-primary">
                 <i class="fas fa-tachometer-alt"></i> Go to Dashboard
             </a>
+            
+            {% if purchase.product.product_type == 'ai_report' %}
+                <a href="{% url 'my_journeys' %}" class="btn btn-success">
+                    <i class="fas fa-robot"></i> Generate a Report
+                </a>
+            {% elif purchase.product.product_type == 'export' %}
+                <a href="{% url 'my_journeys' %}" class="btn btn-success">
+                    <i class="fas fa-share-alt"></i> Distribute a Journey
+                </a>
+            {% elif purchase.product.product_type == 'storage' %}
+                <a href="{% url 'my_journeys' %}" class="btn btn-success">
+                    <i class="fas fa-upload"></i> Upload Files
+                </a>
+            {% endif %}
+            
             <a href="{% url 'product_list' %}" class="btn btn-outline">
                 <i class="fas fa-shopping-bag"></i> Browse More
             </a>
         </div>
         
         <!-- Billing Info -->
-        <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+        <div class="billing-info">
             <i class="fas fa-info-circle"></i>
             A confirmation receipt has been sent to your email address.
+            <span style="width: 4px; height: 4px; background: var(--text-muted); border-radius: 50%; display: inline-block;"></span>
+            <i class="fas fa-lock"></i>
+            Secure payment via PayPal
         </div>
     </div>
 </div>

@@ -90,6 +90,30 @@
         color: var(--accent);
     }
     
+    .product-summary .product-info .product-badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+    
+    .product-badge.ai-report {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+    }
+    
+    .product-badge.distribute {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3B82F6;
+    }
+    
+    .product-badge.storage {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+    
     .info-box {
         background: rgba(59, 130, 246, 0.06);
         border: 1px solid rgba(59, 130, 246, 0.12);
@@ -116,6 +140,50 @@
     
     .info-box .info-text strong {
         color: var(--text-primary);
+    }
+    
+    .feature-list {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .feature-list .feature-title {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .feature-list .feature-title i {
+        color: var(--accent);
+    }
+    
+    .feature-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .feature-list ul li {
+        padding: 4px 0;
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .feature-list ul li i {
+        color: #10b981;
+        font-size: 14px;
+        width: 18px;
+        flex-shrink: 0;
     }
     
     .form-group {
@@ -190,6 +258,10 @@
         color: #fff;
         border: none;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
     
     .btn-purchase:hover {
@@ -208,14 +280,42 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 12px;
         margin-top: 16px;
         font-size: 13px;
         color: var(--text-secondary);
+        flex-wrap: wrap;
     }
     
     .secure-badge i {
         color: #10b981;
+    }
+    
+    .secure-badge .separator {
+        width: 4px;
+        height: 4px;
+        background: var(--text-muted);
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .back-link {
+        text-align: center;
+        margin-top: 16px;
+    }
+    
+    .back-link a {
+        color: var(--text-secondary);
+        font-size: 14px;
+        text-decoration: none;
+        transition: color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .back-link a:hover {
+        color: var(--text-primary);
     }
     
     @media (max-width: 480px) {
@@ -225,6 +325,10 @@
         
         .purchase-card .card-body {
             padding: 20px;
+        }
+        
+        .purchase-card .card-header {
+            padding: 16px 20px;
         }
         
         .product-summary {
@@ -245,6 +349,15 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+        }
+        
+        .secure-badge {
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .secure-badge .separator {
+            display: none;
         }
     }
 </style>
@@ -269,13 +382,11 @@
             <div class="product-summary">
                 <div class="product-icon-large">
                     {% if product.product_type == 'export' %}
-                        📄
-                    {% elif product.product_type == 'theme' %}
-                        🎨
-                    {% elif product.product_type == 'storage' %}
-                        💾
+                        📤
                     {% elif product.product_type == 'ai_report' %}
                         🤖
+                    {% elif product.product_type == 'storage' %}
+                        💾
                     {% else %}
                         📦
                     {% endif %}
@@ -283,18 +394,25 @@
                 <div class="product-info">
                     <div class="name">{{ product.name }}</div>
                     <div class="price">
-                        ${{ product.get_price_display }}
+                        ${{ product.price_min }} <small>one-time</small>
                     </div>
                     <div class="type">
                         <i class="fas fa-tag"></i>
-                        {% if product.payment_type == 'one_time' %}
-                            One-Time Payment
-                        {% elif product.payment_type == 'monthly' %}
-                            Monthly Charge
-                        {% elif product.payment_type == 'per_report' %}
-                            Per Report
-                        {% endif %}
+                        One-Time Payment · Lifetime Access
                     </div>
+                    <span class="product-badge 
+                        {% if product.product_type == 'ai_report' %}ai-report
+                        {% elif product.product_type == 'export' %}distribute
+                        {% elif product.product_type == 'storage' %}storage
+                        {% endif %}">
+                        {% if product.product_type == 'ai_report' %}
+                            🤖 AI Progress Report
+                        {% elif product.product_type == 'export' %}
+                            📤 Distribute Journey
+                        {% elif product.product_type == 'storage' %}
+                            💾 Extra Storage
+                        {% endif %}
+                    </span>
                 </div>
             </div>
             
@@ -303,15 +421,37 @@
                 <i class="fas fa-info-circle"></i>
                 <div class="info-text">
                     <strong>Payment via PayPal</strong><br>
-                    You will be charged <strong>${{ product.price_min }}</strong> 
-                    {% if product.payment_type == 'one_time' %}
-                        as a one-time payment.
-                    {% elif product.payment_type == 'monthly' %}
-                        monthly until canceled.
-                    {% elif product.payment_type == 'per_report' %}
-                        per report generated.
-                    {% endif %}
+                    You will be charged <strong>${{ product.price_min }}</strong> as a one-time payment. 
+                    No recurring fees. Use it forever.
                 </div>
+            </div>
+            
+            <!-- Features -->
+            <div class="feature-list">
+                <div class="feature-title">
+                    <i class="fas fa-check-circle"></i>
+                    What You Get
+                </div>
+                <ul>
+                    {% if product.product_type == 'ai_report' %}
+                        <li><i class="fas fa-check"></i> AI-powered progress reports for any journey</li>
+                        <li><i class="fas fa-check"></i> Detailed analytics and insights</li>
+                        <li><i class="fas fa-check"></i> Smart recommendations and action items</li>
+                        <li><i class="fas fa-check"></i> Markdown export for sharing</li>
+                        <li><i class="fas fa-check"></i> Unlimited reports for all your journeys</li>
+                    {% elif product.product_type == 'export' %}
+                        <li><i class="fas fa-check"></i> Twitter/X thread generator</li>
+                        <li><i class="fas fa-check"></i> LinkedIn post generator</li>
+                        <li><i class="fas fa-check"></i> Blog post generator (Markdown)</li>
+                        <li><i class="fas fa-check"></i> Embed widget for any website</li>
+                        <li><i class="fas fa-check"></i> Portfolio page generator</li>
+                    {% elif product.product_type == 'storage' %}
+                        <li><i class="fas fa-check"></i> {{ product.storage_mb|default:"100" }}MB extra storage</li>
+                        <li><i class="fas fa-check"></i> Upload more images, videos, and documents</li>
+                        <li><i class="fas fa-check"></i> Cloudinary hosting for fast delivery</li>
+                        <li><i class="fas fa-check"></i> Lifetime access — never expires</li>
+                    {% endif %}
+                </ul>
             </div>
             
             <!-- Form -->
@@ -340,22 +480,22 @@
                 {% endfor %}
                 
                 <button type="submit" class="btn-purchase">
-                    <i class="fab fa-paypal"></i> Pay with PayPal - ${{ product.price_min }}
+                    <i class="fab fa-paypal"></i> Pay with PayPal — ${{ product.price_min }}
                 </button>
             </form>
             
             <!-- Secure Badge -->
             <div class="secure-badge">
-                <i class="fas fa-lock"></i>
-                Secure payment via PayPal
-                <span style="width: 4px; height: 4px; background: var(--text-muted); border-radius: 50%; display: inline-block;"></span>
-                <i class="fas fa-shield-alt"></i>
-                Money-back guarantee
+                <i class="fas fa-lock"></i> Secure payment via PayPal
+                <span class="separator"></span>
+                <i class="fas fa-shield-alt"></i> Money-back guarantee
+                <span class="separator"></span>
+                <i class="fas fa-infinity"></i> Lifetime access
             </div>
             
             <!-- Back Link -->
-            <div style="text-align: center; margin-top: 16px;">
-                <a href="{% url 'product_list' %}" style="color: var(--text-secondary); font-size: 14px; text-decoration: none;">
+            <div class="back-link">
+                <a href="{% url 'product_list' %}">
                     <i class="fas fa-arrow-left"></i> Back to Products
                 </a>
             </div>

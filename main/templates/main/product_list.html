@@ -2,7 +2,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Distribution Tools | Rallynex{% endblock %}
+{% block title %}One-Time Purchases | Rallynex{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -39,8 +39,10 @@
     
     .products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         gap: 24px;
+        max-width: 1100px;
+        margin: 0 auto;
     }
     
     .product-card {
@@ -66,20 +68,20 @@
     }
     
     .product-icon {
-        font-size: 40px;
+        font-size: 44px;
         margin-bottom: 12px;
         display: block;
     }
     
     .product-card .product-name {
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 20px;
+        font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 4px;
     }
     
     .product-card .product-price {
-        font-size: 28px;
+        font-size: 30px;
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 8px;
@@ -99,7 +101,7 @@
         flex-grow: 1;
     }
     
-    .product-card .payment-type {
+    .product-card .product-type-badge {
         display: inline-block;
         padding: 2px 12px;
         border-radius: 12px;
@@ -111,19 +113,19 @@
         align-self: flex-start;
     }
     
-    .payment-type.one-time {
-        background: rgba(59, 130, 246, 0.12);
+    .product-type-badge.ai-report {
+        background: rgba(139, 92, 246, 0.15);
+        color: #8b5cf6;
+    }
+    
+    .product-type-badge.distribute {
+        background: rgba(59, 130, 246, 0.15);
         color: #3B82F6;
     }
     
-    .payment-type.monthly {
-        background: rgba(245, 158, 11, 0.12);
-        color: #f59e0b;
-    }
-    
-    .payment-type.per-report {
-        background: rgba(139, 92, 246, 0.12);
-        color: #8b5cf6;
+    .product-type-badge.storage {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
     }
     
     .product-features {
@@ -134,12 +136,17 @@
     }
     
     .product-features li {
-        padding: 4px 0;
+        padding: 6px 0;
         font-size: 13px;
         color: var(--text-secondary);
         display: flex;
-        align-items: center;
-        gap: 8px;
+        align-items: flex-start;
+        gap: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .product-features li:last-child {
+        border-bottom: none;
     }
     
     .product-features li i {
@@ -147,6 +154,7 @@
         font-size: 14px;
         width: 18px;
         flex-shrink: 0;
+        margin-top: 2px;
     }
     
     .product-features li .highlight {
@@ -191,16 +199,6 @@
         box-shadow: none;
     }
     
-    .product-btn.btn-outline-secondary {
-        background: transparent;
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-    }
-    
-    .product-btn.btn-outline-secondary:hover {
-        background: var(--bg-secondary);
-    }
-    
     .purchased-badge {
         position: absolute;
         top: 16px;
@@ -234,30 +232,37 @@
     }
     
     .product-badge.new {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: #fff;
-    }
-    
-    .product-badge.best-value {
         background: linear-gradient(135deg, #8b5cf6, #7c3aed);
         color: #fff;
     }
     
-    /* ===== DISTRIBUTION FEATURES ===== */
-    .distro-badge {
-        display: inline-block;
-        font-size: 11px;
-        font-weight: 500;
-        padding: 2px 8px;
-        border-radius: 6px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        color: var(--text-secondary);
-        margin-right: 4px;
+    .product-badge.best-value {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
     }
     
-    .distro-badge .emoji {
-        margin-right: 2px;
+    .subscription-note {
+        text-align: center;
+        margin-top: 24px;
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        font-size: 14px;
+        color: var(--text-secondary);
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .subscription-note a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .subscription-note a:hover {
+        text-decoration: underline;
     }
     
     @media (max-width: 768px) {
@@ -291,6 +296,10 @@
             font-size: 10px;
             padding: 2px 10px;
         }
+        
+        .product-card .product-name {
+            font-size: 17px;
+        }
     }
 </style>
 {% endblock %}
@@ -300,8 +309,8 @@
     
     <!-- Header -->
     <div class="products-header">
-        <h1>🚀 <span>Distribution Tools</span></h1>
-        <p>Turn your journey into content your audience will love. Pay once, use forever.</p>
+        <h1>🚀 <span>One-Time Purchases</span></h1>
+        <p>Buy once, use forever. No recurring fees, just powerful tools for your journey.</p>
     </div>
     
     <!-- Products Grid -->
@@ -317,27 +326,21 @@
                 {% endif %}
                 
                 <!-- Badge -->
-                {% if product.product_type == 'export' %}
-                    <span class="product-badge popular">🔥 Popular</span>
-                {% elif product.product_type == 'ai_report' %}
-                    <span class="product-badge new">✨ New</span>
-                {% elif product.product_type == 'theme' %}
-                    <span class="product-badge best-value">🎨 Best Value</span>
+                {% if product.product_type == 'ai_report' %}
+                    <span class="product-badge new">🤖 AI-Powered</span>
+                {% elif product.product_type == 'export' %}
+                    <span class="product-badge popular">🔥 Most Popular</span>
+                {% elif product.product_type == 'storage' %}
+                    <span class="product-badge best-value">💾 Extra Space</span>
                 {% endif %}
                 
                 <!-- Icon -->
-                {% if product.product_type == 'export' %}
+                {% if product.product_type == 'ai_report' %}
+                    <span class="product-icon">🤖</span>
+                {% elif product.product_type == 'export' %}
                     <span class="product-icon">📤</span>
-                {% elif product.product_type == 'theme' %}
-                    <span class="product-icon">🎨</span>
                 {% elif product.product_type == 'storage' %}
                     <span class="product-icon">💾</span>
-                {% elif product.product_type == 'ai_report' %}
-                    <span class="product-icon">🤖</span>
-                {% elif product.product_type == 'social_pack' %}
-                    <span class="product-icon">📱</span>
-                {% else %}
-                    <span class="product-icon">📦</span>
                 {% endif %}
                 
                 <!-- Name -->
@@ -345,45 +348,50 @@
                 
                 <!-- Price -->
                 <div class="product-price">
-                    ${{ product.get_price_display }}
+                    ${{ product.price_min }} <small>one-time</small>
                 </div>
                 
-                <!-- Payment Type -->
-                <span class="payment-type {{ product.payment_type }}">
-                    {% if product.payment_type == 'one_time' %}
-                        One-Time Payment
-                    {% elif product.payment_type == 'monthly' %}
-                        Monthly Charge
-                    {% elif product.payment_type == 'per_report' %}
-                        Per Report
+                <!-- Type Badge -->
+                <span class="product-type-badge 
+                    {% if product.product_type == 'ai_report' %}ai-report
+                    {% elif product.product_type == 'export' %}distribute
+                    {% elif product.product_type == 'storage' %}storage
+                    {% endif %}">
+                    {% if product.product_type == 'ai_report' %}
+                        🤖 AI Progress Report
+                    {% elif product.product_type == 'export' %}
+                        📤 Distribute Journey
+                    {% elif product.product_type == 'storage' %}
+                        💾 Extra Storage
                     {% endif %}
                 </span>
                 
                 <!-- Description -->
-                <p class="product-description">{{ product.description|truncatechars:100 }}</p>
+                <p class="product-description">{{ product.description|truncatechars:120 }}</p>
                 
                 <!-- Features -->
-                {% if product.product_type == 'export' %}
+                {% if product.product_type == 'ai_report' %}
                     <ul class="product-features">
-                        <li><i class="fas fa-check-circle"></i> 🐦 <strong>Twitter/X Thread</strong> — Auto-generated</li>
-                        <li><i class="fas fa-check-circle"></i> 💼 <strong>LinkedIn Post</strong> — Professional summary</li>
-                        <li><i class="fas fa-check-circle"></i> 📝 <strong>Blog Post</strong> — Markdown ready</li>
-                        <li><i class="fas fa-check-circle"></i> 🔗 <strong>Embed Widget</strong> — Add to any site</li>
-                        <li><i class="fas fa-check-circle"></i> 🎨 <strong>Portfolio Page</strong> — Beautiful landing</li>
+                        <li><i class="fas fa-robot"></i> <strong>AI-Generated Progress Reports</strong></li>
+                        <li><i class="fas fa-chart-line"></i> <strong>Insights & Analytics</strong> — Track your growth</li>
+                        <li><i class="fas fa-lightbulb"></i> <strong>Smart Recommendations</strong> — Actionable tips</li>
+                        <li><i class="fas fa-download"></i> <strong>Markdown Export</strong> — Share your report</li>
+                        <li><i class="fas fa-infinity"></i> <strong>Unlimited Reports</strong> — Generate anytime</li>
                     </ul>
-                {% else %}
+                {% elif product.product_type == 'export' %}
                     <ul class="product-features">
-                        {% for feature in product.features %}
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                {{ feature }}
-                            </li>
-                        {% empty %}
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                Lifetime access
-                            </li>
-                        {% endfor %}
+                        <li><i class="fab fa-twitter"></i> <strong>Twitter/X Thread</strong> — Auto-generated thread</li>
+                        <li><i class="fab fa-linkedin"></i> <strong>LinkedIn Post</strong> — Professional summary</li>
+                        <li><i class="fas fa-newspaper"></i> <strong>Blog Post</strong> — Markdown ready</li>
+                        <li><i class="fas fa-code"></i> <strong>Embed Widget</strong> — Add to any site</li>
+                        <li><i class="fas fa-palette"></i> <strong>Portfolio Page</strong> — Beautiful landing</li>
+                    </ul>
+                {% elif product.product_type == 'storage' %}
+                    <ul class="product-features">
+                        <li><i class="fas fa-database"></i> <strong>{{ product.storage_mb|default:"100" }}MB Extra Storage</strong></li>
+                        <li><i class="fas fa-cloud-upload-alt"></i> <strong>Upload More Files</strong> — Images, videos, docs</li>
+                        <li><i class="fas fa-infinity"></i> <strong>Lifetime Access</strong> — Never expires</li>
+                        <li><i class="fas fa-shield-alt"></i> <strong>Secure & Reliable</strong> — Cloudinary hosting</li>
                     </ul>
                 {% endif %}
                 
@@ -394,7 +402,7 @@
                     </button>
                 {% else %}
                     <a href="{% url 'paypal_payment_create' product.id %}" class="product-btn btn-primary">
-                        <i class="fas fa-shopping-cart"></i> Purchase Now
+                        <i class="fas fa-shopping-cart"></i> Buy Now — ${{ product.price_min }}
                     </a>
                 {% endif %}
             </div>
@@ -405,29 +413,36 @@
         {% endfor %}
     </div>
     
+    <!-- Subscription Note -->
+    <div class="subscription-note">
+        🚀 <strong>Or subscribe to Rallynex Plus</strong> — Get <strong>all features included</strong> for one low monthly price.
+        <br>
+        <a href="{% url 'subscription_plans' %}">View Subscription Plans →</a>
+    </div>
+    
     <!-- ===== HOW IT WORKS ===== -->
     <div style="margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border-color);">
         <h2 style="text-align:center;font-size:24px;font-weight:700;margin-bottom:32px;">
-            📤 How Distribution Works
+            📤 How It Works
         </h2>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px;max-width:900px;margin:0 auto;">
             <div style="text-align:center;padding:20px;background:var(--bg-secondary);border-radius:16px;border:1px solid var(--border-color);">
                 <div style="font-size:32px;margin-bottom:8px;">1️⃣</div>
                 <h4 style="font-size:15px;font-weight:600;color:var(--text-primary);">Purchase</h4>
-                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Buy the distribution tool once</p>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Buy once, use forever</p>
             </div>
             
             <div style="text-align:center;padding:20px;background:var(--bg-secondary);border-radius:16px;border:1px solid var(--border-color);">
                 <div style="font-size:32px;margin-bottom:8px;">2️⃣</div>
                 <h4 style="font-size:15px;font-weight:600;color:var(--text-primary);">Generate</h4>
-                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Choose Twitter, LinkedIn, Blog, or Portfolio</p>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Use on any of your journeys</p>
             </div>
             
             <div style="text-align:center;padding:20px;background:var(--bg-secondary);border-radius:16px;border:1px solid var(--border-color);">
                 <div style="font-size:32px;margin-bottom:8px;">3️⃣</div>
-                <h4 style="font-size:15px;font-weight:600;color:var(--text-primary);">Copy & Post</h4>
-                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Copy the content and share it everywhere</p>
+                <h4 style="font-size:15px;font-weight:600;color:var(--text-primary);">Share & Grow</h4>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">Build your audience in public</p>
             </div>
         </div>
     </div>
@@ -441,28 +456,38 @@
         <div style="max-width:700px;margin:0 auto;display:grid;gap:12px;">
             <div style="background:var(--bg-secondary);border-radius:12px;padding:16px 20px;border:1px solid var(--border-color);">
                 <p style="font-weight:600;font-size:14px;color:var(--text-primary);margin:0 0 4px;">
-                    What's the difference between Export and Distribution?
+                    What's the difference between AI Report and Distribute Journey?
                 </p>
                 <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-                    Export = PDF/JSON files. Distribution = ready-to-post content for Twitter, LinkedIn, blogs, and portfolios.
+                    <strong>AI Report</strong> = Get insights, analytics, and recommendations about your journey.<br>
+                    <strong>Distribute Journey</strong> = Generate ready-to-post content for Twitter, LinkedIn, blogs, and portfolios.
                 </p>
             </div>
             
             <div style="background:var(--bg-secondary);border-radius:12px;padding:16px 20px;border:1px solid var(--border-color);">
                 <p style="font-weight:600;font-size:14px;color:var(--text-primary);margin:0 0 4px;">
-                    Can I generate multiple formats?
+                    How much extra storage do I get?
                 </p>
                 <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-                    Yes! You can generate as many distribution types as you want after purchasing once.
+                    Each storage purchase adds {{ storage_product.storage_mb|default:"100" }}MB to your account. You can buy multiple storage packs.
                 </p>
             </div>
             
             <div style="background:var(--bg-secondary);border-radius:12px;padding:16px 20px;border:1px solid var(--border-color);">
                 <p style="font-weight:600;font-size:14px;color:var(--text-primary);margin:0 0 4px;">
-                    How long do I have access?
+                    Can I use these on multiple journeys?
                 </p>
                 <p style="font-size:13px;color:var(--text-secondary);margin:0;">
-                    One-time purchase = lifetime access. Generate content for any of your journeys, anytime.
+                    Yes! One purchase gives you access for <strong>all your journeys</strong>. Generate content and reports for any journey you create.
+                </p>
+            </div>
+            
+            <div style="background:var(--bg-secondary);border-radius:12px;padding:16px 20px;border:1px solid var(--border-color);">
+                <p style="font-weight:600;font-size:14px;color:var(--text-primary);margin:0 0 4px;">
+                    Is this a one-time payment or subscription?
+                </p>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0;">
+                    All products here are <strong>one-time purchases</strong>. Pay once, use forever. For ongoing access to everything, check out our <a href="{% url 'subscription_plans' %}" style="color:var(--accent);">subscription plans</a>.
                 </p>
             </div>
         </div>
@@ -474,8 +499,7 @@
             <i class="fas fa-shield-alt"></i> Secure payment via PayPal
         </p>
         <p style="color: var(--text-secondary); font-size: 13px;">
-            All purchases are one-time unless marked otherwise.
-            <a href="{% url 'contact' %}" style="color: var(--accent);">Questions?</a>
+            Questions? <a href="{% url 'contact' %}" style="color: var(--accent);">Contact support</a>
         </p>
     </div>
 </div>
