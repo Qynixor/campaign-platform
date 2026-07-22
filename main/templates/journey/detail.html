@@ -2439,42 +2439,51 @@
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
                         
-                        <!-- AI Report -->
-                        {% if has_ai_report_purchase %}
-                            <a href="{% url 'generate_ai_report' journey.id %}" class="dropdown-item">
-                                <i class="fas fa-robot" style="color: #8B5CF6;"></i> AI Report
-                                <span class="badge-owned">Owned</span>
-                            </a>
-                        {% endif %}
-                        
-                              <!-- DISTRIBUTION (formerly Export) -->
-        {% if has_export_purchase %}
-            <a href="{% url 'request_export' journey.id %}" class="dropdown-item">
-                <i class="fas fa-share-alt" style="color: #3B82F6;"></i> Distribute Journey
-                <span class="badge-owned">Owned</span>
-            </a>
+                    <!-- ===== DROPDOWN MENU ITEMS ===== -->
+
+<!-- AI Report - Show if user has purchase OR active subscription -->
+{% if has_ai_report_purchase or has_subscription %}
+    <a href="{% url 'generate_ai_report' journey.id %}" class="dropdown-item">
+        <i class="fas fa-robot" style="color: #8B5CF6;"></i> AI Report
+        {% if has_ai_report_purchase %}
+            <span class="badge-owned">Owned</span>
+        {% elif has_subscription %}
+            <span class="badge-premium">Premium</span>
         {% endif %}
-                        
-                                             
-                        <!-- Storage -->
-                        {% if has_storage or has_subscription %}
-                            <a href="{% url 'storage_dashboard' %}" class="dropdown-item">
-                                <i class="fas fa-hdd" style="color: #10B981;"></i> Storage
-                                {% if has_storage %}
-                                    <span class="badge-owned">Owned</span>
-                                {% elif has_subscription %}
-                                    <span class="badge-premium">Premium</span>
-                                {% endif %}
-                            </a>
-                        {% endif %}
-                        
-                        <!-- Journey Dashboard (Premium) -->
-                        {% if has_subscription %}
-                            <a href="{% url 'journey_dashboard' journey.slug %}" class="dropdown-item">
-                                <i class="fas fa-chart-pie" style="color: var(--accent);"></i> Journey Dashboard
-                                <span class="badge-premium">Premium</span>
-                            </a>
-                        {% endif %}
+    </a>
+{% endif %}
+
+<!-- DISTRIBUTION (formerly Export) - Show if user has purchase OR active subscription -->
+{% if has_export_purchase or has_subscription %}
+    <a href="{% url 'request_export' journey.id %}" class="dropdown-item">
+        <i class="fas fa-share-alt" style="color: #3B82F6;"></i> Distribute Journey
+        {% if has_export_purchase %}
+            <span class="badge-owned">Owned</span>
+        {% elif has_subscription %}
+            <span class="badge-premium">Premium</span>
+        {% endif %}
+    </a>
+{% endif %}
+
+<!-- Storage - Show if user has purchase OR active subscription -->
+{% if has_storage or has_subscription %}
+    <a href="{% url 'storage_dashboard' %}" class="dropdown-item">
+        <i class="fas fa-hdd" style="color: #10B981;"></i> Storage
+        {% if has_storage %}
+            <span class="badge-owned">Owned</span>
+        {% elif has_subscription %}
+            <span class="badge-premium">Premium</span>
+        {% endif %}
+    </a>
+{% endif %}
+
+<!-- Journey Dashboard - Premium only -->
+{% if has_subscription %}
+    <a href="{% url 'journey_dashboard' journey.slug %}" class="dropdown-item">
+        <i class="fas fa-chart-pie" style="color: var(--accent);"></i> Journey Dashboard
+        <span class="badge-premium">Premium</span>
+    </a>
+{% endif %}
                         
                         <!-- Manage Content -->
                         {% if user == journey.creator.user %}
