@@ -400,49 +400,6 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'paypal_transaction_id']
     readonly_fields = ['created_at']
 
-from django.contrib import admin
-from django.shortcuts import render
-from django.urls import path
-import csv
-import os
-
-class NewsletterSubscriberAdmin(admin.ModelAdmin):
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('subscribers/', self.admin_site.admin_view(self.subscriber_list), name='subscriber_list'),
-        ]
-        return custom_urls + urls
-    
-    def subscriber_list(self, request):
-        csv_path = os.path.join(os.path.dirname(__file__), 'subscribers.csv')
-        subscribers = []
-        
-        if os.path.exists(csv_path):
-            with open(csv_path, 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row and len(row) >= 2:
-                        subscribers.append({'date': row[0], 'email': row[1]})
-        
-        subscribers.reverse()
-        
-        context = {
-            'title': 'Newsletter Subscribers',
-            'subscribers': subscribers,
-            'total': len(subscribers)
-        }
-        return render(request, 'admin/newsletter_subscribers.html', context)
-
-# Register dummy model
-from django.db import models
-class NewsletterSubscriber(models.Model):
-    class Meta:
-        managed = False
-        verbose_name = 'Newsletter Subscribers'
-        verbose_name_plural = 'Newsletter Subscribers'
-
-admin.site.register(NewsletterSubscriber, NewsletterSubscriberAdmin)
 
 # ============================================================================
 # CUSTOM ADMIN SITE CONFIGURATION
