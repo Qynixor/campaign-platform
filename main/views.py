@@ -3263,4 +3263,3 @@ def subscribe_newsletter(request):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request'})
-
