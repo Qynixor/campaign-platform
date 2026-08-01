@@ -401,44 +401,48 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
 
 from django.contrib import admin
-from django.http import HttpResponse
+from django.shortcuts import render
+from django.urls import path
 import csv
-from datetime import datetime
 import os
 
 class NewsletterSubscriberAdmin(admin.ModelAdmin):
-    def changelist_view(self, request, extra_context=None):
-        # Read subscribers from file
-        log_file = os.path.join(os.path.dirname(__file__), 'subscribers.csv')
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('subscribers/', self.admin_site.admin_view(self.subscriber_list), name='subscriber_list'),
+        ]
+        return custom_urls + urls
+    
+    def subscriber_list(self, request):
+        csv_path = os.path.join(os.path.dirname(__file__), 'subscribers.csv')
         subscribers = []
         
-        if os.path.exists(log_file):
-            with open(log_file, 'r') as f:
-                for line in f:
-                    if line.strip():
-                        parts = line.strip().split(',')
-                        subscribers.append({
-                            'date': parts[0] if len(parts) > 0 else '',
-                            'email': parts[1] if len(parts) > 1 else ''
-                        })
+        if os.path.exists(csv_path):
+            with open(csv_path, 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row and len(row) >= 2:
+                        subscribers.append({'date': row[0], 'email': row[1]})
         
-        extra_context = extra_context or {}
-        extra_context['subscribers'] = subscribers
-        extra_context['total'] = len(subscribers)
-        return super().changelist_view(request, extra_context=extra_context)
+        subscribers.reverse()
+        
+        context = {
+            'title': 'Newsletter Subscribers',
+            'subscribers': subscribers,
+            'total': len(subscribers)
+        }
+        return render(request, 'admin/newsletter_subscribers.html', context)
 
 # Register dummy model
 from django.db import models
-class SubscriberLog(models.Model):
+class NewsletterSubscriber(models.Model):
     class Meta:
         managed = False
         verbose_name = 'Newsletter Subscribers'
         verbose_name_plural = 'Newsletter Subscribers'
 
-admin.site.register(SubscriberLog, NewsletterSubscriberAdmin)
-
-
-
+admin.site.register(NewsletterSubscriber, NewsletterSubscriberAdmin)
 
 # ============================================================================
 # CUSTOM ADMIN SITE CONFIGURATION
