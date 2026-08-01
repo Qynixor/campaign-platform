@@ -3250,7 +3250,10 @@ def subscribe_newsletter(request):
             
             subscriber, created = Subscriber.objects.get_or_create(
                 email=email,
-                defaults={'ip_address': request.META.get('REMOTE_ADDR')}
+                defaults={
+                    'ip_address': request.META.get('REMOTE_ADDR'),
+                    'user_agent': request.META.get('HTTP_USER_AGENT', '')  # Add this
+                }
             )
             
             return JsonResponse({
@@ -3262,3 +3265,4 @@ def subscribe_newsletter(request):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request'})
+
