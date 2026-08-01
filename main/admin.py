@@ -399,7 +399,29 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     list_filter = ['transaction_type', 'is_successful', 'created_at']
     search_fields = ['user__username', 'paypal_transaction_id']
     readonly_fields = ['created_at']
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.utils.html import format_html
 
+User = get_user_model()
+
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('email', 'username', 'date_joined', 'is_active')
+    search_fields = ('email', 'username')
+    ordering = ('-date_joined',)
+    readonly_fields = ('date_joined', 'last_login')
+    
+    fieldsets = (
+        ('Account', {'fields': ('username', 'email', 'password')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+    )
+
+# Unregister default then register custom
+try:
+    admin.site.unregister(User)
+except:
+    pass
+admin.site.register(User, CustomUserAdmin)
 
 # ============================================================================
 # CUSTOM ADMIN SITE CONFIGURATION
