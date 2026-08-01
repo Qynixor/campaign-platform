@@ -399,29 +399,46 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     list_filter = ['transaction_type', 'is_successful', 'created_at']
     search_fields = ['user__username', 'paypal_transaction_id']
     readonly_fields = ['created_at']
+
 from django.contrib import admin
-from django.contrib.auth import get_user_model
-from django.utils.html import format_html
+from django.http import HttpResponse
+import csv
+from datetime import datetime
+import os
 
-User = get_user_model()
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    def changelist_view(self, request, extra_context=None):
+        # Read subscribers from file
+        log_file = os.path.join(os.path.dirname(__file__), 'subscribers.csv')
+        subscribers = []
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        parts = line.strip().split(',')
+                        subscribers.append({
+                            'date': parts[0] if len(parts) > 0 else '',
+                            'email': parts[1] if len(parts) > 1 else ''
+                        })
+        
+        extra_context = extra_context or {}
+        extra_context['subscribers'] = subscribers
+        extra_context['total'] = len(subscribers)
+        return super().changelist_view(request, extra_context=extra_context)
 
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'username', 'date_joined', 'is_active')
-    search_fields = ('email', 'username')
-    ordering = ('-date_joined',)
-    readonly_fields = ('date_joined', 'last_login')
-    
-    fieldsets = (
-        ('Account', {'fields': ('username', 'email', 'password')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
-    )
+# Register dummy model
+from django.db import models
+class SubscriberLog(models.Model):
+    class Meta:
+        managed = False
+        verbose_name = 'Newsletter Subscribers'
+        verbose_name_plural = 'Newsletter Subscribers'
 
-# Unregister default then register custom
-try:
-    admin.site.unregister(User)
-except:
-    pass
-admin.site.register(User, CustomUserAdmin)
+admin.site.register(SubscriberLog, NewsletterSubscriberAdmin)
+
+
+
 
 # ============================================================================
 # CUSTOM ADMIN SITE CONFIGURATION
