@@ -193,7 +193,7 @@ urlpatterns = [
     # TEST URL - REMOVE BEFORE GOING LIVE
     # ============================================================================
     path('test-paypal/', views.test_paypal_connection_view, name='test_paypal'),   
- 
+   path('api/subscribe/', views.subscribe_newsletter, name='subscribe_newsletter'),
 ]
 
 # ============================================================================
