@@ -3233,10 +3233,9 @@ def purchase_success(request, purchase_id):
     purchase = get_object_or_404(UserPurchase, id=purchase_id, user=request.user)
     return render(request, 'main/purchase_success.html', {'purchase': purchase})
 
-
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from .models import Subscriber
 import json
 
 @csrf_exempt
@@ -3245,9 +3244,21 @@ def subscribe_newsletter(request):
         try:
             data = json.loads(request.body)
             email = data.get('email')
-            # Save to your email service (MailerLite, ConvertKit, etc.)
-            # For now, just return success
-            return JsonResponse({'success': True, 'message': 'Subscribed!'})
-        except:
-            return JsonResponse({'success': False, 'message': 'Invalid email'})
+            
+            if not email:
+                return JsonResponse({'success': False, 'message': 'Email required'})
+            
+            subscriber, created = Subscriber.objects.get_or_create(
+                email=email,
+                defaults={'ip_address': request.META.get('REMOTE_ADDR')}
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Subscribed!' if created else 'Already subscribed!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
     return JsonResponse({'success': False, 'message': 'Invalid request'})
