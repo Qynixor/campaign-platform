@@ -3237,7 +3237,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Subscriber
 import json
-
 @csrf_exempt
 def subscribe_newsletter(request):
     if request.method == 'POST':
@@ -3251,8 +3250,7 @@ def subscribe_newsletter(request):
             subscriber, created = Subscriber.objects.get_or_create(
                 email=email,
                 defaults={
-                    'ip_address': request.META.get('REMOTE_ADDR'),
-                    'user_agent': request.META.get('HTTP_USER_AGENT', '')  # Add this
+                    'ip_address': request.META.get('REMOTE_ADDR')
                 }
             )
             
