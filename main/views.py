@@ -3232,3 +3232,22 @@ def purchase_success(request, purchase_id):
     """Purchase success page"""
     purchase = get_object_or_404(UserPurchase, id=purchase_id, user=request.user)
     return render(request, 'main/purchase_success.html', {'purchase': purchase})
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def subscribe_newsletter(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            # Save to your email service (MailerLite, ConvertKit, etc.)
+            # For now, just return success
+            return JsonResponse({'success': True, 'message': 'Subscribed!'})
+        except:
+            return JsonResponse({'success': False, 'message': 'Invalid email'})
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
