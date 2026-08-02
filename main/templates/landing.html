@@ -801,7 +801,7 @@ Rallynex is the AI workspace where founders build startups in public. Document p
         margin: 0;
     }
 
-    /* EMAIL POPUP — Frontend Only */
+    /* EMAIL POPUP */
     .email-popup-overlay {
         position: fixed;
         top: 0;
@@ -1437,7 +1437,7 @@ Rallynex is the AI workspace where founders build startups in public. Document p
 
 
 <!-- ============================================
-     EMAIL POPUP — Frontend Only (No Backend)
+     EMAIL POPUP — Formspree (No Backend)
      ============================================ -->
 
 <div class="email-popup-overlay" id="emailPopup">
@@ -1455,13 +1455,18 @@ Rallynex is the AI workspace where founders build startups in public. Document p
                 Join 100+ founders getting weekly tips on building in public,
                 AI content generation, and growing their startup.
             </p>
-            <form id="emailForm">
+
+            <form 
+                action="https://formspree.io/f/mzdnnzeb" 
+                method="POST"
+                id="emailForm"
+            >
                 <div class="form-group">
-                    <input
-                        type="email"
-                        name="email"
+                    <input 
+                        type="email" 
+                        name="email" 
                         id="popupEmail"
-                        placeholder="Enter your email"
+                        placeholder="Enter your email" 
                         required
                         autocomplete="email"
                     >
@@ -1481,13 +1486,10 @@ Rallynex is the AI workspace where founders build startups in public. Document p
         <div class="success-message" id="successMessage">
             <i class="fas fa-check-circle"></i>
             <h3>You're In! 🎉</h3>
-            <p>Welcome to the community!</p>
+            <p>Check your inbox. Welcome to the community!</p>
         </div>
     </div>
 </div>
-
-<!-- Admin Container (Hidden from everyone except admin) -->
-<div id="adminEmails" style="display:none;"></div>
 
 
 {% endblock %}
@@ -1508,7 +1510,6 @@ Rallynex is the AI workspace where founders build startups in public. Document p
         const successMessage = document.getElementById('successMessage');
 
         let hasSubmitted = false;
-        let subscribers = JSON.parse(localStorage.getItem('rallynex_subscribers') || '[]');
 
         function hasSubscribed() {
             return document.cookie.split(';').some(cookie =>
@@ -1529,55 +1530,6 @@ Rallynex is the AI workspace where founders build startups in public. Document p
             document.cookie = 'rallynex_subscribed=1; path=/; max-age=' + (60 * 60 * 24 * 7);
         }
 
-        function saveEmail(email) {
-            const timestamp = new Date().toISOString();
-            subscribers.push({ email: email, date: timestamp });
-            localStorage.setItem('rallynex_subscribers', JSON.stringify(subscribers));
-            
-            if (isAdmin()) {
-                renderAdminEmails();
-            }
-        }
-
-        function isAdmin() {
-            return document.cookie.split(';').some(cookie =>
-                cookie.trim().startsWith('rallynex_admin=')
-            );
-        }
-
-        function renderAdminEmails() {
-            const container = document.getElementById('adminEmails');
-            if (!container) return;
-            
-            container.style.display = 'block';
-            container.style.position = 'fixed';
-            container.style.bottom = '10px';
-            container.style.right = '10px';
-            container.style.background = 'white';
-            container.style.border = '1px solid #ccc';
-            container.style.borderRadius = '8px';
-            container.style.padding = '15px';
-            container.style.maxHeight = '300px';
-            container.style.overflowY = 'auto';
-            container.style.zIndex = '99999';
-            container.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            container.style.fontSize = '12px';
-            container.style.width = '300px';
-            
-            let html = '<h4 style="margin:0 0 10px 0;">📧 Subscribers (' + subscribers.length + ')</h4>';
-            html += '<ul style="list-style:none;padding:0;margin:0;">';
-            subscribers.slice().reverse().forEach(function(sub) {
-                html += '<li style="padding:4px 0;border-bottom:1px solid #eee;">';
-                html += '<strong>' + sub.email + '</strong><br>';
-                html += '<span style="color:#999;font-size:10px;">' + sub.date.slice(0,16) + '</span>';
-                html += '</li>';
-            });
-            html += '</ul>';
-            html += '<button onclick="clearEmails()" style="margin-top:10px;padding:4px 12px;font-size:11px;border:1px solid #ccc;border-radius:4px;background:#f5f5f5;cursor:pointer;">Clear All</button>';
-            html += '<button onclick="exportEmails()" style="margin-top:10px;margin-left:5px;padding:4px 12px;font-size:11px;border:1px solid #ccc;border-radius:4px;background:#3b82f6;color:white;cursor:pointer;">Export CSV</button>';
-            container.innerHTML = html;
-        }
-
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -1596,13 +1548,42 @@ Rallynex is the AI workspace where founders build startups in public. Document p
             btnLoading.style.display = 'inline';
             subscribeBtn.disabled = true;
 
-            saveEmail(email);
+            const formData = new FormData(form);
 
-            formContent.classList.add('hidden');
-            successMessage.classList.add('active');
-            document.cookie = 'rallynex_subscribed=1; path=/; max-age=' + (60 * 60 * 24 * 365);
-
-            setTimeout(closePopup, 4000);
+            fetch('https://formspree.io/f/mzdnnzeb', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    formContent.classList.add('hidden');
+                    successMessage.classList.add('active');
+                    document.cookie = 'rallynex_subscribed=1; path=/; max-age=' + (60 * 60 * 24 * 365);
+                    setTimeout(closePopup, 4000);
+                } else {
+                    return response.json().then(function(data) {
+                        if (data && data.error) {
+                            alert('Error: ' + data.error);
+                        } else {
+                            alert('Something went wrong. Please try again.');
+                        }
+                        hasSubmitted = false;
+                        btnText.style.display = 'inline';
+                        btnLoading.style.display = 'none';
+                        subscribeBtn.disabled = false;
+                    });
+                }
+            })
+            .catch(function(error) {
+                alert('Network error. Please check your connection and try again.');
+                hasSubmitted = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+                subscribeBtn.disabled = false;
+            });
         });
 
         closeBtn.addEventListener('click', closePopup);
@@ -1620,55 +1601,6 @@ Rallynex is the AI workspace where founders build startups in public. Document p
         });
 
         setTimeout(showPopup, 5000);
-
-        // --- Admin Functions ---
-        window.clearEmails = function() {
-            if (confirm('Delete all subscribers?')) {
-                subscribers = [];
-                localStorage.setItem('rallynex_subscribers', JSON.stringify(subscribers));
-                renderAdminEmails();
-            }
-        };
-
-        window.exportEmails = function() {
-            if (subscribers.length === 0) {
-                alert('No subscribers to export.');
-                return;
-            }
-            
-            let csv = 'Email,Date\n';
-            subscribers.forEach(function(sub) {
-                csv += sub.email + ',' + sub.date + '\n';
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'subscribers.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
-
-        // Auto-show admin panel if admin
-        if (isAdmin()) {
-            renderAdminEmails();
-        }
-
-        // Secret admin activation: Click logo 5 times
-        document.querySelector('.logo')?.addEventListener('click', function() {
-            const count = parseInt(sessionStorage.getItem('logoClickCount') || '0') + 1;
-            sessionStorage.setItem('logoClickCount', count);
-            
-            if (count >= 5) {
-                document.cookie = 'rallynex_admin=1; path=/; max-age=' + (60 * 60 * 24 * 30);
-                sessionStorage.removeItem('logoClickCount');
-                renderAdminEmails();
-                alert('Admin mode activated! Check bottom-right corner.');
-            }
-        });
 
     })();
 </script>
