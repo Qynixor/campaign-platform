@@ -3232,11 +3232,6 @@ def purchase_success(request, purchase_id):
     """Purchase success page"""
     purchase = get_object_or_404(UserPurchase, id=purchase_id, user=request.user)
     return render(request, 'main/purchase_success.html', {'purchase': purchase})
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import Subscriber
-import json
 @csrf_exempt
 def subscribe_newsletter(request):
     if request.method == 'POST':
